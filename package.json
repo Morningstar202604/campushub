@@ -1,0 +1,8 @@
+{
+  "name": "campushub",
+  "version": "1.0.0",
+  "description": "韩师校园通 - 校园综合信息平台",
+  "dependencies": {
+    "tdesign-miniprogram": "^1.7.0"
+  }
+}

@@ -1,0 +1,91 @@
+<!-- pages/product-detail/product-detail.wxml -->
+<view class="detail-page" wx:if="{{product}}">
+  <!-- 图片轮播 -->
+  <swiper class="image-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#fff" circular>
+    <swiper-item wx:for="{{product.images}}" wx:key="*this">
+      <image src="{{item}}" mode="aspectFill" class="swiper-image" data-index="{{index}}" bindtap="previewImage" />
+    </swiper-item>
+  </swiper>
+
+  <!-- 价格区 -->
+  <view class="price-section">
+    <view class="price-main">
+      <text class="price-symbol">¥</text>
+      <text class="price-value">{{product.price}}</text>
+      <text class="price-original" wx:if="{{product.originalPrice}}">¥{{product.originalPrice}}</text>
+    </view>
+    <view class="price-tags">
+      <view class="price-tag">{{conditionText}}</view>
+      <view class="price-tag">{{tradeTypeText}}</view>
+    </view>
+  </view>
+
+  <!-- 标题描述 -->
+  <view class="info-section">
+    <view class="product-title">{{product.title}}</view>
+    <view class="product-desc" wx:if="{{product.description}}">{{product.description}}</view>
+  </view>
+
+  <!-- 卖家信息 -->
+  <view class="seller-section" wx:if="{{product.userNickname}}">
+    <view class="seller-avatar">
+      <image wx:if="{{product.userAvatar}}" src="{{product.userAvatar}}" class="avatar-img" />
+      <view wx:else class="avatar-placeholder">{{product.userNickname[0]}}</view>
+    </view>
+    <view class="seller-info">
+      <view class="seller-name">{{product.userNickname}}</view>
+      <view class="seller-meta">{{formatCreateTime}}发布</view>
+    </view>
+  </view>
+
+  <!-- 交易信息 -->
+  <view class="trade-section">
+    <view class="trade-row" wx:if="{{product.location}}">
+      <text class="trade-label">交易地点</text>
+      <text class="trade-value">{{product.location}}</text>
+    </view>
+    <view class="trade-row">
+      <text class="trade-label">交易方式</text>
+      <text class="trade-value">{{tradeTypeText}}</text>
+    </view>
+    <view class="trade-row" wx:if="{{product.contactInfo}}">
+      <text class="trade-label">联系方式</text>
+      <text class="trade-value">{{product.contactInfo}}</text>
+    </view>
+  </view>
+
+  <!-- 安全提示 -->
+  <view class="safety-tip">
+    <view class="safety-icon">⚠️</view>
+    <view class="safety-text">
+      平台仅提供信息展示，不参与交易和担保。请线下当面验货交易，注意安全。
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar safe-bottom">
+    <view class="bar-action {{isCollected ? 'active' : ''}}" bindtap="onCollect">
+      <text class="bar-icon">{{isCollected ? '⭐' : '☆'}}</text>
+      <text class="bar-text">收藏</text>
+    </view>
+    <view class="bar-action" bindtap="onReport">
+      <text class="bar-icon">🚩</text>
+      <text class="bar-text">举报</text>
+    </view>
+    <t-button theme="primary" size="medium" bindtap="onContact" class="bar-btn">
+      {{product.contactInfo ? '查看联系方式' : '联系卖家'}}
+    </t-button>
+  </view>
+</view>
+
+<!-- 加载 -->
+<view class="loading-page" wx:if="{{!product && loading}}">
+  <view class="skeleton-block" style="height: 600rpx; margin-bottom: 24rpx;"></view>
+  <view class="skeleton-block" style="height: 200rpx; margin-bottom: 24rpx;"></view>
+  <view class="skeleton-block" style="height: 200rpx;"></view>
+</view>
+
+<view class="empty-container" wx:if="{{!product && !loading}}">
+  <view class="empty-emoji">😕</view>
+  <view class="empty-text">商品不存在或已下架</view>
+</view>

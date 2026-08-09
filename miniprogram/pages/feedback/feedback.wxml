@@ -1,0 +1,17 @@
+<!-- pages/feedback/feedback.wxml -->
+<view class="feedback-page">
+  <view class="form-section">
+    <view class="form-label">反馈内容</view>
+    <textarea class="form-textarea" placeholder="请描述您遇到的问题或建议..." maxlength="500" value="{{content}}" bindinput="onContentInput" />
+    <view class="char-count">{{content.length}}/500</view>
+  </view>
+
+  <view class="form-section">
+    <view class="form-label">联系方式（选填）</view>
+    <input class="form-input" placeholder="微信号/QQ号，方便我们联系您" maxlength="30" value="{{contact}}" bindinput="onContactInput" />
+  </view>
+
+  <view class="submit-area">
+    <t-button theme="primary" size="large" block bindtap="onSubmit" loading="{{submitting}}">提交反馈</t-button>
+  </view>
+</view>

@@ -1,0 +1,73 @@
+<!-- pages/login/login.wxml -->
+<view class="login-page">
+  <view class="login-header" style="padding-top: {{statusBarHeight + 80}}px;">
+    <view class="logo">🎓</view>
+    <view class="title">韩师校园通</view>
+    <view class="subtitle">校园信息 · 一站搞定</view>
+  </view>
+
+  <view class="login-form">
+    <view class="form-item">
+      <view class="form-label">昵称</view>
+      <input 
+        class="form-input" 
+        placeholder="给自己起个昵称" 
+        maxlength="20"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">学院</view>
+      <input 
+        class="form-input" 
+        placeholder="如：文学与新闻传播学院" 
+        value="{{college}}"
+        bindinput="onCollegeInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">专业</view>
+      <input 
+        class="form-input" 
+        placeholder="如：汉语言文学" 
+        value="{{major}}"
+        bindinput="onMajorInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">年级</view>
+      <picker mode="selector" range="{{gradeOptions}}" bindchange="onGradeChange">
+        <view class="form-picker {{grade ? '' : 'placeholder'}}">
+          {{grade || '请选择年级'}}
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-tags">
+      <view class="form-label">兴趣标签（选填）</view>
+      <view class="tags-grid">
+        <view 
+          class="tag-option {{selectedTags.includes(item) ? 'selected' : ''}}" 
+          wx:for="{{tagOptions}}" 
+          wx:key="*this"
+          data-tag="{{item}}"
+          bindtap="toggleTag"
+        >{{item}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="login-footer">
+    <t-button theme="primary" size="large" block bindtap="onLogin" loading="{{loading}}">
+      进入校园通
+    </t-button>
+    <view class="agreement">
+      登录即表示同意
+      <text class="agreement-link" bindtap="goAgreement">《用户协议与隐私政策》</text>
+    </view>
+  </view>
+</view>

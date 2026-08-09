@@ -1,0 +1,46 @@
+/* pages/feedback/feedback.wxss */
+.feedback-page {
+  min-height: 100vh;
+  background: #fff;
+  padding: 32rpx;
+}
+
+.form-section {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  background: var(--color-bg-gray);
+  border-radius: var(--radius-md);
+  padding: 24rpx;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+}
+
+.form-input {
+  height: 80rpx;
+  background: var(--color-bg-gray);
+  border-radius: var(--radius-md);
+  padding: 0 24rpx;
+  font-size: var(--font-size-base);
+}
+
+.char-count {
+  text-align: right;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-top: 8rpx;
+}
+
+.submit-area {
+  margin-top: 48rpx;
+}

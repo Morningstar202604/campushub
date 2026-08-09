@@ -1,0 +1,119 @@
+/* pages/login/login.wxss */
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #EBF4FD 0%, #F5F6FA 30%);
+  display: flex;
+  flex-direction: column;
+}
+
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 48rpx;
+}
+
+.logo {
+  font-size: 96rpx;
+  margin-bottom: 16rpx;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 8rpx;
+}
+
+.subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
+}
+
+.login-form {
+  flex: 1;
+  padding: 0 48rpx;
+}
+
+.form-item {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.form-input {
+  height: 88rpx;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 0 24rpx;
+  font-size: var(--font-size-base);
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+}
+
+.form-picker {
+  height: 88rpx;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 0 24rpx;
+  font-size: var(--font-size-base);
+  line-height: 88rpx;
+  color: var(--color-text-primary);
+}
+
+.form-picker.placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.form-tags {
+  margin-top: 16rpx;
+}
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.tag-option {
+  padding: 12rpx 28rpx;
+  background: #fff;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  border: 2rpx solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.tag-option.selected {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.login-footer {
+  padding: 48rpx;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.agreement {
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-top: 24rpx;
+}
+
+.agreement-link {
+  color: var(--color-primary);
+}

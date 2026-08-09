@@ -1,0 +1,54 @@
+<!-- pages/guide/guide.wxml -->
+<view class="guide-page">
+  <!-- 分类滚动条 -->
+  <scroll-view class="category-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="category-list">
+      <view 
+        class="cat-item {{activeCategory === '' ? 'active' : ''}}" 
+        bindtap="onCategoryChange"
+        data-id=""
+      >全部</view>
+      <view 
+        class="cat-item {{activeCategory === item._id ? 'active' : ''}}" 
+        wx:for="{{categories}}" 
+        wx:key="_id"
+        data-id="{{item._id}}"
+        bindtap="onCategoryChange"
+      >{{item.name}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- 指南列表 -->
+  <view class="guide-list" wx:if="{{guides.length > 0}}">
+    <view class="guide-card" wx:for="{{guides}}" wx:key="_id" data-id="{{item._id}}" bindtap="onGuideTap">
+      <image wx:if="{{item.coverImage}}" src="{{item.coverImage}}" mode="aspectFill" class="guide-cover" />
+      <view class="guide-body">
+        <view class="guide-title ellipsis-2">{{item.title}}</view>
+        <view class="guide-summary ellipsis-2" wx:if="{{item.summary}}">{{item.summary}}</view>
+        <view class="guide-tags" wx:if="{{item.tags.length > 0}}">
+          <view class="guide-tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</view>
+        </view>
+        <view class="guide-meta">
+          <text class="guide-views">👀 {{item.viewCount || 0}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 骨架屏 -->
+  <view class="guide-list" wx:if="{{loading && guides.length === 0}}">
+    <view class="guide-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="skeleton-block" style="height: 160rpx; border-radius: 16rpx 16rpx 0 0;"></view>
+      <view class="guide-body">
+        <view class="skeleton-block" style="height: 32rpx; width: 80%; margin-bottom: 16rpx;"></view>
+        <view class="skeleton-block" style="height: 24rpx; width: 60%;"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-container" wx:if="{{!loading && guides.length === 0}}">
+    <view class="empty-emoji">📖</view>
+    <view class="empty-text">指南正在编写中</view>
+  </view>
+</view>

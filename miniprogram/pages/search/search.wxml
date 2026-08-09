@@ -1,0 +1,98 @@
+<!-- pages/search/search.wxml -->
+<view class="search-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrap">
+      <text class="search-icon">🔍</text>
+      <input 
+        class="search-input" 
+        placeholder="搜索帖子、商品、指南" 
+        value="{{keyword}}"
+        bindinput="onInput"
+        confirm-type="search"
+        bindconfirm="onSearch"
+        focus
+        cursor-spacing="20"
+      />
+      <text class="search-clear" wx:if="{{keyword}}" bindtap="clearInput">×</text>
+    </view>
+    <text class="search-btn" bindtap="onSearch">搜索</text>
+  </view>
+
+  <!-- 搜索结果 -->
+  <view class="results" wx:if="{{searched}}">
+    <!-- Tab -->
+    <view class="result-tabs">
+      <view class="result-tab {{activeResult === 'posts' ? 'active' : ''}}" data-key="posts" bindtap="onResultTab">
+        帖子 {{posts.length}}
+      </view>
+      <view class="result-tab {{activeResult === 'products' ? 'active' : ''}}" data-key="products" bindtap="onResultTab">
+        商品 {{products.length}}
+      </view>
+      <view class="result-tab {{activeResult === 'guides' ? 'active' : ''}}" data-key="guides" bindtap="onResultTab">
+        指南 {{guides.length}}
+      </view>
+    </view>
+
+    <!-- 帖子结果 -->
+    <view class="result-list" wx:if="{{activeResult === 'posts'}}">
+      <view class="result-item" wx:for="{{posts}}" wx:key="_id" data-id="{{item._id}}" bindtap="goPostDetail">
+        <view class="result-title ellipsis-1">{{item.title}}</view>
+        <view class="result-desc ellipsis-1" wx:if="{{item.content}}">{{item.content}}</view>
+        <view class="result-meta">
+          <text>{{item.userNickname}}</text>
+          <text class="result-dot">·</text>
+          <text>{{item.likeCount || 0}}赞</text>
+        </view>
+      </view>
+      <view class="empty-container" wx:if="{{posts.length === 0}}">
+        <view class="empty-text">没有相关帖子</view>
+      </view>
+    </view>
+
+    <!-- 商品结果 -->
+    <view class="result-list" wx:if="{{activeResult === 'products'}}">
+      <view class="result-item product-result" wx:for="{{products}}" wx:key="_id" data-id="{{item._id}}" bindtap="goProductDetail">
+        <image wx:if="{{item.images[0]}}" src="{{item.images[0]}}" mode="aspectFill" class="result-thumb" />
+        <view class="result-info">
+          <view class="result-title ellipsis-1">{{item.title}}</view>
+          <view class="result-price">¥{{item.price}}</view>
+          <view class="result-meta">
+            <text>{{item.userNickname}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="empty-container" wx:if="{{products.length === 0}}">
+        <view class="empty-text">没有相关商品</view>
+      </view>
+    </view>
+
+    <!-- 指南结果 -->
+    <view class="result-list" wx:if="{{activeResult === 'guides'}}">
+      <view class="result-item" wx:for="{{guides}}" wx:key="_id" data-id="{{item._id}}" bindtap="goGuideDetail">
+        <view class="result-title ellipsis-1">{{item.title}}</view>
+        <view class="result-desc ellipsis-1" wx:if="{{item.summary}}">{{item.summary}}</view>
+      </view>
+      <view class="empty-container" wx:if="{{guides.length === 0}}">
+        <view class="empty-text">没有相关指南</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索历史 -->
+  <view class="history" wx:if="{{!searched}}">
+    <view class="history-header" wx:if="{{history.length > 0}}">
+      <text class="history-title">搜索历史</text>
+      <text class="history-clear" bindtap="clearHistory">清空</text>
+    </view>
+    <view class="history-tags" wx:if="{{history.length > 0}}">
+      <view class="history-tag" wx:for="{{history}}" wx:key="*this" data-key="{{item}}" bindtap="onHistoryTap">{{item}}</view>
+    </view>
+    <view class="hot-search">
+      <view class="history-title">热门搜索</view>
+      <view class="history-tags">
+        <view class="history-tag" wx:for="{{hotSearch}}" wx:key="*this" data-key="{{item}}" bindtap="onHistoryTap">{{item}}</view>
+      </view>
+    </view>
+  </view>
+</view>

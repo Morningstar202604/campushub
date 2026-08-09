@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/login",
+    "pages/post-publish/post-publish",
+    "pages/post-detail/post-detail",
+    "pages/product-publish/product-publish",
+    "pages/product-detail/product-detail",
+    "pages/guide/guide",
+    "pages/guide-detail/guide-detail",
+    "pages/search/search",
+    "pages/profile/profile",
+    "pages/profile-edit/profile-edit",
+    "pages/my-list/my-list",
+    "pages/feedback/feedback",
+    "pages/agreement/agreement"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTitleText": "韩师校园通",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F5F6FA",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#4A90D9",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/guide/guide",
+        "text": "指南"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "cloud": true,
+  "sitemapLocation": "sitemap.json",
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于显示交易地点"
+    }
+  }
+}

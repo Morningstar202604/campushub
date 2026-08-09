@@ -1,0 +1,30 @@
+<!-- pages/guide-detail/guide-detail.wxml -->
+<view class="guide-detail-page" wx:if="{{guide}}">
+  <image wx:if="{{guide.coverImage}}" src="{{guide.coverImage}}" mode="widthFix" class="cover-image" />
+  
+  <view class="content-section">
+    <view class="guide-title">{{guide.title}}</view>
+    
+    <view class="guide-meta" wx:if="{{guide.tags.length > 0}}">
+      <view class="meta-tag" wx:for="{{guide.tags}}" wx:key="*this">{{item}}</view>
+    </view>
+    
+    <view class="guide-stats">
+      <text>👀 {{guide.viewCount || 0}} 浏览</text>
+    </view>
+
+    <view class="guide-content">
+      <rich-text nodes="{{guide.content}}" />
+    </view>
+  </view>
+</view>
+
+<view class="loading-page" wx:if="{{!guide && loading}}">
+  <view class="skeleton-block" style="height: 300rpx; margin-bottom: 32rpx;"></view>
+  <view class="skeleton-block" style="height: 400rpx;"></view>
+</view>
+
+<view class="empty-container" wx:if="{{!guide && !loading}}">
+  <view class="empty-emoji">📖</view>
+  <view class="empty-text">指南不存在</view>
+</view>

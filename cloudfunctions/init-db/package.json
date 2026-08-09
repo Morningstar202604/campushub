@@ -1,0 +1,9 @@
+{
+  "name": "init-db",
+  "version": "1.0.0",
+  "description": "数据库初始化（创建集合+导入指南数据）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

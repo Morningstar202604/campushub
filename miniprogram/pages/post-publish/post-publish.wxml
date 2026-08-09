@@ -1,0 +1,93 @@
+<!-- pages/post-publish/post-publish.wxml -->
+<view class="publish-page">
+  <!-- 标题 -->
+  <view class="form-section">
+    <input 
+      class="title-input" 
+      placeholder="标题（必填，30字以内）" 
+      maxlength="30"
+      value="{{title}}"
+      bindinput="onTitleInput"
+      cursor-spacing="20"
+    />
+  </view>
+
+  <!-- 正文 -->
+  <view class="form-section">
+    <textarea
+      class="content-input"
+      placeholder="说点什么吧...（支持2000字）"
+      maxlength="2000"
+      value="{{content}}"
+      bindinput="onContentInput"
+      cursor-spacing="20"
+      auto-height
+    />
+  </view>
+
+  <!-- 图片 -->
+  <view class="form-section">
+    <view class="image-grid">
+      <view class="image-item" wx:for="{{images}}" wx:key="*this" wx:for-index="idx">
+        <image src="{{item}}" mode="aspectFill" class="preview-image" />
+        <view class="image-delete" data-index="{{idx}}" bindtap="removeImage">×</view>
+      </view>
+      <view class="image-add" wx:if="{{images.length < 9}}" bindtap="chooseImage">
+        <text class="add-icon">+</text>
+        <text class="add-text">{{images.length}}/9</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类 -->
+  <view class="form-section">
+    <view class="section-label">分类</view>
+    <view class="category-grid">
+      <view 
+        class="category-item {{category === item.value ? 'active' : ''}}" 
+        wx:for="{{categories}}" 
+        wx:key="value"
+        data-value="{{item.value}}"
+        bindtap="onCategoryChange"
+      >
+        <text class="category-emoji">{{item.emoji}}</text>
+        <text class="category-name">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 标签 -->
+  <view class="form-section">
+    <view class="section-label">话题标签（选填，最多5个）</view>
+    <view class="tags-area">
+      <view class="tag-item" wx:for="{{tags}}" wx:key="*this">
+        <text>#{{item}}</text>
+        <text class="tag-remove" data-tag="{{item}}" bindtap="removeTag">×</text>
+      </view>
+      <input 
+        class="tag-input" 
+        placeholder="输入标签后回车" 
+        value="{{tagInput}}"
+        bindinput="onTagInput"
+        bindconfirm="addTag"
+        wx:if="{{tags.length < 5}}"
+      />
+    </view>
+  </view>
+
+  <!-- 匿名 -->
+  <view class="form-section anon-section">
+    <view class="anon-info">
+      <view class="anon-title">匿名发布</view>
+      <view class="anon-desc">匿名可发帖和评论，但不能发布商品或交易</view>
+    </view>
+    <switch checked="{{isAnonymous}}" bindchange="onAnonymousChange" color="#4A90D9" />
+  </view>
+
+  <!-- 提交 -->
+  <view class="submit-bar safe-bottom">
+    <t-button theme="primary" size="large" block bindtap="submit" loading="{{submitting}}">
+      发布
+    </t-button>
+  </view>
+</view>

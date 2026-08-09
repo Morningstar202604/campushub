@@ -1,0 +1,100 @@
+<!-- pages/profile/profile.wxml -->
+<view class="profile-page">
+  <!-- 头部 -->
+  <view class="profile-header">
+    <view class="user-card" wx:if="{{user}}">
+      <view class="user-avatar">
+        <image wx:if="{{user.avatar}}" src="{{user.avatar}}" class="avatar-img" />
+        <view wx:else class="avatar-placeholder">{{user.nickname[0] || 'U'}}</view>
+      </view>
+      <view class="user-info">
+        <view class="user-name">{{user.nickname}}</view>
+        <view class="user-school" wx:if="{{user.college}}">{{user.college}}{{user.major ? ' · ' + user.major : ''}}</view>
+        <view class="user-grade" wx:if="{{user.grade}}">{{user.grade}}</view>
+      </view>
+      <view class="edit-btn" bindtap="goEdit">编辑</view>
+    </view>
+    
+    <view class="user-card" wx:else>
+      <view class="user-avatar">
+        <view class="avatar-placeholder">?</view>
+      </view>
+      <view class="user-info">
+        <view class="login-prompt" bindtap="goLogin">点击登录</view>
+        <view class="user-school">登录后享受更多功能</view>
+      </view>
+    </view>
+
+    <!-- 数据统计 -->
+    <view class="stats-row" wx:if="{{user}}">
+      <view class="stat-item" data-type="posts" bindtap="goMyList">
+        <view class="stat-num">{{user.postCount || 0}}</view>
+        <view class="stat-label">帖子</view>
+      </view>
+      <view class="stat-item" data-type="products" bindtap="goMyList">
+        <view class="stat-num">{{user.productCount || 0}}</view>
+        <view class="stat-label">商品</view>
+      </view>
+      <view class="stat-item" data-type="collects" bindtap="goMyList">
+        <view class="stat-num">{{user.collectCount || 0}}</view>
+        <view class="stat-label">收藏</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-num">{{user.creditScore || 100}}</view>
+        <view class="stat-label">信用分</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 标签 -->
+  <view class="tags-section" wx:if="{{user && user.tags && user.tags.length > 0}}">
+    <view class="tags-row">
+      <view class="user-tag" wx:for="{{user.tags}}" wx:key="*this">{{item}}</view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section">
+    <view class="menu-item" bindtap="goMyList" data-type="posts">
+      <text class="menu-icon">📝</text>
+      <text class="menu-text">我的帖子</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goMyList" data-type="products">
+      <text class="menu-icon">🛒</text>
+      <text class="menu-text">我的商品</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goMyList" data-type="collects">
+      <text class="menu-icon">⭐</text>
+      <text class="menu-text">我的收藏</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="menu-section">
+    <view class="menu-item" bindtap="goEdit">
+      <text class="menu-icon">⚙️</text>
+      <text class="menu-text">编辑资料</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goAbout">
+      <text class="menu-icon">ℹ️</text>
+      <text class="menu-text">关于我们</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goFeedback">
+      <text class="menu-icon">💬</text>
+      <text class="menu-text">意见反馈</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="menu-section" wx:if="{{user}}">
+    <view class="menu-item logout" bindtap="onLogout">
+      <text class="menu-text">退出登录</text>
+    </view>
+  </view>
+
+  <view class="version-text">v1.0.0 · 韩师校园通</view>
+</view>

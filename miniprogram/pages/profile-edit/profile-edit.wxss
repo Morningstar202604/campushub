@@ -1,0 +1,72 @@
+/* pages/profile-edit/profile-edit.wxss */
+.edit-page {
+  min-height: 100vh;
+  background: #fff;
+  padding: 0 32rpx 160rpx;
+}
+
+.form-section {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.form-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.form-input {
+  height: 80rpx;
+  font-size: var(--font-size-base);
+}
+
+.form-textarea {
+  font-size: var(--font-size-base);
+  min-height: 80rpx;
+  width: 100%;
+  line-height: 1.5;
+}
+
+.form-picker {
+  height: 80rpx;
+  font-size: var(--font-size-base);
+  line-height: 80rpx;
+}
+
+.form-picker.placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.tag-option {
+  padding: 12rpx 28rpx;
+  background: var(--color-bg-gray);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  border: 2rpx solid transparent;
+}
+
+.tag-option.selected {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.submit-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx 32rpx;
+  background: #fff;
+  box-shadow: 0 -2rpx 12rpx rgba(0,0,0,0.06);
+}

@@ -1,0 +1,107 @@
+/* pages/guide/guide.wxss */
+.guide-page {
+  min-height: 100vh;
+  background: var(--color-bg-page);
+}
+
+/* 分类滚动 */
+.category-scroll {
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  background: #fff;
+  white-space: nowrap;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.category-list {
+  display: inline-flex;
+  padding: 0 24rpx;
+  gap: 16rpx;
+  height: 88rpx;
+  align-items: center;
+}
+
+.cat-item {
+  display: inline-block;
+  padding: 12rpx 32rpx;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-gray);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cat-item.active {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 指南列表 */
+.guide-list {
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.guide-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.guide-card:active {
+  transform: scale(0.98);
+}
+
+.guide-cover {
+  width: 100%;
+  height: 200rpx;
+}
+
+.guide-body {
+  padding: 24rpx;
+}
+
+.guide-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  margin-bottom: 8rpx;
+}
+
+.guide-summary {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16rpx;
+}
+
+.guide-tags {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.guide-tag {
+  font-size: var(--font-size-xs);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  padding: 4rpx 16rpx;
+  border-radius: var(--radius-full);
+}
+
+.guide-meta {
+  display: flex;
+  gap: 24rpx;
+}
+
+.guide-views {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}

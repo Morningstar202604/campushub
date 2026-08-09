@@ -1,0 +1,217 @@
+<!-- pages/index/index.wxml -->
+<view class="page">
+  <!-- 顶部搜索栏（非自定义导航栏，tabBar页面用系统导航栏） -->
+  <view class="top-bar">
+    <view class="top-title">韩师校园通</view>
+    <view class="top-search" bindtap="goSearch">
+      <text class="search-icon">🔍</text>
+      <text class="search-placeholder">搜索帖子、商品、指南</text>
+    </view>
+  </view>
+
+  <!-- Tab 切换 -->
+  <view class="tab-bar">
+    <view 
+      class="tab-item {{activeTab === item.key ? 'active' : ''}}" 
+      wx:for="{{tabs}}" 
+      wx:key="key"
+      data-key="{{item.key}}"
+      bindtap="onTabChange"
+    >
+      <text class="tab-text">{{item.name}}</text>
+      <view class="tab-line" wx:if="{{activeTab === item.key}}"></view>
+    </view>
+  </view>
+
+  <!-- 信息流瀑布流 -->
+  <view class="feed" wx:if="{{leftList.length > 0 || rightList.length > 0}}">
+    <!-- 左列 -->
+    <view class="feed-col">
+      <block wx:for="{{leftList}}" wx:key="_id">
+        <!-- 帖子卡片 -->
+        <view class="feed-card" wx:if="{{item.itemType === 'post'}}" data-id="{{item._id}}" bindtap="onPostTap">
+          <image 
+            wx:if="{{item.images.length > 0}}" 
+            src="{{item.images[0]}}" 
+            mode="widthFix" 
+            class="card-cover" 
+            lazy-load
+          />
+          <view class="card-body">
+            <view class="card-title ellipsis-2">{{item.title}}</view>
+            <view class="card-desc ellipsis-2" wx:if="{{item.content}}">{{item.content}}</view>
+            <view class="card-tags" wx:if="{{item.tags.length > 0}}">
+              <view class="tag tag-primary" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">#{{tag}}</view>
+            </view>
+            <view class="card-meta">
+              <view class="meta-user">
+                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '匿'}}</view>
+                <text class="meta-name">{{item.userNickname}}</text>
+              </view>
+              <text class="meta-stat">❤ {{item.likeCount || 0}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 商品卡片 -->
+        <view class="feed-card" wx:if="{{item.itemType === 'product'}}" data-id="{{item._id}}" bindtap="onProductTap">
+          <image 
+            wx:if="{{item.images.length > 0}}" 
+            src="{{item.images[0]}}" 
+            mode="widthFix" 
+            class="card-cover" 
+            lazy-load
+          />
+          <view class="card-body">
+            <view class="card-title ellipsis-2">{{item.title}}</view>
+            <view class="card-price-row">
+              <text class="card-price">¥{{item.price}}</text>
+              <text class="card-original-price" wx:if="{{item.originalPrice}}">¥{{item.originalPrice}}</text>
+            </view>
+            <view class="card-tags">
+              <view class="tag tag-warning" wx:if="{{item.conditionText}}">{{item.conditionText}}</view>
+              <view class="tag" wx:if="{{item.tradeType === 'face'}}">面交</view>
+            </view>
+            <view class="card-meta">
+              <view class="meta-user">
+                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '用'}}</view>
+                <text class="meta-name">{{item.userNickname}}</text>
+              </view>
+              <text class="meta-stat">{{item.location || '校内'}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    
+    <!-- 右列 -->
+    <view class="feed-col">
+      <block wx:for="{{rightList}}" wx:key="_id">
+        <view class="feed-card" wx:if="{{item.itemType === 'post'}}" data-id="{{item._id}}" bindtap="onPostTap">
+          <image 
+            wx:if="{{item.images.length > 0}}" 
+            src="{{item.images[0]}}" 
+            mode="widthFix" 
+            class="card-cover" 
+            lazy-load
+          />
+          <view class="card-body">
+            <view class="card-title ellipsis-2">{{item.title}}</view>
+            <view class="card-desc ellipsis-2" wx:if="{{item.content}}">{{item.content}}</view>
+            <view class="card-tags" wx:if="{{item.tags.length > 0}}">
+              <view class="tag tag-primary" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">#{{tag}}</view>
+            </view>
+            <view class="card-meta">
+              <view class="meta-user">
+                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '匿'}}</view>
+                <text class="meta-name">{{item.userNickname}}</text>
+              </view>
+              <text class="meta-stat">❤ {{item.likeCount || 0}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="feed-card" wx:if="{{item.itemType === 'product'}}" data-id="{{item._id}}" bindtap="onProductTap">
+          <image 
+            wx:if="{{item.images.length > 0}}" 
+            src="{{item.images[0]}}" 
+            mode="widthFix" 
+            class="card-cover" 
+            lazy-load
+          />
+          <view class="card-body">
+            <view class="card-title ellipsis-2">{{item.title}}</view>
+            <view class="card-price-row">
+              <text class="card-price">¥{{item.price}}</text>
+              <text class="card-original-price" wx:if="{{item.originalPrice}}">¥{{item.originalPrice}}</text>
+            </view>
+            <view class="card-tags">
+              <view class="tag tag-warning" wx:if="{{item.conditionText}}">{{item.conditionText}}</view>
+              <view class="tag" wx:if="{{item.tradeType === 'face'}}">面交</view>
+            </view>
+            <view class="card-meta">
+              <view class="meta-user">
+                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '用'}}</view>
+                <text class="meta-name">{{item.userNickname}}</text>
+              </view>
+              <text class="meta-stat">{{item.location || '校内'}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 骨架屏 -->
+  <view class="feed" wx:if="{{loading && leftList.length === 0 && rightList.length === 0}}">
+    <view class="feed-col">
+      <view class="feed-card skeleton-card" wx:for="{{[1,2]}}" wx:key="*this">
+        <view class="skeleton-block card-cover-placeholder"></view>
+        <view class="card-body">
+          <view class="skeleton-block" style="height: 32rpx; width: 80%; margin-bottom: 16rpx;"></view>
+          <view class="skeleton-block" style="height: 24rpx; width: 60%; margin-bottom: 16rpx;"></view>
+          <view class="skeleton-block" style="height: 24rpx; width: 40%;"></view>
+        </view>
+      </view>
+    </view>
+    <view class="feed-col">
+      <view class="feed-card skeleton-card" wx:for="{{[1,2]}}" wx:key="*this">
+        <view class="skeleton-block card-cover-placeholder"></view>
+        <view class="card-body">
+          <view class="skeleton-block" style="height: 32rpx; width: 70%; margin-bottom: 16rpx;"></view>
+          <view class="skeleton-block" style="height: 24rpx; width: 50%; margin-bottom: 16rpx;"></view>
+          <view class="skeleton-block" style="height: 24rpx; width: 35%;"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view class="load-more" wx:if="{{loading && leftList.length > 0}}">
+    <view class="loading-dot"></view>
+    <text class="load-text">加载中...</text>
+  </view>
+  
+  <!-- 没有更多 -->
+  <view class="no-more" wx:if="{{!hasMore && leftList.length > 0 && !loading}}">
+    <view class="no-more-line"></view>
+    <text class="no-more-text">到底了</text>
+    <view class="no-more-line"></view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-container" wx:if="{{!loading && leftList.length === 0 && rightList.length === 0}}">
+    <view class="empty-emoji">📭</view>
+    <view class="empty-text">还没有内容</view>
+    <view class="empty-sub">快来发布第一条吧</view>
+  </view>
+</view>
+
+<!-- 悬浮发布按钮 -->
+<view class="fab" bindtap="goPublish">
+  <text class="fab-icon">+</text>
+</view>
+
+<!-- 发布菜单 -->
+<view class="publish-mask" wx:if="{{showPublishMenu}}" bindtap="togglePublishMenu"></view>
+<view class="publish-menu" wx:if="{{showPublishMenu}}">
+  <view class="publish-item" data-type="post" bindtap="onPublishSelect">
+    <view class="publish-item-icon">📝</view>
+    <view class="publish-item-text">
+      <view class="publish-item-title">发帖子</view>
+      <view class="publish-item-desc">分享日常、吐槽、求助</view>
+    </view>
+  </view>
+  <view class="publish-item" data-type="product" bindtap="onPublishSelect">
+    <view class="publish-item-icon">🛒</view>
+    <view class="publish-item-text">
+      <view class="publish-item-title">卖东西</view>
+      <view class="publish-item-desc">二手商品信息发布</view>
+    </view>
+  </view>
+  <view class="publish-cancel" bindtap="togglePublishMenu">取消</view>
+</view>
