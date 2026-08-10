@@ -1,9 +1,10 @@
 // cloudfunctions/user-update/index.js
 // 更新个人资料：仅允许本人修改 + 资料内容安全
-const { getDB, AppError, ok, wrap, getCurrentUser, checkContents } = require('./common-bundle')
+// 写操作统一经 requireActiveUser，封禁用户不可修改资料
+const { getDB, AppError, ok, wrap, requireActiveUser, checkContents } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
-  const user = await getCurrentUser()
+  const user = await requireActiveUser()
   const db = getDB()
 
   const { nickname, avatar, bio, college, major, grade, gender, tags } = event

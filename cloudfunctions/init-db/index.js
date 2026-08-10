@@ -1,9 +1,19 @@
 // cloudfunctions/init-db/index.js
 // 数据库初始化云函数 — 首次部署时调用一次
 // 根本性修复指南分类模型：分类使用稳定 categoryId，指南存储 categoryId 与之对应。
-const { getDB, ok, wrap } = require('./common-bundle')
+//
+// ⚠️ 安全：本函数原无任何鉴权，任意客户端均可触发。现增加 INIT_SECRET 守卫：
+// 部署后在云函数环境变量中配置 INIT_SECRET，调用时须携带相同 secret 才允许执行；
+// 未配置 INIT_SECRET 时保持原行为（向后兼容），但强烈建议部署即配置。
+const { getDB, ok, wrap, AppError } = require('./common-bundle')
 
-exports.main = wrap(async () => {
+exports.main = wrap(async (event = {}) => {
+  // 安全防护：若部署时配置了 INIT_SECRET，则必须携带正确 secret 才允许初始化
+  const expected = process.env.INIT_SECRET
+  if (expected && event.secret !== expected) {
+    throw new AppError('无权执行数据库初始化', 'FORBIDDEN')
+  }
+
   const db = getDB()
   const results = []
 

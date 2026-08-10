@@ -1,6 +1,6 @@
 {
   "name": "campushub",
-  "version": "2.0.0",
+  "version": "0.4.0",
   "description": "韩师校园通 - 校园综合信息平台（微信小程序 + 云开发）",
   "scripts": {
     "sync:common": "node scripts/sync-common.js",

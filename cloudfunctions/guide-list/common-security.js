@@ -37,4 +37,41 @@ async function checkContents(texts = [], { openid = '', scene = 2 } = {}) {
   return checkContent({ content: joined, openid, scene })
 }
 
-module.exports = { checkContent, checkContents }
+// 图片内容安全（fail-closed）：对云存储图片做 imgSecCheck。
+// 微信 imgSecCheck v2 需要可访问的 https 链接，故先把 cloud:// fileID 换成临时链接再校验。
+// 任意异常（未开通/超限/命中违规/网络）一律拒绝发布，与文本安全策略一致。
+async function checkImage({ fileID, openid = '' } = {}) {
+  if (!fileID || !String(fileID).startsWith('cloud://')) return
+  let url
+  try {
+    const tmp = await cloud.getTempFileURL({ fileList: [fileID] })
+    url = tmp && tmp.fileList && tmp.fileList[0] && tmp.fileList[0].tempFileURL
+  } catch (e) {
+    console.error('[图片安全] 获取临时链接失败，按最严策略拒绝:', e && (e.errMsg || e.message))
+    throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
+  }
+  if (!url) return
+  try {
+    await cloud.openapi.security.imgSecCheck({
+      version: '2',
+      openid,
+      media: { type: 1, media_url: url }
+    })
+  } catch (e) {
+    const errCode = e && (e.errCode || e.errcode)
+    if (errCode === 87014) {
+      throw new AppError('图片包含敏感内容，请更换后重试', 'CONTENT_RISKY')
+    }
+    console.error('[图片安全] 调用异常，按最严策略拒绝:', e && (e.errMsg || e.message))
+    throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
+  }
+}
+
+// 批量校验图片数组（每张依次校验，任一张违规即拒绝）
+async function checkImages(fileIDs = [], { openid = '' } = {}) {
+  for (const f of (fileIDs || [])) {
+    await checkImage({ fileID: f, openid })
+  }
+}
+
+module.exports = { checkContent, checkContents, checkImage, checkImages }

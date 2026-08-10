@@ -35,6 +35,7 @@
 | 索引字段 | 类型 | 用途 |
 |----------|------|------|
 | `targetId`, `status`, `createdAt` | 复合 | 评论列表（按目标+状态） |
+| `userId`, `createdAt` | 复合 | 频率限制计数窗口（comment-create 限流） |
 
 ## likes / collects（点赞 / 收藏）
 

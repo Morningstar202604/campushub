@@ -1,6 +1,6 @@
 // cloudfunctions/post-create/index.js
-// 发帖：统一鉴权 + fail-closed 内容安全 + 频率限制 + 封禁拦截
-const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, rateLimit } = require('./common-bundle')
+// 发帖：统一鉴权 + fail-closed 内容安全(文本+图片) + 频率限制 + 封禁拦截
+const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -19,8 +19,11 @@ exports.main = wrap(async (event) => {
   if (!Array.isArray(images) || images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
   const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map(t => String(t).slice(0, 20)) : []
 
-  // 内容安全：任何异常一律拒绝发布（fail-closed）
+  // 文本安全：任何异常一律拒绝发布（fail-closed）
   await checkContents([title, content, safeTags.join(' ')], { openid: user.openid, scene: 2 })
+
+  // 图片安全：对每张云存储图片做 imgSecCheck（fail-closed）
+  if (images.length) await checkImages(images, { openid: user.openid })
 
   // 频率限制：30秒内最多发1条
   await rateLimit({ collection: 'posts', match: { userId: user._id }, windowMs: 30000, max: 1 })

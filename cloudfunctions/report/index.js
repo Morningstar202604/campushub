@@ -1,9 +1,10 @@
 // cloudfunctions/report/index.js
-// 举报：登录即可 + 内容安全 + 频率限制
-const { getDB, AppError, ok, wrap, getCurrentUser, checkContents, rateLimit } = require('./common-bundle')
+// 举报：登录 + 封禁拦截 + 内容安全 + 频率限制
+// 写操作统一经 requireActiveUser，封禁用户不可提交举报
+const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, rateLimit } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
-  const user = await getCurrentUser()
+  const user = await requireActiveUser()
   const db = getDB()
 
   const { targetId, targetType = 'post', reason, description = '' } = event

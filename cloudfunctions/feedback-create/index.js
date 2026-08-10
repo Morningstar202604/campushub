@@ -1,9 +1,10 @@
 // cloudfunctions/feedback-create/index.js
 // 用户反馈：统一经云函数（带内容安全 + 频率限制），不再直写数据库
-const { getDB, AppError, ok, wrap, getCurrentUser, checkContents, rateLimit } = require('./common-bundle')
+// 写操作统一经 requireActiveUser，封禁用户不可提交反馈
+const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, rateLimit } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
-  const user = await getCurrentUser()
+  const user = await requireActiveUser()
   const db = getDB()
 
   const { content, contact = '', type = 'suggest' } = event

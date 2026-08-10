@@ -174,7 +174,7 @@ npm install            # 会触发 prepublishOnly → 自动同步 common 层
 ## 后续规划
 
 - [x] 管理员前端页面（封禁/解封/内容审核台）— v0.4 已完成
-- [ ] 图片内容安全（`imgSecCheck`：UE 直传云存储的图片经云函数二次校验）
+- [x] 图片内容安全（`imgSecCheck`：发帖 / 商品图片上传后经云函数 fail-closed 二次校验）
 - [ ] 多校扩展
 - [ ] 自建后端迁移（Node.js + PostgreSQL）
 - [ ] 实时消息通知
