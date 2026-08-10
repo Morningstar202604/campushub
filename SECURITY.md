@@ -14,6 +14,10 @@ We will acknowledge receipt within 48 hours and aim to provide a fix or mitigati
 
 Only the latest release receives security updates.
 
+> Note: CampusHub is mirrored across **GitCode**, **Gitee**, and **GitHub**, but **GitHub is the
+> canonical source**. Please report security issues against the GitHub repository so they are
+> tracked properly.
+
 ## Disclosure Policy
 
 Once a vulnerability is fixed and released, we will publish a GitHub Security Advisory crediting the reporter (unless they prefer to remain anonymous).

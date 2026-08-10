@@ -21,7 +21,7 @@ exports.main = wrap(async (event) => {
     res = await db.collection('posts')
       .where(where).orderBy('createdAt', 'desc').skip(skip).limit(size).get()
   } else {
-    // 推荐：置顶优先 + 时间倒序（需为 isPinned, createdAt 建复合索引，见 docs/DATABASE_INDEXES.md）
+    // 推荐：置顶优先 + 时间倒序（需为 isPinned, createdAt 建复合索引，定义见 docs/INDEXES.md 与 common-indexes.js）
     res = await db.collection('posts')
       .where(where).orderBy('isPinned', 'desc').orderBy('createdAt', 'desc').skip(skip).limit(size).get()
   }

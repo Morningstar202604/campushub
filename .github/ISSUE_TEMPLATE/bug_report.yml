@@ -1,0 +1,46 @@
+name: Bug report
+description: 报告一个缺陷
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: 问题描述
+      description: 简明描述你遇到的现象。
+      placeholder: 例如：发帖时选择三级分类后提交报错……
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 一步步告诉我怎么复现。
+      placeholder: |
+        1. 打开首页
+        2. 点击发帖
+        3. 选择「兴趣区 > 摄影吧」
+        4. 观察报错
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 你认为应该发生什么？
+    validations:
+      required: false
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境与版本
+      description: 微信开发者工具版本、基础库版本、CampusHub 版本（见 CHANGELOG/package.json）、云环境等。
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 截图
+      description: 云函数日志、控制台报错、相关截图（请勿包含密钥 / openid 等敏感信息）。
+    validations:
+      required: false

@@ -1,5 +1,32 @@
+# Dependencies
 node_modules/
 miniprogram_npm/
-.DS_Store
+
+# Build output
 dist/
+
+# Logs
 *.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Local env / secrets (never commit)
+.env
+.env.local
+*.local
+
+# WeChat DevTools private config
+project.private.config.json
+
+# Per-function node_modules (common layer is synced, not installed per function)
+cloudfunctions/*/node_modules/
+
+# Coverage / test artifacts
+coverage/

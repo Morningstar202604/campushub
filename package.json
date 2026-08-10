@@ -1,7 +1,27 @@
 {
   "name": "campushub",
-  "version": "0.4.0",
-  "description": "韩师校园通 - 校园综合信息平台（微信小程序 + 云开发）",
+  "version": "0.5.0",
+  "description": "CampusHub — 全国性校园/兴趣内容社区（微信小程序 + 云开发），一个新时代的开源贴吧",
+  "license": "Apache-2.0",
+  "author": "badhope",
+  "repository": {
+    "type": "git",
+    "url": "https://gitcode.com/badhope/campushub.git"
+  },
+  "homepage": "https://gitcode.com/badhope/campushub",
+  "bugs": {
+    "url": "https://github.com/weed33834/campushub/issues"
+  },
+  "keywords": [
+    "miniprogram",
+    "wechat",
+    "cloudbase",
+    "wxcloud",
+    "tieba",
+    "bbs",
+    "campus",
+    "community"
+  ],
   "scripts": {
     "sync:common": "node scripts/sync-common.js",
     "prepublishOnly": "node scripts/sync-common.js"
