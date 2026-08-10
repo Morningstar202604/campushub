@@ -62,12 +62,14 @@ export GITEE_TOKEN="你的Gitee令牌"
 
 ## 受限网络（GitHub 被 DNS 劫持）
 
-某些沙箱环境会把 `github.com` 解析到 `198.18.0.0/15` 黑洞地址，导致直连失败。脚本会自动检测并（在 root 下）把真实 IP 写入 `/etc/hosts`：
+某些沙箱环境会把 `github.com` 解析到 `198.18.0.0/15` 黑洞地址，导致直连失败。脚本会自动检测劫持，并在（root 下）把 `github.com` 覆盖解析到真实 IP——写入 `/etc/hosts`（会话内生效）并同时写 `~/.user_hosts`（工作区重启后保留）。SNI 保持 `github.com` 不变，TLS 直通，**无需任何额外进程**；fetch/push 自带重试以容忍出口偶发抖动。
+
+如需跳过自动探测，可显式指定真实 IP：
 
 ```bash
-export GITHUB_IP="20.205.243.166"        # github.com 真实 IP
-export GITHUB_API_IP="20.205.243.168"    # api.github.com 真实 IP（可选）
-sudo ./scripts/sync-mirrors.sh
+export GITHUB_IP="20.205.243.166"        # github.com 真实 IP（可选，不填则自动从候选列表探测）
+./scripts/sync-mirrors.sh
 ```
 
-> 真实 IP 可能随 CDN 变动，如失效请用 `https://dns.google/resolve?name=github.com&type=A` 重新查询。
+> 不需要 `GITHUB_API_IP`：脚本只修正 `github.com` 这一个域名，其余平台直连即可。
+> 真实 IP 偶随 CDN 变动；脚本内置候选 IP 列表会自动探测可达的那个，仍可手动用 `GITHUB_IP` 覆盖。

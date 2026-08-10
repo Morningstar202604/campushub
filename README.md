@@ -102,8 +102,7 @@ campushub/
 │   └── init-db/             # 初始化集合与种子数据（含索引自检）
 ├── scripts/
 │   ├── sync-common.js       # 将 common/ 同步进每个云函数目录
-│   ├── gh-proxy.py          # 受限网络下把 github.com 直连到真实 IP 的本地代理
-│   └── sync-mirrors.sh      # 三端（GitCode/Gitee/GitHub）同步脚本
+│   └── sync-mirrors.sh      # 三端（GitCode/Gitee/GitHub）同步脚本（受限网下用 /etc/hosts 指回真实 IP）
 ├── docs/
 │   ├── INDEXES.md           # ★ 数据库索引必建清单 + 控制台步骤（权威，引用 common-indexes.js）
 │   └── SYNC.md              # 三端同步说明
