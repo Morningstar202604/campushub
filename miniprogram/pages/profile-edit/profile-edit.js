@@ -1,10 +1,12 @@
 // pages/profile-edit/profile-edit.js
 const app = getApp()
-const { callFunction } = require('../../utils/request.js')
+const { callFunction, uploadImage } = require('../../utils/request.js')
 
 Page({
   data: {
     user: null,
+    avatar: '',
+    avatarChanged: false,
     nickname: '',
     bio: '',
     college: '',
@@ -21,6 +23,7 @@ Page({
     if (user) {
       this.setData({
         user,
+        avatar: user.avatar || '',
         nickname: user.nickname || '',
         bio: user.bio || '',
         college: user.college || '',
@@ -35,6 +38,20 @@ Page({
   onBioInput(e) { this.setData({ bio: e.detail.value }) },
   onCollegeInput(e) { this.setData({ college: e.detail.value }) },
   onMajorInput(e) { this.setData({ major: e.detail.value }) },
+
+  // 微信头像选择器：返回临时路径，需上传云存储后保存 fileID
+  async onChooseAvatar(e) {
+    const avatarUrl = e.detail.avatarUrl
+    if (!avatarUrl) return
+    wx.showLoading({ title: '上传头像中...' })
+    try {
+      const fileID = await uploadImage(avatarUrl, 'avatars')
+      this.setData({ avatar: fileID, avatarChanged: true })
+    } catch (err) {
+      wx.showToast({ title: '头像上传失败', icon: 'none' })
+    }
+    wx.hideLoading()
+  },
 
   onGradeChange(e) {
     this.setData({ grade: this.data.gradeOptions[e.detail.value] })
@@ -58,14 +75,17 @@ Page({
 
     this.setData({ saving: true })
     try {
-      const res = await callFunction('user-update', {
+      const payload = {
         nickname: this.data.nickname,
         bio: this.data.bio,
         college: this.data.college,
         major: this.data.major,
         grade: this.data.grade,
         tags: this.data.selectedTags
-      })
+      }
+      if (this.data.avatarChanged) payload.avatar = this.data.avatar
+
+      const res = await callFunction('user-update', payload)
 
       if (res.success) {
         app.setUserInfo(res.user)

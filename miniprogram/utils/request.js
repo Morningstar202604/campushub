@@ -28,10 +28,18 @@ function callFunction(name, data = {}) {
  * @param {string} folder 存储文件夹
  * @returns {Promise<string>} fileID
  */
+// 从临时路径推断真实扩展名，避免一律存成 .jpg 导致 png/webp 等扩展名错位
+function getImageExt(filePath) {
+  const m = String(filePath || '').match(/\.([a-zA-Z0-9]+)(?:\?.*)?$/)
+  const ext = m ? m[1].toLowerCase() : 'jpg'
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'heif'].includes(ext) ? ext : 'jpg'
+}
+
 function uploadImage(filePath, folder = 'posts') {
+  const ext = getImageExt(filePath)
   const timestamp = Date.now()
   const random = Math.random().toString(36).substr(2, 8)
-  const cloudPath = `${folder}/${timestamp}_${random}.jpg`
+  const cloudPath = `${folder}/${timestamp}_${random}.${ext}`
   
   return new Promise((resolve, reject) => {
     wx.cloud.uploadFile({
@@ -42,7 +50,7 @@ function uploadImage(filePath, folder = 'posts') {
       },
       fail(err) {
         console.error('[上传图片] 失败', err)
-        reject(err)
+        reject(new Error('图片上传失败，请重试'))
       }
     })
   })

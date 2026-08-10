@@ -54,6 +54,11 @@ Page({
         sourceType: ['album', 'camera'],
         sizeType: ['compressed']
       })
+      const oversized = res.tempFiles.filter(f => f.size > 9 * 1024 * 1024)
+      if (oversized.length) {
+        wx.showToast({ title: '单张图片不能超过9MB', icon: 'none' })
+        return
+      }
       const newPaths = res.tempFiles.map(f => f.tempFilePath)
       this.setData({ images: [...this.data.images, ...newPaths] })
     } catch (err) {}

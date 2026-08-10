@@ -1,5 +1,14 @@
 <!-- pages/profile-edit/profile-edit.wxml -->
 <view class="edit-page">
+  <view class="form-section avatar-section">
+    <view class="form-label">头像</view>
+    <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+      <image wx:if="{{avatar}}" src="{{avatar}}" class="avatar-preview" mode="aspectFill" />
+      <view wx:else class="avatar-empty">{{user.nickname[0] || '头'}}</view>
+      <text class="avatar-tip">点击设置</text>
+    </button>
+  </view>
+
   <view class="form-section">
     <view class="form-label">昵称</view>
     <input class="form-input" placeholder="输入昵称" maxlength="20" value="{{nickname}}" bindinput="onNicknameInput" />
