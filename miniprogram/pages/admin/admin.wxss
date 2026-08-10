@@ -1,0 +1,139 @@
+/* pages/admin/admin.wxss — 管理员审核台 */
+.admin-page {
+  padding: 24rpx 24rpx 60rpx;
+  min-height: 100vh;
+  background: #F5F6FA;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx;
+  background: linear-gradient(135deg, #4A90D9, #357ABD);
+  border-radius: 20rpx;
+  color: #fff;
+}
+.admin-badge {
+  font-size: 34rpx;
+  font-weight: 600;
+}
+.admin-sub {
+  font-size: 26rpx;
+  opacity: 0.9;
+}
+
+.ban-panel {
+  margin-top: 24rpx;
+  padding: 28rpx 32rpx;
+  background: #fff;
+  border-radius: 20rpx;
+}
+.panel-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 18rpx;
+}
+.ban-input {
+  height: 76rpx;
+  padding: 0 24rpx;
+  background: #F5F6FA;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  margin-bottom: 20rpx;
+}
+.ban-btns {
+  display: flex;
+  gap: 20rpx;
+}
+.btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #fff;
+  margin: 0;
+}
+.btn-ban {
+  background: #E64340;
+}
+.btn-unban {
+  background: #07C160;
+}
+
+.report-list {
+  margin-top: 24rpx;
+}
+.empty {
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+  padding: 80rpx 0;
+}
+.report-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 20rpx;
+}
+.report-top {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 14rpx;
+}
+.type-tag {
+  font-size: 22rpx;
+  color: #fff;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+}
+.type-post { background: #4A90D9; }
+.type-product { background: #F5A623; }
+.type-comment { background: #9B59B6; }
+.reason {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+.report-snippet {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.report-snippet.notfound {
+  color: #999;
+  font-style: italic;
+}
+.report-desc {
+  font-size: 24rpx;
+  color: #888;
+  margin-top: 8rpx;
+}
+.report-author {
+  font-size: 24rpx;
+  color: #4A90D9;
+  margin-top: 8rpx;
+}
+.report-actions {
+  display: flex;
+  gap: 32rpx;
+  margin-top: 22rpx;
+  border-top: 1rpx solid #EEE;
+  padding-top: 22rpx;
+}
+.act {
+  font-size: 26rpx;
+}
+.act-del { color: #E64340; }
+.act-ban { color: #F5A623; }
+.act-resolve { color: #07C160; }
+.load-more {
+  text-align: center;
+  color: #999;
+  font-size: 24rpx;
+  padding: 24rpx 0;
+}

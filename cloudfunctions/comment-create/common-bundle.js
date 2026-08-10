@@ -5,11 +5,13 @@ const error = require('./common-error')
 const context = require('./common-context')
 const security = require('./common-security')
 const rate = require('./common-rate')
+const content = require('./common-content')
 
 module.exports = {
   ...db,
   ...error,
   ...context,
   ...security,
-  ...rate
+  ...rate,
+  ...content
 }

@@ -1,22 +1,39 @@
 // pages/profile/profile.js
 const app = getApp()
 const { logout, ensureLogin } = require('../../utils/auth.js')
+const { callFunction } = require('../../utils/request.js')
 
 Page({
   data: {
-    user: null
+    user: null,
+    isAdmin: false
   },
 
   onShow() {
     if (app.globalData.isLoggedIn) {
       this.setData({ user: app.globalData.userInfo })
+      this.checkAdmin()
     } else {
-      this.setData({ user: null })
+      this.setData({ user: null, isAdmin: false })
+    }
+  },
+
+  // 仅用于前端显示/隐藏"管理后台"入口；真实权限始终在云函数校验
+  async checkAdmin() {
+    try {
+      const res = await callFunction('admin', { action: 'check' })
+      if (res.success) this.setData({ isAdmin: !!res.isAdmin })
+    } catch (e) {
+      // 忽略：非管理员或网络异常都不应影响个人页
     }
   },
 
   goLogin() {
     wx.navigateTo({ url: '/pages/login/login' })
+  },
+
+  goAdmin() {
+    wx.navigateTo({ url: '/pages/admin/admin' })
   },
 
   goEdit() {

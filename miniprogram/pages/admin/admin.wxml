@@ -1,0 +1,42 @@
+<!-- pages/admin/admin.wxml — 管理员审核台 -->
+<view class="admin-page">
+  <view class="admin-header">
+    <view class="admin-badge">🛡️ 管理员</view>
+    <view class="admin-sub">待处理举报：{{total}}</view>
+  </view>
+
+  <view class="ban-panel">
+    <view class="panel-title">用户封禁 / 解封</view>
+    <input class="ban-input" placeholder="输入用户ID(24位)或OpenID" value="{{banTarget}}" bindinput="onBanInput" />
+    <view class="ban-btns">
+      <button class="btn btn-ban" loading="{{banLoading}}" bindtap="doBan">封禁</button>
+      <button class="btn btn-unban" bindtap="doUnban">解封</button>
+    </view>
+  </view>
+
+  <view class="report-list">
+    <view class="empty" wx:if="{{reports.length === 0 && !loading}}">暂无待处理举报 🎉</view>
+
+    <view class="report-card" wx:for="{{reports}}" wx:key="reportId">
+      <view class="report-top">
+        <text class="type-tag type-{{item.targetType}}">{{item.targetType === 'post' ? '帖子' : item.targetType === 'product' ? '商品' : '评论'}}</text>
+        <text class="reason">{{item.reason}}</text>
+      </view>
+
+      <view class="report-snippet" wx:if="{{!item.target.notFound}}">{{item.target.snippet}}</view>
+      <view class="report-snippet notfound" wx:else>内容已不存在</view>
+
+      <view class="report-desc" wx:if="{{item.description}}">说明：{{item.description}}</view>
+      <view class="report-author" wx:if="{{item.target.ownerNickname}}">作者：{{item.target.ownerNickname}}</view>
+
+      <view class="report-actions">
+        <text class="act act-del" data-id="{{item.targetId}}" data-type="{{item.targetType}}" bindtap="onDelete">删除内容</text>
+        <text class="act act-ban" wx:if="{{item.target.ownerId}}" data-ownerid="{{item.target.ownerId}}" data-nickname="{{item.target.ownerNickname}}" bindtap="onBanAuthor">封禁作者</text>
+        <text class="act act-resolve" data-reportid="{{item.reportId}}" bindtap="onResolve">标记处理</text>
+      </view>
+    </view>
+
+    <view class="load-more" wx:if="{{loading}}">加载中…</view>
+    <view class="load-more" wx:elif="{{!hasMore && reports.length > 0}}">没有更多了</view>
+  </view>
+</view>
