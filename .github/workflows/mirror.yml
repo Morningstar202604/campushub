@@ -1,0 +1,41 @@
+name: Mirror to GitCode & Gitee
+
+# 当向 GitHub 推送时，自动把改动镜像到 GitCode 与 Gitee，实现三方同步。
+# 在 GitHub 仓库 Settings > Secrets 中配置:
+#   GITCODE_TOKEN   GitCode 个人访问令牌
+#   GITEE_USER      Gitee 账号 (badhope)
+#   GITEE_TOKEN     Gitee 私人令牌 / 密码
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name  "sync-bot"
+          git config user.email "sync@campushub.local"
+
+      - name: Skip dependabot commits
+        run: |
+          if git log -1 --pretty=%an | grep -qi dependabot; then
+            echo "跳过 dependabot 提交，不镜像"
+            exit 0
+          fi
+
+      - name: Push to GitCode
+        run: |
+          git remote add gitcode "https://oauth2:${{ secrets.GITCODE_TOKEN }}@gitcode.com/badhope/campushub.git"
+          git push gitcode "$(git branch --show-current)" --force-with-lease
+
+      - name: Push to Gitee
+        run: |
+          git remote add gitee "https://${{ secrets.GITEE_USER }}:${{ secrets.GITEE_TOKEN }}@gitee.com/badhope/campushub.git"
+          git push gitee "$(git branch --show-current)" --force-with-lease
