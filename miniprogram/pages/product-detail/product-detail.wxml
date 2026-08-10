@@ -72,6 +72,10 @@
       <text class="bar-icon">🚩</text>
       <text class="bar-text">举报</text>
     </view>
+    <view class="bar-action" wx:if="{{canDelete}}" bindtap="onDeleteProduct">
+      <text class="bar-icon">🗑️</text>
+      <text class="bar-text">下架</text>
+    </view>
     <t-button theme="primary" size="medium" bindtap="onContact" class="bar-btn">
       {{product.contactInfo ? '查看联系方式' : '联系卖家'}}
     </t-button>

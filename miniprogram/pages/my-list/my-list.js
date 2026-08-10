@@ -64,5 +64,33 @@ Page({
     } else {
       wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` })
     }
+  },
+
+  // 删除我的帖子/商品（"我的"列表直接管理）
+  onDelete(e) {
+    const id = e.currentTarget.dataset.id
+    const type = e.currentTarget.dataset.type // 'product' | 'post'
+    if (!id || type === 'collects') return
+    wx.showModal({
+      title: type === 'product' ? '下架商品' : '删除帖子',
+      content: '删除后不可恢复，确定吗？',
+      confirmColor: '#e64340',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          const fn = type === 'product' ? 'product-delete' : 'post-delete'
+          const arg = type === 'product' ? { productId: id } : { postId: id }
+          const r = await callFunction(fn, arg)
+          if (r.success) {
+            this.setData({ list: this.data.list.filter(it => it._id !== id) })
+            wx.showToast({ title: '已删除', icon: 'success' })
+          } else {
+            wx.showToast({ title: (r && r.message) || '删除失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    })
   }
 })

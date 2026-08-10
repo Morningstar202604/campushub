@@ -61,6 +61,10 @@
         <text class="action-icon">↗</text>
         <text class="action-text">分享</text>
       </view>
+      <view class="action-item" wx:if="{{canDelete}}" bindtap="onDeletePost">
+        <text class="action-icon">🗑️</text>
+        <text class="action-text">删除</text>
+      </view>
     </view>
   </view>
 
@@ -83,6 +87,7 @@
           <view class="comment-meta">
             <text class="comment-time">{{item.timeText}}</text>
             <text class="comment-reply" data-userid="{{item.userId}}" data-nickname="{{item.userNickname}}" bindtap="onReply">回复</text>
+            <text class="comment-delete" wx:if="{{item.userId === currentUserId}}" data-id="{{item._id}}" bindtap="onDeleteComment">删除</text>
           </view>
           <view class="reply-notice" wx:if="{{item.replyToNickname}}">
             回复 @{{item.replyToNickname}}

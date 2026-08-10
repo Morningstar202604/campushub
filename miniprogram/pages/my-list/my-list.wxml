@@ -10,6 +10,13 @@
           <text class="item-time">{{item.timeText}}</text>
         </view>
       </view>
+      <view
+        class="item-delete"
+        wx:if="{{type !== 'collects'}}"
+        catchtap="onDelete"
+        data-id="{{item._id}}"
+        data-type="{{item.price !== undefined ? 'product' : 'post'}}"
+      >删除</view>
     </view>
   </view>
 

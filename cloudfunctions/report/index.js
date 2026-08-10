@@ -1,36 +1,28 @@
 // cloudfunctions/report/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+// 举报：登录即可 + 内容安全 + 频率限制
+const { getDB, AppError, ok, wrap, getCurrentUser, checkContents, rateLimit } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext()
-  const db = cloud.database()
-  
+exports.main = wrap(async (event) => {
+  const user = await getCurrentUser()
+  const db = getDB()
+
   const { targetId, targetType = 'post', reason, description = '' } = event
-  
-  if (!targetId || !reason) {
-    return { success: false, message: '缺少必要参数' }
-  }
-  
-  const userRes = await db.collection('users')
-    .where({ openid: wxContext.OPENID })
-    .get()
-  
-  if (userRes.data.length === 0) {
-    return { success: false, message: '用户不存在' }
-  }
-  
+  if (!targetId || !reason) throw new AppError('缺少必要参数', 'INVALID_PARAM')
+
+  await checkContents([reason, description], { openid: user.openid, scene: 2 })
+  await rateLimit({ collection: 'reports', match: { reporterId: user._id }, windowMs: 60000, max: 5 })
+
   await db.collection('reports').add({
     data: {
       targetId,
       targetType,
-      reporterId: userRes.data[0]._id,
+      reporterId: user._id,
       reason,
       description,
       status: 'pending',
       createdAt: new Date()
     }
   })
-  
-  return { success: true, message: '举报已提交，我们会尽快处理' }
-}
+
+  return ok({ message: '举报已提交，我们会尽快处理' })
+})

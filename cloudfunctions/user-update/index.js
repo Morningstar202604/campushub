@@ -1,38 +1,37 @@
 // cloudfunctions/user-update/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+// 更新个人资料：仅允许本人修改 + 资料内容安全
+const { getDB, AppError, ok, wrap, getCurrentUser, checkContents } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext()
-  const db = cloud.database()
-  
+exports.main = wrap(async (event) => {
+  const user = await getCurrentUser()
+  const db = getDB()
+
   const { nickname, avatar, bio, college, major, grade, gender, tags } = event
-  
-  const userRes = await db.collection('users')
-    .where({ openid: wxContext.OPENID })
-    .get()
-  
-  if (userRes.data.length === 0) {
-    return { success: false, message: '用户不存在' }
-  }
-  
-  const userId = userRes.data[0]._id
+
   const updateData = {}
-  
-  if (nickname !== undefined) updateData.nickname = nickname.slice(0, 20)
+  if (nickname !== undefined) updateData.nickname = String(nickname).slice(0, 20)
   if (avatar !== undefined) updateData.avatar = avatar
-  if (bio !== undefined) updateData.bio = bio.slice(0, 100)
+  if (bio !== undefined) updateData.bio = String(bio).slice(0, 100)
   if (college !== undefined) updateData.college = college
   if (major !== undefined) updateData.major = major
   if (grade !== undefined) updateData.grade = grade
   if (gender !== undefined) updateData.gender = gender
-  if (tags !== undefined) updateData.tags = tags.slice(0, 10)
-  
+  if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags.slice(0, 10) : tags
+
+  // 资料内容安全（昵称/简介/标签可能含违规词）
+  await checkContents(
+    [updateData.nickname, updateData.bio, Array.isArray(updateData.tags) ? updateData.tags.join(' ') : ''],
+    { openid: user.openid, scene: 1 }
+  )
+
+  if (Object.keys(updateData).length === 0) {
+    throw new AppError('没有需要更新的字段', 'INVALID_PARAM')
+  }
   updateData.updatedAt = new Date()
-  
-  await db.collection('users').doc(userId).update({ data: updateData })
-  
-  const updated = await db.collection('users').doc(userId).get()
-  
-  return { success: true, user: updated.data }
-}
+
+  // 仅本人可改：where 条件锁定 openid，杜绝越权改他人
+  await db.collection('users').where({ openid: user.openid }).update({ data: updateData })
+
+  const updated = await db.collection('users').doc(user._id).get()
+  return ok({ user: updated.data })
+})

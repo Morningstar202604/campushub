@@ -1,7 +1,11 @@
 {
   "name": "campushub",
-  "version": "1.0.0",
-  "description": "韩师校园通 - 校园综合信息平台",
+  "version": "2.0.0",
+  "description": "韩师校园通 - 校园综合信息平台（微信小程序 + 云开发）",
+  "scripts": {
+    "sync:common": "node scripts/sync-common.js",
+    "prepublishOnly": "node scripts/sync-common.js"
+  },
   "dependencies": {
     "tdesign-miniprogram": "^1.7.0"
   }

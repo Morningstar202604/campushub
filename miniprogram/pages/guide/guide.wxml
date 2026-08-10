@@ -9,10 +9,10 @@
         data-id=""
       >全部</view>
       <view 
-        class="cat-item {{activeCategory === item._id ? 'active' : ''}}" 
+        class="cat-item {{activeCategory === item.categoryId ? 'active' : ''}}" 
         wx:for="{{categories}}" 
         wx:key="_id"
-        data-id="{{item._id}}"
+        data-id="{{item.categoryId}}"
         bindtap="onCategoryChange"
       >{{item.name}}</view>
     </view>

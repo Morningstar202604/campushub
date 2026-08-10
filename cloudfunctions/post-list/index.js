@@ -1,38 +1,22 @@
 // cloudfunctions/post-list/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const { getDB, ok, wrap } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const db = cloud.database()
-  const _ = db.command
+exports.main = wrap(async (event) => {
+  const db = getDB()
   const { tab = 'recommend', page = 1, pageSize = 20, schoolId = 'HSFNC' } = event
-  
+
   const where = { status: 'normal', schoolId }
-  
-  try {
-    if (tab === 'latest') {
-      const res = await db.collection('posts')
-        .where(where)
-        .orderBy('createdAt', 'desc')
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get()
-      return { success: true, list: res.data, hasMore: res.data.length === pageSize }
-    }
-    
-    // 推荐：按互动量 + 时间衰减
-    const res = await db.collection('posts')
-      .where(where)
-      .orderBy('isPinned', 'desc')
-      .orderBy('likeCount', 'desc')
-      .orderBy('createdAt', 'desc')
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .get()
-    
-    return { success: true, list: res.data, hasMore: res.data.length === pageSize }
-  } catch (err) {
-    console.error('[post-list] error:', err)
-    return { success: false, list: [], hasMore: false, error: err.message }
+  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
+  const size = Math.min(100, Math.max(1, Number(pageSize)))
+
+  let res
+  if (tab === 'latest') {
+    res = await db.collection('posts')
+      .where(where).orderBy('createdAt', 'desc').skip(skip).limit(size).get()
+  } else {
+    // 推荐：置顶优先 + 时间倒序（需为 isPinned, createdAt 建复合索引，见 docs/DATABASE_INDEXES.md）
+    res = await db.collection('posts')
+      .where(where).orderBy('isPinned', 'desc').orderBy('createdAt', 'desc').skip(skip).limit(size).get()
   }
-}
+  return ok({ list: res.data, hasMore: res.data.length === size })
+})

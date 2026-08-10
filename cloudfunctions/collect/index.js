@@ -1,59 +1,27 @@
 // cloudfunctions/collect/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+// 收藏/取消：登录 + 封禁拦截 + 本人操作
+const { getDB, getCmd, AppError, ok, wrap, requireActiveUser } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext()
-  const db = cloud.database()
-  const _ = db.command
-  
+exports.main = wrap(async (event) => {
+  const user = await requireActiveUser()
+  const db = getDB()
+  const _ = getCmd()
+
   const { targetId, type = 'post', action = 'collect' } = event
-  
-  if (!targetId) {
-    return { success: false, message: '缺少目标ID' }
-  }
-  
-  const userRes = await db.collection('users')
-    .where({ openid: wxContext.OPENID })
-    .get()
-  
-  if (userRes.data.length === 0) {
-    return { success: false, message: '用户不存在' }
-  }
-  
-  const user = userRes.data[0]
+  if (!targetId) throw new AppError('缺少目标ID', 'INVALID_PARAM')
+
   const collection = type === 'post' ? 'posts' : 'products'
-  
+
   if (action === 'collect') {
-    const existing = await db.collection('collects').where({
-      userId: user._id, targetId, type
-    }).count()
-    
-    if (existing.total > 0) {
-      return { success: false, message: '已收藏过' }
-    }
-    
-    await db.collection('collects').add({
-      data: {
-        userId: user._id, targetId, type,
-        createdAt: new Date()
-      }
-    })
-    
-    await db.collection(collection).doc(targetId).update({
-      data: { collectCount: _.inc(1) }
-    })
-    
-    return { success: true, collected: true }
+    const existing = await db.collection('collects').where({ userId: user._id, targetId, type }).count()
+    if (existing.total > 0) throw new AppError('已收藏过', 'ALREADY')
+
+    await db.collection('collects').add({ data: { userId: user._id, targetId, type, createdAt: new Date() } })
+    await db.collection(collection).doc(targetId).update({ data: { collectCount: _.inc(1) } })
+    return ok({ collected: true })
   } else {
-    await db.collection('collects').where({
-      userId: user._id, targetId, type
-    }).remove()
-    
-    await db.collection(collection).doc(targetId).update({
-      data: { collectCount: _.inc(-1) }
-    })
-    
-    return { success: true, collected: false }
+    await db.collection('collects').where({ userId: user._id, targetId, type }).remove()
+    await db.collection(collection).doc(targetId).update({ data: { collectCount: _.inc(-1) } })
+    return ok({ collected: false })
   }
-}
+})

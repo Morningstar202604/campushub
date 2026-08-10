@@ -1,78 +1,44 @@
 // cloudfunctions/my-list/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+// 我的内容：登录 + 仅本人数据；软删除(status='deleted')不展示
+const { getDB, getCmd, AppError, ok, wrap, getCurrentUser } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext()
-  const db = cloud.database()
-  const _ = db.command
-  
+exports.main = wrap(async (event) => {
+  const user = await getCurrentUser()
+  const db = getDB()
+  const _ = getCmd()
+
   const { type = 'posts', page = 1, pageSize = 20 } = event
-  
-  const userRes = await db.collection('users')
-    .where({ openid: wxContext.OPENID })
-    .get()
-  
-  if (userRes.data.length === 0) {
-    return { success: false, list: [] }
+  const userId = user._id
+  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
+  const size = Math.min(100, Math.max(1, Number(pageSize)))
+
+  if (type === 'posts' || type === 'products') {
+    const collection = type === 'posts' ? 'posts' : 'products'
+    const res = await db.collection(collection)
+      .where({ userId, status: _.neq('deleted') })
+      .orderBy('createdAt', 'desc').skip(skip).limit(size).get()
+    return ok({ list: res.data, hasMore: res.data.length === size })
   }
-  
-  const userId = userRes.data[0]._id
-  
-  try {
-    if (type === 'posts') {
-      const res = await db.collection('posts')
-        .where({ userId, status: _.neq('deleted') })
-        .orderBy('createdAt', 'desc')
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get()
-      return { success: true, list: res.data, hasMore: res.data.length === pageSize }
+
+  if (type === 'collects') {
+    const collectRes = await db.collection('collects')
+      .where({ userId }).orderBy('createdAt', 'desc').skip(skip).limit(size).get()
+    if (collectRes.data.length === 0) return ok({ list: [], hasMore: false })
+
+    const postIds = collectRes.data.filter(c => c.type === 'post').map(c => c.targetId)
+    const productIds = collectRes.data.filter(c => c.type === 'product').map(c => c.targetId)
+
+    let posts = [], products = []
+    if (postIds.length) {
+      const r = await db.collection('posts').where({ _id: _.in(postIds), status: _.neq('deleted') }).get()
+      posts = r.data
     }
-    
-    if (type === 'products') {
-      const res = await db.collection('products')
-        .where({ userId, status: _.neq('deleted') })
-        .orderBy('createdAt', 'desc')
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get()
-      return { success: true, list: res.data, hasMore: res.data.length === pageSize }
+    if (productIds.length) {
+      const r = await db.collection('products').where({ _id: _.in(productIds), status: _.neq('deleted') }).get()
+      products = r.data
     }
-    
-    if (type === 'collects') {
-      // 先查收藏记录
-      const collectRes = await db.collection('collects')
-        .where({ userId })
-        .orderBy('createdAt', 'desc')
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get()
-      
-      if (collectRes.data.length === 0) {
-        return { success: true, list: [], hasMore: false }
-      }
-      
-      // 根据类型分组查询
-      const postIds = collectRes.data.filter(c => c.type === 'post').map(c => c.targetId)
-      const productIds = collectRes.data.filter(c => c.type === 'product').map(c => c.targetId)
-      
-      let posts = [], products = []
-      if (postIds.length) {
-        const r = await db.collection('posts').where({ _id: _.in(postIds) }).get()
-        posts = r.data
-      }
-      if (productIds.length) {
-        const r = await db.collection('products').where({ _id: _.in(productIds) }).get()
-        products = r.data
-      }
-      
-      return { success: true, list: [...posts, ...products], hasMore: collectRes.data.length === pageSize }
-    }
-    
-    return { success: false, list: [], message: '未知类型' }
-  } catch (err) {
-    console.error('[my-list] error:', err)
-    return { success: false, list: [] }
+    return ok({ list: [...posts, ...products], hasMore: collectRes.data.length === size })
   }
-}
+
+  throw new AppError('未知类型', 'INVALID_PARAM')
+})

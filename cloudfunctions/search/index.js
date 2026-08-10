@@ -1,47 +1,29 @@
 // cloudfunctions/search/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+// 搜索：关键词转义 + 限长，避免正则注入与超长查询
+const { getDB, ok, wrap } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const db = cloud.database()
-  const { keyword, schoolId = 'HSFNC', page = 1, pageSize = 20 } = event
-  
-  if (!keyword || !keyword.trim()) {
-    return { success: true, posts: [], products: [], guides: [] }
-  }
-  
-  const reg = db.Regexp({ regexp: keyword.trim(), options: 'i' })
-  
-  try {
-    // 并行搜索三个集合
-    const [postsRes, productsRes, guidesRes] = await Promise.all([
-      db.collection('posts')
-        .where({ schoolId, status: 'normal', title: reg })
-        .orderBy('createdAt', 'desc')
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get(),
-      db.collection('products')
-        .where({ schoolId, status: 'on_sale', title: reg })
-        .orderBy('createdAt', 'desc')
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get(),
-      db.collection('guides')
-        .where({ schoolId, status: 'published', title: reg })
-        .orderBy('createdAt', 'desc')
-        .limit(pageSize)
-        .get()
-    ])
-    
-    return {
-      success: true,
-      posts: postsRes.data,
-      products: productsRes.data,
-      guides: guidesRes.data
-    }
-  } catch (err) {
-    console.error('[search] error:', err)
-    return { success: false, posts: [], products: [], guides: [] }
-  }
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
+
+exports.main = wrap(async (event) => {
+  const db = getDB()
+  const { keyword, schoolId = 'HSFNC', page = 1, pageSize = 20 } = event
+
+  if (!keyword || !String(keyword).trim()) {
+    return ok({ posts: [], products: [], guides: [] })
+  }
+
+  const kw = String(keyword).trim().slice(0, 20)
+  const reg = db.RegExp({ regexp: escapeRegExp(kw), options: 'i' })
+  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
+  const size = Math.min(100, Math.max(1, Number(pageSize)))
+
+  const [postsRes, productsRes, guidesRes] = await Promise.all([
+    db.collection('posts').where({ schoolId, status: 'normal', title: reg }).orderBy('createdAt', 'desc').skip(skip).limit(size).get(),
+    db.collection('products').where({ schoolId, status: 'on_sale', title: reg }).orderBy('createdAt', 'desc').skip(skip).limit(size).get(),
+    db.collection('guides').where({ schoolId, status: 'published', title: reg }).orderBy('createdAt', 'desc').limit(size).get()
+  ])
+
+  return ok({ posts: postsRes.data, products: productsRes.data, guides: guidesRes.data })
+})

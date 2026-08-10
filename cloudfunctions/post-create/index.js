@@ -1,66 +1,30 @@
 // cloudfunctions/post-create/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+// 发帖：统一鉴权 + fail-closed 内容安全 + 频率限制 + 封禁拦截
+const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, rateLimit } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext()
-  const db = cloud.database()
-  const _ = db.command
-  
+exports.main = wrap(async (event) => {
+  const user = await requireActiveUser()
+  const db = getDB()
+  const _ = getCmd()
+
   const { title, content, images = [], tags = [], category = 'daily', isAnonymous = false } = event
-  
+
   // 参数校验
-  if (!title || !title.trim()) {
-    return { success: false, message: '请输入标题' }
+  if (!title || !title.trim()) throw new AppError('请输入标题', 'INVALID_PARAM')
+  if (!content.trim() && (!Array.isArray(images) || images.length === 0)) {
+    throw new AppError('请输入内容或上传图片', 'INVALID_PARAM')
   }
-  if (!content.trim() && images.length === 0) {
-    return { success: false, message: '请输入内容或上传图片' }
-  }
-  if (title.length > 30) {
-    return { success: false, message: '标题不能超过30字' }
-  }
-  if (content.length > 2000) {
-    return { success: false, message: '内容不能超过2000字' }
-  }
-  if (images.length > 9) {
-    return { success: false, message: '图片不能超过9张' }
-  }
-  
-  // 敏感词检查
-  try {
-    const msgCheck = await cloud.openapi.security.msgSecCheck({
-      content: title + content + tags.join('')
-    })
-    if (msgCheck.errCode !== 0) {
-      return { success: false, message: '内容包含敏感信息，请修改后重试' }
-    }
-  } catch (e) {
-    console.warn('[安全检查] 跳过:', e.errMsg)
-  }
-  
-  // 查用户信息
-  const userRes = await db.collection('users')
-    .where({ openid: wxContext.OPENID })
-    .get()
-  
-  if (userRes.data.length === 0) {
-    return { success: false, message: '用户不存在，请重新登录' }
-  }
-  
-  const user = userRes.data[0]
-  
-  // 频率限制：30秒内只能发一条
-  const recentPosts = await db.collection('posts')
-    .where({
-      userId: user._id,
-      createdAt: _.gt(new Date(Date.now() - 30000))
-    })
-    .count()
-  
-  if (recentPosts.total > 0) {
-    return { success: false, message: '发布太频繁，请30秒后再试' }
-  }
-  
+  if (title.length > 30) throw new AppError('标题不能超过30字', 'INVALID_PARAM')
+  if (content.length > 2000) throw new AppError('内容不能超过2000字', 'INVALID_PARAM')
+  if (!Array.isArray(images) || images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
+  const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map(t => String(t).slice(0, 20)) : []
+
+  // 内容安全：任何异常一律拒绝发布（fail-closed）
+  await checkContents([title, content, safeTags.join(' ')], { openid: user.openid, scene: 2 })
+
+  // 频率限制：30秒内最多发1条
+  await rateLimit({ collection: 'posts', match: { userId: user._id }, windowMs: 30000, max: 1 })
+
   const post = {
     userId: user._id,
     userNickname: isAnonymous ? '匿名同学' : user.nickname,
@@ -70,7 +34,7 @@ exports.main = async (event, context) => {
     title: title.trim(),
     content: content.trim(),
     images,
-    tags,
+    tags: safeTags,
     category,
     isAnonymous,
     likeCount: 0,
@@ -83,13 +47,9 @@ exports.main = async (event, context) => {
     createdAt: new Date(),
     updatedAt: new Date()
   }
-  
+
   const addRes = await db.collection('posts').add({ data: post })
-  
-  // 更新用户帖子数
-  await db.collection('users').doc(user._id).update({
-    data: { postCount: _.inc(1) }
-  })
-  
-  return { success: true, postId: addRes._id }
-}
+  await db.collection('users').doc(user._id).update({ data: { postCount: _.inc(1) } })
+
+  return ok({ postId: addRes._id })
+})

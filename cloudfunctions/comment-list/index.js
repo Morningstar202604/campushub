@@ -1,26 +1,17 @@
 // cloudfunctions/comment-list/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const { getDB, AppError, ok, wrap } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const db = cloud.database()
+exports.main = wrap(async (event) => {
+  const db = getDB()
   const { targetId, page = 1, pageSize = 50 } = event
-  
-  if (!targetId) {
-    return { success: false, list: [] }
-  }
-  
-  try {
-    const res = await db.collection('comments')
-      .where({ targetId, status: 'normal' })
-      .orderBy('createdAt', 'asc')
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .get()
-    
-    return { success: true, list: res.data, hasMore: res.data.length === pageSize }
-  } catch (err) {
-    console.error('[comment-list] error:', err)
-    return { success: false, list: [] }
-  }
-}
+  if (!targetId) throw new AppError('缺少目标ID', 'INVALID_PARAM')
+
+  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
+  const size = Math.min(100, Math.max(1, Number(pageSize)))
+
+  const res = await db.collection('comments')
+    .where({ targetId, status: 'normal' })
+    .orderBy('createdAt', 'asc').skip(skip).limit(size).get()
+
+  return ok({ list: res.data, hasMore: res.data.length === size })
+})

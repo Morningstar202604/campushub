@@ -7,6 +7,7 @@ Page({
   data: {
     product: null,
     isCollected: false,
+    canDelete: false,
     loading: true,
     formatCreateTime: '',
     conditionText: '',
@@ -34,6 +35,7 @@ Page({
         this.setData({
           product: p,
           isCollected: res.isCollected,
+          canDelete: !!getUserId() && getUserId() === p.userId,
           formatCreateTime: formatTime(p.createdAt),
           conditionText: conditionMap[p.condition] || p.condition,
           tradeTypeText: tradeMap[p.tradeType] || p.tradeType,
@@ -104,6 +106,30 @@ Page({
           }
         } catch (err) {
           wx.showToast({ title: '举报失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // 删除商品（仅作者）
+  onDeleteProduct() {
+    if (!this.data.canDelete) return
+    wx.showModal({
+      title: '下架商品',
+      content: '下架后不可恢复，确定吗？',
+      confirmColor: '#e64340',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          const r = await callFunction('product-delete', { productId: this.data.product._id })
+          if (r.success) {
+            wx.showToast({ title: '已下架', icon: 'success' })
+            setTimeout(() => wx.navigateBack(), 800)
+          } else {
+            wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
         }
       }
     })

@@ -1,27 +1,21 @@
 // cloudfunctions/login/index.js
-const cloud = require('wx-server-sdk')
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+// 用户登录/注册。允许被封禁用户登录（仅用于提示），但写操作会被统一拦截。
+const { getDB, ok, wrap, getOpenid } = require('./common-bundle')
 
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext()
-  const db = cloud.database()
-  
-  // 查询用户是否存在
-  const userRes = await db.collection('users')
-    .where({ openid: wxContext.OPENID })
-    .get()
-  
+exports.main = wrap(async (event, context) => {
+  const openid = await getOpenid()
+  const db = getDB()
+
+  const userRes = await db.collection('users').where({ openid }).get()
+
   if (userRes.data.length > 0) {
     const user = userRes.data[0]
-    await db.collection('users').doc(user._id).update({
-      data: { updatedAt: new Date() }
-    })
-    return { success: true, user }
+    await db.collection('users').doc(user._id).update({ data: { updatedAt: new Date() } })
+    return ok({ user })
   }
-  
-  // 新用户创建
+
   const newUser = {
-    openid: wxContext.OPENID,
+    openid,
     nickname: '韩师同学' + Math.random().toString(36).substr(2, 6),
     avatar: '',
     school: '韩山师范学院',
@@ -41,9 +35,8 @@ exports.main = async (event, context) => {
     createdAt: new Date(),
     updatedAt: new Date()
   }
-  
+
   const addRes = await db.collection('users').add({ data: newUser })
   newUser._id = addRes._id
-  
-  return { success: true, user: newUser }
-}
+  return ok({ user: newUser })
+})

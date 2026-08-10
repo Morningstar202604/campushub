@@ -16,26 +16,28 @@ Page({
       wx.showToast({ title: '请输入反馈内容', icon: 'none' })
       return
     }
-    
+    if (this.data.submitting) return
+
     this.setData({ submitting: true })
-    
+
     try {
-      // 直接写入数据库
-      const db = wx.cloud.database()
-      await db.collection('feedbacks').add({
-        data: {
-          content: this.data.content.trim(),
-          contact: this.data.contact.trim(),
-          createdAt: new Date()
-        }
+      // 统一经云函数写入（含内容安全 + 频率限制）
+      const res = await callFunction('feedback-create', {
+        content: this.data.content.trim(),
+        contact: this.data.contact.trim(),
+        type: 'suggest'
       })
-      
-      wx.showToast({ title: '提交成功', icon: 'success' })
-      setTimeout(() => wx.navigateBack(), 1500)
+
+      if (res && res.success) {
+        wx.showToast({ title: '提交成功', icon: 'success' })
+        setTimeout(() => wx.navigateBack(), 1500)
+      } else {
+        wx.showToast({ title: (res && res.message) || '提交失败', icon: 'none' })
+      }
     } catch (err) {
       wx.showToast({ title: '提交失败', icon: 'none' })
     }
-    
+
     this.setData({ submitting: false })
   }
 })

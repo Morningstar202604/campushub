@@ -9,6 +9,8 @@ Page({
     comments: [],
     isLiked: false,
     isCollected: false,
+    canDelete: false,
+    currentUserId: '',
     commentText: '',
     replyTo: '',
     replyToUserId: '',
@@ -42,6 +44,8 @@ Page({
           post,
           isLiked: res.isLiked,
           isCollected: res.isCollected,
+          canDelete: !!getUserId() && getUserId() === post.userId,
+          currentUserId: getUserId() || '',
           formatCreateTime: formatTime(post.createdAt),
           categoryText: categoryMap[post.category] || post.category,
           loading: false
@@ -138,6 +142,49 @@ Page({
 
   onCommentInput(e) {
     this.setData({ commentText: e.detail.value })
+  },
+
+  // 删除帖子（仅作者）
+  onDeletePost() {
+    if (!this.data.canDelete) return
+    wx.showModal({
+      title: '删除帖子',
+      content: '删除后不可恢复，确定吗？',
+      confirmColor: '#e64340',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          const r = await callFunction('post-delete', { postId: this.data.post._id })
+          if (r.success) {
+            wx.showToast({ title: '已删除', icon: 'success' })
+            setTimeout(() => wx.navigateBack(), 800)
+          } else {
+            wx.showToast({ title: r.message || '删除失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // 删除自己的评论
+  async onDeleteComment(e) {
+    const commentId = e.currentTarget.dataset.id
+    try {
+      const r = await callFunction('comment-delete', { commentId })
+      if (r.success) {
+        this.setData({
+          comments: this.data.comments.filter(c => c._id !== commentId),
+          'post.commentCount': Math.max(0, (this.data.post.commentCount || 1) - 1)
+        })
+        wx.showToast({ title: '已删除', icon: 'none' })
+      } else {
+        wx.showToast({ title: r.message || '删除失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '删除失败', icon: 'none' })
+    }
   },
 
   onReply(e) {
