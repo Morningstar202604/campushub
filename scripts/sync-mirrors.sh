@@ -50,9 +50,11 @@ if [[ "$MAIN_REMOTE" == "gitcode" ]]; then MAIN_REMOTE="origin"; fi
 
 # ---------- 受限网络: 本地代理把 github 直连到真实 IP ----------
 PROXY_PID=""
+PROXY_URL=""
 cleanup() {
   [[ -n "$PROXY_PID" ]] && kill "$PROXY_PID" 2>/dev/null || true
   git config --unset http.proxy 2>/dev/null || true
+  git config --unset remote.github.proxy 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -67,62 +69,23 @@ ensure_github_reachable() {
   fi
   echo "[sync] 启动本地代理，将 github.com 直连到真实 IP $GITHUB_IP (免疫 /etc/hosts 还原)"
   local port="${SB_PROXY_PORT:-19443}"
-  cat > /tmp/sb_github_proxy.py <<PYEOF
-import socket, threading, os
-PORT = $port
-GH = os.environ.get("GITHUB_IP", "$GITHUB_IP")
-GH_API = os.environ.get("GITHUB_API_IP", "${GITHUB_API_IP:-$GITHUB_IP}")
-MAP = {"github.com": GH, "api.github.com": GH_API, "*.github.com": GH}
-def recv_until(c, marker=b"\r\n\r\n", timeout=5):
-    buf = b""; c.settimeout(timeout)
-    while marker not in buf:
-        d = c.recv(4096)
-        if not d: break
-        buf += d
-    return buf
-def pipe(a, b):
-    try:
-        while True:
-            d = a.recv(65536)
-            if not d: break
-            b.sendall(d)
-    except Exception: pass
-    finally:
-        try: b.shutdown(socket.SHUT_WR)
-        except Exception: pass
-        try: a.close()
-        except Exception: pass
-def handle(c):
-    try:
-        data = recv_until(c)
-        head, _, rest = data.partition(b"\r\n\r\n")
-        parts = head.decode(errors="ignore").split()
-        if len(parts) < 2 or parts[0] != "CONNECT":
-            c.close(); return
-        host, port = parts[1].rsplit(":", 1); port = int(port)
-        target = MAP.get(host, MAP.get("*." + host.split(".", 1)[1], host))
-        r = socket.create_connection((target, port), timeout=20)
-        c.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-        if rest: r.sendall(rest)
-        c.settimeout(None)
-        t1 = threading.Thread(target=pipe, args=(c, r), daemon=True); t1.start()
-        t2 = threading.Thread(target=pipe, args=(r, c), daemon=True); t2.start()
-    except Exception:
-        try: c.close()
-        except Exception: pass
-s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(("127.0.0.1", PORT)); s.listen(128)
-while True:
-    conn, _ = s.accept()
-    threading.Thread(target=handle, args=(conn,), daemon=True).start()
-PYEOF
-  GITHUB_IP="$GITHUB_IP" GITHUB_API_IP="${GITHUB_API_IP:-$GITHUB_IP}" \
-    python3 /tmp/sb_github_proxy.py &
-  PROXY_PID=$!
-  export http_proxy="http://127.0.0.1:$port"
-  export https_proxy="http://127.0.0.1:$port"
-  git config http.proxy "http://127.0.0.1:$port"
+  # 注意: pkill -f 的正则要用 [x] 形式，否则会匹配到本脚本自身的命令行而自杀
+  pkill -f "[g]h-proxy[.]py" 2>/dev/null || true
   sleep 1
+  # 代理实现独立成 scripts/gh-proxy.py，不再用 heredoc 内联生成
+  # （内联版难以单独调试，shell 转义也容易引入隐蔽差异）
+  GITHUB_IP="$GITHUB_IP" GITHUB_API_IP="${GITHUB_API_IP:-$GITHUB_IP}" \
+    python3 "$REPO_PATH/scripts/gh-proxy.py" "$port" &
+  PROXY_PID=$!
+  sleep 2
+  # 只让 github 远端走代理，gitcode / gitee 保持直连，避免无谓多一跳
+  PROXY_URL="http://127.0.0.1:$port"
+  git config remote.github.proxy "$PROXY_URL"
+  if ! curl -sS -x "$PROXY_URL" -o /dev/null -m 20 https://github.com/ 2>/dev/null; then
+    echo "[sync] ⚠ 代理已启动但 github.com 仍不可达，请确认 GITHUB_IP=$GITHUB_IP 是否为当前有效 IP" >&2
+  else
+    echo "[sync] ✓ 代理就绪，github.com 可达"
+  fi
 }
 
 gh_url() { [[ -n "${GH_TOKEN:-}" ]] && echo "https://${GH_OWNER}:${GH_TOKEN}@github.com/${GH_OWNER}/${GH_REPO}.git" || echo "https://github.com/${GH_OWNER}/${GH_REPO}.git"; }
@@ -131,7 +94,6 @@ gc_url() { [[ -n "${GITCODE_TOKEN:-}" ]] && echo "https://oauth2:${GITCODE_TOKEN
 
 # ---------- 主流程 ----------
 cd "$REPO_PATH"
-ensure_github_reachable
 
 git remote remove github 2>/dev/null || true
 git remote remove gitee 2>/dev/null || true
@@ -140,6 +102,9 @@ git remote add gitee "$(ge_url)"
 if [[ "$MAIN_REMOTE" == "origin" ]]; then
   git remote set-url origin "$(gc_url)"
 fi
+
+# 必须在 remote 重建之后再配代理: git remote remove 会连带清掉 remote.github.proxy
+ensure_github_reachable
 
 echo "[sync] 拉取所有远端..."
 git fetch --all --prune
