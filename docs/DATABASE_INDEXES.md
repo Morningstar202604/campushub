@@ -49,6 +49,7 @@
 | 集合 | 索引字段 | 类型 | 用途 |
 |------|----------|------|------|
 | reports | `reporterId`, `createdAt` | 复合 | 频率限制计数窗口 |
+| reports | `status`, `createdAt` | 复合 desc,desc | 审核台 list-reports（按 pending 筛选 + 时间倒序） |
 | feedbacks | `userId`, `createdAt` | 复合 | 频率限制计数窗口 |
 
 ## guides（指南）/ guide_categories（指南分类）
