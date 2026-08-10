@@ -16,10 +16,20 @@
 
 | 索引字段 | 类型 | 用途 |
 |----------|------|------|
-| `schoolId`, `status`, `createdAt` | 复合 desc,desc,desc | 最新列表 |
-| `schoolId`, `status`, `isPinned`, `createdAt` | 复合 desc,desc,desc,desc | 推荐列表（置顶+时间） |
+| `schoolId`, `status`, `createdAt` | 复合 desc,desc,desc | 最新列表（按校区，可选） |
+| `schoolId`, `status`, `isPinned`, `createdAt` | 复合 desc,desc,desc,desc | 推荐列表（置顶+时间，按校区可选） |
 | `userId`, `createdAt` | 复合 desc,desc | 我的帖子（软删除过滤） |
 | `schoolId`, `status`, `title` | 复合 | 搜索按标题匹配（排序可能回退，不影响结果） |
+| `categoryPath`, `status`, `createdAt` | 复合 desc,desc,desc | 分类筛选列表（按多级目录节点 id 包含匹配） |
+| `status`, `kind`, `expireAt` | 复合 | 定时过期任务 task-expire（查超时未解决 task） |
+| `status`, `createdAt` | 复合 desc,desc | 过期页列表（status='expired'） |
+
+## categories（内容分类：多级目录）
+
+| 索引字段 | 类型 | 用途 |
+|----------|------|------|
+| `parentId` | 单字段 | 按父节点查子分类（建树/下钻） |
+| `status`, `level`, `order` | 复合 asc,asc,asc | 分类列表排序 |
 
 ## products（商品）
 

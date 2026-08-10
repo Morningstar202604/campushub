@@ -46,6 +46,45 @@
   color: var(--color-text-placeholder);
 }
 
+.top-expired {
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  padding: 10rpx 18rpx;
+  background: var(--color-bg-gray);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* ===== 分类筛选条 ===== */
+.cat-filter {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 16rpx 32rpx 0;
+  padding: 18rpx 24rpx;
+  background: #fff;
+  border-radius: var(--radius-md);
+}
+.cat-filter-icon {
+  font-size: 28rpx;
+}
+.cat-filter-text {
+  flex: 1;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+.cat-filter-placeholder {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+.cat-filter-clear {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
 /* ===== Tab 栏 ===== */
 .tab-bar {
   display: flex;

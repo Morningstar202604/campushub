@@ -1,0 +1,24 @@
+<!-- components/category-picker/category-picker.wxml -->
+<view class="cat-mask" wx:if="{{visible}}" bindtap="close">
+  <view class="cat-sheet" catchtap="noop">
+    <view class="cat-head">
+      <view class="cat-back" wx:if="{{path.length > 0}}" bindtap="onBack">← 返回</view>
+      <view class="cat-title">{{levelName(path.length)}}</view>
+      <view class="cat-close" bindtap="close">✕</view>
+    </view>
+    <view class="cat-path" wx:if="{{path.length > 0}}">{{path.map(c => c.name).join(' / ')}}</view>
+    <scroll-view scroll-y class="cat-list">
+      <view
+        class="cat-item"
+        wx:for="{{list}}"
+        wx:key="_id"
+        data-cat="{{item}}"
+        bindtap="onSelect"
+      >
+        <text class="cat-name">{{item.emoji}} {{item.name}}</text>
+        <text class="cat-arrow" wx:if="{{item.hasChild}}">›</text>
+      </view>
+      <view class="cat-empty" wx:if="{{!loading && list.length === 0}}">暂无分类</view>
+    </scroll-view>
+  </view>
+</view>

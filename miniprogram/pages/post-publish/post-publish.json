@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "t-button": "tdesign-miniprogram/button/button"
+    "t-button": "tdesign-miniprogram/button/button",
+    "category-picker": "/components/category-picker/category-picker"
   },
   "navigationBarTitleText": "发帖子"
 }

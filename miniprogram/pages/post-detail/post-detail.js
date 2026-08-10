@@ -16,7 +16,11 @@ Page({
     replyToUserId: '',
     loading: true,
     formatCreateTime: '',
-    categoryText: ''
+    categoryText: '',
+    isTask: false,
+    isResolved: false,
+    isExpired: false,
+    canResolve: false
   },
 
   onLoad(options) {
@@ -35,19 +39,23 @@ Page({
       
       if (res.success) {
         const post = res.post
-        const categoryMap = {
-          daily: '日常', study: '学习', life: '生活',
-          rant: '吐槽', help: '求助', share: '分享'
-        }
-        
+        const isTask = post.kind === 'task'
+        const isResolved = !!post.resolved
+        const isExpired = post.status === 'expired'
+        const isAuthor = !!getUserId() && getUserId() === post.userId
+
         this.setData({
           post,
           isLiked: res.isLiked,
           isCollected: res.isCollected,
-          canDelete: !!getUserId() && getUserId() === post.userId,
+          canDelete: isAuthor,
           currentUserId: getUserId() || '',
           formatCreateTime: formatTime(post.createdAt),
-          categoryText: categoryMap[post.category] || post.category,
+          categoryText: post.category || '',
+          isTask,
+          isResolved,
+          isExpired,
+          canResolve: isAuthor && isTask && !isResolved && !isExpired,
           loading: false
         })
       } else {
@@ -163,6 +171,29 @@ Page({
           }
         } catch (err) {
           wx.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // 标记任务/请求为已解决（仅作者本人）
+  onResolve() {
+    if (!this.data.canResolve) return
+    wx.showModal({
+      title: '标记为已解决',
+      content: '确认该任务/请求已解决？',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          const r = await callFunction('resolve', { postId: this.data.post._id })
+          if (r.success) {
+            this.setData({ isResolved: true, canResolve: false, 'post.resolved': true })
+            wx.showToast({ title: '已标记为已解决', icon: 'success' })
+          } else {
+            wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
         }
       }
     })

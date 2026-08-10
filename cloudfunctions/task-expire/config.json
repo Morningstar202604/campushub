@@ -1,0 +1,9 @@
+{
+  "triggers": [
+    {
+      "name": "expireTasks",
+      "type": "timer",
+      "config": "0 0 * * * * *"
+    }
+  ]
+}

@@ -2,9 +2,9 @@
 <view class="publish-page">
   <!-- 标题 -->
   <view class="form-section">
-    <input 
-      class="title-input" 
-      placeholder="标题（必填，30字以内）" 
+    <input
+      class="title-input"
+      placeholder="标题（必填，30字以内）"
       maxlength="30"
       value="{{title}}"
       bindinput="onTitleInput"
@@ -39,20 +39,35 @@
     </view>
   </view>
 
-  <!-- 分类 -->
+  <!-- 分类（多级目录） -->
   <view class="form-section">
-    <view class="section-label">分类</view>
-    <view class="category-grid">
-      <view 
-        class="category-item {{category === item.value ? 'active' : ''}}" 
-        wx:for="{{categories}}" 
-        wx:key="value"
-        data-value="{{item.value}}"
-        bindtap="onCategoryChange"
-      >
-        <text class="category-emoji">{{item.emoji}}</text>
-        <text class="category-name">{{item.label}}</text>
+    <view class="section-label">分类（选到最细，方便他人查找）</view>
+    <view class="category-pick" bindtap="onCategoryTap">
+      <text wx:if="{{categoryName}}" class="cat-pick-text">{{categoryName}}</text>
+      <text wx:else class="cat-pick-placeholder">点击选择分区 / 吧 / 子版块</text>
+      <text class="cat-pick-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 类型：普通帖 / 任务帖 -->
+  <view class="form-section">
+    <view class="section-label">类型</view>
+    <view class="kind-row">
+      <view class="kind-item {{kind === 'post' ? 'active' : ''}}" data-kind="post" bindtap="onKindChange">💬 普通帖</view>
+      <view class="kind-item {{kind === 'task' ? 'active' : ''}}" data-kind="task" bindtap="onKindChange">📌 任务/请求</view>
+    </view>
+    <view class="expire-row" wx:if="{{kind === 'task'}}">
+      <text class="expire-label">有效期</text>
+      <view class="expire-options">
+        <view
+          class="expire-opt {{expireDays === item ? 'active' : ''}}"
+          wx:for="{{expireOptions}}"
+          wx:key="*this"
+          data-days="{{item}}"
+          bindtap="onExpireChange"
+        >{{item}}天</view>
       </view>
+      <text class="expire-tip">超时未解决将自动归档到「过期」页</text>
     </view>
   </view>
 
@@ -64,9 +79,9 @@
         <text>#{{item}}</text>
         <text class="tag-remove" data-tag="{{item}}" bindtap="removeTag">×</text>
       </view>
-      <input 
-        class="tag-input" 
-        placeholder="输入标签后回车" 
+      <input
+        class="tag-input"
+        placeholder="输入标签后回车"
         value="{{tagInput}}"
         bindinput="onTagInput"
         bindconfirm="addTag"
@@ -90,4 +105,7 @@
       发布
     </t-button>
   </view>
+
+  <!-- 多级分类选择器 -->
+  <category-picker visible="{{showCatPicker}}" bind:select="onCatSelect" bind:close="onCatClose" />
 </view>

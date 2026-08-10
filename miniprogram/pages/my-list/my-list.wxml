@@ -5,6 +5,11 @@
       <image wx:if="{{item.images[0]}}" src="{{item.images[0]}}" mode="aspectFill" class="item-thumb" />
       <view class="item-info">
         <view class="item-title ellipsis-2">{{item.title}}</view>
+        <view class="item-tags" wx:if="{{item.kind === 'task' || item.resolved || item.status === 'expired'}}">
+          <text class="item-tag tag-task" wx:if="{{item.kind === 'task'}}">任务</text>
+          <text class="item-tag tag-resolved" wx:if="{{item.resolved}}">已解决</text>
+          <text class="item-tag tag-expired" wx:if="{{item.status === 'expired'}}">已过期</text>
+        </view>
         <view class="item-meta">
           <text wx:if="{{item.price}}" class="item-price">¥{{item.price}}</text>
           <text class="item-time">{{item.timeText}}</text>

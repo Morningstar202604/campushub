@@ -7,6 +7,15 @@
       <text class="search-icon">🔍</text>
       <text class="search-placeholder">搜索帖子、商品、指南</text>
     </view>
+    <view class="top-expired" bindtap="goExpired">⏰过期</view>
+  </view>
+
+  <!-- 分类筛选条 -->
+  <view class="cat-filter" bindtap="onCategoryTap">
+    <text class="cat-filter-icon">📂</text>
+    <text wx:if="{{selectedCategoryName}}" class="cat-filter-text">{{selectedCategoryName}}</text>
+    <text wx:else class="cat-filter-text cat-filter-placeholder">全部分类</text>
+    <text wx:if="{{selectedCategoryId}}" class="cat-filter-clear" catchtap="clearCategory">✕ 清除</text>
   </view>
 
   <!-- Tab 切换 -->
@@ -215,3 +224,6 @@
   </view>
   <view class="publish-cancel" bindtap="togglePublishMenu">取消</view>
 </view>
+
+<!-- 多级分类选择器 -->
+<category-picker visible="{{showCatPicker}}" bind:select="onCatSelect" bind:close="onCatClose" />

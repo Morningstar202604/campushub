@@ -20,7 +20,7 @@ exports.main = wrap(async (event = {}) => {
   // 1. 创建集合
   const collections = [
     'users', 'posts', 'products', 'comments', 'likes', 'collects',
-    'guides', 'guide_categories', 'reports', 'feedbacks'
+    'guides', 'guide_categories', 'categories', 'reports', 'feedbacks'
   ]
   for (const name of collections) {
     try {
@@ -48,6 +48,41 @@ exports.main = wrap(async (event = {}) => {
     results.push({ item: 'guide_categories', status: 'imported', count: categories.length })
   } else {
     results.push({ item: 'guide_categories', status: 'exists', count: existingCats.total })
+  }
+
+  // 2.5 导入内容分类（全国性贴吧式多级目录：分区→吧→子版块）
+  // 韩山师范学院仅为示例校区，结构上支持任意学校。
+  const categorySeed = [
+    // L1 分区
+    { _id: 'zone_national', name: '全国', emoji: '🌏', parentId: null, level: 1, order: 1, kind: 'zone', status: 'active' },
+    { _id: 'zone_campus', name: '校园', emoji: '🏫', parentId: null, level: 1, order: 2, kind: 'zone', status: 'active' },
+    { _id: 'zone_city', name: '城市', emoji: '🏙️', parentId: null, level: 1, order: 3, kind: 'zone', status: 'active' },
+    { _id: 'zone_hobby', name: '兴趣', emoji: '🎯', parentId: null, level: 1, order: 4, kind: 'zone', status: 'active' },
+    // L2 吧
+    { _id: 'forum_freshman', name: '新生答疑吧', emoji: '🎓', parentId: 'zone_national', level: 2, order: 1, kind: 'forum', status: 'active' },
+    { _id: 'forum_kaoyan', name: '考研吧', emoji: '📚', parentId: 'zone_national', level: 2, order: 2, kind: 'forum', status: 'active' },
+    { _id: 'forum_parttime', name: '兼职实习吧', emoji: '💼', parentId: 'zone_national', level: 2, order: 3, kind: 'forum', status: 'active' },
+    { _id: 'forum_lostfound', name: '失物招领吧', emoji: '🔍', parentId: 'zone_national', level: 2, order: 4, kind: 'forum', status: 'active' },
+    { _id: 'forum_hanshi', name: '韩山师范学院吧', emoji: '🏫', parentId: 'zone_campus', level: 2, order: 1, kind: 'forum', schoolId: 'HSFNC', status: 'active' },
+    { _id: 'forum_guangzhou', name: '广州吧', emoji: '🌆', parentId: 'zone_city', level: 2, order: 1, kind: 'forum', status: 'active' },
+    { _id: 'forum_chaozhou', name: '潮州吧', emoji: '🏯', parentId: 'zone_city', level: 2, order: 2, kind: 'forum', status: 'active' },
+    { _id: 'forum_photo', name: '摄影吧', emoji: '📷', parentId: 'zone_hobby', level: 2, order: 1, kind: 'forum', status: 'active' },
+    { _id: 'forum_game', name: '电竞吧', emoji: '🎮', parentId: 'zone_hobby', level: 2, order: 2, kind: 'forum', status: 'active' },
+    { _id: 'forum_food', name: '美食吧', emoji: '🍜', parentId: 'zone_hobby', level: 2, order: 3, kind: 'forum', status: 'active' },
+    // L3 子版块（挂韩师吧下作示例）
+    { _id: 'board_confess', name: '表白墙', emoji: '💌', parentId: 'forum_hanshi', level: 3, order: 1, kind: 'board', schoolId: 'HSFNC', status: 'active' },
+    { _id: 'board_course', name: '课程答疑', emoji: '📝', parentId: 'forum_hanshi', level: 3, order: 2, kind: 'board', schoolId: 'HSFNC', status: 'active' },
+    { _id: 'board_idle', name: '二手闲置', emoji: '🛒', parentId: 'forum_hanshi', level: 3, order: 3, kind: 'board', schoolId: 'HSFNC', status: 'active' },
+    { _id: 'board_event', name: '校园活动', emoji: '🎉', parentId: 'forum_hanshi', level: 3, order: 4, kind: 'board', schoolId: 'HSFNC', status: 'active' }
+  ]
+  const existingCatDocs = await db.collection('categories').where({ status: 'active' }).count().catch(() => ({ total: 0 }))
+  if (existingCatDocs.total === 0) {
+    for (const cat of categorySeed) {
+      await db.collection('categories').add({ data: { ...cat, createdAt: new Date() } })
+    }
+    results.push({ item: 'categories', status: 'imported', count: categorySeed.length })
+  } else {
+    results.push({ item: 'categories', status: 'exists', count: existingCatDocs.total })
   }
 
   // 3. 导入指南内容（categoryId 与分类表对齐）

@@ -1,0 +1,9 @@
+{
+  "name": "task-expire",
+  "version": "1.0.0",
+  "description": "定时将超时未解决的任务帖置为过期",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

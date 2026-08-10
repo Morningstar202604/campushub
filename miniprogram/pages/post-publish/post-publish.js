@@ -9,17 +9,17 @@ Page({
     images: [],
     tags: [],
     tagInput: '',
-    category: 'daily',
     isAnonymous: false,
     submitting: false,
-    categories: [
-      { value: 'daily', label: '日常', emoji: '☀️' },
-      { value: 'study', label: '学习', emoji: '📚' },
-      { value: 'life', label: '生活', emoji: '🌿' },
-      { value: 'rant', label: '吐槽', emoji: '😤' },
-      { value: 'help', label: '求助', emoji: '🆘' },
-      { value: 'share', label: '分享', emoji: '✨' }
-    ]
+    // 多级分类
+    categoryId: '',
+    categoryPath: [],
+    categoryName: '',
+    showCatPicker: false,
+    // 类型：普通帖 / 任务帖（任务帖带过期时间）
+    kind: 'post',
+    expireDays: 7,
+    expireOptions: [3, 7, 15, 30]
   },
 
   onTitleInput(e) {
@@ -62,10 +62,6 @@ Page({
     this.setData({ images })
   },
 
-  onCategoryChange(e) {
-    this.setData({ category: e.currentTarget.dataset.value })
-  },
-
   onTagInput(e) {
     this.setData({ tagInput: e.detail.value })
   },
@@ -97,9 +93,31 @@ Page({
     this.setData({ isAnonymous: e.detail.value })
   },
 
+  // 打开多级分类选择器
+  onCategoryTap() {
+    this.setData({ showCatPicker: true })
+  },
+  onCatSelect(e) {
+    const { categoryId, categoryPath, categoryName } = e.detail
+    this.setData({ categoryId, categoryPath, categoryName, showCatPicker: false })
+  },
+  onCatClose() {
+    this.setData({ showCatPicker: false })
+  },
+
+  // 类型切换
+  onKindChange(e) {
+    this.setData({ kind: e.currentTarget.dataset.kind })
+  },
+  onExpireChange(e) {
+    this.setData({ expireDays: Number(e.currentTarget.dataset.days) })
+  },
+
   async submit() {
-    const { title, content, images, tags, category, isAnonymous } = this.data
-    
+    const {
+      title, content, images, tags, categoryId, categoryPath, kind, expireDays, isAnonymous
+    } = this.data
+
     if (!title.trim()) {
       wx.showToast({ title: '请输入标题', icon: 'none' })
       return
@@ -108,29 +126,34 @@ Page({
       wx.showToast({ title: '请输入内容或上传图片', icon: 'none' })
       return
     }
-    
+    if (!categoryId) {
+      wx.showToast({ title: '请选择分类', icon: 'none' })
+      return
+    }
+
     this.setData({ submitting: true })
     wx.showLoading({ title: '发布中...' })
-    
+
     try {
-      // 上传图片
       let uploadedImages = []
       if (images.length > 0) {
         uploadedImages = await uploadImages(images, 'posts')
       }
-      
-      // 调用云函数
+
       const res = await callFunction('post-create', {
         title,
         content,
         images: uploadedImages,
         tags,
-        category,
+        categoryId,
+        categoryPath,
+        kind,
+        expireDays,
         isAnonymous
       })
-      
+
       wx.hideLoading()
-      
+
       if (res.success) {
         app.globalData.needRefresh = true
         wx.showToast({ title: '发布成功', icon: 'success' })
@@ -143,7 +166,7 @@ Page({
       console.error('发布失败', err)
       wx.showToast({ title: '发布失败', icon: 'none' })
     }
-    
+
     this.setData({ submitting: false })
   }
 })

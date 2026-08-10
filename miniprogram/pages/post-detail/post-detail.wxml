@@ -16,6 +16,11 @@
         <view class="author-meta">{{formatCreateTime}}</view>
       </view>
       <view class="category-badge">{{categoryText}}</view>
+      <view class="status-badges">
+        <text class="status-badge task" wx:if="{{isTask}}">📌 任务</text>
+        <text class="status-badge resolved" wx:if="{{isResolved}}">✅ 已解决</text>
+        <text class="status-badge expired" wx:if="{{isExpired}}">⏰ 已过期</text>
+      </view>
     </view>
 
     <!-- 标题 -->
@@ -64,6 +69,10 @@
       <view class="action-item" wx:if="{{canDelete}}" bindtap="onDeletePost">
         <text class="action-icon">🗑️</text>
         <text class="action-text">删除</text>
+      </view>
+      <view class="action-item resolve" wx:if="{{canResolve}}" bindtap="onResolve">
+        <text class="action-icon">✅</text>
+        <text class="action-text">解决</text>
       </view>
     </view>
   </view>

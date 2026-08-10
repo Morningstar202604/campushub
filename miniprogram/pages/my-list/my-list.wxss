@@ -40,6 +40,22 @@
   line-height: 1.4;
 }
 
+.item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin: 8rpx 0;
+}
+.item-tag {
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+.tag-task { background: #fff4e6; color: #d97706; }
+.tag-resolved { background: #e6f6ec; color: #16a34a; }
+.tag-expired { background: #f0f0f0; color: #999; }
+
 .item-meta {
   display: flex;
   align-items: center;

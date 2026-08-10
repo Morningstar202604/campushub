@@ -14,7 +14,8 @@
     "pages/profile-edit/profile-edit",
     "pages/my-list/my-list",
     "pages/feedback/feedback",
-    "pages/agreement/agreement"
+    "pages/agreement/agreement",
+    "pages/expired/expired"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFFFF",

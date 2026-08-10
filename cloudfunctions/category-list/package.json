@@ -1,0 +1,9 @@
+{
+  "name": "category-list",
+  "version": "1.0.0",
+  "description": "分类列表（多级目录）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

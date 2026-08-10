@@ -1,0 +1,29 @@
+<!-- pages/expired/expired.wxml -->
+<view class="expired-page">
+  <view class="expired-tip">
+    ⏰ 过期任务归档：发布时设了有效期的任务/请求，超时未解决会自动归档到这里，不再推上主页。
+  </view>
+
+  <view class="list" wx:if="{{list.length > 0}}">
+    <view class="list-item" wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onItemTap">
+      <view class="item-info">
+        <view class="item-title ellipsis-2">
+          <text class="tag-resolved" wx:if="{{item.resolved}}">✅已解决</text>{{item.title}}
+        </view>
+        <view class="item-meta">
+          <text class="item-cat">{{item.category}}</text>
+          <text class="item-time">{{item.timeText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-container" wx:if="{{!loading && list.length === 0}}">
+    <view class="empty-emoji">🎉</view>
+    <view class="empty-text">暂无过期任务</view>
+  </view>
+
+  <view class="load-more" wx:if="{{loading}}">
+    <text class="load-text">加载中...</text>
+  </view>
+</view>

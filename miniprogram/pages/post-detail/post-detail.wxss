@@ -79,6 +79,35 @@
   border-radius: var(--radius-full);
 }
 
+/* 状态徽标：任务 / 已解决 / 已过期 */
+.status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 10rpx;
+}
+.status-badge {
+  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+.status-badge.task {
+  background: #fff4e6;
+  color: #d97706;
+}
+.status-badge.resolved {
+  background: #e6f6ec;
+  color: #16a34a;
+}
+.status-badge.expired {
+  background: #f0f0f0;
+  color: #999;
+}
+.action-item.resolve .action-text {
+  color: #16a34a;
+}
+
 /* 标题 */
 .post-title {
   font-size: 40rpx;

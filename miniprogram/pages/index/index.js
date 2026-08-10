@@ -16,7 +16,11 @@ Page({
     page: 1,
     hasMore: true,
     loading: false,
-    showPublishMenu: false
+    showPublishMenu: false,
+    // 分类筛选（多级目录，传节点 id 即可按任意层级筛选）
+    selectedCategoryId: '',
+    selectedCategoryName: '',
+    showCatPicker: false
   },
 
   onLoad() {
@@ -49,12 +53,17 @@ Page({
     const funcName = this.data.activeTab === 'products' ? 'product-list' : 'post-list'
     
     try {
-      const res = await callFunction(funcName, {
+      const params = {
         tab: this.data.activeTab,
         page: reset ? 1 : this.data.page,
-        pageSize: 20,
-        schoolId: 'HSFNC'
-      })
+        pageSize: 20
+      }
+      // 分类筛选只作用于帖子流；二手 tab 用商品自有分类，不传 categoryId
+      if (funcName === 'post-list') {
+        params.categoryId = this.data.selectedCategoryId || undefined
+      }
+
+      const res = await callFunction(funcName, params)
       
       if (res.success && res.list) {
         // 为每个 item 添加 itemType 字段，用于区分帖子/商品
@@ -139,6 +148,37 @@ Page({
 
   goSearch() {
     wx.navigateTo({ url: '/pages/search/search' })
+  },
+
+  // 打开分类筛选（多级目录）
+  onCategoryTap() {
+    this.setData({ showCatPicker: true })
+  },
+  onCatSelect(e) {
+    const { categoryId, categoryName } = e.detail
+    this.setData({
+      selectedCategoryId: categoryId,
+      selectedCategoryName: categoryName,
+      showCatPicker: false,
+      page: 1, leftList: [], rightList: [], hasMore: true
+    })
+    this.loadList(true)
+  },
+  onCatClose() {
+    this.setData({ showCatPicker: false })
+  },
+  clearCategory() {
+    if (!this.data.selectedCategoryId) return
+    this.setData({
+      selectedCategoryId: '',
+      selectedCategoryName: '',
+      page: 1, leftList: [], rightList: [], hasMore: true
+    })
+    this.loadList(true)
+  },
+
+  goExpired() {
+    wx.navigateTo({ url: '/pages/expired/expired' })
   },
 
   goPublish() {
