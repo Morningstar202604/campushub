@@ -1,0 +1,40 @@
+.cat-admin { padding: 24rpx; min-height: 100vh; background: #F5F6FA; box-sizing: border-box; }
+.no-auth { padding: 120rpx 40rpx; text-align: center; }
+.no-auth-emoji { font-size: 80rpx; }
+.no-auth-title { font-size: 34rpx; font-weight: 600; margin-top: 20rpx; }
+.no-auth-sub { font-size: 26rpx; color: #999; margin-top: 16rpx; line-height: 1.6; }
+
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12rpx; }
+.h-title { font-size: 34rpx; font-weight: 700; }
+.btn-add { background: #4A90D9; color: #fff; margin: 0; }
+
+.tip { font-size: 24rpx; color: #999; margin: 8rpx 0 20rpx; line-height: 1.5; }
+
+.list { display: flex; flex-direction: column; gap: 16rpx; }
+.cat-card { background: #fff; border-radius: 16rpx; padding: 24rpx; display: flex; align-items: center; justify-content: space-between; }
+.cat-main { display: flex; align-items: center; gap: 12rpx; flex: 1; min-width: 0; }
+.cat-emoji { font-size: 36rpx; }
+.cat-name { font-size: 30rpx; font-weight: 600; }
+.cat-kind { font-size: 22rpx; color: #fff; border-radius: 8rpx; padding: 2rpx 10rpx; }
+.cat-kind-zone { background: #8E7CC3; }
+.cat-kind-forum { background: #4A90D9; }
+.cat-kind-board { background: #57B894; }
+.cat-school { font-size: 22rpx; color: #999; background: #F0F0F0; border-radius: 8rpx; padding: 2rpx 10rpx; }
+.cat-actions { display: flex; gap: 24rpx; margin-left: 16rpx; }
+.act { font-size: 26rpx; }
+.act-edit { color: #4A90D9; }
+.act-del { color: #E57373; }
+.empty { text-align: center; color: #999; padding: 80rpx 0; font-size: 28rpx; }
+
+.form-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10; }
+.form-sheet { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 24rpx 24rpx 0 0; padding: 32rpx; z-index: 11; box-sizing: border-box; }
+.form-title { font-size: 32rpx; font-weight: 700; margin-bottom: 24rpx; }
+.field { display: flex; align-items: center; margin-bottom: 20rpx; }
+.label { width: 120rpx; font-size: 28rpx; color: #666; flex-shrink: 0; }
+.input { flex: 1; background: #F5F6FA; border-radius: 12rpx; padding: 16rpx 20rpx; font-size: 28rpx; }
+.picker { flex: 1; }
+.picker-text { background: #F5F6FA; border-radius: 12rpx; padding: 16rpx 20rpx; font-size: 28rpx; }
+.form-btns { display: flex; gap: 20rpx; margin-top: 16rpx; }
+.btn { flex: 1; margin: 0; font-size: 30rpx; }
+.btn-cancel { background: #F0F0F0; color: #666; }
+.btn-save { background: #4A90D9; color: #fff; }

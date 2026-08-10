@@ -6,6 +6,9 @@
 // 部署后在云函数环境变量中配置 INIT_SECRET，调用时须携带相同 secret 才允许执行；
 // 未配置 INIT_SECRET 时保持原行为（向后兼容），但强烈建议部署即配置。
 const { getDB, ok, wrap, AppError } = require('./common-bundle')
+// 索引的权威定义（单一事实来源）。微信云开发不支持用代码创建索引，
+// 故 init-db 仅据此自检并回显缺失清单，真正创建仍需在控制台手动完成。
+const { EXPECTED_INDEXES } = require('./common-indexes')
 
 exports.main = wrap(async (event = {}) => {
   // 安全防护：若部署时配置了 INIT_SECRET，则必须携带正确 secret 才允许初始化
@@ -147,5 +150,36 @@ exports.main = wrap(async (event = {}) => {
     results.push({ item: 'guides', status: 'exists', count: existingGuides.total })
   }
 
-  return ok({ message: '数据库初始化完成', results })
+  // 4. 索引自检（微信云开发不支持用代码创建索引，这里只检测缺失并回显，便于部署时一次看清）
+  const indexReport = await ensureIndexes(db)
+  results.push({ item: 'indexes', checked: EXPECTED_INDEXES.length, missing: indexReport.missing })
+  if (indexReport.missing.length) {
+    console.warn('[init-db] 以下索引尚未创建，请在「云开发控制台 → 数据库 → 索引管理」手动创建：',
+      indexReport.missing.map(m => `${m.collection}.${m.name}`))
+  }
+
+  const tip = indexReport.missing.length
+    ? `初始化完成，但还有 ${indexReport.missing.length} 个索引未创建，详见控制台日志或 docs/INDEXES.md`
+    : '初始化完成，索引齐备'
+  return ok({ message: tip, results, missingIndexes: indexReport.missing })
 })
+
+// 索引自检：微信云开发无 createIndex API，索引只能在控制台手动建。
+// 这里用 getIndexes() 读取现有索引，对比 EXPECTED_INDEXES，回显缺失清单（不自动创建）。
+async function ensureIndexes(db) {
+  const missing = []
+  for (const idx of EXPECTED_INDEXES) {
+    let existingNames = []
+    try {
+      const r = await db.collection(idx.collection).getIndexes()
+      const list = (r && r.indexes) || []
+      existingNames = list.map(i => i.IndexName || i.name || i.indexName).filter(Boolean)
+    } catch (e) {
+      // 接口受限或集合尚未就绪：无法检测，仍提示该索引需在控制台确认
+      missing.push({ ...idx, note: '无法读取现有索引（接口受限或集合尚未就绪）' })
+      continue
+    }
+    if (!existingNames.includes(idx.name)) missing.push(idx)
+  }
+  return { missing }
+}

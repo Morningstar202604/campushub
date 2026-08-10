@@ -1,0 +1,75 @@
+<!-- pages/category-admin/category-admin.wxml — 内容分类运营管理（仅管理员） -->
+<view class="cat-admin">
+  <!-- 无权限 -->
+  <view class="no-auth" wx:if="{{!isAdmin}}">
+    <view class="no-auth-emoji">🔒</view>
+    <view class="no-auth-title">仅管理员可访问</view>
+    <view class="no-auth-sub">如需管理分类，请联系超级管理员将你的 OpenID 加入云函数环境变量 ADMIN_OPENIDS</view>
+  </view>
+
+  <!-- 管理界面 -->
+  <block wx:else>
+    <view class="header">
+      <view class="h-title">内容分类管理</view>
+      <button class="btn-add" size="mini" bindtap="onAdd">+ 新增</button>
+    </view>
+
+    <view class="tip">层级：分区 → 吧 → 子版块（最多 3 级）。用户发帖只能选到最末级。</view>
+
+    <view class="list" wx:if="{{list.length}}">
+      <view class="cat-card" wx:for="{{list}}" wx:key="_id">
+        <view class="cat-main">
+          <text class="cat-emoji">{{item.emoji}}</text>
+          <text class="cat-name">{{item.name}}</text>
+          <text class="cat-kind cat-kind-{{item.kind}}">{{item.kind === 'zone' ? '分区' : item.kind === 'forum' ? '吧' : '子版块'}}</text>
+          <text class="cat-school" wx:if="{{item.schoolId}}">{{item.schoolId}}</text>
+        </view>
+        <view class="cat-actions">
+          <text class="act act-edit" data-id="{{item._id}}" bindtap="onEdit">编辑</text>
+          <text class="act act-del" data-id="{{item._id}}" bindtap="onDelete">删除</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:else>暂无分类</view>
+
+    <!-- 新增/编辑表单 -->
+    <view class="form-mask" wx:if="{{form.show}}" bindtap="onCancel"></view>
+    <view class="form-sheet" wx:if="{{form.show}}">
+      <view class="form-title">{{form.mode === 'edit' ? '编辑分类' : '新增分类'}}</view>
+
+      <view class="field">
+        <text class="label">名称</text>
+        <input class="input" placeholder="如：考研吧" value="{{form.name}}" bindinput="onName" maxlength="20" />
+      </view>
+      <view class="field">
+        <text class="label">图标</text>
+        <input class="input" placeholder="emoji，如 📚" value="{{form.emoji}}" bindinput="onEmoji" maxlength="4" />
+      </view>
+      <view class="field">
+        <text class="label">父级</text>
+        <picker class="picker" mode="selector" range="{{parentOptions}}" range-key="label" value="{{parentIndex}}" bindchange="onParentChange">
+          <view class="picker-text">{{parentOptions[parentIndex].label}}</view>
+        </picker>
+      </view>
+      <view class="field">
+        <text class="label">类型</text>
+        <picker class="picker" mode="selector" range="{{kindOptions}}" range-key="label" value="{{kindIndex}}" bindchange="onKindChange">
+          <view class="picker-text">{{kindOptions[kindIndex].label}}</view>
+        </picker>
+      </view>
+      <view class="field">
+        <text class="label">校区ID</text>
+        <input class="input" placeholder="可选，如 HSFNC（留空继承父级）" value="{{form.schoolId}}" bindinput="onSchool" />
+      </view>
+      <view class="field">
+        <text class="label">排序</text>
+        <input class="input" type="number" placeholder="数字越小越靠前" value="{{form.order}}" bindinput="onOrder" />
+      </view>
+
+      <view class="form-btns">
+        <button class="btn btn-cancel" bindtap="onCancel">取消</button>
+        <button class="btn btn-save" bindtap="onSubmit">保存</button>
+      </view>
+    </view>
+  </block>
+</view>

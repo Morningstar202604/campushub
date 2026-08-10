@@ -138,5 +138,9 @@ Page({
     const res = await callFunction('admin', payload)
     wx.hideLoading()
     return res
+  },
+
+  goCategoryAdmin() {
+    wx.navigateTo({ url: '/pages/category-admin/category-admin' })
   }
 })

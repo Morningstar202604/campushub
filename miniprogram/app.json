@@ -15,7 +15,8 @@
     "pages/my-list/my-list",
     "pages/feedback/feedback",
     "pages/agreement/agreement",
-    "pages/expired/expired"
+    "pages/expired/expired",
+    "pages/category-admin/category-admin"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFFFF",

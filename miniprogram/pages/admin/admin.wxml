@@ -5,6 +5,10 @@
     <view class="admin-sub">待处理举报：{{total}}</view>
   </view>
 
+  <view class="admin-quick">
+    <view class="quick-btn" style="display:inline-block;margin:16rpx 0;padding:16rpx 28rpx;background:#4A90D9;color:#fff;border-radius:40rpx;font-size:26rpx;" bindtap="goCategoryAdmin">📂 分类管理</view>
+  </view>
+
   <view class="ban-panel">
     <view class="panel-title">用户封禁 / 解封</view>
     <input class="ban-input" placeholder="输入用户ID(24位)或OpenID" value="{{banTarget}}" bindinput="onBanInput" />

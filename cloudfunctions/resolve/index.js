@@ -1,6 +1,6 @@
 // cloudfunctions/resolve/index.js
 // 将任务/请求帖标记为「已解决」（仅作者本人或管理员）
-const { getDB, AppError, ok, wrap, requireActiveUser } = require('./common-bundle')
+const { getDB, AppError, ok, wrap, requireActiveUser, checkAdmin } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -29,12 +29,3 @@ exports.main = wrap(async (event) => {
   })
   return ok({ resolved: true })
 })
-
-// 管理员身份识别（云端可信，不依赖前端）
-async function checkAdmin(db, openid) {
-  const envAdmins = (process.env.ADMIN_OPENIDS || '').split(',').map(s => s.trim()).filter(Boolean)
-  if (envAdmins.includes(openid)) return true
-  const cfg = await db.collection('config').doc('global').get().catch(() => ({ data: null }))
-  if (cfg && cfg.data && Array.isArray(cfg.data.adminOpenids) && cfg.data.adminOpenids.includes(openid)) return true
-  return false
-}

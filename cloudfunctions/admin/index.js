@@ -12,7 +12,7 @@
 //   list-reports 分页列出待处理举报，并 join 目标内容摘要与作者
 //   delete       删除指定内容（管理员越权，含云存储图片回收）
 //   resolve      将举报标记为已处理（避免重复处理）
-const { getDB, getCmd, AppError, ok, wrap, getOpenid, removeContent } = require('./common-bundle')
+const { getDB, getCmd, AppError, ok, wrap, getOpenid, removeContent, checkAdmin } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const db = getDB()
@@ -95,15 +95,6 @@ exports.main = wrap(async (event) => {
 
   throw new AppError('未知操作', 'INVALID_PARAM')
 })
-
-// 管理员身份识别（云端可信，不依赖前端）
-async function checkAdmin(db, openid) {
-  const envAdmins = (process.env.ADMIN_OPENIDS || '').split(',').map(s => s.trim()).filter(Boolean)
-  if (envAdmins.includes(openid)) return true
-  const cfg = await db.collection('config').doc('global').get().catch(() => ({ data: null }))
-  if (cfg && cfg.data && Array.isArray(cfg.data.adminOpenids) && cfg.data.adminOpenids.includes(openid)) return true
-  return false
-}
 
 // 取被举报内容摘要（用于审核台展示）
 async function getTargetSummary(db, type, id) {

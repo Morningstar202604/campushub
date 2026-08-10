@@ -74,4 +74,18 @@ async function checkImages(fileIDs = [], { openid = '' } = {}) {
   }
 }
 
-module.exports = { checkContent, checkContents, checkImage, checkImages }
+// 管理员身份识别（云端可信，不依赖前端）
+// 优先级：
+//   ① 云函数环境变量 ADMIN_OPENIDS（逗号分隔）
+//   ② 数据库 config 集合 doc('global').adminOpenids 数组
+// 部署后请至少在云函数环境变量中配置管理员 openid。
+// 提取自 admin/resolve 的重复实现，统一为单一事实来源。
+async function checkAdmin(db, openid) {
+  const envAdmins = (process.env.ADMIN_OPENIDS || '').split(',').map(s => s.trim()).filter(Boolean)
+  if (envAdmins.includes(openid)) return true
+  const cfg = await db.collection('config').doc('global').get().catch(() => ({ data: null }))
+  if (cfg && cfg.data && Array.isArray(cfg.data.adminOpenids) && cfg.data.adminOpenids.includes(openid)) return true
+  return false
+}
+
+module.exports = { checkContent, checkContents, checkImage, checkImages, checkAdmin }

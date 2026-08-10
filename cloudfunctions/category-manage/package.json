@@ -1,0 +1,9 @@
+{
+  "name": "category-manage",
+  "version": "1.0.0",
+  "description": "内容分类运营管理（管理员 CRUD）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
