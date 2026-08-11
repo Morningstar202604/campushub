@@ -96,6 +96,68 @@ exports.main = wrap(async (event) => {
     return ok({ resolved: true })
   }
 
+  // ---- 置顶/取消置顶 ----
+  if (action === 'pin' || action === 'unpin') {
+    const { postId } = event
+    if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
+    const updateRes = await db.collection('posts').doc(postId).update({
+      data: { isPinned: action === 'pin', updatedAt: new Date() }
+    }).catch(() => ({ stats: { updated: 0 } }))
+    if (updateRes.stats && updateRes.stats.updated === 0) throw new AppError('帖子不存在', 'NOT_FOUND')
+    return ok({ action, postId, isPinned: action === 'pin' })
+  }
+
+  // ---- 加精/取消加精 ----
+  if (action === 'essence' || action === 'unessence') {
+    const { postId } = event
+    if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
+    const updateRes = await db.collection('posts').doc(postId).update({
+      data: { isEssence: action === 'essence', updatedAt: new Date() }
+    }).catch(() => ({ stats: { updated: 0 } }))
+    if (updateRes.stats && updateRes.stats.updated === 0) throw new AppError('帖子不存在', 'NOT_FOUND')
+    return ok({ action, postId, isEssence: action === 'essence' })
+  }
+
+  // ---- 用户列表（分页 + 搜索） ----
+  if (action === 'list-users') {
+    const { keyword, page = 1, pageSize = 20 } = event
+    const pSize = Math.min(100, Math.max(1, Number(pageSize)))
+    const skip = Math.max(0, (Number(page) - 1) * pSize)
+    const where = {}
+    if (keyword && String(keyword).trim()) {
+      where.nickname = db.RegExp({ regexp: String(keyword).trim().slice(0, 20), options: 'i' })
+    }
+    const [listRes, totalRes] = await Promise.all([
+      db.collection('users').where(where).orderBy('createdAt', 'desc').skip(skip).limit(pSize)
+        .field({ _id: true, nickname: true, avatar: true, school: true, verifyStatus: true, postCount: true, productCount: true, createdAt: true })
+        .get(),
+      db.collection('users').where(where).count()
+    ])
+    return ok({ list: listRes.data || [], total: totalRes.total, page, pageSize: pSize })
+  }
+
+  // ---- 反馈列表 ----
+  if (action === 'list-feedbacks') {
+    const { page = 1, pageSize = 20 } = event
+    const pSize = Math.min(100, Math.max(1, Number(pageSize)))
+    const skip = Math.max(0, (Number(page) - 1) * pSize)
+    const [listRes, totalRes] = await Promise.all([
+      db.collection('feedbacks').orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
+      db.collection('feedbacks').count()
+    ])
+    return ok({ list: listRes.data || [], total: totalRes.total, page, pageSize: pSize })
+  }
+
+  // ---- 更新反馈状态 ----
+  if (action === 'resolve-feedback') {
+    const { feedbackId, reply } = event
+    if (!feedbackId) throw new AppError('缺少反馈ID', 'INVALID_PARAM')
+    await db.collection('feedbacks').doc(feedbackId).update({
+      data: { status: 'resolved', adminReply: reply || '', resolvedAt: new Date() }
+    })
+    return ok({ resolved: true })
+  }
+
   throw new AppError('未知操作', 'INVALID_PARAM')
 })
 

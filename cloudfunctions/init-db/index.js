@@ -23,7 +23,8 @@ exports.main = wrap(async (event = {}) => {
   // 1. 创建集合
   const collections = [
     'users', 'posts', 'products', 'comments', 'likes', 'collects',
-    'guides', 'guide_categories', 'categories', 'reports', 'feedbacks'
+    'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
+    'follows', 'checkins'
   ]
   for (const name of collections) {
     try {

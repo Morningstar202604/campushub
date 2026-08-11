@@ -1,0 +1,86 @@
+<!-- pages/user-profile/user-profile.wxml -->
+<view class="profile-page" wx:if="{{profile}}">
+  <!-- 用户信息卡 -->
+  <view class="user-card">
+    <view class="user-header">
+      <view class="user-avatar">
+        <image wx:if="{{profile.avatar}}" src="{{profile.avatar}}" class="avatar-img" />
+        <view wx:else class="avatar-placeholder">{{profile.nickname[0] || '?'}}</view>
+      </view>
+      <view class="user-info">
+        <view class="user-name">{{profile.nickname}}</view>
+        <view class="user-school" wx:if="{{profile.school}}">{{profile.school}}</view>
+        <view class="user-bio" wx:if="{{profile.bio}}">{{profile.bio}}</view>
+      </view>
+    </view>
+
+    <!-- 统计 -->
+    <view class="stats-row">
+      <view class="stat-item">
+        <text class="stat-num">{{profile.postCount}}</text>
+        <text class="stat-label">帖子</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{profile.productCount}}</text>
+        <text class="stat-label">商品</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{profile.followerCount}}</text>
+        <text class="stat-label">粉丝</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{profile.followingCount}}</text>
+        <text class="stat-label">关注</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{profile.creditScore}}</text>
+        <text class="stat-label">积分</text>
+      </view>
+    </view>
+
+    <!-- 兴趣标签 -->
+    <view class="tags-row" wx:if="{{profile.tags.length > 0}}">
+      <view class="tag tag-primary" wx:for="{{profile.tags}}" wx:key="*this">#{{item}}</view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-row" wx:if="{{!isSelf}}">
+      <t-button theme="{{isFollowing ? 'default' : 'primary'}}" size="medium" bindtap="onFollow" class="follow-btn">
+        {{isFollowing ? '已关注' : '+ 关注'}}
+      </t-button>
+    </view>
+  </view>
+
+  <!-- 最近帖子 -->
+  <view class="posts-section">
+    <view class="section-title">最近发布</view>
+    <view class="post-list" wx:if="{{posts.length > 0}}">
+      <view class="post-item" wx:for="{{posts}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPostTap">
+        <image wx:if="{{item.images.length > 0}}" src="{{item.images[0]}}" mode="aspectFill" class="post-thumb" />
+        <view class="post-info">
+          <view class="post-title ellipsis-2">{{item.title}}</view>
+          <view class="post-meta">
+            <text>{{item.timeText}}</text>
+            <text class="meta-dot">·</text>
+            <text>❤ {{item.likeCountText}}</text>
+            <text class="meta-dot">·</text>
+            <text>💬 {{item.commentCount || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="empty-container" wx:if="{{posts.length === 0}}">
+      <view class="empty-text">暂无发布</view>
+    </view>
+  </view>
+</view>
+
+<view class="loading-page" wx:if="{{!profile && loading}}">
+  <view class="skeleton-block" style="height: 300rpx; margin-bottom: 24rpx;"></view>
+  <view class="skeleton-block" style="height: 200rpx;"></view>
+</view>
+
+<view class="empty-container" wx:if="{{!profile && !loading}}">
+  <view class="empty-emoji">😕</view>
+  <view class="empty-text">用户不存在</view>
+</view>

@@ -48,7 +48,18 @@ const EXPECTED_INDEXES = [
   // ===== guides / guide_categories =====
   { collection: 'guides', name: 'idx_guides_school_status_category_sort_created', fields: [{ key: 'schoolId', direction: 1 }, { key: 'status', direction: 1 }, { key: 'categoryId', direction: 1 }, { key: 'sort', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false },
   { collection: 'guides', name: 'idx_guides_school_status_title', fields: [{ key: 'schoolId', direction: 1 }, { key: 'status', direction: 1 }, { key: 'title', direction: -1 }], unique: false },
-  { collection: 'guide_categories', name: 'idx_guide_categories_school', fields: [{ key: 'schoolId', direction: 1 }], unique: false }
+  { collection: 'guide_categories', name: 'idx_guide_categories_school', fields: [{ key: 'schoolId', direction: 1 }], unique: false },
+
+  // ===== follows =====
+  { collection: 'follows', name: 'idx_follows_follower_created', fields: [{ key: 'followerId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  { collection: 'follows', name: 'idx_follows_following_created', fields: [{ key: 'followingId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  { collection: 'follows', name: 'idx_follows_follower_following', fields: [{ key: 'followerId', direction: 1 }, { key: 'followingId', direction: 1 }], unique: true },
+
+  // ===== checkins =====
+  { collection: 'checkins', name: 'idx_checkins_user_date', fields: [{ key: 'userId', direction: 1 }, { key: 'date', direction: 1 }], unique: false },
+
+  // ===== comments (楼中楼) =====
+  { collection: 'comments', name: 'idx_comments_parent_status_created', fields: [{ key: 'parentId', direction: 1 }, { key: 'status', direction: 1 }, { key: 'createdAt', direction: 1 }], unique: false }
 ]
 
 module.exports = { EXPECTED_INDEXES }

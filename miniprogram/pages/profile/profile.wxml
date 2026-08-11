@@ -46,6 +46,18 @@
     </view>
   </view>
 
+  <!-- 签到 -->
+  <view class="checkin-card" wx:if="{{user}}">
+    <view class="checkin-info">
+      <view class="checkin-title">📅 每日签到</view>
+      <view class="checkin-sub" wx:if="{{user.checkinStreak > 0}}">已连续签到 {{user.checkinStreak}} 天</view>
+      <view class="checkin-sub" wx:else>坚持签到赚积分</view>
+    </view>
+    <view class="checkin-btn" bindtap="onCheckin">
+      签到
+    </view>
+  </view>
+
   <!-- 标签 -->
   <view class="tags-section" wx:if="{{user && user.tags && user.tags.length > 0}}">
     <view class="tags-row">
@@ -104,5 +116,5 @@
     </view>
   </view>
 
-  <view class="version-text">v0.5.0 · CampusHub</view>
+  <view class="version-text">v0.6.0 · CampusHub</view>
 </view>

@@ -4,16 +4,20 @@
   <view class="post-section">
     <!-- 作者信息 -->
     <view class="author-bar">
-      <view class="author-avatar">
+      <view class="author-avatar" bindtap="goUserProfile">
         <image wx:if="{{post.userAvatar}}" src="{{post.userAvatar}}" class="avatar-img" />
         <view wx:else class="avatar-placeholder">{{post.userNickname[0] || '匿'}}</view>
       </view>
-      <view class="author-info">
+      <view class="author-info" bindtap="goUserProfile">
         <view class="author-name">
           {{post.userNickname}}
           <text class="anon-badge" wx:if="{{post.isAnonymous}}">匿名</text>
         </view>
         <view class="author-meta">{{formatCreateTime}}</view>
+      </view>
+      <!-- 关注按钮（非作者时显示） -->
+      <view class="follow-btn {{isFollowing ? 'following' : ''}}" wx:if="{{!canDelete && !post.isAnonymous}}" catchtap="onFollow">
+        {{isFollowing ? '已关注' : '+ 关注'}}
       </view>
       <view class="category-badge">{{categoryText}}</view>
       <view class="status-badges">
@@ -89,13 +93,13 @@
     </view>
   </view>
 
-  <!-- 评论区 -->
+  <!-- 评论区（楼中楼） -->
   <view class="comment-section" id="comment-section">
     <view class="section-header">
-      <text class="section-title">评论 {{comments.length}}</text>
+      <text class="section-title">评论 {{post.commentCount || 0}}</text>
     </view>
 
-    <!-- 评论列表 -->
+    <!-- 评论列表（楼中楼） -->
     <view class="comment-list" wx:if="{{comments.length > 0}}">
       <view class="comment-item" wx:for="{{comments}}" wx:key="_id">
         <view class="comment-avatar">
@@ -107,11 +111,34 @@
           <view class="comment-text">{{item.content}}</view>
           <view class="comment-meta">
             <text class="comment-time">{{item.timeText}}</text>
-            <text class="comment-reply" data-userid="{{item.userId}}" data-nickname="{{item.userNickname}}" bindtap="onReply">回复</text>
+            <text class="comment-action" data-userid="{{item.userId}}" data-nickname="{{item.userNickname}}" data-commentid="{{item._id}}" bindtap="onReply">回复</text>
+            <text class="comment-action {{item._liked ? 'liked' : ''}}" data-id="{{item._id}}" data-liked="{{item._liked}}" catchtap="onCommentLike">
+              {{item._liked ? '❤️' : '🤍'}} {{item.likeCount || 0}}
+            </text>
             <text class="comment-delete" wx:if="{{item.userId === currentUserId}}" data-id="{{item._id}}" bindtap="onDeleteComment">删除</text>
           </view>
-          <view class="reply-notice" wx:if="{{item.replyToNickname}}">
-            回复 @{{item.replyToNickname}}
+
+          <!-- 楼中楼子回复 -->
+          <view class="sub-replies" wx:if="{{item.replies.length > 0}}">
+            <view class="reply-item" wx:for="{{item.replies}}" wx:for-item="reply" wx:key="_id">
+              <text class="reply-name">{{reply.userNickname}}</text>
+              <text class="reply-arrow" wx:if="{{reply.replyToNickname}}"> 回复 @{{reply.replyToNickname}}</text>
+              <text class="reply-arrow" wx:else>: </text>
+              <text class="reply-text">{{reply.content}}</text>
+              <view class="reply-meta">
+                <text class="reply-time">{{reply.timeText}}</text>
+                <text class="comment-action" data-userid="{{reply.userId}}" data-nickname="{{reply.userNickname}}" data-commentid="{{item._id}}" catchtap="onReply">回复</text>
+                <text class="comment-action {{reply._liked ? 'liked' : ''}}" data-id="{{reply._id}}" data-liked="{{reply._liked}}" catchtap="onCommentLike">
+                  {{reply._liked ? '❤️' : '🤍'}} {{reply.likeCount || 0}}
+                </text>
+                <text class="comment-delete" wx:if="{{reply.userId === currentUserId}}" data-id="{{reply._id}}" catchtap="onDeleteComment">删除</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 展开/折叠子回复 -->
+          <view class="toggle-replies" wx:if="{{item.replies.length > 0}}" data-id="{{item._id}}" bindtap="toggleReplies">
+            {{expandedReplies[item._id] ? '收起' : '展开'}} {{item.replies.length}}条回复
           </view>
         </view>
       </view>
@@ -125,17 +152,22 @@
 
   <!-- 底部输入栏 -->
   <view class="input-bar safe-bottom">
-    <input 
-      class="comment-input" 
-      placeholder="{{replyTo ? '回复 @' + replyTo + '...' : '写评论...'}}" 
-      value="{{commentText}}"
-      bindinput="onCommentInput"
-      confirm-type="send"
-      bindconfirm="sendComment"
-      cursor-spacing="20"
-      adjust-position="{{true}}"
-    />
-    <view class="send-btn {{commentText ? 'active' : ''}}" bindtap="sendComment">发送</view>
+    <view class="reply-hint" wx:if="{{replyTo}}" catchtap="cancelReply">
+      回复 @{{replyTo}} ✕
+    </view>
+    <view class="input-row">
+      <input 
+        class="comment-input" 
+        placeholder="{{replyTo ? '回复 @' + replyTo + '...' : '写评论...'}}" 
+        value="{{commentText}}"
+        bindinput="onCommentInput"
+        confirm-type="send"
+        bindconfirm="sendComment"
+        cursor-spacing="20"
+        adjust-position="{{true}}"
+      />
+      <view class="send-btn {{commentText ? 'active' : ''}}" bindtap="sendComment">发送</view>
+    </view>
   </view>
 </view>
 

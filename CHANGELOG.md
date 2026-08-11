@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0] - 2026-08-11
 
-### Added
+### Added — P2 功能补齐
+- **关注系统**：新增 `follow` 云函数（关注/取关/状态查询/关注列表/粉丝列表），双向计数同步，限流防刷
+- **每日签到**：新增 `checkin` 云函数（连续签到 + 积分奖励，每 7 天额外加成），个人中心签到入口
+- **用户主页**：新增 `user-profile` 云函数 + `user-profile` 页面（公开资料 + 统计 + 最近帖子 + 关注状态）
+- **楼中楼评论**：`comment-create` 支持 `parentId` 嵌套回复；`comment-list` 返回树形结构（主楼层 + 子回复）；前端展开/折叠子回复
+- **评论点赞**：`like` 函数扩展支持 `type: 'comment'`，帖子详情页评论可点赞
+- **关注作者**：帖子详情页作者栏新增关注/取关按钮 + 点击作者跳转主页
+- **管理员扩展**：`admin` 新增置顶/取消置顶、加精/取消加精、用户列表（搜索）、反馈列表、反馈回复
+- **新增集合**：`follows`、`checkins`（init-db 自动创建）
+- **新增索引**：follows 3 个（follower/following/唯一对）、checkins 1 个（user+date）、comments 楼中楼 1 个（parent+status+created）
+
+### Added — P1 核心体验
 - **帖子编辑**：新增 `post-update` 云函数，作者可编辑标题/内容/图片/标签/分类（仅本人，fail-closed 内容安全 + 图片安全）
 - **商品编辑**：新增 `product-update` 云函数，作者可编辑全部字段 + 标记已售/重新上架（`status: 'sold'`/`'on_sale'`）
 - **帖子举报**：帖子详情页新增举报入口（6 种举报原因），补齐此前仅商品可举报的缺口

@@ -75,6 +75,23 @@ Page({
     wx.navigateTo({ url: '/pages/feedback/feedback' })
   },
 
+  // 每日签到
+  async onCheckin() {
+    if (!ensureLogin()) return
+    try {
+      const res = await callFunction('checkin', {})
+      if (res.success) {
+        wx.showToast({ title: res.message, icon: 'success' })
+        // 刷新用户数据
+        await this.refreshUserData()
+      } else {
+        wx.showToast({ title: res.message || '签到失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '签到失败', icon: 'none' })
+    }
+  },
+
   onLogout() {
     wx.showModal({
       title: '提示',

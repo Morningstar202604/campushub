@@ -11,17 +11,21 @@ Page({
     isCollected: false,
     canDelete: false,
     canEdit: false,
+    isFollowing: false,
     currentUserId: '',
     commentText: '',
     replyTo: '',
     replyToUserId: '',
+    replyToCommentId: '', // 楼中楼回复的父评论 id
     loading: true,
     formatCreateTime: '',
     categoryText: '',
     isTask: false,
     isResolved: false,
     isExpired: false,
-    canResolve: false
+    canResolve: false,
+    // 展开的楼中楼
+    expandedReplies: {}
   },
 
   onLoad(options) {
@@ -33,7 +37,6 @@ Page({
   },
 
   onShow() {
-    // 编辑后返回刷新
     if (this.postId && app.globalData.needRefresh) {
       app.globalData.needRefresh = false
       this.loadPost(this.postId)
@@ -69,6 +72,11 @@ Page({
           canResolve: isAuthor && isTask && !isResolved && !isExpired,
           loading: false
         })
+
+        // 检查关注状态（非作者时）
+        if (!isAuthor && app.globalData.isLoggedIn) {
+          this.checkFollowing(post.userId)
+        }
       } else {
         this.setData({ loading: false })
         wx.showToast({ title: res.message || '加载失败', icon: 'none' })
@@ -79,13 +87,24 @@ Page({
     }
   },
 
+  async checkFollowing(targetUserId) {
+    try {
+      const res = await callFunction('follow', { action: 'check', targetUserId })
+      if (res.success) this.setData({ isFollowing: res.isFollowing })
+    } catch (e) {}
+  },
+
   async loadComments(targetId) {
     try {
       const res = await callFunction('comment-list', { targetId })
       if (res.success) {
         const comments = res.list.map(c => ({
           ...c,
-          timeText: formatTime(c.createdAt)
+          timeText: formatTime(c.createdAt),
+          replies: (c.replies || []).map(r => ({
+            ...r,
+            timeText: formatTime(r.createdAt)
+          }))
         }))
         this.setData({ comments })
       }
@@ -104,14 +123,12 @@ Page({
 
   async onLike() {
     if (!app.ensureLogin()) return
-    
     try {
       const res = await callFunction('like', {
         targetId: this.data.post._id,
         type: 'post',
         action: this.data.isLiked ? 'unlike' : 'like'
       })
-      
       if (res.success) {
         this.setData({
           isLiked: res.liked,
@@ -125,47 +142,64 @@ Page({
 
   async onCollect() {
     if (!app.ensureLogin()) return
-    
     try {
       const res = await callFunction('collect', {
         targetId: this.data.post._id,
         type: 'post',
         action: this.data.isCollected ? 'uncollect' : 'collect'
       })
-      
       if (res.success) {
         this.setData({
           isCollected: res.collected,
           'post.collectCount': this.data.post.collectCount + (res.collected ? 1 : -1)
         })
-        wx.showToast({
-          title: res.collected ? '已收藏' : '已取消',
-          icon: 'none'
-        })
+        wx.showToast({ title: res.collected ? '已收藏' : '已取消', icon: 'none' })
       }
     } catch (err) {
       wx.showToast({ title: '操作失败', icon: 'none' })
     }
   },
 
+  // 关注作者
+  async onFollow() {
+    if (!app.ensureLogin()) return
+    const { isFollowing, post } = this.data
+    try {
+      const res = await callFunction('follow', {
+        action: isFollowing ? 'unfollow' : 'follow',
+        targetUserId: post.userId
+      })
+      if (res.success) {
+        this.setData({ isFollowing: res.following })
+        wx.showToast({ title: res.following ? '已关注' : '已取关', icon: 'none' })
+      } else {
+        wx.showToast({ title: res.message || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
+  // 跳转作者主页
+  goUserProfile() {
+    if (this.data.post.isAnonymous) return
+    wx.navigateTo({
+      url: `/pages/user-profile/user-profile?id=${this.data.post.userId}`
+    })
+  },
+
   onShare() {
     wx.showShareMenu({ withShareTicket: true })
   },
 
-  // 编辑帖子（仅作者）
   onEdit() {
     if (!this.data.canEdit) return
-    wx.navigateTo({
-      url: `/pages/post-publish/post-publish?id=${this.data.post._id}`
-    })
+    wx.navigateTo({ url: `/pages/post-publish/post-publish?id=${this.data.post._id}` })
   },
 
-  // 举报帖子
   onReport() {
     if (!app.ensureLogin()) return
-    const reportReasons = [
-      '垃圾广告', '违法违规', '色情低俗', '辱骂攻击', '隐私泄露', '其他'
-    ]
+    const reportReasons = ['垃圾广告', '违法违规', '色情低俗', '辱骂攻击', '隐私泄露', '其他']
     wx.showActionSheet({
       itemList: reportReasons,
       success: async (res) => {
@@ -199,7 +233,6 @@ Page({
     this.setData({ commentText: e.detail.value })
   },
 
-  // 删除帖子（仅作者）
   onDeletePost() {
     if (!this.data.canDelete) return
     wx.showModal({
@@ -223,7 +256,6 @@ Page({
     })
   },
 
-  // 标记任务/请求为已解决（仅作者本人）
   onResolve() {
     if (!this.data.canResolve) return
     wx.showModal({
@@ -252,10 +284,8 @@ Page({
     try {
       const r = await callFunction('comment-delete', { commentId })
       if (r.success) {
-        this.setData({
-          comments: this.data.comments.filter(c => c._id !== commentId),
-          'post.commentCount': Math.max(0, (this.data.post.commentCount || 1) - 1)
-        })
+        await this.loadComments(this.postId)
+        this.setData({ 'post.commentCount': Math.max(0, (this.data.post.commentCount || 1) - 1) })
         wx.showToast({ title: '已删除', icon: 'none' })
       } else {
         wx.showToast({ title: r.message || '删除失败', icon: 'none' })
@@ -265,18 +295,28 @@ Page({
     }
   },
 
+  // 回复主楼层评论
   onReply(e) {
-    const { userid, nickname } = e.currentTarget.dataset
+    const { userid, nickname, commentid } = e.currentTarget.dataset
     this.setData({
       replyTo: nickname,
-      replyToUserId: userid
+      replyToUserId: userid,
+      replyToCommentId: commentid
+    })
+  },
+
+  // 取消回复
+  cancelReply() {
+    this.setData({
+      replyTo: '',
+      replyToUserId: '',
+      replyToCommentId: ''
     })
   },
 
   async sendComment() {
     if (!app.ensureLogin()) return
-    
-    const { commentText, post, replyTo, replyToUserId } = this.data
+    const { commentText, post, replyTo, replyToUserId, replyToCommentId } = this.data
     
     if (!commentText.trim()) {
       wx.showToast({ title: '请输入评论内容', icon: 'none' })
@@ -289,27 +329,82 @@ Page({
         targetType: 'post',
         content: commentText,
         replyToUserId: replyToUserId,
-        replyToNickname: replyTo
+        replyToNickname: replyTo,
+        parentId: replyToCommentId || undefined
       })
       
       if (res.success) {
-        const newComment = {
-          ...res.comment,
-          timeText: '刚刚'
-        }
         this.setData({
-          comments: [...this.data.comments, newComment],
           commentText: '',
           replyTo: '',
           replyToUserId: '',
+          replyToCommentId: '',
           'post.commentCount': (post.commentCount || 0) + 1
         })
+        await this.loadComments(this.postId)
         wx.showToast({ title: '评论成功', icon: 'success' })
       } else {
         wx.showToast({ title: res.message || '评论失败', icon: 'none' })
       }
     } catch (err) {
       wx.showToast({ title: '评论失败', icon: 'none' })
+    }
+  },
+
+  // 展开折叠楼中楼
+  toggleReplies(e) {
+    const commentId = e.currentTarget.dataset.id
+    const expanded = { ...this.data.expandedReplies }
+    expanded[commentId] = !expanded[commentId]
+    this.setData({ expandedReplies: expanded })
+  },
+
+  // 评论点赞
+  async onCommentLike(e) {
+    if (!app.ensureLogin()) return
+    const { id, liked } = e.currentTarget.dataset
+    const comments = [...this.data.comments]
+    // 找到评论并更新
+    for (const c of comments) {
+      if (c._id === id) {
+        try {
+          const res = await callFunction('like', {
+            targetId: id,
+            type: 'comment',
+            action: liked ? 'unlike' : 'like'
+          })
+          if (res.success) {
+            c.likeCount = (c.likeCount || 0) + (res.liked ? 1 : -1)
+            c._liked = res.liked
+            this.setData({ comments })
+          }
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        }
+        return
+      }
+      // 在子回复中查找
+      if (c.replies) {
+        for (const r of c.replies) {
+          if (r._id === id) {
+            try {
+              const res = await callFunction('like', {
+                targetId: id,
+                type: 'comment',
+                action: liked ? 'unlike' : 'like'
+              })
+              if (res.success) {
+                r.likeCount = (r.likeCount || 0) + (res.liked ? 1 : -1)
+                r._liked = res.liked
+                this.setData({ comments })
+              }
+            } catch (err) {
+              wx.showToast({ title: '操作失败', icon: 'none' })
+            }
+            return
+          }
+        }
+      }
     }
   },
 

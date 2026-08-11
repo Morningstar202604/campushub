@@ -110,6 +110,46 @@
   margin-top: 4rpx;
 }
 
+/* 签到卡片 */
+.checkin-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16rpx 32rpx 0;
+  padding: 24rpx 32rpx;
+  background: linear-gradient(135deg, #4A90D9, #5BA0E9);
+  border-radius: var(--radius-lg);
+}
+
+.checkin-info {
+  flex: 1;
+}
+
+.checkin-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4rpx;
+}
+
+.checkin-sub {
+  font-size: var(--font-size-xs);
+  color: rgba(255,255,255,0.8);
+}
+
+.checkin-btn {
+  padding: 12rpx 40rpx;
+  background: #fff;
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.checkin-btn:active {
+  opacity: 0.8;
+}
+
 /* 标签 */
 .tags-section {
   padding: 24rpx 32rpx 0;

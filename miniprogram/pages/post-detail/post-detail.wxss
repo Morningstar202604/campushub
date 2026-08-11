@@ -318,3 +318,100 @@
 .loading-page {
   padding: 32rpx;
 }
+
+/* 关注按钮 */
+.follow-btn {
+  flex-shrink: 0;
+  padding: 8rpx 24rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.follow-btn.following {
+  background: var(--color-bg-hover);
+  color: var(--color-text-secondary);
+}
+
+/* 评论操作按钮 */
+.comment-action {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-left: 24rpx;
+}
+
+.comment-action.liked {
+  color: var(--color-danger);
+}
+
+/* 楼中楼子回复 */
+.sub-replies {
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.reply-item {
+  padding: 8rpx 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.reply-name {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.reply-arrow {
+  color: var(--color-text-tertiary);
+}
+
+.reply-text {
+  color: var(--color-text-primary);
+}
+
+.reply-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 4rpx;
+}
+
+.reply-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-quaternary);
+}
+
+/* 展开/折叠子回复 */
+.toggle-replies {
+  margin-top: 12rpx;
+  padding: 8rpx 16rpx;
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+/* 回复提示 */
+.reply-hint {
+  padding: 8rpx 24rpx;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background: #fff;
+  padding: 16rpx 24rpx;
+  border-radius: var(--radius-sm);
+}
