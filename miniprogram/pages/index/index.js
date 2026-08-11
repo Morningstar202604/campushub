@@ -61,6 +61,12 @@ Page({
       // 分类筛选只作用于帖子流；二手 tab 用商品自有分类，不传 categoryId
       if (funcName === 'post-list') {
         params.categoryId = this.data.selectedCategoryId || undefined
+      } else {
+        // 二手 tab：传用户 schoolId（可选）
+        const userInfo = app.globalData.userInfo
+        if (userInfo && userInfo.schoolId) {
+          params.schoolId = userInfo.schoolId
+        }
       }
 
       const res = await callFunction(funcName, params)
@@ -68,9 +74,10 @@ Page({
       if (res.success && res.list) {
         // 为每个 item 添加 itemType 字段，用于区分帖子/商品
         const items = res.list.map(item => {
+          const isProduct = this.data.activeTab === 'products'
           return {
             ...item,
-            itemType: item.price !== undefined && item.price !== null ? 'product' : 'post',
+            itemType: isProduct ? 'product' : 'post',
             conditionText: this.getConditionText(item.condition),
             // 确保 tags 是数组
             tags: item.tags || [],

@@ -16,10 +16,10 @@ exports.main = wrap(async (event, context) => {
 
   const newUser = {
     openid,
-    nickname: '韩师同学' + Math.random().toString(36).substr(2, 6),
+    nickname: '同学' + Math.random().toString(36).substr(2, 6),
     avatar: '',
-    school: '韩山师范学院',
-    schoolId: 'HSFNC',
+    school: '',
+    schoolId: '',
     college: '',
     major: '',
     grade: '',
@@ -32,6 +32,8 @@ exports.main = wrap(async (event, context) => {
     productCount: 0,
     followerCount: 0,
     followingCount: 0,
+    checkinStreak: 0,
+    lastCheckinDate: '',
     createdAt: new Date(),
     updatedAt: new Date()
   }

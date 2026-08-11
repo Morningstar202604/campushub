@@ -191,3 +191,9 @@
 .history-tag:active {
   background: var(--color-bg-hover);
 }
+
+/* 关键词高亮 */
+.highlight {
+  color: var(--color-primary);
+  font-weight: 600;
+}

@@ -10,6 +10,7 @@ Page({
     isLiked: false,
     isCollected: false,
     canDelete: false,
+    canEdit: false,
     currentUserId: '',
     commentText: '',
     replyTo: '',
@@ -24,9 +25,18 @@ Page({
   },
 
   onLoad(options) {
+    this.postId = options.id
     if (options.id) {
       this.loadPost(options.id)
       this.loadComments(options.id)
+    }
+  },
+
+  onShow() {
+    // 编辑后返回刷新
+    if (this.postId && app.globalData.needRefresh) {
+      app.globalData.needRefresh = false
+      this.loadPost(this.postId)
     }
   },
 
@@ -49,6 +59,7 @@ Page({
           isLiked: res.isLiked,
           isCollected: res.isCollected,
           canDelete: isAuthor,
+          canEdit: isAuthor && !isExpired,
           currentUserId: getUserId() || '',
           formatCreateTime: formatTime(post.createdAt),
           categoryText: post.category || '',
@@ -139,6 +150,42 @@ Page({
 
   onShare() {
     wx.showShareMenu({ withShareTicket: true })
+  },
+
+  // 编辑帖子（仅作者）
+  onEdit() {
+    if (!this.data.canEdit) return
+    wx.navigateTo({
+      url: `/pages/post-publish/post-publish?id=${this.data.post._id}`
+    })
+  },
+
+  // 举报帖子
+  onReport() {
+    if (!app.ensureLogin()) return
+    const reportReasons = [
+      '垃圾广告', '违法违规', '色情低俗', '辱骂攻击', '隐私泄露', '其他'
+    ]
+    wx.showActionSheet({
+      itemList: reportReasons,
+      success: async (res) => {
+        const reason = reportReasons[res.tapIndex]
+        try {
+          const r = await callFunction('report', {
+            targetId: this.data.post._id,
+            targetType: 'post',
+            reason
+          })
+          if (r.success) {
+            wx.showToast({ title: '举报已提交', icon: 'success' })
+          } else {
+            wx.showToast({ title: r.message || '举报失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '举报失败', icon: 'none' })
+        }
+      }
+    })
   },
 
   onShareAppMessage() {

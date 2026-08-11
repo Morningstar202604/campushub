@@ -47,9 +47,10 @@ exports.main = wrap(async (event) => {
 
   if (action === 'list-reports') {
     const { page = 1, pageSize = 20 } = event
-    const skip = Math.max(0, (page - 1) * pageSize)
+    const pSize = Math.min(100, Math.max(1, Number(pageSize) || 20))
+    const skip = Math.max(0, (Number(page) - 1) * pSize)
     const [listRes, totalRes] = await Promise.all([
-      db.collection('reports').where({ status: 'pending' }).orderBy('createdAt', 'desc').skip(skip).limit(pageSize).get(),
+      db.collection('reports').where({ status: 'pending' }).orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
       db.collection('reports').where({ status: 'pending' }).count()
     ])
     const items = await Promise.all((listRes.data || []).map(async (r) => ({
@@ -61,7 +62,7 @@ exports.main = wrap(async (event) => {
       createdAt: r.createdAt,
       target: await getTargetSummary(db, r.targetType, r.targetId)
     })))
-    return ok({ list: items, total: totalRes.total, page, pageSize })
+    return ok({ list: items, total: totalRes.total, page, pageSize: pSize })
   }
 
   if (action === 'delete') {
@@ -87,9 +88,11 @@ exports.main = wrap(async (event) => {
   if (action === 'resolve') {
     const { reportId } = event
     if (!reportId) throw new AppError('缺少举报ID', 'INVALID_PARAM')
-    await db.collection('reports').doc(reportId).update({
+    const updateRes = await db.collection('reports').doc(reportId).update({
       data: { status: 'resolved', resolvedAt: new Date() }
-    }).catch(() => {})
+    })
+    const updated = updateRes.stats ? updateRes.stats.updated : 0
+    if (updated === 0) throw new AppError('举报不存在或已处理', 'NOT_FOUND')
     return ok({ resolved: true })
   }
 

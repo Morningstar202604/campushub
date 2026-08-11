@@ -15,6 +15,8 @@ exports.main = wrap(async (event) => {
   if (p.kind !== 'task') {
     throw new AppError('仅任务/请求类内容可标记已解决', 'INVALID_PARAM')
   }
+  // 已删除的帖子不可标记
+  if (p.status === 'deleted') throw new AppError('该帖子已被删除', 'INVALID_PARAM')
   if (p.resolved) return ok({ resolved: true, already: true })
 
   // 作者本人，或管理员

@@ -1,68 +1,54 @@
 <!-- pages/agreement/agreement.wxml -->
 <view class="agreement-page">
-  <view class="agreement-title">韩师校园通用户协议与隐私政策</view>
+  <view class="agreement-title">CampusHub 用户协议与隐私政策</view>
   <view class="agreement-date">最后更新：2026年8月</view>
 
   <view class="section">
     <view class="section-title">一、服务说明</view>
-    <view class="section-text">
-      韩师校园通（以下简称"本平台"）是面向韩山师范学院师生的校园信息服务平台，提供校园贴吧、二手交易信息发布、校园指南等功能。本平台仅提供信息展示服务，不参与用户间的交易行为，不提供担保服务。
-    </view>
+    <text class="section-text">CampusHub（以下简称"本平台"）是一个全国性校园/兴趣内容社区，提供社区贴吧、二手交易信息发布、校园指南等功能。本平台仅提供信息展示服务，不参与用户间的交易行为，不提供担保服务。</text>
   </view>
 
   <view class="section">
     <view class="section-title">二、用户注册与使用</view>
-    <view class="section-text">
-      1. 用户需使用微信授权登录方可使用本平台服务。\n
-      2. 用户应提供真实、准确的个人信息。\n
-      3. 匿名发布功能仅限于帖子发布和评论，商品发布需使用真实昵称。\n
-      4. 用户不得发布违法、违规、侵权或不良信息。
-    </view>
+    <text class="section-text">1. 用户需使用微信授权登录方可使用本平台服务。
+2. 用户应提供真实、准确的个人信息。
+3. 匿名发布功能仅限于帖子发布和评论，商品发布需使用真实昵称。
+4. 用户不得发布违法、违规、侵权或不良信息。</text>
   </view>
 
   <view class="section">
     <view class="section-title">三、交易规则</view>
-    <view class="section-text">
-      1. 本平台仅提供二手商品信息展示，不参与交易过程。\n
-      2. 用户应自行判断交易风险，线下当面验货交易。\n
-      3. 本平台不对交易纠纷承担任何责任。\n
-      4. 请注意交易安全，避免上当受骗。
-    </view>
+    <text class="section-text">1. 本平台仅提供二手商品信息展示，不参与交易过程。
+2. 用户应自行判断交易风险，线下当面验货交易。
+3. 本平台不对交易纠纷承担任何责任。
+4. 请注意交易安全，避免上当受骗。</text>
   </view>
 
   <view class="section">
     <view class="section-title">四、隐私保护</view>
-    <view class="section-text">
-      1. 本平台收集的用户信息包括：微信openid、昵称、学院、专业、年级、兴趣标签。\n
-      2. 用户信息仅用于平台内展示和互动，不会泄露给第三方。\n
-      3. 用户可在个人中心修改或删除个人信息。\n
-      4. 联系方式等敏感信息仅在用户主动填写时展示。
-    </view>
+    <text class="section-text">1. 本平台收集的用户信息包括：微信openid、昵称、学院、专业、年级、兴趣标签。
+2. 用户信息仅用于平台内展示和互动，不会泄露给第三方。
+3. 用户可在个人中心修改或删除个人信息。
+4. 联系方式等敏感信息仅在用户主动填写时展示。</text>
   </view>
 
   <view class="section">
     <view class="section-title">五、内容规范</view>
-    <view class="section-text">
-      1. 禁止发布涉政、涉黄、涉暴、涉赌等违法违规内容。\n
-      2. 禁止发布垃圾广告、虚假信息。\n
-      3. 禁止侵犯他人隐私、知识产权。\n
-      4. 违规内容将被删除，严重违规者将被封禁账号。
-    </view>
+    <text class="section-text">1. 禁止发布涉政、涉黄、涉暴、涉赌等违法违规内容。
+2. 禁止发布垃圾广告、虚假信息。
+3. 禁止侵犯他人隐私、知识产权。
+4. 违规内容将被删除，严重违规者将被封禁账号。</text>
   </view>
 
   <view class="section">
     <view class="section-title">六、免责声明</view>
-    <view class="section-text">
-      1. 本平台不对用户发布内容的真实性、合法性负责。\n
-      2. 因网络故障、系统维护等原因导致的服务中断，本平台不承担责任。\n
-      3. 用户使用本平台产生的任何直接或间接损失，本平台不承担责任。
-    </view>
+    <text class="section-text">1. 本平台不对用户发布内容的真实性、合法性负责。
+2. 因网络故障、系统维护等原因导致的服务中断，本平台不承担责任。
+3. 用户使用本平台产生的任何直接或间接损失，本平台不承担责任。</text>
   </view>
 
   <view class="section">
     <view class="section-title">七、联系我们</view>
-    <view class="section-text">
-      如您对本协议有任何疑问，可通过"意见反馈"功能联系我们。
-    </view>
+    <text class="section-text">如您对本协议有任何疑问，可通过"意见反馈"功能联系我们。</text>
   </view>
 </view>

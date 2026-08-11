@@ -13,8 +13,23 @@ Page({
     if (app.globalData.isLoggedIn) {
       this.setData({ user: app.globalData.userInfo })
       this.checkAdmin()
+      // 刷新用户数据（发布/收藏后统计数同步）
+      this.refreshUserData()
     } else {
       this.setData({ user: null, isAdmin: false })
+    }
+  },
+
+  // 从服务端刷新用户统计数据
+  async refreshUserData() {
+    try {
+      const res = await callFunction('login', {})
+      if (res.success && res.user) {
+        app.setUserInfo(res.user)
+        this.setData({ user: res.user })
+      }
+    } catch (e) {
+      // 静默失败
     }
   },
 
@@ -49,8 +64,8 @@ Page({
 
   goAbout() {
     wx.showModal({
-      title: '关于韩师校园通',
-      content: '韩师校园通是面向韩山师范学院师生的校园信息平台，提供校园贴吧、二手交易、校园指南等功能。\n\n平台仅提供信息展示，不参与交易担保。',
+      title: '关于 CampusHub',
+      content: 'CampusHub 是一个全国性校园/兴趣内容社区，提供社区贴吧、二手交易、校园指南等功能。\n\n平台仅提供信息展示，不参与交易担保。',
       showCancel: false,
       confirmText: '知道了'
     })

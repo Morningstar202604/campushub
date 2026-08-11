@@ -14,10 +14,15 @@ exports.main = wrap(async (event) => {
   } = event
 
   if (!title || !title.trim()) throw new AppError('请输入商品标题', 'INVALID_PARAM')
-  if (price === undefined || price === null || Number(price) < 0) throw new AppError('请输入有效价格', 'INVALID_PARAM')
+  const numPrice = Number(price)
+  if (price === undefined || price === null || !Number.isFinite(numPrice) || numPrice < 0) throw new AppError('请输入有效价格', 'INVALID_PARAM')
   if (!Array.isArray(images) || images.length === 0) throw new AppError('请至少上传一张图片', 'INVALID_PARAM')
   if (images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
   if (title.length > 30) throw new AppError('标题不能超过30字', 'INVALID_PARAM')
+  // 原价合理性：不能低于售价
+  if (originalPrice !== undefined && originalPrice !== null && Number(originalPrice) > 0 && Number(originalPrice) < numPrice) {
+    throw new AppError('原价不能低于售价', 'INVALID_PARAM')
+  }
 
   // 文本安全：fail-closed
   await checkContents([title, description, contactInfo], { openid: user.openid, scene: 2 })
@@ -32,17 +37,17 @@ exports.main = wrap(async (event) => {
     userId: user._id,
     userNickname: user.nickname,
     userAvatar: user.avatar,
-    schoolId: user.schoolId || 'HSFNC',
+    schoolId: user.schoolId || '',
     title: title.trim(),
-    description: (description || '').trim(),
+    description: String(description || '').trim().slice(0, 2000),
     images,
-    price: Number(price),
+    price: numPrice,
     originalPrice: originalPrice ? Number(originalPrice) : null,
     category,
     condition,
     tradeType,
-    location,
-    contactInfo,
+    location: String(location || '').slice(0, 200),
+    contactInfo: String(contactInfo || '').slice(0, 100),
     status: 'on_sale',
     viewCount: 0,
     wantCount: 0,

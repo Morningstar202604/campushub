@@ -2,7 +2,7 @@
 <view class="login-page">
   <view class="login-header" style="padding-top: {{statusBarHeight + 80}}px;">
     <view class="logo">🎓</view>
-    <view class="title">韩师校园通</view>
+    <view class="title">CampusHub</view>
     <view class="subtitle">校园信息 · 一站搞定</view>
   </view>
 

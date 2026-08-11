@@ -7,9 +7,11 @@ function escapeRegExp(s) {
 
 exports.main = wrap(async (event) => {
   const db = getDB()
-  const { page = 1, pageSize = 20, schoolId = 'HSFNC', category, keyword } = event
+  const { page = 1, pageSize = 20, schoolId, category, keyword } = event
 
-  const where = { status: 'on_sale', schoolId }
+  // 不再强制 schoolId — 全国内容默认不过滤校区
+  const where = { status: 'on_sale' }
+  if (schoolId) where.schoolId = schoolId
   if (category && category !== 'all') where.category = category
 
   if (keyword && String(keyword).trim()) {

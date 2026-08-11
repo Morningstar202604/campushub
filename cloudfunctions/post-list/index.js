@@ -7,8 +7,12 @@ exports.main = wrap(async (event) => {
   const db = getDB()
   const { tab = 'recommend', page = 1, pageSize = 20, categoryId, schoolId, status = 'normal' } = event
 
+  // 状态白名单 — 仅允许 normal 与 expired，防止客户端枚举已删帖
+  const ALLOWED_STATUS = ['normal', 'expired']
+  const safeStatus = ALLOWED_STATUS.includes(status) ? status : 'normal'
+
   // 基础过滤：状态（首页只推 normal；过期页传 status='expired'）
-  const where = { status }
+  const where = { status: safeStatus }
   if (schoolId) where.schoolId = schoolId
   // 分类筛选：categoryPath 为数组，直接按元素包含匹配（前端传所选节点 id）
   if (categoryId) where.categoryPath = categoryId

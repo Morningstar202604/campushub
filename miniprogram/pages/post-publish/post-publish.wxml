@@ -29,8 +29,8 @@
   <view class="form-section">
     <view class="image-grid">
       <view class="image-item" wx:for="{{images}}" wx:key="*this" wx:for-index="idx">
-        <image src="{{item}}" mode="aspectFill" class="preview-image" />
-        <view class="image-delete" data-index="{{idx}}" bindtap="removeImage">×</view>
+        <image src="{{item}}" mode="aspectFill" class="preview-image" data-index="{{idx}}" bindtap="previewImage" />
+        <view class="image-delete" data-index="{{idx}}" catchtap="removeImage">×</view>
       </view>
       <view class="image-add" wx:if="{{images.length < 9}}" bindtap="chooseImage">
         <text class="add-icon">+</text>
@@ -102,7 +102,7 @@
   <!-- 提交 -->
   <view class="submit-bar safe-bottom">
     <t-button theme="primary" size="large" block bindtap="submit" loading="{{submitting}}">
-      发布
+      {{isEdit ? '保存修改' : '发布'}}
     </t-button>
   </view>
 

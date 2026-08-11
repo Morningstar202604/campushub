@@ -101,14 +101,19 @@ async function updateNode(db, event) {
   if (schoolId !== undefined) patch.schoolId = (schoolId && String(schoolId).trim()) ? String(schoolId).trim() : null
   if (order !== undefined && Number.isFinite(Number(order))) patch.order = Number(order)
 
-  // 改父级：防环（新父不能是自己或自己的后代）+ 重算 level
+  // 改父级：防环（新父不能是自己或自己的后代）+ 重算 level + MAX_LEVEL 校验
   if (parentId !== undefined && parentId !== cur.data.parentId) {
     if (parentId === id) throw new AppError('不能将分类设为自身的父级', 'INVALID_PARAM')
     const descendants = await collectDescendants(db, id)
     if (descendants.includes(parentId)) throw new AppError('不能将分类移动到其自身子级之下', 'INVALID_PARAM')
     const { level, schoolId: inherited } = await resolveLevel(db, parentId || null)
+    // 移动后新 level + 子树深度不能超过 MAX_LEVEL
+    const subtreeDepth = await getSubtreeDepth(db, id)
+    if (level + subtreeDepth > MAX_LEVEL) throw new AppError('移动后子树层级将超过 ' + MAX_LEVEL + ' 级', 'INVALID_PARAM')
     patch.level = level
     if (schoolId === undefined) patch.schoolId = inherited || null
+    // 级联更新子节点的 level + schoolId
+    await cascadeUpdateLevel(db, id, level, patch.schoolId || cur.data.schoolId)
   }
 
   patch.updatedAt = new Date()
@@ -131,4 +136,45 @@ async function deleteNode(db, event) {
   // 软删除：让该节点从分类树（仅查 active）中消失，但历史帖子的 categoryPath 引用仍可用
   await db.collection('categories').doc(id).update({ data: { status: 'deleted', updatedAt: new Date() } })
   return ok({ deleted: true })
+}
+
+// 计算某节点的子树最大深度（该节点自身深度=0）
+async function getSubtreeDepth(db, rootId) {
+  const _ = getCmd()
+  let maxDepth = 0
+  let frontier = [rootId]
+  let depth = 0
+  while (frontier.length) {
+    const res = await db.collection('categories')
+      .where({ parentId: _.in(frontier), status: 'active' })
+      .field({ _id: true })
+      .get()
+    const ids = (res.data || []).map(d => d._id)
+    if (!ids.length) break
+    depth++
+    if (depth > maxDepth) maxDepth = depth
+    frontier = ids
+  }
+  return maxDepth
+}
+
+// 级联更新子节点的 level（+1 偏移）和 schoolId
+async function cascadeUpdateLevel(db, rootId, newLevel, schoolId) {
+  const _ = getCmd()
+  let frontier = [rootId]
+  let currentLevel = newLevel
+  while (frontier.length) {
+    const res = await db.collection('categories')
+      .where({ parentId: _.in(frontier), status: 'active' })
+      .get()
+    const children = res.data || []
+    if (!children.length) break
+    currentLevel++
+    const childIds = children.map(c => c._id)
+    // 批量更新子节点 level + schoolId
+    await db.collection('categories')
+      .where({ _id: _.in(childIds) })
+      .update({ data: { level: currentLevel, schoolId: schoolId || null } })
+    frontier = childIds
+  }
 }

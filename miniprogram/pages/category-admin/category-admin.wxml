@@ -59,7 +59,7 @@
       </view>
       <view class="field">
         <text class="label">校区ID</text>
-        <input class="input" placeholder="可选，如 HSFNC（留空继承父级）" value="{{form.schoolId}}" bindinput="onSchool" />
+        <input class="input" placeholder="可选（留空继承父级）" value="{{form.schoolId}}" bindinput="onSchool" />
       </view>
       <view class="field">
         <text class="label">排序</text>

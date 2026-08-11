@@ -21,62 +21,80 @@
 
   <!-- 搜索结果 -->
   <view class="results" wx:if="{{searched}}">
-    <!-- Tab -->
-    <view class="result-tabs">
-      <view class="result-tab {{activeResult === 'posts' ? 'active' : ''}}" data-key="posts" bindtap="onResultTab">
-        帖子 {{posts.length}}
-      </view>
-      <view class="result-tab {{activeResult === 'products' ? 'active' : ''}}" data-key="products" bindtap="onResultTab">
-        商品 {{products.length}}
-      </view>
-      <view class="result-tab {{activeResult === 'guides' ? 'active' : ''}}" data-key="guides" bindtap="onResultTab">
-        指南 {{guides.length}}
-      </view>
+    <!-- 搜索失败 -->
+    <view class="empty-container" wx:if="{{searchError}}">
+      <view class="empty-emoji">😵</view>
+      <view class="empty-text">搜索失败，请重试</view>
     </view>
 
-    <!-- 帖子结果 -->
-    <view class="result-list" wx:if="{{activeResult === 'posts'}}">
-      <view class="result-item" wx:for="{{posts}}" wx:key="_id" data-id="{{item._id}}" bindtap="goPostDetail">
-        <view class="result-title ellipsis-1">{{item.title}}</view>
-        <view class="result-desc ellipsis-1" wx:if="{{item.content}}">{{item.content}}</view>
-        <view class="result-meta">
-          <text>{{item.userNickname}}</text>
-          <text class="result-dot">·</text>
-          <text>{{item.likeCount || 0}}赞</text>
+    <block wx:if="{{!searchError}}">
+      <!-- Tab -->
+      <view class="result-tabs">
+        <view class="result-tab {{activeResult === 'posts' ? 'active' : ''}}" data-key="posts" bindtap="onResultTab">
+          帖子 {{posts.length}}
+        </view>
+        <view class="result-tab {{activeResult === 'products' ? 'active' : ''}}" data-key="products" bindtap="onResultTab">
+          商品 {{products.length}}
+        </view>
+        <view class="result-tab {{activeResult === 'guides' ? 'active' : ''}}" data-key="guides" bindtap="onResultTab">
+          指南 {{guides.length}}
         </view>
       </view>
-      <view class="empty-container" wx:if="{{posts.length === 0}}">
-        <view class="empty-text">没有相关帖子</view>
-      </view>
-    </view>
 
-    <!-- 商品结果 -->
-    <view class="result-list" wx:if="{{activeResult === 'products'}}">
-      <view class="result-item product-result" wx:for="{{products}}" wx:key="_id" data-id="{{item._id}}" bindtap="goProductDetail">
-        <image wx:if="{{item.images[0]}}" src="{{item.images[0]}}" mode="aspectFill" class="result-thumb" />
-        <view class="result-info">
-          <view class="result-title ellipsis-1">{{item.title}}</view>
-          <view class="result-price">¥{{item.price}}</view>
+      <!-- 帖子结果 -->
+      <view class="result-list" wx:if="{{activeResult === 'posts'}}">
+        <view class="result-item" wx:for="{{posts}}" wx:key="_id" data-id="{{item._id}}" bindtap="goPostDetail">
+          <view class="result-title ellipsis-1">
+            <text wx:for="{{item.segments}}" wx:for-item="seg" wx:key="index" class="{{seg.highlight ? 'highlight' : ''}}">{{seg.text}}</text>
+          </view>
+          <view class="result-desc ellipsis-1" wx:if="{{item.content}}">{{item.content}}</view>
           <view class="result-meta">
             <text>{{item.userNickname}}</text>
+            <text class="result-dot">·</text>
+            <text>{{item.timeText}}</text>
+            <text class="result-dot">·</text>
+            <text>{{item.likeCountText || 0}}赞</text>
           </view>
         </view>
+        <view class="empty-container" wx:if="{{posts.length === 0}}">
+          <view class="empty-text">没有相关帖子</view>
+        </view>
       </view>
-      <view class="empty-container" wx:if="{{products.length === 0}}">
-        <view class="empty-text">没有相关商品</view>
-      </view>
-    </view>
 
-    <!-- 指南结果 -->
-    <view class="result-list" wx:if="{{activeResult === 'guides'}}">
-      <view class="result-item" wx:for="{{guides}}" wx:key="_id" data-id="{{item._id}}" bindtap="goGuideDetail">
-        <view class="result-title ellipsis-1">{{item.title}}</view>
-        <view class="result-desc ellipsis-1" wx:if="{{item.summary}}">{{item.summary}}</view>
+      <!-- 商品结果 -->
+      <view class="result-list" wx:if="{{activeResult === 'products'}}">
+        <view class="result-item product-result" wx:for="{{products}}" wx:key="_id" data-id="{{item._id}}" bindtap="goProductDetail">
+          <image wx:if="{{item.images[0]}}" src="{{item.images[0]}}" mode="aspectFill" class="result-thumb" />
+          <view class="result-info">
+            <view class="result-title ellipsis-1">
+              <text wx:for="{{item.segments}}" wx:for-item="seg" wx:key="index" class="{{seg.highlight ? 'highlight' : ''}}">{{seg.text}}</text>
+            </view>
+            <view class="result-price">¥{{item.price}}</view>
+            <view class="result-meta">
+              <text>{{item.userNickname}}</text>
+              <text class="result-dot">·</text>
+              <text>{{item.timeText}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="empty-container" wx:if="{{products.length === 0}}">
+          <view class="empty-text">没有相关商品</view>
+        </view>
       </view>
-      <view class="empty-container" wx:if="{{guides.length === 0}}">
-        <view class="empty-text">没有相关指南</view>
+
+      <!-- 指南结果 -->
+      <view class="result-list" wx:if="{{activeResult === 'guides'}}">
+        <view class="result-item" wx:for="{{guides}}" wx:key="_id" data-id="{{item._id}}" bindtap="goGuideDetail">
+          <view class="result-title ellipsis-1">
+            <text wx:for="{{item.segments}}" wx:for-item="seg" wx:key="index" class="{{seg.highlight ? 'highlight' : ''}}">{{seg.text}}</text>
+          </view>
+          <view class="result-desc ellipsis-1" wx:if="{{item.summary}}">{{item.summary}}</view>
+        </view>
+        <view class="empty-container" wx:if="{{guides.length === 0}}">
+          <view class="empty-text">没有相关指南</view>
+        </view>
       </view>
-    </view>
+    </block>
   </view>
 
   <!-- 搜索历史 -->

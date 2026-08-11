@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-11
+
+### Added
+- **帖子编辑**：新增 `post-update` 云函数，作者可编辑标题/内容/图片/标签/分类（仅本人，fail-closed 内容安全 + 图片安全）
+- **商品编辑**：新增 `product-update` 云函数，作者可编辑全部字段 + 标记已售/重新上架（`status: 'sold'`/`'on_sale'`）
+- **帖子举报**：帖子详情页新增举报入口（6 种举报原因），补齐此前仅商品可举报的缺口
+- **浏览量显示**：帖子详情、商品详情展示浏览次数
+- **搜索增强**：标题 + 内容/描述/摘要双路搜索；搜索结果关键词高亮；搜索失败错误状态
+- **草稿保存**：发帖/商品页退出时自动保存草稿（标题/内容/标签等），下次进入恢复
+- **图片预览**：发帖/商品页点击已选图片可全屏预览（此前仅删除）
+- **个人中心刷新**：进入"我的"页时从服务端刷新统计数据（发帖数/商品数/收藏数实时同步）
+- **我的列表编辑入口**：我的帖子/商品列表新增"编辑"按钮，可直接跳转编辑页
+- **联系方式复制**：商品详情查看联系方式时支持一键复制到剪贴板
+
+### Changed
+- **全国品牌统一**：移除全部 HSFNC / 韩师校园通硬编码，导航栏、登录页、个人中心、协议页统一为 CampusHub
+- **product-list / search / guide-list** 默认不再按 schoolId 过滤（全国模式），可选传入 schoolId 缩小范围
+- **首页分类筛选条** 在"二手"tab 下隐藏（此前无效显示）
+- **首页商品类型判断** 改为按 tab 判定而非 `price` 字段推断（修复免费商品被误判为帖子的 Bug）
+- **用户协议页** 修复 `\n` 在 `<view>` 中不换行的渲染 Bug（改用 `<text>` 标签）
+- **商品详情** 操作栏重构：编辑/已售/举报/下架按钮按权限动态显示
+
+### Fixed
+- **task-expire 误过期已解决任务**：where 条件缺少 `resolved` 过滤，已解决的任务仍被置为 expired（核心逻辑 Bug）
+- **like/collect 计数漂移**：取消点赞/收藏时无存在性检查，计数可漂移至负数；新增 type 白名单防跨集合误操作；新增限流防刷赞
+- **comment-create 可评论已删帖**：未检查目标 status，已删除帖/商品仍可评论；新增 targetType 白名单
+- **post-list 可枚举已删帖**：status 未做白名单，客户端可传 `status='deleted'` 枚举软删内容
+- **guide-detail 可读取未发布指南**：未过滤 status，按 id 可读取草稿
+- **user-update 头像无内容安全**：avatar 图片未走 `checkImage`，敏感图片可作头像；同时修复 tags 未强制数组、college/major/grade 无长度限制
+- **product-create NaN 价格**：`Number('abc')` 为 NaN，通过 `< 0` 检查；原价可低于售价；description/contactInfo/location 无长度限制
+- **admin resolve 假成功**：`.catch(() => {})` 吞掉更新失败仍返回 `resolved: true`；pageSize 未限制可致 DoS
+- **category-manage reparent 不级联 level**：移动节点后子节点 level 未更新；reparent 未校验 MAX_LEVEL 可创建超 3 级
+- **resolve 可标记已删帖**：未检查 `post.status`
+- **report 重复举报**：同一用户可对同一目标反复提交；targetType 未白名单；description 无长度限制
+
+### Security
+- 头像图片安全审核（`checkImage`，fail-closed）
+- 点赞/收藏/举报/评论全部类型白名单校验
+- post-list/guide-detail 状态过滤防信息泄露
+- report per-target 去重防滥用
+
 ## [0.5.0] - 2026-08-10
 
 ### Added

@@ -48,6 +48,7 @@ Page({
       console.error('加载失败', err)
       this.setData({ loading: false })
     }
+    wx.stopPullDownRefresh()
   },
 
   onReachBottom() {
@@ -64,6 +65,23 @@ Page({
     } else {
       wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` })
     }
+  },
+
+  // 编辑帖子/商品
+  onEdit(e) {
+    const id = e.currentTarget.dataset.id
+    const type = e.currentTarget.dataset.type
+    if (type === 'product') {
+      wx.navigateTo({ url: `/pages/product-publish/product-publish?id=${id}` })
+    } else {
+      wx.navigateTo({ url: `/pages/post-publish/post-publish?id=${id}` })
+    }
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    this.setData({ page: 1, list: [], hasMore: true })
+    this.loadList(true)
   },
 
   // 删除我的帖子/商品（"我的"列表直接管理）

@@ -5,9 +5,9 @@
     <view class="section-label">商品图片（1-9张，第一张为封面）</view>
     <view class="image-grid">
       <view class="image-item" wx:for="{{images}}" wx:key="*this" wx:for-index="idx">
-        <image src="{{item}}" mode="aspectFill" class="preview-image" />
+        <image src="{{item}}" mode="aspectFill" class="preview-image" data-index="{{idx}}" bindtap="previewImage" />
         <view class="cover-badge" wx:if="{{idx === 0}}">封面</view>
-        <view class="image-delete" data-index="{{idx}}" bindtap="removeImage">×</view>
+        <view class="image-delete" data-index="{{idx}}" catchtap="removeImage">×</view>
       </view>
       <view class="image-add" wx:if="{{images.length < 9}}" bindtap="chooseImage">
         <text class="add-icon">+</text>
@@ -138,7 +138,7 @@
   <!-- 提交 -->
   <view class="submit-bar safe-bottom">
     <t-button theme="primary" size="large" block bindtap="submit" loading="{{submitting}}">
-      发布商品
+      {{isEdit ? '保存修改' : '发布商品'}}
     </t-button>
   </view>
 </view>

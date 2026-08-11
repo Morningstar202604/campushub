@@ -7,9 +7,10 @@ exports.main = wrap(async (event) => {
   const { guideId } = event
   if (!guideId) throw new AppError('缺少指南ID', 'INVALID_PARAM')
 
-  const res = await db.collection('guides').doc(guideId).get()
+  const res = await db.collection('guides').doc(guideId).get().catch(() => ({ data: null }))
   const guide = res.data
   if (!guide) throw new AppError('指南不存在', 'NOT_FOUND')
+  if (guide.status !== 'published') throw new AppError('该指南暂未发布', 'NOT_FOUND')
 
   await db.collection('guides').doc(guideId).update({ data: { viewCount: _.inc(1) } })
   guide.viewCount = (guide.viewCount || 0) + 1

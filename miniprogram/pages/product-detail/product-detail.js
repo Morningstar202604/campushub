@@ -8,6 +8,8 @@ Page({
     product: null,
     isCollected: false,
     canDelete: false,
+    canEdit: false,
+    isSold: false,
     loading: true,
     formatCreateTime: '',
     conditionText: '',
@@ -15,8 +17,17 @@ Page({
   },
 
   onLoad(options) {
+    this.productId = options.id
     if (options.id) {
       this.loadProduct(options.id)
+    }
+  },
+
+  onShow() {
+    // 编辑后返回刷新
+    if (this.productId && app.globalData.needRefresh) {
+      app.globalData.needRefresh = false
+      this.loadProduct(this.productId)
     }
   },
 
@@ -31,11 +42,14 @@ Page({
         const p = res.product
         const conditionMap = { new: '全新', almost_new: '几乎全新', good: '8成新', fair: '5成新' }
         const tradeMap = { face: '当面交易', mail: '邮寄', both: '当面/邮寄' }
-        
+        const isOwner = !!getUserId() && getUserId() === p.userId
+
         this.setData({
           product: p,
           isCollected: res.isCollected,
-          canDelete: !!getUserId() && getUserId() === p.userId,
+          canDelete: isOwner,
+          canEdit: isOwner,
+          isSold: p.status === 'sold',
           formatCreateTime: formatTime(p.createdAt),
           conditionText: conditionMap[p.condition] || p.condition,
           tradeTypeText: tradeMap[p.tradeType] || p.tradeType,
@@ -81,12 +95,55 @@ Page({
       wx.showModal({
         title: '联系方式',
         content: product.contactInfo,
-        showCancel: false,
-        confirmText: '知道了'
+        confirmText: '复制',
+        cancelText: '关闭',
+        success: (res) => {
+          if (res.confirm) {
+            wx.setClipboardData({
+              data: product.contactInfo,
+              success: () => wx.showToast({ title: '已复制', icon: 'success' })
+            })
+          }
+        }
       })
     } else {
       wx.showToast({ title: '卖家未留下联系方式', icon: 'none' })
     }
+  },
+
+  // 编辑商品（仅作者）
+  onEdit() {
+    if (!this.data.canEdit) return
+    wx.navigateTo({
+      url: `/pages/product-publish/product-publish?id=${this.data.product._id}`
+    })
+  },
+
+  // 标记已售 / 重新上架
+  onMarkSold() {
+    if (!this.data.canEdit) return
+    const newSold = !this.data.isSold
+    wx.showModal({
+      title: newSold ? '标记为已售' : '重新上架',
+      content: newSold ? '标记后商品不再展示在在售列表' : '商品将重新展示在在售列表',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          const r = await callFunction('product-update', {
+            productId: this.data.product._id,
+            markSold: newSold
+          })
+          if (r.success) {
+            this.setData({ isSold: newSold, 'product.status': r.status })
+            wx.showToast({ title: newSold ? '已标记为已售' : '已重新上架', icon: 'success' })
+          } else {
+            wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        }
+      }
+    })
   },
 
   onReport() {

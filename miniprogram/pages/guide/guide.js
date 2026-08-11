@@ -17,7 +17,7 @@ Page({
     this.setData({ loading: true })
     try {
       const res = await callFunction('guide-list', {
-        schoolId: 'HSFNC',
+        schoolId: app.globalData.userInfo ? app.globalData.userInfo.schoolId || undefined : undefined,
         categoryId: categoryId || undefined
       })
       if (res.success) {

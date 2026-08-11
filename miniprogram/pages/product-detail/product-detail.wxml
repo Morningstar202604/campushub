@@ -17,6 +17,8 @@
     <view class="price-tags">
       <view class="price-tag">{{conditionText}}</view>
       <view class="price-tag">{{tradeTypeText}}</view>
+      <view class="price-tag" wx:if="{{isSold}}" style="background:#e64340;color:#fff;">已售出</view>
+      <view class="price-tag" wx:if="{{product.viewCount}}">👁 {{product.viewCount}}</view>
     </view>
   </view>
 
@@ -68,7 +70,15 @@
       <text class="bar-icon">{{isCollected ? '⭐' : '☆'}}</text>
       <text class="bar-text">收藏</text>
     </view>
-    <view class="bar-action" bindtap="onReport">
+    <view class="bar-action" wx:if="{{canEdit}}" bindtap="onEdit">
+      <text class="bar-icon">✏️</text>
+      <text class="bar-text">编辑</text>
+    </view>
+    <view class="bar-action" wx:if="{{canEdit}}" bindtap="onMarkSold">
+      <text class="bar-icon">{{isSold ? '↩' : '✅'}}</text>
+      <text class="bar-text">{{isSold ? '上架' : '已售'}}</text>
+    </view>
+    <view class="bar-action" bindtap="onReport" wx:if="{{!canDelete}}">
       <text class="bar-icon">🚩</text>
       <text class="bar-text">举报</text>
     </view>

@@ -2,13 +2,12 @@
 App({
   globalData: {
     userInfo: null,
-    schoolId: 'HSFNC',
-    schoolName: '韩山师范学院',
     isLoggedIn: false,
     statusBarHeight: 0,
     navBarHeight: 0,
     screenHeight: 0,
-    safeAreaBottom: 0
+    safeAreaBottom: 0,
+    needRefresh: false
   },
 
   onLaunch() {
@@ -62,5 +61,19 @@ App({
       return false
     }
     return true
+  },
+
+  // 刷新用户统计数据（发布/收藏后调用）
+  async refreshUserInfo() {
+    if (!this.globalData.userInfo) return
+    try {
+      const { callFunction } = require('./utils/request.js')
+      const res = await callFunction('login', {})
+      if (res.success && res.user) {
+        this.setUserInfo(res.user)
+      }
+    } catch (e) {
+      // 静默失败，不影响用户操作
+    }
   }
 })

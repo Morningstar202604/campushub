@@ -9,11 +9,13 @@ exports.main = wrap(async () => {
   const _ = getCmd()
   const now = new Date()
 
+  // 已解决的任务不进过期页 — resolved 字段可能不存在（旧数据），用 neq(true) 兼容
   const res = await db.collection('posts')
     .where({
       kind: 'task',
       status: 'normal',
-      expireAt: _.lt(now)
+      expireAt: _.lt(now),
+      resolved: _.neq(true)
     })
     .limit(100)
     .get()

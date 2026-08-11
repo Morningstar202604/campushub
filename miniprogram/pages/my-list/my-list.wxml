@@ -15,13 +15,20 @@
           <text class="item-time">{{item.timeText}}</text>
         </view>
       </view>
-      <view
-        class="item-delete"
-        wx:if="{{type !== 'collects'}}"
-        catchtap="onDelete"
-        data-id="{{item._id}}"
-        data-type="{{item.price !== undefined ? 'product' : 'post'}}"
-      >删除</view>
+      <view class="item-actions" wx:if="{{type !== 'collects'}}">
+        <view
+          class="item-edit"
+          catchtap="onEdit"
+          data-id="{{item._id}}"
+          data-type="{{item.price !== undefined ? 'product' : 'post'}}"
+        >编辑</view>
+        <view
+          class="item-delete"
+          catchtap="onDelete"
+          data-id="{{item._id}}"
+          data-type="{{item.price !== undefined ? 'product' : 'post'}}"
+        >删除</view>
+      </view>
     </view>
   </view>
 

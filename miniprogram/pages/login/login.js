@@ -84,7 +84,7 @@ Page({
 
       if (updateRes.success) {
         app.setUserInfo(updateRes.user)
-        wx.showToast({ title: '欢迎来到韩师校园通', icon: 'success' })
+        wx.showToast({ title: '欢迎来到 CampusHub', icon: 'success' })
         setTimeout(() => {
           wx.switchTab({ url: '/pages/index/index' })
         }, 1500)
