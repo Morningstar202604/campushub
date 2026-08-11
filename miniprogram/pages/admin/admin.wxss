@@ -137,3 +137,50 @@
   font-size: 24rpx;
   padding: 24rpx 0;
 }
+
+/* Tab 切换 */
+.admin-tabs {
+  display: flex;
+  background: #fff;
+  border-radius: 16rpx;
+  margin-top: 24rpx;
+  padding: 8rpx;
+}
+.admin-tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  color: #666;
+  border-radius: 12rpx;
+  transition: all 0.2s;
+}
+.admin-tab.active {
+  background: #4A90D9;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 快捷按钮 */
+.quick-btn {
+  display: inline-block;
+  margin: 16rpx 0;
+  padding: 16rpx 28rpx;
+  background: #4A90D9;
+  color: #fff;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+}
+.quick-btn:active { opacity: 0.8; }
+
+.panel-desc {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.btn-pin { background: #4A90D9; color: #fff; }
+.btn-unpin { background: #f0f0f0; color: #666; }
+.btn-essence { background: #F5A623; color: #fff; }
+.btn-unessence { background: #f0f0f0; color: #666; }

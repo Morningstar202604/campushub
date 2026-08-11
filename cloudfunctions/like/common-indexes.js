@@ -59,7 +59,11 @@ const EXPECTED_INDEXES = [
   { collection: 'checkins', name: 'idx_checkins_user_date', fields: [{ key: 'userId', direction: 1 }, { key: 'date', direction: 1 }], unique: false },
 
   // ===== comments (楼中楼) =====
-  { collection: 'comments', name: 'idx_comments_parent_status_created', fields: [{ key: 'parentId', direction: 1 }, { key: 'status', direction: 1 }, { key: 'createdAt', direction: 1 }], unique: false }
+  { collection: 'comments', name: 'idx_comments_parent_status_created', fields: [{ key: 'parentId', direction: 1 }, { key: 'status', direction: 1 }, { key: 'createdAt', direction: 1 }], unique: false },
+
+  // ===== notifications =====
+  { collection: 'notifications', name: 'idx_notifications_user_created', fields: [{ key: 'userId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  { collection: 'notifications', name: 'idx_notifications_user_read', fields: [{ key: 'userId', direction: 1 }, { key: 'isRead', direction: 1 }], unique: false }
 ]
 
 module.exports = { EXPECTED_INDEXES }

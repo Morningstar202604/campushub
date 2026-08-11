@@ -193,9 +193,11 @@ Page({
   },
 
   onShareAppMessage() {
+    const product = this.data.product
+    if (!product) return { title: 'CampusHub', path: '/pages/index/index' }
     return {
-      title: this.data.product.title,
-      path: `/pages/product-detail/product-detail?id=${this.data.product._id}`
+      title: product.title,
+      path: `/pages/product-detail/product-detail?id=${product._id}`
     }
   }
 })

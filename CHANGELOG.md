@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2026-08-11
 
 ### Added — P2 功能补齐
+- **站内通知系统**：新增 `notification` 云函数（列表/未读数/标记已读/全部已读）；like/comment/follow 自动创建通知；新增 `notifications` 集合 + 索引；个人中心消息入口 + 未读 badge；新增 `pages/notifications` 页面
 - **关注系统**：新增 `follow` 云函数（关注/取关/状态查询/关注列表/粉丝列表），双向计数同步，限流防刷
 - **每日签到**：新增 `checkin` 云函数（连续签到 + 积分奖励，每 7 天额外加成），个人中心签到入口
 - **用户主页**：新增 `user-profile` 云函数 + `user-profile` 页面（公开资料 + 统计 + 最近帖子 + 关注状态）
@@ -16,7 +17,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **关注作者**：帖子详情页作者栏新增关注/取关按钮 + 点击作者跳转主页
 - **管理员扩展**：`admin` 新增置顶/取消置顶、加精/取消加精、用户列表（搜索）、反馈列表、反馈回复
 - **新增集合**：`follows`、`checkins`（init-db 自动创建）
-- **新增索引**：follows 3 个（follower/following/唯一对）、checkins 1 个（user+date）、comments 楼中楼 1 个（parent+status+created）
+- **新增索引**：follows 3 个（follower/following/唯一对）、checkins 1 个（user+date）、comments 楼中楼 1 个（parent+status+created）、notifications 2 个（user+created、user+read）
+
+### Fixed — P0/P1 遗漏修复
+- **guide.js 缺少 `const app = getApp()`** → Guide Tab 完全不加载（P0 回归 Bug）
+- **common-context.js 字段投影不完整** → checkinStreak/lastCheckinDate/creditScore 丢失，签到连续天数永远重置为 1（P0）
+- **profile 收藏计数永远显示 0** → collect 函数未更新 user.collectCount（login 新用户也未初始化该字段）
+- **onShareAppMessage 空指针** → post/product/guide 详情页在数据加载前分享会崩溃
+- **admin 页缺少 try/catch** → 网络错误时 loading 永远不消失；onResolve 无确认弹窗
+- **app.json 死权限** → scope.userLocation 声明但从未使用
+- **搜索结果重复** → 标题+内容同时命中时同一帖子出现两次
+- **post-detail collects 查询缺 type 过滤**
+- **collectCount/likeCount NaN 风险** → 迁移旧帖 undefined + 1 = NaN
+- **expired 页 category 无 fallback** → 旧帖分类为空时显示空白
+- **guide-list 无分页** → 大数据集静默截断
+- **删除死代码 format.js** → getCategoryText 使用过时的扁平分类映射
+
+### Added — P2 管理员 UI + 登录合规
+- **管理员前端**：Tab 切换（举报审核/帖子管理/用户封禁）；置顶/加精/取消置顶/取消加精 UI
+- **首页置顶 badge**：被管理员置顶的帖子在信息流显示 📌 置顶 标记
+- **登录协议 checkbox** → 合规要求：必须勾选才能进入（此前为纯链接）
 
 ### Added — P1 核心体验
 - **帖子编辑**：新增 `post-update` 云函数，作者可编辑标题/内容/图片/标签/分类（仅本人，fail-closed 内容安全 + 图片安全）

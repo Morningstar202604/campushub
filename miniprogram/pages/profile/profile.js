@@ -6,17 +6,18 @@ const { callFunction } = require('../../utils/request.js')
 Page({
   data: {
     user: null,
-    isAdmin: false
+    isAdmin: false,
+    unreadCount: 0
   },
 
   onShow() {
     if (app.globalData.isLoggedIn) {
       this.setData({ user: app.globalData.userInfo })
       this.checkAdmin()
-      // 刷新用户数据（发布/收藏后统计数同步）
       this.refreshUserData()
+      this.loadUnreadCount()
     } else {
-      this.setData({ user: null, isAdmin: false })
+      this.setData({ user: null, isAdmin: false, unreadCount: 0 })
     }
   },
 
@@ -28,9 +29,15 @@ Page({
         app.setUserInfo(res.user)
         this.setData({ user: res.user })
       }
-    } catch (e) {
-      // 静默失败
-    }
+    } catch (e) {}
+  },
+
+  // 未读通知数
+  async loadUnreadCount() {
+    try {
+      const res = await callFunction('notification', { action: 'unreadCount' })
+      if (res.success) this.setData({ unreadCount: res.unreadCount })
+    } catch (e) {}
   },
 
   // 仅用于前端显示/隐藏"管理后台"入口；真实权限始终在云函数校验
@@ -73,6 +80,10 @@ Page({
 
   goFeedback() {
     wx.navigateTo({ url: '/pages/feedback/feedback' })
+  },
+
+  goNotification() {
+    wx.navigateTo({ url: '/pages/notifications/notifications' })
   },
 
   // 每日签到

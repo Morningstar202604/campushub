@@ -5,42 +5,76 @@
     <view class="admin-sub">待处理举报：{{total}}</view>
   </view>
 
-  <view class="admin-quick">
-    <view class="quick-btn" style="display:inline-block;margin:16rpx 0;padding:16rpx 28rpx;background:#4A90D9;color:#fff;border-radius:40rpx;font-size:26rpx;" bindtap="goCategoryAdmin">📂 分类管理</view>
+  <!-- Tab 切换 -->
+  <view class="admin-tabs">
+    <view class="admin-tab {{activeTab === 'reports' ? 'active' : ''}}" data-key="reports" bindtap="onTabChange">举报审核</view>
+    <view class="admin-tab {{activeTab === 'manage' ? 'active' : ''}}" data-key="manage" bindtap="onTabChange">帖子管理</view>
+    <view class="admin-tab {{activeTab === 'users' ? 'active' : ''}}" data-key="users" bindtap="onTabChange">用户/封禁</view>
   </view>
 
-  <view class="ban-panel">
-    <view class="panel-title">用户封禁 / 解封</view>
-    <input class="ban-input" placeholder="输入用户ID(24位)或OpenID" value="{{banTarget}}" bindinput="onBanInput" />
-    <view class="ban-btns">
-      <button class="btn btn-ban" loading="{{banLoading}}" bindtap="doBan">封禁</button>
-      <button class="btn btn-unban" bindtap="doUnban">解封</button>
-    </view>
-  </view>
-
-  <view class="report-list">
-    <view class="empty" wx:if="{{reports.length === 0 && !loading}}">暂无待处理举报 🎉</view>
-
-    <view class="report-card" wx:for="{{reports}}" wx:key="reportId">
-      <view class="report-top">
-        <text class="type-tag type-{{item.targetType}}">{{item.targetType === 'post' ? '帖子' : item.targetType === 'product' ? '商品' : '评论'}}</text>
-        <text class="reason">{{item.reason}}</text>
-      </view>
-
-      <view class="report-snippet" wx:if="{{!item.target.notFound}}">{{item.target.snippet}}</view>
-      <view class="report-snippet notfound" wx:else>内容已不存在</view>
-
-      <view class="report-desc" wx:if="{{item.description}}">说明：{{item.description}}</view>
-      <view class="report-author" wx:if="{{item.target.ownerNickname}}">作者：{{item.target.ownerNickname}}</view>
-
-      <view class="report-actions">
-        <text class="act act-del" data-id="{{item.targetId}}" data-type="{{item.targetType}}" bindtap="onDelete">删除内容</text>
-        <text class="act act-ban" wx:if="{{item.target.ownerId}}" data-ownerid="{{item.target.ownerId}}" data-nickname="{{item.target.ownerNickname}}" bindtap="onBanAuthor">封禁作者</text>
-        <text class="act act-resolve" data-reportid="{{item.reportId}}" bindtap="onResolve">标记处理</text>
-      </view>
+  <!-- 举报审核 -->
+  <block wx:if="{{activeTab === 'reports'}}">
+    <view class="admin-quick">
+      <view class="quick-btn" bindtap="goCategoryAdmin">📂 分类管理</view>
     </view>
 
-    <view class="load-more" wx:if="{{loading}}">加载中…</view>
-    <view class="load-more" wx:elif="{{!hasMore && reports.length > 0}}">没有更多了</view>
-  </view>
+    <view class="report-list">
+      <view class="empty" wx:if="{{reports.length === 0 && !loading}}">暂无待处理举报 🎉</view>
+
+      <view class="report-card" wx:for="{{reports}}" wx:key="reportId">
+        <view class="report-top">
+          <text class="type-tag type-{{item.targetType}}">{{item.targetType === 'post' ? '帖子' : item.targetType === 'product' ? '商品' : '评论'}}</text>
+          <text class="reason">{{item.reason}}</text>
+        </view>
+
+        <view class="report-snippet" wx:if="{{!item.target.notFound}}">{{item.target.snippet}}</view>
+        <view class="report-snippet notfound" wx:else>内容已不存在</view>
+
+        <view class="report-desc" wx:if="{{item.description}}">说明：{{item.description}}</view>
+        <view class="report-author" wx:if="{{item.target.ownerNickname}}">作者：{{item.target.ownerNickname}}</view>
+
+        <view class="report-actions">
+          <text class="act act-del" data-id="{{item.targetId}}" data-type="{{item.targetType}}" bindtap="onDelete">删除内容</text>
+          <text class="act act-ban" wx:if="{{item.target.ownerId}}" data-ownerid="{{item.target.ownerId}}" data-nickname="{{item.target.ownerNickname}}" bindtap="onBanAuthor">封禁作者</text>
+          <text class="act act-resolve" data-reportid="{{item.reportId}}" bindtap="onResolve">标记处理</text>
+        </view>
+      </view>
+
+      <view class="load-more" wx:if="{{loading}}">加载中…</view>
+      <view class="load-more" wx:elif="{{!hasMore && reports.length > 0}}">没有更多了</view>
+    </view>
+  </block>
+
+  <!-- 帖子管理（置顶/加精） -->
+  <block wx:if="{{activeTab === 'manage'}}">
+    <view class="ban-panel">
+      <view class="panel-title">📌 置顶 / ⭐ 加精</view>
+      <view class="panel-desc">输入帖子ID（在帖子详情页右上角操作栏可见，或从举报列表复制）</view>
+      <input class="ban-input" placeholder="输入帖子ID" value="{{pinTarget}}" bindinput="onPinInput" />
+      <view class="ban-btns">
+        <button class="btn btn-pin" loading="{{pinLoading}}" bindtap="doPin">📌 置顶</button>
+        <button class="btn btn-unpin" bindtap="doUnpin">取消置顶</button>
+      </view>
+      <view class="ban-btns">
+        <button class="btn btn-essence" bindtap="doEssence">⭐ 加精</button>
+        <button class="btn btn-unessence" bindtap="doUnessence">取消加精</button>
+      </view>
+    </view>
+  </block>
+
+  <!-- 用户/封禁 -->
+  <block wx:if="{{activeTab === 'users'}}">
+    <view class="ban-panel">
+      <view class="panel-title">用户封禁 / 解封</view>
+      <input class="ban-input" placeholder="输入用户ID(24位)或OpenID" value="{{banTarget}}" bindinput="onBanInput" />
+      <view class="ban-btns">
+        <button class="btn btn-ban" loading="{{banLoading}}" bindtap="doBan">封禁</button>
+        <button class="btn btn-unban" bindtap="doUnban">解封</button>
+      </view>
+    </view>
+
+    <view class="admin-quick">
+      <view class="quick-btn" bindtap="goCategoryAdmin">📂 分类管理</view>
+    </view>
+  </block>
 </view>

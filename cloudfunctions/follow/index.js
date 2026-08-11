@@ -36,6 +36,14 @@ exports.main = wrap(async (event) => {
       // 更新双方计数
       await db.collection('users').doc(user._id).update({ data: { followingCount: _.inc(1) } })
       await db.collection('users').doc(targetUserId).update({ data: { followerCount: _.inc(1) } })
+
+      // 站内通知
+      try {
+        await db.collection('notifications').add({
+          data: { userId: targetUserId, type: 'follow', content: `${user.nickname} 关注了你`, targetId: user._id, isRead: false, createdAt: new Date() }
+        })
+      } catch (e) {}
+
       return ok({ following: true })
     } else {
       // 取关：仅当存在时才删除 + 扣减

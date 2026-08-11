@@ -24,7 +24,7 @@ exports.main = wrap(async (event = {}) => {
   const collections = [
     'users', 'posts', 'products', 'comments', 'likes', 'collects',
     'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
-    'follows', 'checkins'
+    'follows', 'checkins', 'notifications'
   ]
   for (const name of collections) {
     try {

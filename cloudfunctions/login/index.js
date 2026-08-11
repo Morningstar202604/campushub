@@ -30,6 +30,7 @@ exports.main = wrap(async (event, context) => {
     creditScore: 100,
     postCount: 0,
     productCount: 0,
+    collectCount: 0,
     followerCount: 0,
     followingCount: 0,
     checkinStreak: 0,

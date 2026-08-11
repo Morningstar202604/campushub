@@ -31,9 +31,11 @@ Page({
   },
 
   onShareAppMessage() {
+    const guide = this.data.guide
+    if (!guide) return { title: 'CampusHub', path: '/pages/index/index' }
     return {
-      title: this.data.guide.title,
-      path: `/pages/guide-detail/guide-detail?id=${this.data.guide._id}`
+      title: guide.title,
+      path: `/pages/guide-detail/guide-detail?id=${guide._id}`
     }
   }
 })

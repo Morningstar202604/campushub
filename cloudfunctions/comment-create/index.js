@@ -67,5 +67,14 @@ exports.main = wrap(async (event) => {
     await db.collection('comments').doc(validParentId).update({ data: { replyCount: _.inc(1) } })
   }
 
+  // 站内通知：通知作者被评论（不通知自己）
+  try {
+    if (targetRes.data.userId !== user._id) {
+      await db.collection('notifications').add({
+        data: { userId: targetRes.data.userId, type: 'comment', content: `${user.nickname} 评论了你的内容`, targetId, isRead: false, createdAt: new Date() }
+      })
+    }
+  } catch (e) {}
+
   return ok({ commentId: addRes._id, comment })
 })

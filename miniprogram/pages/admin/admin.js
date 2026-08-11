@@ -10,7 +10,10 @@ Page({
     loading: false,
     total: 0,
     banTarget: '',
-    banLoading: false
+    banLoading: false,
+    pinTarget: '',
+    pinLoading: false,
+    activeTab: 'reports'
   },
 
   onLoad() {
@@ -22,7 +25,11 @@ Page({
   },
 
   onReachBottom() {
-    this.loadReports(false)
+    if (this.data.activeTab === 'reports') this.loadReports(false)
+  },
+
+  onTabChange(e) {
+    this.setData({ activeTab: e.currentTarget.dataset.key })
   },
 
   async loadReports(reset) {
@@ -55,14 +62,19 @@ Page({
       success: async (r) => {
         if (!r.confirm) return
         wx.showLoading({ title: '处理中' })
-        const res = await callFunction('admin', { action: 'delete', targetType: type, targetId: id })
-        wx.hideLoading()
-        if (res.success) {
-          wx.showToast({ title: '已删除', icon: 'success' })
-          const reports = this.data.reports.filter(r => !(r.targetType === type && r.targetId === id))
-          this.setData({ reports, total: Math.max(0, this.data.total - 1) })
-        } else {
-          wx.showToast({ title: res.message || '删除失败', icon: 'none' })
+        try {
+          const res = await callFunction('admin', { action: 'delete', targetType: type, targetId: id })
+          if (res.success) {
+            wx.showToast({ title: '已删除', icon: 'success' })
+            const reports = this.data.reports.filter(r => !(r.targetType === type && r.targetId === id))
+            this.setData({ reports, total: Math.max(0, this.data.total - 1) })
+          } else {
+            wx.showToast({ title: res.message || '删除失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        } finally {
+          wx.hideLoading()
         }
       }
     })
@@ -76,25 +88,42 @@ Page({
       success: async (r) => {
         if (!r.confirm) return
         wx.showLoading({ title: '处理中' })
-        const res = await callFunction('admin', { action: 'ban', targetUserId: ownerid })
-        wx.hideLoading()
-        wx.showToast({ title: res.success ? '已封禁' : (res.message || '失败'), icon: res.success ? 'success' : 'none' })
+        try {
+          const res = await callFunction('admin', { action: 'ban', targetUserId: ownerid })
+          wx.showToast({ title: res.success ? '已封禁' : (res.message || '失败'), icon: res.success ? 'success' : 'none' })
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        } finally {
+          wx.hideLoading()
+        }
       }
     })
   },
 
   async onResolve(e) {
     const { reportid } = e.currentTarget.dataset
-    wx.showLoading({ title: '处理中' })
-    const res = await callFunction('admin', { action: 'resolve', reportId: reportid })
-    wx.hideLoading()
-    if (res.success) {
-      const reports = this.data.reports.filter(r => r.reportId !== reportid)
-      this.setData({ reports, total: Math.max(0, this.data.total - 1) })
-      wx.showToast({ title: '已标记处理', icon: 'success' })
-    } else {
-      wx.showToast({ title: res.message || '失败', icon: 'none' })
-    }
+    wx.showModal({
+      title: '标记为已处理',
+      content: '确认将该举报标记为已处理？',
+      success: async (r) => {
+        if (!r.confirm) return
+        wx.showLoading({ title: '处理中' })
+        try {
+          const res = await callFunction('admin', { action: 'resolve', reportId: reportid })
+          if (res.success) {
+            const reports = this.data.reports.filter(r => r.reportId !== reportid)
+            this.setData({ reports, total: Math.max(0, this.data.total - 1) })
+            wx.showToast({ title: '已标记处理', icon: 'success' })
+          } else {
+            wx.showToast({ title: res.message || '失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        } finally {
+          wx.hideLoading()
+        }
+      }
+    })
   },
 
   onBanInput(e) {
@@ -105,28 +134,36 @@ Page({
     const t = (this.data.banTarget || '').trim()
     if (!t) return wx.showToast({ title: '请输入用户ID', icon: 'none' })
     this.setData({ banLoading: true })
-    const res = await this.banCall('ban', t)
-    this.setData({ banLoading: false })
-    if (res.success) {
-      wx.showToast({ title: '已封禁', icon: 'success' })
-      this.setData({ banTarget: '' })
-    } else {
-      wx.showToast({ title: res.message || '失败', icon: 'none' })
+    try {
+      const res = await this.banCall('ban', t)
+      if (res.success) {
+        wx.showToast({ title: '已封禁', icon: 'success' })
+        this.setData({ banTarget: '' })
+      } else {
+        wx.showToast({ title: res.message || '失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
     }
+    this.setData({ banLoading: false })
   },
 
   async doUnban() {
     const t = (this.data.banTarget || '').trim()
     if (!t) return wx.showToast({ title: '请输入用户ID', icon: 'none' })
     this.setData({ banLoading: true })
-    const res = await this.banCall('unban', t)
-    this.setData({ banLoading: false })
-    if (res.success) {
-      wx.showToast({ title: '已解封', icon: 'success' })
-      this.setData({ banTarget: '' })
-    } else {
-      wx.showToast({ title: res.message || '失败', icon: 'none' })
+    try {
+      const res = await this.banCall('unban', t)
+      if (res.success) {
+        wx.showToast({ title: '已解封', icon: 'success' })
+        this.setData({ banTarget: '' })
+      } else {
+        wx.showToast({ title: res.message || '失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
     }
+    this.setData({ banLoading: false })
   },
 
   // 按输入特征自动区分 userId(24位hex) 与 openid
@@ -135,9 +172,75 @@ Page({
     if (/^[0-9a-fA-F]{24}$/.test(text)) payload.targetUserId = text
     else payload.targetOpenid = text
     wx.showLoading({ title: '处理中' })
-    const res = await callFunction('admin', payload)
-    wx.hideLoading()
-    return res
+    try {
+      const res = await callFunction('admin', payload)
+      return res
+    } catch (err) {
+      return { success: false, message: '操作失败' }
+    } finally {
+      wx.hideLoading()
+    }
+  },
+
+  // ---- 置顶/加精 ----
+  onPinInput(e) {
+    this.setData({ pinTarget: e.detail.value })
+  },
+
+  async doPin() {
+    const t = (this.data.pinTarget || '').trim()
+    if (!t) return wx.showToast({ title: '请输入帖子ID', icon: 'none' })
+    this.setData({ pinLoading: true })
+    try {
+      const res = await callFunction('admin', { action: 'pin', postId: t })
+      wx.showToast({ title: res.success ? '已置顶' : (res.message || '失败'), icon: res.success ? 'success' : 'none' })
+      if (res.success) this.setData({ pinTarget: '' })
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+    this.setData({ pinLoading: false })
+  },
+
+  async doUnpin() {
+    const t = (this.data.pinTarget || '').trim()
+    if (!t) return wx.showToast({ title: '请输入帖子ID', icon: 'none' })
+    this.setData({ pinLoading: true })
+    try {
+      const res = await callFunction('admin', { action: 'unpin', postId: t })
+      wx.showToast({ title: res.success ? '已取消置顶' : (res.message || '失败'), icon: res.success ? 'success' : 'none' })
+      if (res.success) this.setData({ pinTarget: '' })
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+    this.setData({ pinLoading: false })
+  },
+
+  async doEssence() {
+    const t = (this.data.pinTarget || '').trim()
+    if (!t) return wx.showToast({ title: '请输入帖子ID', icon: 'none' })
+    this.setData({ pinLoading: true })
+    try {
+      const res = await callFunction('admin', { action: 'essence', postId: t })
+      wx.showToast({ title: res.success ? '已加精' : (res.message || '失败'), icon: res.success ? 'success' : 'none' })
+      if (res.success) this.setData({ pinTarget: '' })
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+    this.setData({ pinLoading: false })
+  },
+
+  async doUnessence() {
+    const t = (this.data.pinTarget || '').trim()
+    if (!t) return wx.showToast({ title: '请输入帖子ID', icon: 'none' })
+    this.setData({ pinLoading: true })
+    try {
+      const res = await callFunction('admin', { action: 'unessence', postId: t })
+      wx.showToast({ title: res.success ? '已取消加精' : (res.message || '失败'), icon: res.success ? 'success' : 'none' })
+      if (res.success) this.setData({ pinTarget: '' })
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+    this.setData({ pinLoading: false })
   },
 
   goCategoryAdmin() {

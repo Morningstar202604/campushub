@@ -22,6 +22,8 @@ exports.main = wrap(async (event) => {
 
     await db.collection('collects').add({ data: { userId: user._id, targetId, type, createdAt: new Date() } })
     await db.collection(collection).doc(targetId).update({ data: { collectCount: _.inc(1) } })
+    // 同步用户收藏计数
+    await db.collection('users').doc(user._id).update({ data: { collectCount: _.inc(1) } })
     return ok({ collected: true })
   } else {
     // 仅当确实存在记录时才删除 + 扣减，防止计数漂移至负数
@@ -30,6 +32,8 @@ exports.main = wrap(async (event) => {
 
     await db.collection('collects').where({ userId: user._id, targetId, type }).remove()
     await db.collection(collection).doc(targetId).update({ data: { collectCount: _.inc(-1) } })
+    // 同步用户收藏计数
+    await db.collection('users').doc(user._id).update({ data: { collectCount: _.inc(-1) } })
     return ok({ collected: false })
   }
 })

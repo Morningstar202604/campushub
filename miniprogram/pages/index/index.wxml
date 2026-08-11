@@ -47,6 +47,7 @@
             lazy-load
           />
           <view class="card-body">
+            <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
             <view class="card-title ellipsis-2">{{item.title}}</view>
             <view class="card-desc ellipsis-2" wx:if="{{item.content}}">{{item.content}}</view>
             <view class="card-tags" wx:if="{{item.tags.length > 0}}">
@@ -73,6 +74,7 @@
             lazy-load
           />
           <view class="card-body">
+            <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
             <view class="card-title ellipsis-2">{{item.title}}</view>
             <view class="card-price-row">
               <text class="card-price">¥{{item.price}}</text>
@@ -107,6 +109,7 @@
             lazy-load
           />
           <view class="card-body">
+            <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
             <view class="card-title ellipsis-2">{{item.title}}</view>
             <view class="card-desc ellipsis-2" wx:if="{{item.content}}">{{item.content}}</view>
             <view class="card-tags" wx:if="{{item.tags.length > 0}}">
@@ -132,6 +135,7 @@
             lazy-load
           />
           <view class="card-body">
+            <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
             <view class="card-title ellipsis-2">{{item.title}}</view>
             <view class="card-price-row">
               <text class="card-price">¥{{item.price}}</text>

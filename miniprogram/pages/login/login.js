@@ -10,6 +10,7 @@ Page({
     major: '',
     grade: '',
     loading: false,
+    agreed: false,
     selectedTags: [],
     gradeOptions: ['2020级', '2021级', '2022级', '2023级', '2024级', '2025级', '研究生'],
     tagOptions: ['学习', '考研', '摄影', '篮球', '音乐', '美食', '旅行', '游戏', '阅读', '运动', '追剧', '兼职']
@@ -53,7 +54,15 @@ Page({
     this.setData({ selectedTags: tags })
   },
 
+  toggleAgree() {
+    this.setData({ agreed: !this.data.agreed })
+  },
+
   async onLogin() {
+    if (!this.data.agreed) {
+      wx.showToast({ title: '请先同意用户协议', icon: 'none' })
+      return
+    }
     if (this.data.loading) return
     
     if (!this.data.nickname.trim()) {

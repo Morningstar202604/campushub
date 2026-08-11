@@ -1,4 +1,5 @@
 // pages/guide/guide.js
+const app = getApp()
 const { callFunction } = require('../../utils/request.js')
 
 Page({

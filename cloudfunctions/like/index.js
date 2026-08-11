@@ -30,6 +30,17 @@ exports.main = wrap(async (event) => {
 
     await db.collection('likes').add({ data: { userId: user._id, targetId, type, createdAt: new Date() } })
     await db.collection(cfg.col).doc(targetId).update({ data: { [cfg.countField]: _.inc(1) } })
+
+    // 站内通知：通知作者被点赞（不通知自己）
+    try {
+      const target = await db.collection(cfg.col).doc(targetId).field({ userId: true, title: true }).get()
+      if (target.data && target.data.userId !== user._id) {
+        await db.collection('notifications').add({
+          data: { userId: target.data.userId, type: 'like', content: `${user.nickname} 赞了你的内容`, targetId, isRead: false, createdAt: new Date() }
+        })
+      }
+    } catch (e) {}
+
     return ok({ liked: true })
   } else {
     // 仅当确实存在记录时才删除 + 扣减，防止计数漂移至负数

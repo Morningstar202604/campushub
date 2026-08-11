@@ -4,7 +4,7 @@ const { getDB, ok, wrap } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const db = getDB()
-  const { schoolId, categoryId } = event
+  const { schoolId, categoryId, page = 1, pageSize = 50 } = event
 
   // schoolId 可选 — 不传则返回全部指南（全国模式）
   const catWhere = {}
@@ -17,11 +17,15 @@ exports.main = wrap(async (event) => {
   if (schoolId) where.schoolId = schoolId
   if (categoryId && categoryId !== 'all') where.categoryId = categoryId
 
+  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
+  const size = Math.min(100, Math.max(1, Number(pageSize)))
+
   const guideRes = await db.collection('guides')
     .where(where)
     .orderBy('sort', 'asc').orderBy('createdAt', 'desc')
     .field({ title: true, summary: true, coverImage: true, categoryId: true, category: true, tags: true, viewCount: true, _id: true })
+    .skip(skip).limit(size)
     .get()
 
-  return ok({ categories, guides: guideRes.data })
+  return ok({ categories, guides: guideRes.data, hasMore: guideRes.data.length === size })
 })

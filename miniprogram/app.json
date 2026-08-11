@@ -17,7 +17,8 @@
     "pages/agreement/agreement",
     "pages/expired/expired",
     "pages/category-admin/category-admin",
-    "pages/user-profile/user-profile"
+    "pages/user-profile/user-profile",
+    "pages/notifications/notifications"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFFFF",
@@ -48,10 +49,5 @@
     ]
   },
   "cloud": true,
-  "sitemapLocation": "sitemap.json",
-  "permission": {
-    "scope.userLocation": {
-      "desc": "用于显示交易地点"
-    }
-  }
+  "sitemapLocation": "sitemap.json"
 }

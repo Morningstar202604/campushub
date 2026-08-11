@@ -36,18 +36,20 @@ exports.main = wrap(async (event) => {
     db.collection('guides').where({ ...guideWhere, title: reg }).orderBy('createdAt', 'desc').limit(size).get()
   ])
 
-  // 补充内容搜索（title 未命中的，再查 content/description/summary）
+  // 补充内容搜索（title 未命中的，再查 content/description/summary），去重
   if (postsRes.data.length < size) {
     const more = await db.collection('posts')
       .where({ ...postWhere, content: titleOrContent })
       .orderBy('createdAt', 'desc').skip(skip).limit(size - postsRes.data.length).get()
-    postsRes.data = postsRes.data.concat(more.data || [])
+    const seen = new Set(postsRes.data.map(p => p._id))
+    postsRes.data = postsRes.data.concat((more.data || []).filter(p => !seen.has(p._id)))
   }
   if (productsRes.data.length < size) {
     const more = await db.collection('products')
       .where({ ...productWhere, description: titleOrContent })
       .orderBy('createdAt', 'desc').skip(skip).limit(size - productsRes.data.length).get()
-    productsRes.data = productsRes.data.concat(more.data || [])
+    const seen = new Set(productsRes.data.map(p => p._id))
+    productsRes.data = productsRes.data.concat((more.data || []).filter(p => !seen.has(p._id)))
   }
 
   return ok({ posts: postsRes.data, products: productsRes.data, guides: guidesRes.data })

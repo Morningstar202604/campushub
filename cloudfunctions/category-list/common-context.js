@@ -19,7 +19,12 @@ async function getCurrentUser() {
   const db = getDB()
   const res = await db.collection('users')
     .where({ openid })
-    .field({ openid: true, verifyStatus: true, nickname: true, avatar: true, schoolId: true, _id: true })
+    .field({ openid: true, verifyStatus: true, nickname: true, avatar: true,
+             schoolId: true, school: true, _id: true,
+             college: true, major: true, grade: true, bio: true, tags: true, gender: true,
+             creditScore: true, checkinStreak: true, lastCheckinDate: true,
+             postCount: true, productCount: true, collectCount: true,
+             followerCount: true, followingCount: true })
     .get()
   if (!res.data || res.data.length === 0) {
     throw new AppError('用户不存在，请重新登录', 'USER_NOT_FOUND')

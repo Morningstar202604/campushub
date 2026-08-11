@@ -62,12 +62,15 @@
   </view>
 
   <view class="login-footer">
-    <t-button theme="primary" size="large" block bindtap="onLogin" loading="{{loading}}">
+    <t-button theme="primary" size="large" block bindtap="onLogin" loading="{{loading}}" disabled="{{!agreed}}">
       进入校园通
     </t-button>
     <view class="agreement">
-      登录即表示同意
-      <text class="agreement-link" bindtap="goAgreement">《用户协议与隐私政策》</text>
+      <view class="agree-checkbox {{agreed ? 'checked' : ''}}" bindtap="toggleAgree">
+        <text wx:if="{{agreed}}">✓</text>
+      </view>
+      <text>我已阅读并同意</text>
+      <text class="agreement-link" catchtap="goAgreement">《用户协议与隐私政策》</text>
     </view>
   </view>
 </view>

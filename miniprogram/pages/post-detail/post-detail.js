@@ -132,7 +132,7 @@ Page({
       if (res.success) {
         this.setData({
           isLiked: res.liked,
-          'post.likeCount': this.data.post.likeCount + (res.liked ? 1 : -1)
+          'post.likeCount': (this.data.post.likeCount || 0) + (res.liked ? 1 : -1)
         })
       }
     } catch (err) {
@@ -151,7 +151,7 @@ Page({
       if (res.success) {
         this.setData({
           isCollected: res.collected,
-          'post.collectCount': this.data.post.collectCount + (res.collected ? 1 : -1)
+          'post.collectCount': (this.data.post.collectCount || 0) + (res.collected ? 1 : -1)
         })
         wx.showToast({ title: res.collected ? '已收藏' : '已取消', icon: 'none' })
       }
@@ -223,9 +223,11 @@ Page({
   },
 
   onShareAppMessage() {
+    const post = this.data.post
+    if (!post) return { title: 'CampusHub', path: '/pages/index/index' }
     return {
-      title: this.data.post.title,
-      path: `/pages/post-detail/post-detail?id=${this.data.post._id}`
+      title: post.title,
+      path: `/pages/post-detail/post-detail?id=${post._id}`
     }
   },
 

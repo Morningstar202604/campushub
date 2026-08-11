@@ -166,6 +166,16 @@
   padding: 20rpx 24rpx 24rpx;
 }
 
+.card-pin-badge {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 20rpx;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8rpx;
+}
+
 .card-title {
   font-size: var(--font-size-base);
   font-weight: 600;
