@@ -104,6 +104,7 @@ campushub/
 │   ├── sync-common.js       # 将 common/ 同步进每个云函数目录
 │   └── sync-mirrors.sh      # 三端（GitCode/Gitee/GitHub）同步脚本（受限网下用 /etc/hosts 指回真实 IP）
 ├── docs/
+│   ├── DEPLOY.md             # ★ 部署上线指南（10 步，必读）
 │   ├── INDEXES.md           # ★ 数据库索引必建清单 + 控制台步骤（权威，引用 common-indexes.js）
 │   └── SYNC.md              # 三端同步说明
 ├── project.config.json      # 项目配置（请填真实 appid）
@@ -135,6 +136,8 @@ npm run sync:common
 这样仓库里「一份源码」即为唯一事实来源，避免重复实现导致的不一致。当前仓库共 **27 个**可部署云函数，全部携带内核层副本。
 
 ## 快速开始
+
+> **完整部署指南见 [`docs/DEPLOY.md`](docs/DEPLOY.md)** — 从填 AppID 到上线共 10 步，不要跳步。
 
 ### 1. 安装依赖并同步内核层
 
