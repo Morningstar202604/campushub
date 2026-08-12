@@ -23,6 +23,7 @@ to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs 
    > ban / rate-limit / response-format / content-deletion / index definitions. The sync
    > script copies it into every cloud function directory. **Never edit the `common-*.js`
    > copies inside individual function folders directly** — edit `cloudfunctions/common/` and re-run `npm run sync:common`.
+   > There are currently **34 cloud functions**, all carrying synced copies of the 8 common modules.
 4. Open the project in **WeChat DevTools** (fill in your own `appid` and cloud `env`).
 5. Create a feature branch: `git checkout -b my-feature`.
 6. Make your changes.

@@ -1,9 +1,9 @@
 {
   "name": "campushub",
-  "version": "0.5.0",
-  "description": "CampusHub — 全国性校园/兴趣内容社区（微信小程序 + 云开发），一个新时代的开源贴吧",
+  "version": "0.6.0",
+  "description": "CampusHub — An open-source campus & interest community for WeChat Mini Program + CloudBase",
   "license": "Apache-2.0",
-  "author": "badhope",
+  "author": "weed33834",
   "repository": {
     "type": "git",
     "url": "https://gitcode.com/badhope/campushub.git"
@@ -13,14 +13,17 @@
     "url": "https://github.com/weed33834/campushub/issues"
   },
   "keywords": [
-    "miniprogram",
-    "wechat",
+    "wechat-miniprogram",
+    "wechat-cloud",
     "cloudbase",
     "wxcloud",
+    "forum",
+    "community",
+    "campus",
     "tieba",
     "bbs",
-    "campus",
-    "community"
+    "secondhand",
+    "open-source"
   ],
   "scripts": {
     "sync:common": "node scripts/sync-common.js",

@@ -1,29 +1,29 @@
-<!-- 提交前请先阅读 CONTRIBUTING.md -->
+<!-- Please read CONTRIBUTING.md before submitting -->
 
-## 这个 PR 做了什么？
+## What does this PR do?
 
-<!-- 简述改动；若是修复，说明修复了什么问题 -->
+<!-- Brief description of changes. If fixing a bug, explain what was broken. -->
 
-## 关联 Issue
+## Related Issue
 
-<!-- 例如：Closes #123 -->
+<!-- e.g., Closes #123 -->
 
-## 改动类型
+## Change Type
 
-- [ ] Bug 修复 (fix)
-- [ ] 新功能 (feat)
-- [ ] 文档 (docs)
-- [ ] 重构 (refactor)
-- [ ] 其他（请说明）
+- [ ] Bug fix (fix)
+- [ ] New feature (feat)
+- [ ] Documentation (docs)
+- [ ] Refactor (refactor)
+- [ ] Other (please describe)
 
-## 检查清单
+## Checklist
 
-- [ ] 已运行 `npm run sync:common`（若改动涉及 `cloudfunctions/common/`）
-- [ ] 新增云函数均含 `package.json`
-- [ ] 新增索引已在 `cloudfunctions/common/common-indexes.js` 登记并在 `docs/INDEXES.md` 说明
-- [ ] 未在 `cloudfunctions/*/` 内直接修改 `common-*.js` 副本
-- [ ] 无密钥 / token 提交进仓库
+- [ ] Ran `npm run sync:common` (if changes touch `cloudfunctions/common/`)
+- [ ] New cloud functions include a `package.json`
+- [ ] New indexes are registered in `cloudfunctions/common/common-indexes.js` and documented in `docs/INDEXES.md`
+- [ ] Did NOT edit `common-*.js` copies inside `cloudfunctions/*/` directly
+- [ ] No secrets / tokens committed
 
-## 测试方式
+## How to Test
 
-<!-- 在微信开发者工具中如何验证本改动 -->
+<!-- How to verify this change in WeChat DevTools -->

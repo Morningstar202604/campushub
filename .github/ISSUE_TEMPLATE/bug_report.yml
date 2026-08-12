@@ -1,46 +1,46 @@
 name: Bug report
-description: 报告一个缺陷
+description: Report a bug
 title: "[bug] "
 labels: ["bug"]
 body:
   - type: textarea
     id: what
     attributes:
-      label: 问题描述
-      description: 简明描述你遇到的现象。
-      placeholder: 例如：发帖时选择三级分类后提交报错……
+      label: Describe the bug
+      description: A clear description of what happened.
+      placeholder: e.g., When I select a 3-level category and submit a post, I get an error...
     validations:
       required: true
   - type: textarea
     id: reproduce
     attributes:
-      label: 复现步骤
-      description: 一步步告诉我怎么复现。
+      label: Steps to reproduce
+      description: Tell us how to reproduce it step by step.
       placeholder: |
-        1. 打开首页
-        2. 点击发帖
-        3. 选择「兴趣区 > 摄影吧」
-        4. 观察报错
+        1. Open the homepage
+        2. Tap the publish button
+        3. Select "Hobbies > Photography"
+        4. Observe the error
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: 期望行为
-      description: 你认为应该发生什么？
+      label: Expected behavior
+      description: What did you expect to happen?
     validations:
       required: false
   - type: textarea
     id: env
     attributes:
-      label: 环境与版本
-      description: 微信开发者工具版本、基础库版本、CampusHub 版本（见 CHANGELOG/package.json）、云环境等。
+      label: Environment
+      description: WeChat DevTools version, base library version, CampusHub version (see CHANGELOG / package.json), cloud env, etc.
     validations:
       required: false
   - type: textarea
     id: logs
     attributes:
-      label: 日志 / 截图
-      description: 云函数日志、控制台报错、相关截图（请勿包含密钥 / openid 等敏感信息）。
+      label: Logs / Screenshots
+      description: Cloud function logs, console errors, relevant screenshots. Do NOT include secrets or openids.
     validations:
       required: false
