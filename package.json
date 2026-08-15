@@ -17,13 +17,8 @@
     "wechat-miniprogram",
     "wechat-cloud",
     "cloudbase",
-    "wxcloud",
-    "forum",
     "community",
     "campus",
-    "tieba",
-    "bbs",
-    "secondhand",
     "open-source"
   ],
   "scripts": {
