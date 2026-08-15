@@ -1,6 +1,7 @@
 {
   "name": "like",
   "version": "1.0.0",
+  "description": "点赞/取消（帖子+商品+评论）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

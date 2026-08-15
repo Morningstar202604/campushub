@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # CampusHub 三方仓库镜像同步脚本
-# 把 GitCode / GitHub / Gitee 三个平台的 campushub 仓库对齐到同一份代码。
+# 把 GitCode / GitHub / Gitee 三个平台的 CampusHub 仓库对齐到同一份代码。
 #
 # 用法:
 #   ./scripts/sync-mirrors.sh                 # 以 GitCode(origin) 为准，镜像到 GitHub + Gitee

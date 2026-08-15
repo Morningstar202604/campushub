@@ -59,7 +59,7 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 ## Directory Structure
 
 ```
-campushub/
+CampusHub/
 ├── miniprogram/              # Mini Program frontend
 │   ├── app.js               # Entry (CloudBase init)
 │   ├── app.json             # Global config

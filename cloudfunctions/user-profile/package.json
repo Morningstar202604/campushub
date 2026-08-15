@@ -1,6 +1,7 @@
 {
   "name": "user-profile",
   "version": "1.0.0",
+  "description": "查看其他用户主页",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

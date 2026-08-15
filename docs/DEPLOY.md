@@ -37,7 +37,7 @@
 
 微信开发者工具 → 导入项目（选择 campushub 目录）→ 顶部菜单「云开发」按钮 → 开通 → 创建环境
 
-- **环境名称**：随意，如 `campushub`
+- **环境名称**：随意，如 `CampusHub`
 - **环境 ID**：创建后复制，形如 `campushub-0g1234567890`
 
 ### 2.2 填入云环境 ID
@@ -59,7 +59,7 @@ wx.cloud.init({
 
 ### 3.1 安装 npm 依赖
 
-在项目根目录（campushub/）执行：
+在项目根目录（CampusHub/）执行：
 
 ```bash
 npm install
@@ -356,7 +356,7 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 ## 附录：项目架构速览
 
 ```
-campushub/
+CampusHub/
 ├── miniprogram/           # 小程序前端（21 个页面）
 ├── cloudfunctions/        # 云函数（34 个）
 │   └── common/            # 共享内核层（单一事实来源）

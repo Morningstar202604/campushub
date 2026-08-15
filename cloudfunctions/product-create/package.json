@@ -1,6 +1,7 @@
 {
   "name": "product-create",
   "version": "1.0.0",
+  "description": "创建商品（价格校验+安全检查）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

@@ -1,6 +1,7 @@
 {
   "name": "guide-detail",
   "version": "1.0.0",
+  "description": "指南详情（状态过滤）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

@@ -1,6 +1,7 @@
 {
   "name": "post-create",
   "version": "1.0.0",
+  "description": "创建帖子（叶子节点校验+任务过期）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

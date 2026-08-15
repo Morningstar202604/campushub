@@ -1,6 +1,7 @@
 {
   "name": "follow",
   "version": "1.0.0",
+  "description": "关注/取关+列表+状态检查",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

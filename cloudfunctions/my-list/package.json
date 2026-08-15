@@ -1,6 +1,7 @@
 {
   "name": "my-list",
   "version": "1.0.0",
+  "description": "用户自己的帖子/商品/收藏列表",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

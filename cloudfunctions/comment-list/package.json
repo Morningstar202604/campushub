@@ -1,6 +1,7 @@
 {
   "name": "comment-list",
   "version": "1.0.0",
+  "description": "评论列表（楼层+子回复）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

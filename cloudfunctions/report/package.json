@@ -1,6 +1,7 @@
 {
   "name": "report",
   "version": "1.0.0",
+  "description": "举报内容（去重+类型白名单）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

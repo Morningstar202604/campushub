@@ -1,6 +1,7 @@
 {
   "name": "checkin",
   "version": "1.0.0",
+  "description": "每日签到（连续签到+积分+周bonus）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

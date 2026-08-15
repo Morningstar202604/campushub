@@ -1,6 +1,7 @@
 {
   "name": "search",
   "version": "1.0.0",
+  "description": "跨集合搜索（标题+内容+关键词高亮）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

@@ -1,6 +1,7 @@
 {
   "name": "product-update",
   "version": "1.0.0",
+  "description": "编辑商品+标记已售/重新上架",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }

@@ -1,6 +1,7 @@
 {
   "name": "notification",
   "version": "1.0.0",
+  "description": "站内通知（列表/已读/未读数）",
   "main": "index.js",
   "dependencies": { "wx-server-sdk": "~2.6.3" }
 }
