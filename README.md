@@ -51,7 +51,7 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 | Metric | Count |
 |--------|-------|
 | Cloud Functions | 34 |
-| Mini Program Pages | 21 |
+| Mini Program Pages | 19 |
 | Database Collections | 14 |
 | Defined Indexes | 32 |
 | Cloud Function Common Modules | 8 (synced to all 34 functions) |
@@ -64,7 +64,7 @@ CampusHub/
 │   ├── app.js               # Entry (CloudBase init)
 │   ├── app.json             # Global config
 │   ├── app.wxss             # Global styles + Design Tokens
-│   ├── pages/               # 21 pages
+│   ├── pages/               # 19 pages
 │   ├── components/          # Shared components (category-picker)
 │   └── utils/               # Utilities (request, auth)
 ├── cloudfunctions/           # 34 cloud functions

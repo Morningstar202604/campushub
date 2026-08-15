@@ -357,7 +357,7 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 
 ```
 CampusHub/
-├── miniprogram/           # 小程序前端（21 个页面）
+├── miniprogram/           # 小程序前端（19 个页面）
 ├── cloudfunctions/        # 云函数（34 个）
 │   └── common/            # 共享内核层（单一事实来源）
 ├── scripts/

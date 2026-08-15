@@ -1,7 +1,7 @@
 {
   "name": "admin",
   "version": "1.0.0",
-  "description": "CampusHub cloud function",
+  "description": "管理员中枢（封禁/解封/举报审核/置顶/加精/用户/反馈）",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"
