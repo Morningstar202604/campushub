@@ -1,11 +1,17 @@
 # CampusHub
 
-> 全国性校园 / 兴趣内容社区（微信小程序 + 云开发）—— 一个新时代的开源贴吧。
-
-[English](../README.md) | [中文](#概述)
+> **全国性校园 / 兴趣内容社区（微信小程序 + 云开发）—— 一个新时代的开源贴吧。**
+> 多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台，开箱即用、零成本。
+>
+> 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](https://weed33834.github.io/campushub/)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
 [![Version](https://img.shields.io/badge/version-0.6.0-green.svg)](../CHANGELOG.md)
+[![Stars](https://img.shields.io/github/stars/weed33834/campushub?style=social)](https://github.com/weed33834/campushub)
+
+> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/weed33834/campushub/issues) 与 [PR](https://github.com/weed33834/campushub/pulls)。
+>
+> **搜索关键词**：微信小程序开源 / 校园社区开源 / 开源贴吧 / 校园论坛 / 二手交易小程序 / 云开发开源 / 微信小程序论坛 / 兴趣社区 / Tieba-style / WeChat Mini Program forum / open-source community.
 
 ---
 

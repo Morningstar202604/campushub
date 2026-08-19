@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="CampusHub — 基于「微信小程序 + 云开发」的开源校园/兴趣内容社区，开源贴吧：多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台。" />
+<meta name="keywords" content="微信小程序开源,校园社区开源,开源贴吧,二手交易,云开发,云函数,校园论坛,miniprogram,cloudbase,forum" />
+<title>CampusHub · 微信小程序开源校园社区 / 开源贴吧</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#9da7b3;--accent:#2f81f7;--green:#3fb950}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:880px;margin:0 auto;padding:0 20px}
+  header{padding:64px 0 24px;text-align:center}
+  .logo{font-size:40px;font-weight:800;letter-spacing:-1px}
+  .logo .dot{color:var(--green)}
+  .tag{color:var(--muted);font-size:18px;margin:12px 0 24px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:28px}
+  .badges img{height:20px}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:10px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--fg)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn:hover{opacity:.9}
+  .platforms{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0 60px;font-size:14px;color:var(--muted)}
+  .platforms span{padding:4px 10px;border:1px solid var(--border);border-radius:999px}
+  section{padding:18px 0}
+  h2{font-size:22px;margin:32px 0 14px;border-left:4px solid var(--accent);padding-left:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .feat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .feat b{color:var(--green)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;text-align:center;margin:14px 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .stat .n{font-size:28px;font-weight:800;color:var(--accent)}
+  .stat .l{color:var(--muted);font-size:13px}
+  .stack{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{padding:4px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted)}
+  footer{margin-top:40px;padding:24px 0;border-top:1px solid var(--border);color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">CampusHub<span class="dot">.</span></div>
+      <div class="tag">微信小程序 + 云开发 · 开源校园/兴趣社区，一个新时代的开源贴吧</div>
+      <div class="badges">
+        <img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" />
+        <img alt="version" src="https://img.shields.io/badge/version-0.6.0-green.svg" />
+        <img alt="cloud" src="https://img.shields.io/badge/WeChat-CloudBase-orange.svg" />
+        <img alt="PRs" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" />
+        <img alt="stars" src="https://img.shields.io/github/stars/weed33834/campushub?style=social" />
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/weed33834/campushub">★ Star on GitHub</a>
+        <a class="btn" href="https://github.com/weed33834/campushub#quick-start">快速开始</a>
+        <a class="btn" href="https://gitcode.com/badhope/campushub">GitCode 源仓库</a>
+      </div>
+      <div class="platforms">
+        <span>GitHub · github.com/weed33834/campushub</span>
+        <span>GitCode · gitcode.com/badhope/campushub</span>
+        <span>Gitee · gitee.com/badhope/campushub</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>这是什么</h2>
+      <p>CampusHub 是一个基于「微信小程序 + 微信云开发」的内容社区，开源即开源贴吧：用户可在多级分类目录下发帖、提问、二手交易、找同好。内容默认全国可见，分类树由管理后台维护——加学校、开新吧无需改代码。</p>
+    </section>
+
+    <section>
+      <h2>核心功能</h2>
+      <div class="grid">
+        <div class="feat"><b>多级分类</b><br>分区→吧→板块三级，后台可视化管理</div>
+        <div class="feat"><b>信息流首页</b><br>瀑布流 + 推荐/最新/二手 Tab</div>
+        <div class="feat"><b>贴吧式发帖</b><br>图文、标签、匿名、草稿、图片预览</div>
+        <div class="feat"><b>二手交易</b><br>价格/成色/联系方式/标记已售</div>
+        <div class="feat"><b>楼中楼评论</b><br>嵌套回复、评论点赞、@用户</div>
+        <div class="feat"><b>关注 + 主页</b><br>关注/粉丝、用户公开主页</div>
+        <div class="feat"><b>每日签到</b><br>连续签到 + 积分（7 天加成）</div>
+        <div class="feat"><b>站内通知</b><br>点赞/评论/关注自动通知</div>
+        <div class="feat"><b>内容安全</b><br>fail-closed，审核失败即拒绝</div>
+        <div class="feat"><b>管理后台</b><br>举报/封禁/置顶/加精/分类 CRUD</div>
+        <div class="feat"><b>任务过期</b><br>3/7/15/30 天 TTL 自动归档</div>
+        <div class="feat"><b>全站搜索</b><br>标题+内容、关键词高亮</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>项目规模</h2>
+      <div class="stats">
+        <div class="stat"><div class="n">34</div><div class="l">云函数</div></div>
+        <div class="stat"><div class="n">19</div><div class="l">前端页面</div></div>
+        <div class="stat"><div class="n">14</div><div class="l">数据集合</div></div>
+        <div class="stat"><div class="n">32</div><div class="l">数据库索引</div></div>
+        <div class="stat"><div class="n">8</div><div class="l">共享内核模块</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>技术栈</h2>
+      <div class="stack">
+        <span class="chip">原生微信小程序</span>
+        <span class="chip">TDesign 组件库</span>
+        <span class="chip">微信云开发 (云函数 + 云数据库 + 云存储)</span>
+        <span class="chip">Node.js</span>
+        <span class="chip">Serverless</span>
+        <span class="chip">共享内核层架构</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>为什么值得 Star</h2>
+      <div class="grid">
+        <div class="feat">开箱即用：填 AppID 即可部署上线</div>
+        <div class="feat">零成本：云开发免费额度足够 ~1000 DAU</div>
+        <div class="feat">安全 fail-closed：所有 UGC 经内容安全审核</div>
+        <div class="feat">单一事实来源：共享内核零漂移</div>
+        <div class="feat">Apache-2.0 商用友好</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>开始使用</h2>
+      <p>10 步从 AppID 到上线，详见 <a href="https://github.com/weed33834/campushub/blob/main/docs/DEPLOY.md">部署指南</a>。</p>
+    </section>
+
+    <footer>
+      © 2026 weed33834 · Apache License 2.0 ·
+      <a href="https://github.com/weed33834/campushub">GitHub</a> ·
+      <a href="https://gitcode.com/badhope/campushub">GitCode</a> ·
+      <a href="https://gitee.com/badhope/campushub">Gitee</a>
+    </footer>
+  </div>
+</body>
+</html>
