@@ -33,9 +33,9 @@ jobs:
       - name: Push to GitCode
         run: |
           git remote add gitcode "https://oauth2:${{ secrets.GITCODE_TOKEN }}@gitcode.com/badhope/campushub.git"
-          git push gitcode "$(git branch --show-current)" --force-with-lease
+          git push gitcode "$(git branch --show-current)" --force
 
       - name: Push to Gitee
         run: |
           git remote add gitee "https://${{ secrets.GITEE_USER }}:${{ secrets.GITEE_TOKEN }}@gitee.com/badhope/campushub.git"
-          git push gitee "$(git branch --show-current)" --force-with-lease
+          git push gitee "$(git branch --show-current)" --force
