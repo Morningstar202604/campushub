@@ -19,8 +19,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 20
+          cache: npm
       - name: Install root dependencies
-        run: npm install
+        run: npm ci
       - name: Validate cloudfunctions
         run: |
           for dir in cloudfunctions/*/; do
