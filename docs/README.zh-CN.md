@@ -11,7 +11,7 @@
 
 > 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/Morningstar202604/campushub/issues) 与 [PR](https://github.com/Morningstar202604/campushub/pulls)。
 >
-> **搜索关键词**：微信小程序开源 / 校园社区开源 / 开源贴吧 / 校园论坛 / 二手交易小程序 / 云开发开源 / 微信小程序论坛 / 兴趣社区 / Tieba-style / WeChat Mini Program forum / open-source community.
+> **搜索关键词**：微信小程序开源 / 校园社区开源 / 开源贴吧 / 校园论坛 / 二手交易小程序 / 云开发开源 / 微信小程序论坛 / 兴趣社区 / 校园二手 / 学生社区
 
 ---
 

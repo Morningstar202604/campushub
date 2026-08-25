@@ -31,16 +31,16 @@ CampusHub is designed with the following security principles:
 - **Input validation**: All cloud functions validate and whitelist input parameters (types, status, lengths) to prevent injection and abuse.
 - **Rate limiting**: Write operations (posts, comments, likes, follows, reports) are rate-limited via DB-backed counters.
 
-## UGC Compliance & Incident Response（平台义务与应急处置）
+## UGC Compliance & Incident Response
 
 CampusHub is a UGC (user-generated content) platform. Operators of every deployment
 carry the following obligations, independent of the technical safeguards above:
 
 ### Operator obligations
 
-1. **Subject qualification**: The「社交 > 社区/论坛」category requires a non-individual
+1. **Subject qualification**: The "Social > Community/Forum" WeChat category requires a non-individual
    entity (organization / enterprise / individual business). Deployers must register the
-   mini program under a qualifying subject and complete ICP filing (小程序备案).
+   mini program under a qualifying subject and complete ICP filing.
 2. **Real-name traceability**: End users are identified by `openid` and (optionally)
    campus verification. Operators must be able to map an `openid` to a real identity
    when legally required — keep registration logs; do not run fully anonymous deployments.

@@ -1,9 +1,9 @@
 # CampusHub
 
-> **基于「微信小程序 + 云开发」的开源校园 / 兴趣内容社区 —— 一个新时代的开源贴吧。**
-> 多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台，开箱即用、零成本。
+> **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
+> Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
 >
-> 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) ｜ 🌐 [官网 Landing Page](https://Morningstar202604.github.io/campushub/)
+> 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](https://Morningstar202604.github.io/campushub/)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-0.7.0-green.svg)](./CHANGELOG.md)
@@ -11,15 +11,15 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 [![Stars](https://img.shields.io/github/stars/Morningstar202604/campushub?style=social)](https://github.com/Morningstar202604/campushub)
 
-> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/Morningstar202604/campushub/issues) 与 [PR](https://github.com/Morningstar202604/campushub/pulls)。
+> If this project helps you, please give it a ★ **Star** so more people can find it. Issues and [PRs](https://github.com/Morningstar202604/campushub/pulls) are welcome.
 >
-> **搜索关键词**：微信小程序开源 / 校园社区开源 / 开源贴吧 / 校园论坛 / 二手交易小程序 / 云开发开源 / 微信小程序论坛 / 兴趣社区 / Tieba-style / WeChat Mini Program forum / open-source community.
+> **Search keywords**: wechat miniprogram open source / campus community / open-source forum / second-hand market mini program / cloudbase / tieba-style / student marketplace / WeChat Mini Program forum.
 
 ---
 
 ## Overview
 
-CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBase**. Think of it as a modern, open-source Tieba (贴吧): users can post, ask questions, trade, and connect with like-minded people under a **multi-level category tree**.
+CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBase**. Think of it as a modern, open-source forum: users can post, ask questions, trade, and connect with like-minded people under a **multi-level category tree**.
 
 - Content is **nationwide by default** — not locked to a single campus.
 - The category tree (Zone → Forum → Board, 3 levels) is **managed via admin UI** — no code changes or redeployment needed to add a school or open a new forum.
@@ -34,7 +34,7 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 | **Rich Posts** | Image + text posts, categories, tags, anonymous posting, drafts, image preview |
 | **Task & Expiry** | Task posts with 3/7/15/30-day TTL; hourly cron scan auto-archives expired tasks; author/admin can mark "resolved" |
 | **Second-hand Market** | Product listings with price, condition, trade type, contact info; mark as sold; edit listings |
-| **Nested Comments** | Threaded replies (楼中楼), comment likes, reply-to-user |
+| **Nested Comments** | Threaded replies (floors + sub-replies), comment likes, reply-to-user |
 | **Follow System** | Follow/unfollow users, follower/following counts, user profile pages |
 | **Daily Check-in** | Consecutive check-in streak + credit points with weekly bonus |
 | **In-app Notifications** | Auto-generated notifications for likes, comments, and follows |
@@ -195,7 +195,7 @@ npm install
 - [x] Image content safety (`imgSecCheck`)
 - [x] Multi-level categories + admin CRUD
 - [x] Task expiry & resolved marking
-- [x] Nested comments (楼中楼) + comment likes
+- [x] Nested comments (threaded replies) + comment likes
 - [x] Follow system + user profiles
 - [x] Daily check-in + credit points
 - [x] In-app notifications
