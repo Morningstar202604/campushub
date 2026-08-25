@@ -6,11 +6,12 @@
     <view class="author-bar">
       <view class="author-avatar" bindtap="goUserProfile">
         <image wx:if="{{post.userAvatar}}" src="{{post.userAvatar}}" class="avatar-img" />
-        <view wx:else class="avatar-placeholder">{{post.userNickname[0] || '匿'}}</view>
+        <view wx:else class="avatar-placeholder">{{post.userNicknameFirst || '匿'}}</view>
       </view>
       <view class="author-info" bindtap="goUserProfile">
         <view class="author-name">
           {{post.userNickname}}
+      <text class="author-v" wx:if="{{post.authorVerified}}">🎖️ 已认证</text>
           <text class="anon-badge" wx:if="{{post.isAnonymous}}">匿名</text>
         </view>
         <view class="author-meta">{{formatCreateTime}}</view>
@@ -20,6 +21,7 @@
         {{isFollowing ? '已关注' : '+ 关注'}}
       </view>
       <view class="category-badge">{{categoryText}}</view>
+      <view class="status-badge task" wx:if="{{post.location}}">📍{{post.location}}</view>
       <view class="status-badges">
         <text class="status-badge task" wx:if="{{isTask}}">📌 任务</text>
         <text class="status-badge resolved" wx:if="{{isResolved}}">✅ 已解决</text>
@@ -84,7 +86,7 @@
       </view>
       <view class="action-item resolve" wx:if="{{canResolve}}" bindtap="onResolve">
         <text class="action-icon">✅</text>
-        <text class="action-text">解决</text>
+        <text class="action-text">{{isTask ? '解决' : '完成'}}</text>
       </view>
       <view class="action-item" wx:if="{{!canDelete}}" bindtap="onReport">
         <text class="action-icon">🚩</text>
@@ -104,7 +106,7 @@
       <view class="comment-item" wx:for="{{comments}}" wx:key="_id">
         <view class="comment-avatar">
           <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="avatar-img" />
-          <view wx:else class="avatar-placeholder">{{item.userNickname[0] || '匿'}}</view>
+          <view wx:else class="avatar-placeholder">{{item.userNicknameFirst || '匿'}}</view>
         </view>
         <view class="comment-body">
           <view class="comment-name">{{item.userNickname}}</view>
@@ -112,14 +114,14 @@
           <view class="comment-meta">
             <text class="comment-time">{{item.timeText}}</text>
             <text class="comment-action" data-userid="{{item.userId}}" data-nickname="{{item.userNickname}}" data-commentid="{{item._id}}" bindtap="onReply">回复</text>
-            <text class="comment-action {{item._liked ? 'liked' : ''}}" data-id="{{item._id}}" data-liked="{{item._liked}}" catchtap="onCommentLike">
-              {{item._liked ? '❤️' : '🤍'}} {{item.likeCount || 0}}
+            <text class="comment-action {{item.liked ? 'liked' : ''}}" data-id="{{item._id}}" data-liked="{{item.liked}}" catchtap="onCommentLike">
+              {{item.liked ? '❤️' : '🤍'}} {{item.likeCount || 0}}
             </text>
             <text class="comment-delete" wx:if="{{item.userId === currentUserId}}" data-id="{{item._id}}" bindtap="onDeleteComment">删除</text>
           </view>
 
-          <!-- 楼中楼子回复 -->
-          <view class="sub-replies" wx:if="{{item.replies.length > 0}}">
+          <!-- 楼中楼子回复：≤2 条直接展示；更多时默认折叠、可展开 -->
+          <view class="sub-replies" wx:if="{{item.replies.length > 0 && (item.replies.length <= 2 || expandedReplies[item._id])}}">
             <view class="reply-item" wx:for="{{item.replies}}" wx:for-item="reply" wx:key="_id">
               <text class="reply-name">{{reply.userNickname}}</text>
               <text class="reply-arrow" wx:if="{{reply.replyToNickname}}"> 回复 @{{reply.replyToNickname}}</text>
@@ -128,16 +130,16 @@
               <view class="reply-meta">
                 <text class="reply-time">{{reply.timeText}}</text>
                 <text class="comment-action" data-userid="{{reply.userId}}" data-nickname="{{reply.userNickname}}" data-commentid="{{item._id}}" catchtap="onReply">回复</text>
-                <text class="comment-action {{reply._liked ? 'liked' : ''}}" data-id="{{reply._id}}" data-liked="{{reply._liked}}" catchtap="onCommentLike">
-                  {{reply._liked ? '❤️' : '🤍'}} {{reply.likeCount || 0}}
+                <text class="comment-action {{reply.liked ? 'liked' : ''}}" data-id="{{reply._id}}" data-liked="{{reply.liked}}" catchtap="onCommentLike">
+                  {{reply.liked ? '❤️' : '🤍'}} {{reply.likeCount || 0}}
                 </text>
                 <text class="comment-delete" wx:if="{{reply.userId === currentUserId}}" data-id="{{reply._id}}" catchtap="onDeleteComment">删除</text>
               </view>
             </view>
           </view>
 
-          <!-- 展开/折叠子回复 -->
-          <view class="toggle-replies" wx:if="{{item.replies.length > 0}}" data-id="{{item._id}}" bindtap="toggleReplies">
+          <!-- 展开/折叠子回复（仅多于 2 条时显示，点击真实生效） -->
+          <view class="toggle-replies" wx:if="{{item.replies.length > 2}}" data-id="{{item._id}}" bindtap="toggleReplies">
             {{expandedReplies[item._id] ? '收起' : '展开'}} {{item.replies.length}}条回复
           </view>
         </view>

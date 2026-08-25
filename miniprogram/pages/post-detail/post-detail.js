@@ -1,7 +1,8 @@
 // pages/post-detail/post-detail.js
 const app = getApp()
 const { callFunction } = require('../../utils/request.js')
-const { formatTime, getUserId } = require('../../utils/auth.js')
+const { formatTime, getUserId, firstChar } = require('../../utils/auth.js')
+const { requestSubscribe } = require('../../utils/subscribe.js')
 
 Page({
   data: {
@@ -25,7 +26,10 @@ Page({
     isExpired: false,
     canResolve: false,
     // 展开的楼中楼
-    expandedReplies: {}
+    expandedReplies: {},
+    // 评论分页
+    commentPage: 1,
+    commentHasMore: false
   },
 
   onLoad(options) {
@@ -52,6 +56,7 @@ Page({
       
       if (res.success) {
         const post = res.post
+        post.userNicknameFirst = firstChar(post.userNickname) // emoji 安全首字符
         const isTask = post.kind === 'task'
         const isResolved = !!post.resolved
         const isExpired = post.status === 'expired'
@@ -69,7 +74,7 @@ Page({
           isTask,
           isResolved,
           isExpired,
-          canResolve: isAuthor && isTask && !isResolved && !isExpired,
+          canResolve: isAuthor && (isTask || post.kind === 'lost' || post.kind === 'found') && !isResolved && !isExpired,
           loading: false
         })
 
@@ -94,22 +99,43 @@ Page({
     } catch (e) {}
   },
 
-  async loadComments(targetId) {
+  async loadComments(targetId, { reset = true } = {}) {
+    if (this._loadingComments) return
+    this._loadingComments = true
+    const page = reset ? 1 : this.data.commentPage
     try {
-      const res = await callFunction('comment-list', { targetId })
+      const res = await callFunction('comment-list', { targetId, page, pageSize: 20 })
       if (res.success) {
-        const comments = res.list.map(c => ({
+        // 服务端已回填 liked；≤2 条子回复默认展开，更多的默认折叠
+        const items = res.list.map(c => ({
           ...c,
+          liked: !!c.liked,
+          userNicknameFirst: firstChar(c.userNickname),
           timeText: formatTime(c.createdAt),
           replies: (c.replies || []).map(r => ({
             ...r,
+            liked: !!r.liked,
+            userNicknameFirst: firstChar(r.userNickname),
             timeText: formatTime(r.createdAt)
           }))
         }))
-        this.setData({ comments })
+        this.setData({
+          comments: reset ? items : [...this.data.comments, ...items],
+          commentPage: page + 1,
+          commentHasMore: !!res.hasMore
+        })
       }
     } catch (err) {
       console.error('加载评论失败', err)
+    } finally {
+      this._loadingComments = false
+    }
+  },
+
+  // 触底加载下一页评论
+  onReachBottom() {
+    if (this.postId && this.data.commentHasMore) {
+      this.loadComments(this.postId, { reset: false })
     }
   },
 
@@ -123,40 +149,57 @@ Page({
 
   async onLike() {
     if (!app.ensureLogin()) return
+    if (this._likeLock) return
+    this._likeLock = true
+    const next = !this.data.isLiked
+    // 乐观更新：先翻状态，失败再回滚
+    this.setData({
+      isLiked: next,
+      'post.likeCount': Math.max(0, (this.data.post.likeCount || 0) + (next ? 1 : -1))
+    })
     try {
       const res = await callFunction('like', {
         targetId: this.data.post._id,
         type: 'post',
-        action: this.data.isLiked ? 'unlike' : 'like'
+        action: next ? 'like' : 'unlike'
       })
-      if (res.success) {
-        this.setData({
-          isLiked: res.liked,
-          'post.likeCount': (this.data.post.likeCount || 0) + (res.liked ? 1 : -1)
-        })
-      }
+      if (!res.success) throw new Error(res.message || '操作失败')
     } catch (err) {
-      wx.showToast({ title: '操作失败', icon: 'none' })
+      this.setData({
+        isLiked: !next,
+        'post.likeCount': Math.max(0, (this.data.post.likeCount || 0) + (next ? -1 : 1))
+      })
+      wx.showToast({ title: err.message === '操作失败' ? '操作失败' : (err.message || '操作失败'), icon: 'none' })
+    } finally {
+      this._likeLock = false
     }
   },
 
   async onCollect() {
     if (!app.ensureLogin()) return
+    if (this._collectLock) return
+    this._collectLock = true
+    const next = !this.data.isCollected
+    this.setData({
+      isCollected: next,
+      'post.collectCount': Math.max(0, (this.data.post.collectCount || 0) + (next ? 1 : -1))
+    })
     try {
       const res = await callFunction('collect', {
         targetId: this.data.post._id,
         type: 'post',
-        action: this.data.isCollected ? 'uncollect' : 'collect'
+        action: next ? 'collect' : 'uncollect'
       })
-      if (res.success) {
-        this.setData({
-          isCollected: res.collected,
-          'post.collectCount': (this.data.post.collectCount || 0) + (res.collected ? 1 : -1)
-        })
-        wx.showToast({ title: res.collected ? '已收藏' : '已取消', icon: 'none' })
-      }
+      if (!res.success) throw new Error('操作失败')
+      wx.showToast({ title: res.collected ? '已收藏' : '已取消', icon: 'none' })
     } catch (err) {
+      this.setData({
+        isCollected: !next,
+        'post.collectCount': Math.max(0, (this.data.post.collectCount || 0) + (next ? -1 : 1))
+      })
       wx.showToast({ title: '操作失败', icon: 'none' })
+    } finally {
+      this._collectLock = false
     }
   },
 
@@ -345,6 +388,7 @@ Page({
         })
         await this.loadComments(this.postId)
         wx.showToast({ title: '评论成功', icon: 'success' })
+        requestSubscribe(['comment'])
       } else {
         wx.showToast({ title: res.message || '评论失败', icon: 'none' })
       }
@@ -361,52 +405,41 @@ Page({
     this.setData({ expandedReplies: expanded })
   },
 
-  // 评论点赞
+  // 评论点赞（liked 由 comment-list 服务端回填；失败给出可见提示）
   async onCommentLike(e) {
     if (!app.ensureLogin()) return
     const { id, liked } = e.currentTarget.dataset
-    const comments = [...this.data.comments]
-    // 找到评论并更新
-    for (const c of comments) {
-      if (c._id === id) {
-        try {
-          const res = await callFunction('like', {
-            targetId: id,
-            type: 'comment',
-            action: liked ? 'unlike' : 'like'
-          })
-          if (res.success) {
-            c.likeCount = (c.likeCount || 0) + (res.liked ? 1 : -1)
-            c._liked = res.liked
-            this.setData({ comments })
+    if (this._commentLikeLock) return
+    this._commentLikeLock = true
+    try {
+      const res = await callFunction('like', {
+        targetId: id,
+        type: 'comment',
+        action: liked ? 'unlike' : 'like'
+      })
+      if (res.success) {
+        const comments = this.data.comments.map(c => {
+          let nc = c
+          if (c._id === id) {
+            nc = { ...c, liked: res.liked, likeCount: Math.max(0, (c.likeCount || 0) + (res.liked ? 1 : -1)) }
+          } else if (c.replies && c.replies.length) {
+            const replies = c.replies.map(r =>
+              r._id === id
+                ? { ...r, liked: res.liked, likeCount: Math.max(0, (r.likeCount || 0) + (res.liked ? 1 : -1)) }
+                : r
+            )
+            if (replies.some((r, i) => r !== c.replies[i])) nc = { ...c, replies }
           }
-        } catch (err) {
-          wx.showToast({ title: '操作失败', icon: 'none' })
-        }
-        return
+          return nc
+        })
+        this.setData({ comments })
+      } else {
+        wx.showToast({ title: res.message || '操作失败', icon: 'none' })
       }
-      // 在子回复中查找
-      if (c.replies) {
-        for (const r of c.replies) {
-          if (r._id === id) {
-            try {
-              const res = await callFunction('like', {
-                targetId: id,
-                type: 'comment',
-                action: liked ? 'unlike' : 'like'
-              })
-              if (res.success) {
-                r.likeCount = (r.likeCount || 0) + (res.liked ? 1 : -1)
-                r._liked = res.liked
-                this.setData({ comments })
-              }
-            } catch (err) {
-              wx.showToast({ title: '操作失败', icon: 'none' })
-            }
-            return
-          }
-        }
-      }
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    } finally {
+      this._commentLikeLock = false
     }
   },
 

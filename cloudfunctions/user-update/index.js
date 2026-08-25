@@ -10,28 +10,36 @@ exports.main = wrap(async (event) => {
   const { nickname, avatar, bio, college, major, grade, gender, tags } = event
 
   const updateData = {}
-  if (nickname !== undefined) updateData.nickname = String(nickname).slice(0, 20)
+  if (nickname !== undefined) updateData.nickname = String(nickname).trim().slice(0, 20)
   if (avatar !== undefined) {
-    // 头像图片安全审核（fail-closed）
-    if (avatar && avatar.startsWith('cloud://')) {
-      await checkImage({ fileID: avatar, openid: user.openid })
+    // 头像必须是本云存储文件且过图片安全审核（fail-closed，拒绝外链/垃圾值）
+    if (!avatar || typeof avatar !== 'string' || !avatar.startsWith('cloud://')) {
+      throw new AppError('头像仅支持上传到云存储的图片', 'INVALID_PARAM')
     }
+    await checkImage({ fileID: avatar, openid: user.openid })
     updateData.avatar = avatar
   }
   if (bio !== undefined) updateData.bio = String(bio).slice(0, 100)
-  if (college !== undefined) updateData.college = String(college).slice(0, 50)
-  if (major !== undefined) updateData.major = String(major).slice(0, 50)
-  if (grade !== undefined) updateData.grade = String(grade).slice(0, 20)
-  if (gender !== undefined) updateData.gender = gender
+  // college/major/grade 公开展示在主页，与昵称/简介同等送内容安全检测
+  if (college !== undefined) updateData.college = String(college).trim().slice(0, 50)
+  if (major !== undefined) updateData.major = String(major).trim().slice(0, 50)
+  if (grade !== undefined) updateData.grade = String(grade).trim().slice(0, 20)
+  // gender 白名单：0=保密 1=男 2=女
+  if (gender !== undefined) {
+    const g = Number(gender)
+    if (![0, 1, 2].includes(g)) throw new AppError('非法的性别取值', 'INVALID_PARAM')
+    updateData.gender = g
+  }
   if (tags !== undefined) {
     // 强制转为数组，每项限长 20，最多 10 个
     const tagArr = Array.isArray(tags) ? tags : String(tags).split(/[,，]/).map(t => t.trim()).filter(Boolean)
     updateData.tags = tagArr.slice(0, 10).map(t => String(t).slice(0, 20))
   }
 
-  // 资料内容安全（昵称/简介/标签可能含违规词）
+  // 资料内容安全（昵称/简介/院系/专业/年级/标签，全部公开展示）
   await checkContents(
-    [updateData.nickname, updateData.bio, Array.isArray(updateData.tags) ? updateData.tags.join(' ') : ''],
+    [updateData.nickname, updateData.bio, updateData.college, updateData.major, updateData.grade,
+     Array.isArray(updateData.tags) ? updateData.tags.join(' ') : ''],
     { openid: user.openid, scene: 1 }
   )
 

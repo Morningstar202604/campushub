@@ -1,5 +1,5 @@
-// cloudfunctions/product-detail/index.js
-const { cloud, getDB, getCmd, AppError, ok, wrap } = require('./common-bundle')
+﻿// cloudfunctions/product-detail/index.js
+const { cloud, getDB, getCmd, AppError, ok, wrap, countViewOnce } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const db = getDB()
@@ -11,8 +11,9 @@ exports.main = wrap(async (event) => {
   const product = productRes.data
   if (!product || product.status === 'deleted') throw new AppError('商品不存在或已下架', 'NOT_FOUND')
 
-  await db.collection('products').doc(productId).update({ data: { viewCount: _.inc(1) } })
-  product.viewCount = (product.viewCount || 0) + 1
+  // 浏览量按 (openid, 文档, 自然日) 去重自增
+  const viewed = await countViewOnce('products', productId)
+  if (viewed) product.viewCount = (product.viewCount || 0) + 1
 
   const openid = cloud.getWXContext().OPENID
   let isCollected = false

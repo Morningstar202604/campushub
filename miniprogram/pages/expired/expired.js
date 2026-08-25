@@ -6,7 +6,7 @@ const { formatTime } = require('../../utils/auth.js')
 Page({
   data: {
     list: [],
-    loading: true,
+    loading: false,
     page: 1,
     hasMore: true
   },
@@ -16,7 +16,8 @@ Page({
   },
 
   async loadList(reset = false) {
-    if (this.data.loading) return
+    // reset（首次/下拉）允许打断在途请求；仅翻页受 loading 守卫
+    if (this.data.loading && !reset) return
     this.setData({ loading: true })
     try {
       const res = await callFunction('post-list', {

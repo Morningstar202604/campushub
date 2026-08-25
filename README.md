@@ -3,15 +3,15 @@
 > **基于「微信小程序 + 云开发」的开源校园 / 兴趣内容社区 —— 一个新时代的开源贴吧。**
 > 多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台，开箱即用、零成本。
 >
-> 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) ｜ 🌐 [官网 Landing Page](https://weed33834.github.io/campushub/)
+> 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) ｜ 🌐 [官网 Landing Page](https://Morningstar202604.github.io/campushub/)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-0.6.0-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.7.0-green.svg)](./CHANGELOG.md)
 [![Cloud](https://img.shields.io/badge/WeChat-CloudBase-orange.svg)](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![Stars](https://img.shields.io/github/stars/weed33834/campushub?style=social)](https://github.com/weed33834/campushub)
+[![Stars](https://img.shields.io/github/stars/Morningstar202604/campushub?style=social)](https://github.com/Morningstar202604/campushub)
 
-> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/weed33834/campushub/issues) 与 [PR](https://github.com/weed33834/campushub/pulls)。
+> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/Morningstar202604/campushub/issues) 与 [PR](https://github.com/Morningstar202604/campushub/pulls)。
 >
 > **搜索关键词**：微信小程序开源 / 校园社区开源 / 开源贴吧 / 校园论坛 / 二手交易小程序 / 云开发开源 / 微信小程序论坛 / 兴趣社区 / Tieba-style / WeChat Mini Program forum / open-source community.
 
@@ -56,11 +56,11 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 
 | Metric | Count |
 |--------|-------|
-| Cloud Functions | 34 |
-| Mini Program Pages | 19 |
-| Database Collections | 14 |
-| Defined Indexes | 32 |
-| Cloud Function Common Modules | 8 (synced to all 34 functions) |
+| Cloud Functions | 35 |
+| Mini Program Pages | 22 |
+| Database Collections | 16 |
+| Defined Indexes | 33 |
+| Cloud Function Common Modules | 9 (synced to all 35 functions) |
 
 ## Directory Structure
 
@@ -118,16 +118,15 @@ CampusHub/
 │   └── init-db/              # One-time DB bootstrap (collections + seeds + index check)
 ├── scripts/
 │   ├── sync-common.js       # Sync common/ into every cloud function directory
-│   └── sync-mirrors.sh      # Three-platform mirror sync (GitCode/GitHub/Gitee)
+│   └── SYNC.md              # Three-platform manual sync guide
 ├── docs/
 │   ├── DEPLOY.md             # ★ Deployment guide (10 steps)
 │   ├── INDEXES.md           # ★ Database index checklist (32 indexes)
 │   └── SYNC.md              # Three-platform sync instructions
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml            # CI: validate all cloud function package.json
-│   │   ├── mirror.yml        # Auto-mirror GitHub → GitCode + Gitee
-│   │   └── dependabot-auto-merge.yml
+│   │   ├── ci.yml            # CI: JSON validity + JS syntax + common-layer consistency
+│   │   └── deploy.yml        # Manual cloud-function deploy (workflow_dispatch)
 │   └── dependabot.yml
 ├── project.config.json      # WeChat DevTools project config (fill your AppID)
 ├── package.json             # npm deps + sync:common script + OSS metadata
@@ -188,7 +187,7 @@ npm install
 - **Index self-check**: `init-db` compares `common-indexes.js` against live indexes and reports `missingIndexes`
 - **Soft delete**: Deletion sets `status='deleted'`, preserving data traceability; counters sync-rollback
 - **Safe search**: Regex-escaped keywords + 20-char limit, no ReDoS/injection
-- **Zero cost**: CloudBase free tier is sufficient for ~1000 DAU MVP
+- **Near-zero cost**: CloudBase free-trial env for dev, 19.9 CNY/mo entry plan in production
 
 ## Roadmap
 
@@ -202,11 +201,20 @@ npm install
 - [x] In-app notifications
 - [x] Post/product editing
 - [x] Draft auto-save
-- [ ] Content recommendation / hot ranking
+- [x] One-command cloud function deploy (`npm run deploy` + GitHub Actions + `npm run doctor` self-check)
+- [x] Cost pack: upload image compression, feed/category TTL cache, lazy task expiry, search throttle
+- [x] Dedicated second-hand market tab page
+- [x] Confession wall (forced-anonymous short posts)
+- [x] Hot ranking tab (last-7-day likes)
+- [x] Subscribe message framework (env-configurable templates)
+- [x] Lost & found module (kind=lost/found + dedicated page)
+- [x] Campus identity verification (student-ID + card photo, admin review)
 - [ ] Self-hosted backend migration (Node.js + PostgreSQL)
-- [ ] Real-time push notifications (WeChat subscribe messages)
+- [x] Real-time push via subscribe messages (framework; enable by setting TMPL_* env vars)
 - [ ] Campus events module
 - [ ] Multi-language UI (i18n)
+
+> Strategy & expert review: see [`docs/EXPERT_REVIEW_AND_ROADMAP.md`](./docs/EXPERT_REVIEW_AND_ROADMAP.md)
 
 ## Mirrors & Sync
 
@@ -215,11 +223,10 @@ This project is open-sourced under **Apache License 2.0** and mirrored across th
 | Platform | URL | Role |
 |----------|-----|------|
 | **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Canonical source |
-| **GitHub** | [github.com/weed33834/campushub](https://github.com/weed33834/campushub) | Mirror + CI + Issues |
+| **GitHub** | [github.com/Morningstar202604/campushub](https://github.com/Morningstar202604/campushub) | Mirror + CI + Issues |
 | **Gitee** | [gitee.com/badhope/campushub](https://gitee.com/badhope/campushub) | Mirror (China access) |
 
-GitHub Actions (`.github/workflows/mirror.yml`) auto-mirrors pushes to GitCode + Gitee.
-For local sync, use `scripts/sync-mirrors.sh`.
+Sync is manual by design: commit once locally, push to all three remotes — see [`docs/SYNC.md`](./docs/SYNC.md).
 
 ## Contributing
 
@@ -229,8 +236,8 @@ Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, c
 
 See [CHANGELOG.md](./CHANGELOG.md) for version history.
 
-**Latest: v0.6.0** — Follow system, check-in, nested comments, comment likes, user profiles, in-app notifications, post/product editing, admin pin/essence UI, 12 critical bug fixes, security hardening.
+**Latest: v0.7.0** — Lost & found, confession wall, hot ranking, campus verification, subscribe-message framework; v0.6.1 security audit fixes (fail-closed images, idempotent likes/checkin, atomic deletes). See [CHANGELOG](./CHANGELOG.md).
 
 ## License
 
-[Apache License 2.0](./LICENSE) © 2026 weed33834. See [NOTICE](./NOTICE) for details.
+[Apache License 2.0](./LICENSE) © 2026 Morningstar202604. See [NOTICE](./NOTICE) for details.

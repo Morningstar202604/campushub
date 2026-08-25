@@ -29,8 +29,10 @@ Page({
       })
 
       if (res && res.success) {
+        // 成功后保持 submitting=true 并提前返回：跳转空窗期内防重复提交
         wx.showToast({ title: '提交成功', icon: 'success' })
         setTimeout(() => wx.navigateBack(), 1500)
+        return
       } else {
         wx.showToast({ title: (res && res.message) || '提交失败', icon: 'none' })
       }
@@ -38,6 +40,7 @@ Page({
       wx.showToast({ title: '提交失败', icon: 'none' })
     }
 
+    // 仅失败路径复位
     this.setData({ submitting: false })
   }
 })

@@ -6,6 +6,7 @@ const context = require('./common-context')
 const security = require('./common-security')
 const rate = require('./common-rate')
 const content = require('./common-content')
+const subscribe = require('./common-subscribe')
 
 module.exports = {
   ...db,
@@ -13,5 +14,6 @@ module.exports = {
   ...context,
   ...security,
   ...rate,
-  ...content
+  ...content,
+  ...subscribe
 }

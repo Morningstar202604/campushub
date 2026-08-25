@@ -1,0 +1,34 @@
+<!-- pages/wall/wall.wxml -->
+<view class="page">
+  <view class="wall-tip">💌 匿名表白 / 树洞，请文明发言</view>
+
+  <view class="list" wx:if="{{list.length > 0}}">
+    <view class="card" wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onItemClick">
+      <view class="card-title">{{item.title}}</view>
+      <view class="card-content" wx:if="{{item.content}}">{{item.content}}</view>
+      <view class="card-meta">
+        <text class="card-time">{{item.timeText}}</text>
+        <view class="card-stats">
+          <text class="stat">❤ {{item.likeCount || 0}}</text>
+          <text class="stat">💬 {{item.commentCount || 0}}</text>
+          <text class="stat" wx:if="{{item.resolved}}">✅ 已送达</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-container" wx:if="{{!loading && list.length === 0}}">
+    <view class="empty-emoji">💌</view>
+    <view class="empty-text">墙上还空着</view>
+    <view class="empty-sub">点右下角 + 说出你的心里话</view>
+  </view>
+
+  <view class="load-more" wx:if="{{loading && list.length > 0}}">
+    <text>加载中...</text>
+  </view>
+  <view class="no-more" wx:if="{{!hasMore && list.length > 0 && !loading}}">
+    <text>到底了</text>
+  </view>
+</view>
+
+<view class="fab" bindtap="goPublish"><text class="fab-icon">✍️</text></view>

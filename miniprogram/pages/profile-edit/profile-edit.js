@@ -1,6 +1,7 @@
-// pages/profile-edit/profile-edit.js
+﻿// pages/profile-edit/profile-edit.js
 const app = getApp()
 const { callFunction, uploadImage } = require('../../utils/request.js')
+const { firstChar } = require('../../utils/auth.js')
 
 Page({
   data: {
@@ -22,7 +23,7 @@ Page({
     const user = app.globalData.userInfo
     if (user) {
       this.setData({
-        user,
+        user: { ...user, nicknameFirst: firstChar(user.nickname) },
         avatar: user.avatar || '',
         nickname: user.nickname || '',
         bio: user.bio || '',
@@ -90,7 +91,9 @@ Page({
       if (res.success) {
         app.setUserInfo(res.user)
         wx.showToast({ title: '保存成功', icon: 'success' })
+        // 保持 saving=true 并提前返回：跳转空窗期防重复保存
         setTimeout(() => wx.navigateBack(), 1500)
+        return
       } else {
         wx.showToast({ title: '保存失败', icon: 'none' })
       }

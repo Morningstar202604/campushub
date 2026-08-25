@@ -60,7 +60,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-[GitHub Security advisory](https://github.com/weed33834/campushub/security/advisories/new).
+[GitHub Security advisory](https://github.com/Morningstar202604/campushub/security/advisories/new).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

@@ -59,11 +59,29 @@ Page({
 
   onItemClick(e) {
     const id = e.currentTarget.dataset.id
-    const hasPrice = e.currentTarget.dataset.price
-    if (hasPrice) {
+    // 用服务端口径判类型（旧写法 dataset.price 对 0 元商品是 falsy，会路由错页面）
+    const itemType = e.currentTarget.dataset.itemType
+    if (itemType === 'product') {
       wx.navigateTo({ url: `/pages/product-detail/product-detail?id=${id}` })
     } else {
       wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` })
+    }
+  },
+
+  // 收藏 tab：取消收藏
+  async onUncollect(e) {
+    const id = e.currentTarget.dataset.id
+    const targetType = e.currentTarget.dataset.targetType || 'post'
+    try {
+      const r = await callFunction('collect', { targetId: id, type: targetType, action: 'uncollect' })
+      if (r.success) {
+        this.setData({ list: this.data.list.filter(it => it._id !== id) })
+        wx.showToast({ title: '已取消收藏', icon: 'none' })
+      } else {
+        wx.showToast({ title: (r && r.message) || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
     }
   },
 

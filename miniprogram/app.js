@@ -1,4 +1,4 @@
-// app.js
+﻿// app.js
 App({
   globalData: {
     userInfo: null,
@@ -7,7 +7,8 @@ App({
     navBarHeight: 0,
     screenHeight: 0,
     safeAreaBottom: 0,
-    needRefresh: false
+    needRefresh: false,
+    loginRedirect: ''
   },
 
   onLaunch() {
@@ -19,16 +20,20 @@ App({
       })
     }
 
-    // 获取系统信息
-    const sysInfo = wx.getWindowInfo()
-    const menuInfo = wx.getMenuButtonBoundingClientRect()
-    
-    this.globalData.statusBarHeight = sysInfo.statusBarHeight
-    this.globalData.navBarHeight = (menuInfo.top - sysInfo.statusBarHeight) * 2 + menuInfo.height
-    this.globalData.screenHeight = sysInfo.screenHeight
-    this.globalData.safeAreaBottom = sysInfo.screenHeight - sysInfo.safeArea.bottom
+    // 获取系统信息（独立 try/catch：低版本基础库/异常机型抛错时不阻断登录态恢复）
+    try {
+      const sysInfo = wx.getWindowInfo()
+      const menuInfo = wx.getMenuButtonBoundingClientRect()
 
-    // 检查登录状态
+      this.globalData.statusBarHeight = sysInfo.statusBarHeight
+      this.globalData.navBarHeight = (menuInfo.top - sysInfo.statusBarHeight) * 2 + menuInfo.height
+      this.globalData.screenHeight = sysInfo.screenHeight
+      this.globalData.safeAreaBottom = sysInfo.screenHeight - sysInfo.safeArea.bottom
+    } catch (e) {
+      console.error('系统信息获取失败(已跳过):', e)
+    }
+
+    // 检查登录状态（必须在异常兜底之外保证执行）
     this.checkLogin()
   },
 

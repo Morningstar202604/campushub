@@ -41,16 +41,21 @@ async function resolveLevel(db, parentId) {
 async function collectDescendants(db, rootId) {
   const _ = getCmd()
   const result = []
+  const seen = new Set([rootId])
   let frontier = [rootId]
   while (frontier.length) {
     const res = await db.collection('categories')
       .where({ parentId: _.in(frontier), status: 'active' })
       .field({ _id: true })
+      .limit(1000) // 显式上限：默认单次 get 仅返回 100 条，会静默漏子树
       .get()
     const ids = (res.data || []).map(d => d._id)
     if (!ids.length) break
     result.push(...ids)
-    frontier = ids
+    frontier = ids.filter(id => !seen.has(id))
+    if (!frontier.length) break
+    frontier.forEach(id => seen.add(id))
+    if (seen.size > 5000) break // 脏数据成环时的保险丝
   }
   return result
 }
@@ -144,16 +149,20 @@ async function getSubtreeDepth(db, rootId) {
   let maxDepth = 0
   let frontier = [rootId]
   let depth = 0
+  const seen = new Set([rootId])
   while (frontier.length) {
     const res = await db.collection('categories')
       .where({ parentId: _.in(frontier), status: 'active' })
       .field({ _id: true })
+      .limit(1000)
       .get()
-    const ids = (res.data || []).map(d => d._id)
+    const ids = (res.data || []).map(d => d._id).filter(id => !seen.has(id))
     if (!ids.length) break
     depth++
     if (depth > maxDepth) maxDepth = depth
+    ids.forEach(id => seen.add(id))
     frontier = ids
+    if (seen.size > 5000) break // 脏数据成环时的保险丝
   }
   return maxDepth
 }
@@ -166,6 +175,7 @@ async function cascadeUpdateLevel(db, rootId, newLevel, schoolId) {
   while (frontier.length) {
     const res = await db.collection('categories')
       .where({ parentId: _.in(frontier), status: 'active' })
+      .limit(1000) // 显式上限：默认单次 get 仅返回 100 条，会静默漏改子树
       .get()
     const children = res.data || []
     if (!children.length) break

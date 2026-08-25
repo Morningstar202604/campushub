@@ -41,7 +41,11 @@ async function checkContents(texts = [], { openid = '', scene = 2 } = {}) {
 // 微信 imgSecCheck v2 需要可访问的 https 链接，故先把 cloud:// fileID 换成临时链接再校验。
 // 任意异常（未开通/超限/命中违规/网络）一律拒绝发布，与文本安全策略一致。
 async function checkImage({ fileID, openid = '' } = {}) {
-  if (!fileID || !String(fileID).startsWith('cloud://')) return
+  // fail-closed：只接受本云存储的图片。外链/垃圾值一律拒绝，
+  // 堵住"非 cloud:// 静默放行"的审核后门（客户端可完全控制该字段）。
+  if (!fileID || typeof fileID !== 'string' || !fileID.startsWith('cloud://')) {
+    throw new AppError('仅支持上传到云存储的图片', 'INVALID_PARAM')
+  }
   let url
   try {
     const tmp = await cloud.getTempFileURL({ fileList: [fileID] })
@@ -50,7 +54,10 @@ async function checkImage({ fileID, openid = '' } = {}) {
     console.error('[图片安全] 获取临时链接失败，按最严策略拒绝:', e && (e.errMsg || e.message))
     throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
   }
-  if (!url) return
+  // 拿不到可审核的临时链接同样拒绝，不放行
+  if (!url) {
+    throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
+  }
   try {
     await cloud.openapi.security.imgSecCheck({
       version: '2',
@@ -67,11 +74,9 @@ async function checkImage({ fileID, openid = '' } = {}) {
   }
 }
 
-// 批量校验图片数组（每张依次校验，任一张违规即拒绝）
+// 批量校验图片数组（并发校验缩短尾延迟，任一张违规即整体拒绝）
 async function checkImages(fileIDs = [], { openid = '' } = {}) {
-  for (const f of (fileIDs || [])) {
-    await checkImage({ fileID: f, openid })
-  }
+  await Promise.all((fileIDs || []).map(f => checkImage({ fileID: f, openid })))
 }
 
 // 管理员身份识别（云端可信，不依赖前端）

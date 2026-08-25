@@ -8,10 +8,11 @@
       <text class="search-placeholder">搜索帖子、商品、指南</text>
     </view>
     <view class="top-expired" bindtap="goExpired">⏰过期</view>
+    <view class="top-expired" bindtap="goWall">💌墙</view>
   </view>
 
-  <!-- 分类筛选条（仅帖子流显示，二手 tab 无效） -->
-  <view class="cat-filter" wx:if="{{activeTab !== 'products'}}" bindtap="onCategoryTap">
+  <!-- 分类筛选条（多级目录） -->
+  <view class="cat-filter" bindtap="onCategoryTap">
     <text class="cat-filter-icon">📂</text>
     <text wx:if="{{selectedCategoryName}}" class="cat-filter-text">{{selectedCategoryName}}</text>
     <text wx:else class="cat-filter-text cat-filter-placeholder">全部分类</text>
@@ -38,12 +39,12 @@
     <view class="feed-col">
       <block wx:for="{{leftList}}" wx:key="_id">
         <!-- 帖子卡片 -->
-        <view class="feed-card" wx:if="{{item.itemType === 'post'}}" data-id="{{item._id}}" bindtap="onPostTap">
-          <image 
-            wx:if="{{item.images.length > 0}}" 
-            src="{{item.images[0]}}" 
-            mode="widthFix" 
-            class="card-cover" 
+        <view class="feed-card" data-id="{{item._id}}" bindtap="onPostTap">
+          <image
+            wx:if="{{item.images.length > 0}}"
+            src="{{item.images[0]}}"
+            mode="widthFix"
+            class="card-cover"
             lazy-load
           />
           <view class="card-body">
@@ -56,41 +57,11 @@
             <view class="card-meta">
               <view class="meta-user">
                 <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
-                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '匿'}}</view>
+                <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '匿'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
+                <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>
               </view>
               <text class="meta-stat">❤ {{item.likeCount || 0}}</text>
-            </view>
-          </view>
-        </view>
-        
-        <!-- 商品卡片 -->
-        <view class="feed-card" wx:if="{{item.itemType === 'product'}}" data-id="{{item._id}}" bindtap="onProductTap">
-          <image 
-            wx:if="{{item.images.length > 0}}" 
-            src="{{item.images[0]}}" 
-            mode="widthFix" 
-            class="card-cover" 
-            lazy-load
-          />
-          <view class="card-body">
-            <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
-            <view class="card-title ellipsis-2">{{item.title}}</view>
-            <view class="card-price-row">
-              <text class="card-price">¥{{item.price}}</text>
-              <text class="card-original-price" wx:if="{{item.originalPrice}}">¥{{item.originalPrice}}</text>
-            </view>
-            <view class="card-tags">
-              <view class="tag tag-warning" wx:if="{{item.conditionText}}">{{item.conditionText}}</view>
-              <view class="tag" wx:if="{{item.tradeType === 'face'}}">面交</view>
-            </view>
-            <view class="card-meta">
-              <view class="meta-user">
-                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
-                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '用'}}</view>
-                <text class="meta-name">{{item.userNickname}}</text>
-              </view>
-              <text class="meta-stat">{{item.location || '校内'}}</text>
             </view>
           </view>
         </view>
@@ -100,12 +71,12 @@
     <!-- 右列 -->
     <view class="feed-col">
       <block wx:for="{{rightList}}" wx:key="_id">
-        <view class="feed-card" wx:if="{{item.itemType === 'post'}}" data-id="{{item._id}}" bindtap="onPostTap">
-          <image 
-            wx:if="{{item.images.length > 0}}" 
-            src="{{item.images[0]}}" 
-            mode="widthFix" 
-            class="card-cover" 
+        <view class="feed-card" data-id="{{item._id}}" bindtap="onPostTap">
+          <image
+            wx:if="{{item.images.length > 0}}"
+            src="{{item.images[0]}}"
+            mode="widthFix"
+            class="card-cover"
             lazy-load
           />
           <view class="card-body">
@@ -118,40 +89,11 @@
             <view class="card-meta">
               <view class="meta-user">
                 <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
-                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '匿'}}</view>
+                <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '匿'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
+                <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>
               </view>
               <text class="meta-stat">❤ {{item.likeCount || 0}}</text>
-            </view>
-          </view>
-        </view>
-        
-        <view class="feed-card" wx:if="{{item.itemType === 'product'}}" data-id="{{item._id}}" bindtap="onProductTap">
-          <image 
-            wx:if="{{item.images.length > 0}}" 
-            src="{{item.images[0]}}" 
-            mode="widthFix" 
-            class="card-cover" 
-            lazy-load
-          />
-          <view class="card-body">
-            <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
-            <view class="card-title ellipsis-2">{{item.title}}</view>
-            <view class="card-price-row">
-              <text class="card-price">¥{{item.price}}</text>
-              <text class="card-original-price" wx:if="{{item.originalPrice}}">¥{{item.originalPrice}}</text>
-            </view>
-            <view class="card-tags">
-              <view class="tag tag-warning" wx:if="{{item.conditionText}}">{{item.conditionText}}</view>
-              <view class="tag" wx:if="{{item.tradeType === 'face'}}">面交</view>
-            </view>
-            <view class="card-meta">
-              <view class="meta-user">
-                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
-                <view class="meta-avatar-placeholder" wx:else>{{item.userNickname[0] || '用'}}</view>
-                <text class="meta-name">{{item.userNickname}}</text>
-              </view>
-              <text class="meta-stat">{{item.location || '校内'}}</text>
             </view>
           </view>
         </view>
@@ -224,6 +166,20 @@
     <view class="publish-item-text">
       <view class="publish-item-title">卖东西</view>
       <view class="publish-item-desc">二手商品信息发布</view>
+    </view>
+  </view>
+  <view class="publish-item" data-type="lostfound" bindtap="onPublishSelect">
+    <view class="publish-item-icon">🎒</view>
+    <view class="publish-item-text">
+      <view class="publish-item-title">失物招领</view>
+      <view class="publish-item-desc">丢了东西 / 捡到东西</view>
+    </view>
+  </view>
+  <view class="publish-item" data-type="confession" bindtap="onPublishSelect">
+    <view class="publish-item-icon">💌</view>
+    <view class="publish-item-text">
+      <view class="publish-item-title">表白墙</view>
+      <view class="publish-item-desc">匿名说出心里话</view>
     </view>
   </view>
   <view class="publish-cancel" bindtap="togglePublishMenu">取消</view>

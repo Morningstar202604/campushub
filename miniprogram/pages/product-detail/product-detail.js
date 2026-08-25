@@ -1,7 +1,7 @@
-// pages/product-detail/product-detail.js
+﻿// pages/product-detail/product-detail.js
 const app = getApp()
 const { callFunction } = require('../../utils/request.js')
-const { formatTime, getUserId } = require('../../utils/auth.js')
+const { formatTime, getUserId, firstChar } = require('../../utils/auth.js')
 
 Page({
   data: {
@@ -40,6 +40,7 @@ Page({
       
       if (res.success) {
         const p = res.product
+        p.userNicknameFirst = firstChar(p.userNickname)
         const conditionMap = { new: '全新', almost_new: '几乎全新', good: '8成新', fair: '5成新' }
         const tradeMap = { face: '当面交易', mail: '邮寄', both: '当面/邮寄' }
         const isOwner = !!getUserId() && getUserId() === p.userId

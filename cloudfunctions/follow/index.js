@@ -1,4 +1,4 @@
-// cloudfunctions/follow/index.js
+﻿// cloudfunctions/follow/index.js
 // 关注/取关 + 关注状态查询 + 关注/粉丝列表
 // follows 集合: { followerId, followingId, createdAt }
 const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, rateLimit } = require('./common-bundle')
@@ -40,7 +40,7 @@ exports.main = wrap(async (event) => {
       // 站内通知
       try {
         await db.collection('notifications').add({
-          data: { userId: targetUserId, type: 'follow', content: `${user.nickname} 关注了你`, targetId: user._id, isRead: false, createdAt: new Date() }
+          data: { userId: targetUserId, type: 'follow', targetType: 'user', content: `${user.nickname} 关注了你`, targetId: user._id, isRead: false, createdAt: new Date() }
         })
       } catch (e) {}
 

@@ -12,8 +12,9 @@ exports.main = wrap(async (event) => {
   if (!postRes || !postRes.data) throw new AppError('帖子不存在', 'NOT_FOUND')
   const p = postRes.data
 
-  if (p.kind !== 'task') {
-    throw new AppError('仅任务/请求类内容可标记已解决', 'INVALID_PARAM')
+  // 任务/失物/招领均可标记完成（已解决/已找回/已归还）
+  if (!['task', 'lost', 'found'].includes(p.kind)) {
+    throw new AppError('该类内容不支持标记完成', 'INVALID_PARAM')
   }
   // 已删除的帖子不可标记
   if (p.status === 'deleted') throw new AppError('该帖子已被删除', 'INVALID_PARAM')

@@ -1,11 +1,11 @@
-<!-- pages/user-profile/user-profile.wxml -->
+﻿<!-- pages/user-profile/user-profile.wxml -->
 <view class="profile-page" wx:if="{{profile}}">
   <!-- 用户信息卡 -->
   <view class="user-card">
     <view class="user-header">
       <view class="user-avatar">
         <image wx:if="{{profile.avatar}}" src="{{profile.avatar}}" class="avatar-img" />
-        <view wx:else class="avatar-placeholder">{{profile.nickname[0] || '?'}}</view>
+        <view wx:else class="avatar-placeholder">{{profile.nicknameFirst || '?'}}</view>
       </view>
       <view class="user-info">
         <view class="user-name">{{profile.nickname}}</view>

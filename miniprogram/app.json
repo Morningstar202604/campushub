@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/market/market",
     "pages/admin/admin",
     "pages/login/login",
     "pages/post-publish/post-publish",
@@ -18,7 +19,10 @@
     "pages/expired/expired",
     "pages/category-admin/category-admin",
     "pages/user-profile/user-profile",
-    "pages/notifications/notifications"
+    "pages/notifications/notifications",
+    "pages/wall/wall",
+    "pages/lost-found/lost-found",
+    "pages/verify/verify"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFFFF",
@@ -37,6 +41,10 @@
       {
         "pagePath": "pages/index/index",
         "text": "首页"
+      },
+      {
+        "pagePath": "pages/market/market",
+        "text": "二手"
       },
       {
         "pagePath": "pages/guide/guide",

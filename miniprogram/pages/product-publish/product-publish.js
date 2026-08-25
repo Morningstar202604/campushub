@@ -1,6 +1,6 @@
 // pages/product-publish/product-publish.js
 const app = getApp()
-const { callFunction, uploadImages } = require('../../utils/request.js')
+const { callFunction, uploadImage } = require('../../utils/request.js')
 
 Page({
   data: {
@@ -52,7 +52,9 @@ Page({
   },
 
   onUnload() {
-    if (!this.data.isEdit && (this.data.title || this.data.images.length)) {
+    // 已发布成功则不再"复活"草稿
+    if (!this.data.isEdit && !this._published &&
+        (this.data.title || this.data.images.length)) {
       this.saveDraft()
     }
   },
@@ -65,7 +67,13 @@ Page({
   restoreDraft() {
     const draft = wx.getStorageSync(this.data.draftKey)
     if (draft && draft.savedAt) {
-      this.setData(draft)
+      // 白名单式恢复，避免草稿对象里的元字段（savedAt 等）串进 data
+      const { title, description, price, category, condition, tradeType, location, contactInfo } = draft
+      this.setData({
+        title: title || '', description: description || '', price: price || '',
+        category: category || 'digital', condition: condition || 'good',
+        tradeType: tradeType || 'face', location: location || '', contactInfo: contactInfo || ''
+      })
     }
   },
 
@@ -94,10 +102,13 @@ Page({
         })
       } else {
         wx.showToast({ title: '加载失败', icon: 'none' })
+        // 加载失败立即退出：空白表单提交会覆盖原商品
+        setTimeout(() => wx.navigateBack(), 1500)
       }
     } catch (err) {
       wx.hideLoading()
       wx.showToast({ title: '加载失败', icon: 'none' })
+      setTimeout(() => wx.navigateBack(), 1500)
     }
   },
 
@@ -149,31 +160,44 @@ Page({
   onTradeTypeChange(e) { this.setData({ tradeType: e.currentTarget.dataset.value }) },
 
   async submit() {
+    if (this.data.submitting) return // JS 级防重入
     const { title, description, images, price, originalPrice, category, condition, tradeType, location, contactInfo, isEdit, editId } = this.data
 
     if (!title.trim()) { wx.showToast({ title: '请输入标题', icon: 'none' }); return }
     if (images.length === 0) { wx.showToast({ title: '请至少上传一张图片', icon: 'none' }); return }
-    if (!price || isNaN(Number(price)) || Number(price) < 0) { wx.showToast({ title: '请输入有效价格', icon: 'none' }); return }
+    // 价格允许 0（免费赠送），但必须是有限数字
+    const numPrice = Number(price)
+    if (!Number.isFinite(numPrice) || numPrice < 0) { wx.showToast({ title: '请输入有效价格', icon: 'none' }); return }
+    let numOriginal = null
+    if (originalPrice !== '' && originalPrice !== undefined && originalPrice !== null) {
+      numOriginal = Number(originalPrice)
+      if (!Number.isFinite(numOriginal)) { wx.showToast({ title: '原价格式不正确', icon: 'none' }); return }
+    }
 
     this.setData({ submitting: true })
     wx.showLoading({ title: isEdit ? '保存中...' : '发布中...' })
 
     try {
-      // 分离已上传和本地图片
+      // 分离已上传和本地图片；逐张上传，失败保留进度防孤儿文件
       const existingImages = images.filter(img => typeof img === 'string' && img.startsWith('cloud://'))
       const localImages = images.filter(img => typeof img === 'string' && !img.startsWith('cloud://'))
-      let uploadedImages = existingImages
-      if (localImages.length > 0) {
-        const newUploaded = await uploadImages(localImages, 'products')
-        uploadedImages = [...existingImages, ...newUploaded]
+      const uploadedImages = [...existingImages]
+      for (let i = 0; i < localImages.length; i++) {
+        try {
+          const fileID = await uploadImage(localImages[i], 'products')
+          uploadedImages.push(fileID)
+        } catch (e) {
+          this.setData({ images: [...uploadedImages, ...localImages.slice(i)] })
+          throw e
+        }
       }
 
       if (isEdit) {
         const res = await callFunction('product-update', {
           productId: editId,
           title, description, images: uploadedImages,
-          price: Number(price),
-          originalPrice: originalPrice ? Number(originalPrice) : null,
+          price: numPrice,
+          originalPrice: numOriginal,
           category, condition, tradeType, location, contactInfo
         })
         wx.hideLoading()
@@ -181,31 +205,36 @@ Page({
           app.globalData.needRefresh = true
           wx.showToast({ title: '修改成功', icon: 'success' })
           setTimeout(() => wx.navigateBack(), 1500)
+          return
         } else {
           wx.showToast({ title: res.message || '修改失败', icon: 'none' })
         }
       } else {
         const res = await callFunction('product-create', {
           title, description, images: uploadedImages,
-          price: Number(price),
-          originalPrice: originalPrice ? Number(originalPrice) : null,
+          price: numPrice,
+          originalPrice: numOriginal,
           category, condition, tradeType, location, contactInfo
         })
         wx.hideLoading()
         if (res.success) {
+          this._published = true
           this.clearDraft()
           app.globalData.needRefresh = true
           wx.showToast({ title: '发布成功', icon: 'success' })
           setTimeout(() => wx.navigateBack(), 1500)
+          return
         } else {
           wx.showToast({ title: res.message || '发布失败', icon: 'none' })
         }
       }
     } catch (err) {
       wx.hideLoading()
-      wx.showToast({ title: '操作失败', icon: 'none' })
+      console.error('商品提交失败', err)
+      wx.showToast({ title: (err && err.message) || '操作失败', icon: 'none' })
     }
 
+    // 仅失败路径复位，允许修改后重试
     this.setData({ submitting: false })
   }
 })

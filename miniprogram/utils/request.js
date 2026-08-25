@@ -1,4 +1,5 @@
 // utils/request.js — 云函数调用封装
+const { compressForUpload } = require('./image.js')
 
 /**
  * 调用云函数（Promise 封装）
@@ -36,24 +37,29 @@ function getImageExt(filePath) {
 }
 
 function uploadImage(filePath, folder = 'posts') {
-  const ext = getImageExt(filePath)
-  const timestamp = Date.now()
-  const random = Math.random().toString(36).substr(2, 8)
-  const cloudPath = `${folder}/${timestamp}_${random}.${ext}`
-  
-  return new Promise((resolve, reject) => {
-    wx.cloud.uploadFile({
-      cloudPath,
-      filePath,
-      success(res) {
-        resolve(res.fileID)
-      },
-      fail(err) {
-        console.error('[上传图片] 失败', err)
-        reject(new Error('图片上传失败，请重试'))
-      }
+  // 上传前压缩（CDN 流量是账单大头，见 docs/EXPERT_REVIEW_AND_ROADMAP.md 降本清单 C1）
+  return compressForUpload(filePath)
+    .catch(() => filePath) // 压缩链路任何异常都回退原图，不阻塞上传
+    .then((finalPath) => {
+      const ext = getImageExt(finalPath)
+      const timestamp = Date.now()
+      const random = Math.random().toString(36).substr(2, 8)
+      const cloudPath = `${folder}/${timestamp}_${random}.${ext}`
+
+      return new Promise((resolve, reject) => {
+        wx.cloud.uploadFile({
+          cloudPath,
+          filePath: finalPath,
+          success(res) {
+            resolve(res.fileID)
+          },
+          fail(err) {
+            console.error('[上传图片] 失败', err)
+            reject(new Error('图片上传失败，请重试'))
+          }
+        })
+      })
     })
-  })
 }
 
 /**

@@ -3,13 +3,13 @@
 > **全国性校园 / 兴趣内容社区（微信小程序 + 云开发）—— 一个新时代的开源贴吧。**
 > 多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台，开箱即用、零成本。
 >
-> 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](https://weed33834.github.io/campushub/)
+> 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](https://Morningstar202604.github.io/campushub/)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
 [![Version](https://img.shields.io/badge/version-0.6.0-green.svg)](../CHANGELOG.md)
-[![Stars](https://img.shields.io/github/stars/weed33834/campushub?style=social)](https://github.com/weed33834/campushub)
+[![Stars](https://img.shields.io/github/stars/Morningstar202604/campushub?style=social)](https://github.com/Morningstar202604/campushub)
 
-> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/weed33834/campushub/issues) 与 [PR](https://github.com/weed33834/campushub/pulls)。
+> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/Morningstar202604/campushub/issues) 与 [PR](https://github.com/Morningstar202604/campushub/pulls)。
 >
 > **搜索关键词**：微信小程序开源 / 校园社区开源 / 开源贴吧 / 校园论坛 / 二手交易小程序 / 云开发开源 / 微信小程序论坛 / 兴趣社区 / Tieba-style / WeChat Mini Program forum / open-source community.
 
@@ -44,16 +44,16 @@ CampusHub 是一个基于**微信小程序 + 微信云开发**的内容社区，
 
 - **前端**：原生微信小程序 + TDesign 组件库
 - **后端**：微信云开发（云函数 + 云数据库 + 云存储）
-- **架构**：`cloudfunctions/common/` 共享内核层（8 个模块，同步到全部 34 个云函数）
+- **架构**：`cloudfunctions/common/` 共享内核层（9 个模块，同步到全部 35 个云函数）
 
 ## 项目规模
 
 | 维度 | 数量 |
 |------|------|
-| 云函数 | 34 |
+| 云函数 | 35 |
 | 前端页面 | 19 |
 | 数据集合 | 14 |
-| 索引定义 | 32 |
+| 索引定义 | 33 |
 
 ## 快速开始
 
@@ -81,9 +81,9 @@ npm install          # 安装依赖 + 自动同步内核层
 | 平台 | 地址 | 角色 |
 |------|------|------|
 | **GitCode** | gitcode.com/badhope/campushub | 源仓库 |
-| **GitHub** | github.com/weed33834/campushub | 镜像 + CI |
+| **GitHub** | github.com/Morningstar202604/campushub | 镜像 + CI |
 | **Gitee** | gitee.com/badhope/campushub | 镜像（国内访问） |
 
 ## 开源协议
 
-[Apache License 2.0](../LICENSE) © 2026 weed33834
+[Apache License 2.0](../LICENSE) © 2026 Morningstar202604

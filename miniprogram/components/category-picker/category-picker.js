@@ -1,6 +1,11 @@
-// components/category-picker/category-picker.js
+﻿// components/category-picker/category-picker.js
 // 多级分类选择器：分区 → 吧 → 子版块，逐级下钻，必须选到叶子
+// 分类树 10 分钟本地缓存（降本 C2），缓存失效时自动回源刷新
 const { callFunction } = require('../../utils/request.js')
+const { getCache, setCache } = require('../../utils/cache.js')
+
+const CATEGORY_CACHE_KEY = 'category_tree'
+const CATEGORY_CACHE_TTL = 10 * 60 * 1000
 
 Component({
   properties: {
@@ -16,18 +21,31 @@ Component({
     visible(v) { if (v) this.open() }
   },
   methods: {
+    async loadCategories() {
+      // 命中缓存直接返回
+      const cached = getCache(CATEGORY_CACHE_KEY)
+      if (cached && cached.length) {
+        this.setData({ allCats: cached })
+        return
+      }
+      this.setData({ loading: true })
+      try {
+        const res = await callFunction('category-list', {})
+        if (res && res.success) {
+          const list = res.list || []
+          setCache(CATEGORY_CACHE_KEY, list, CATEGORY_CACHE_TTL)
+          this.setData({ allCats: list })
+        }
+      } catch (e) {
+        console.error('加载分类失败', e)
+      }
+      this.setData({ loading: false })
+    },
     async open() {
       if (!this.data.allCats) {
-        this.setData({ loading: true })
-        try {
-          const res = await callFunction('category-list', {})
-          if (res && res.success) this.setData({ allCats: res.list || [] })
-        } catch (e) {
-          console.error('加载分类失败', e)
-        }
-        this.setData({ loading: false })
+        await this.loadCategories()
       }
-      this.setData({ path: [], list: this.renderList([]) })
+      this.setData({ path: [], pathText: '', list: this.renderList([]) })
     },
     childrenOf(id) {
       return (this.data.allCats || []).filter(c => c.parentId === id)
@@ -46,7 +64,7 @@ Component({
       const path = [...this.data.path, cat]
       const hasChild = this.childrenOf(cat._id).length > 0
       if (path.length < 3 && hasChild) {
-        this.setData({ path, list: this.renderList(path) })
+        this.setData({ path, pathText: path.map(c => c.name).join(' / '), list: this.renderList(path) })
       } else {
         // 终选（叶子或无子分类）
         this.triggerEvent('select', {
@@ -59,7 +77,7 @@ Component({
     },
     onBack() {
       const path = this.data.path.slice(0, -1)
-      this.setData({ path, list: this.renderList(path) })
+      this.setData({ path, pathText: path.map(c => c.name).join(' / '), list: this.renderList(path) })
     },
     close() {
       this.triggerEvent('close')

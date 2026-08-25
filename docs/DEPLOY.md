@@ -80,7 +80,29 @@ npm install
 
 ## 第四步：上传部署全部云函数
 
-项目共 **34 个云函数**，全部需要部署。
+> **推荐：先试自动化部署**（约 10 分钟，替代本步的逐个手动上传）：
+>
+> ```bash
+> npm install                      # 安装依赖（含 miniprogram-ci）
+> npm run sync:common              # 同步 common 内核到所有函数
+> npm run doctor                   # 自检 AppID/环境ID/内核一致性
+> ```
+>
+> 然后二选一：
+> - **本地一键部署**：在项目根目录创建 `scripts/deploy.config.json`（已被 .gitignore 排除，不会入库）：
+>   ```json
+>   {
+>     "appid": "你的AppID",
+>     "privateKeyPath": "C:/path/to/private.key",
+>     "environments": { "prod": { "envId": "你的环境ID" } }
+>   }
+>   ```
+>   私钥在小程序后台「开发管理 → 开发设置 → 小程序代码上传」生成下载。然后执行 `npm run deploy`。
+> - **CI 自动部署**：配置 GitHub Secrets（`WX_APPID`、`CLOUD_ENV_ID`、`WX_UPLOAD_PRIVATE_KEY_B64`），推送 cloudfunctions/** 到 main 即自动部署（见 `.github/workflows/deploy.yml`）。
+>
+> 手动部署方式保留如下，适用于不想装 CLI 的场景。
+
+项目共 **35 个云函数**，全部需要部署。
 
 ### 4.1 批量部署
 
@@ -90,17 +112,17 @@ npm install
 3. 等待每个部署完成（状态栏有进度提示）
 
 > 34 个函数列表：
-> `login`, `user-update`, `user-profile`, `post-create`, `post-list`, `post-detail`, `post-delete`, `post-update`, `product-create`, `product-list`, `product-detail`, `product-delete`, `product-update`, `comment-create`, `comment-list`, `comment-delete`, `like`, `collect`, `report`, `feedback-create`, `search`, `my-list`, `category-list`, `category-manage`, `guide-list`, `guide-detail`, `admin`, `resolve`, `task-expire`, `init-db`, `follow`, `checkin`, `notification`
+> `login`, `user-update`, `user-profile`, `post-create`, `post-list`, `post-detail`, `post-delete`, `post-update`, `product-create`, `product-list`, `product-detail`, `product-delete`, `product-update`, `comment-create`, `comment-list`, `comment-delete`, `like`, `collect`, `report`, `feedback-create`, `search`, `my-list`, `category-list`, `category-manage`, `guide-list`, `guide-detail`, `admin`, `resolve`, `task-expire`, `init-db`, `follow`, `checkin`, `notification`, `verify`
 
 ### 4.2 部署 task-expire 定时触发器
 
 `task-expire` 是定时任务，除了上传代码外，还需要单独部署触发器：
 
 1. 右键 `cloudfunctions/task-expire/` →「上传触发器」
-2. 确认 `config.json` 中的 cron 表达式 `"0 0 * * * *"` 被正确部署
+2. 确认 `config.json` 中的 cron 表达式 `"0 0 */6 * * *"` 被正确部署
 
 > cron 格式为 6 字段：秒 分 时 日 月 周
-> `0 0 * * * *` = 每小时第 0 分 0 秒执行一次
+> `0 0 */6 * * *` = 每 6 小时执行一次（降本 C3：信息流已惰性过滤过期任务，cron 仅作归档兜底）
 
 ---
 
@@ -118,7 +140,7 @@ npm install
 
 > 同样的环境变量也要配给 `resolve` 和 `category-manage` 函数（它们也调用 `checkAdmin`）。
 
-### 5.2 init-db 安全密钥（推荐配置）
+### 5.2 init-db 安全密钥（必配，fail-closed）
 
 云开发控制台 → 云函数 → `init-db` 函数 → 环境变量：
 
@@ -142,7 +164,7 @@ npm install
 }
 ```
 
-> 如果没配 `INIT_SECRET`，直接传 `{}` 即可。
+> ⚠️ v0.6.1 起 INIT_SECRET 为**必配项**：未配置时 init-db 会直接拒绝执行（防止任意客户端重放初始化）。
 
 ### 6.2 检查返回结果
 
@@ -163,7 +185,7 @@ npm install
 ### 6.3 自动创建的内容
 
 `init-db` 会自动：
-- 创建 14 个集合（users, posts, products, comments, likes, collects, guides, guide_categories, categories, reports, feedbacks, follows, checkins, notifications）
+- 创建 15 个集合（users, posts, products, comments, likes, collects, guides, guide_categories, categories, reports, feedbacks, follows, checkins, notifications, view_logs）
 - 导入 6 个指南分类 + 18 个内容分类（分区→吧→板块三级目录）+ 6 篇示例指南
 
 > 种子数据中韩山师范学院相关内容仅为示例，上线后可通过管理后台「分类管理」增删改。
@@ -349,7 +371,9 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 | 管理员 OpenID | 云函数 `admin` 环境变量 `ADMIN_OPENIDS` | 你的 openid |
 | init-db 密钥 | 云函数 `init-db` 环境变量 `INIT_SECRET` | 自定义密钥 |
 | 数据库索引 | 云开发控制台手动创建 | 见第七步 |
-| 定时触发器 | `task-expire/config.json` | `0 0 * * * *`（每小时） |
+| 定时触发器 | `task-expire/config.json` | `0 0 */6 * * *`（每 6 小时） |
+| 一键部署配置 | `scripts/deploy.config.json`（不入库） | appid / privateKeyPath / environments |
+| 部署前自检 | 终端执行 `npm run doctor` | 错误阻断，警告提示 |
 
 ---
 

@@ -1,4 +1,4 @@
-// cloudfunctions/category-list/index.js
+﻿// cloudfunctions/category-list/index.js
 // 返回分类树节点（全国性贴吧式多级目录）
 //   parentId 缺省 -> 返回全部（前端本地建树、逐级下钻）
 //   提供 parentId -> 仅返回该父节点下的直接子节点
@@ -15,7 +15,7 @@ exports.main = wrap(async (event = {}) => {
     .where(where)
     .orderBy('level', 'asc')
     .orderBy('order', 'asc')
-    .limit(300)
+    .limit(1000)
     .get()
   return ok({ list: res.data })
 })

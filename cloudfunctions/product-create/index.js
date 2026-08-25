@@ -36,6 +36,7 @@ exports.main = wrap(async (event) => {
   const product = {
     userId: user._id,
     userNickname: user.nickname,
+    authorVerified: user.campusVerified === true,
     userAvatar: user.avatar,
     schoolId: user.schoolId || '',
     title: title.trim(),

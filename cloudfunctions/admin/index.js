@@ -12,7 +12,12 @@
 //   list-reports 分页列出待处理举报，并 join 目标内容摘要与作者
 //   delete       删除指定内容（管理员越权，含云存储图片回收）
 //   resolve      将举报标记为已处理（避免重复处理）
-const { getDB, getCmd, AppError, ok, wrap, getOpenid, removeContent, checkAdmin } = require('./common-bundle')
+const { getDB, getCmd, AppError, ok, wrap, getOpenid, removeContent, checkAdmin, checkContents } = require('./common-bundle')
+
+// 与 search 一致的正则转义，防关键词注入/查询报错
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 exports.main = wrap(async (event) => {
   const db = getDB()
@@ -125,7 +130,7 @@ exports.main = wrap(async (event) => {
     const skip = Math.max(0, (Number(page) - 1) * pSize)
     const where = {}
     if (keyword && String(keyword).trim()) {
-      where.nickname = db.RegExp({ regexp: String(keyword).trim().slice(0, 20), options: 'i' })
+      where.nickname = db.RegExp({ regexp: escapeRegExp(String(keyword).trim().slice(0, 20)), options: 'i' })
     }
     const [listRes, totalRes] = await Promise.all([
       db.collection('users').where(where).orderBy('createdAt', 'desc').skip(skip).limit(pSize)
@@ -152,12 +157,61 @@ exports.main = wrap(async (event) => {
   if (action === 'resolve-feedback') {
     const { feedbackId, reply } = event
     if (!feedbackId) throw new AppError('缺少反馈ID', 'INVALID_PARAM')
+    // 管理回复会展示给用户：限长 + 过内容安全（与其他面向用户的文本一致）
+    const safeReply = String(reply || '').trim().slice(0, 500)
+    if (safeReply) {
+      await checkContents([safeReply], { openid: operatorOpenid, scene: 2 })
+    }
     await db.collection('feedbacks').doc(feedbackId).update({
-      data: { status: 'resolved', adminReply: reply || '', resolvedAt: new Date() }
+      data: { status: 'resolved', adminReply: safeReply, resolvedAt: new Date() }
     })
     return ok({ resolved: true })
   }
 
+  // ---- 校园认证：待审列表（status=all 查全部） ----
+  if (action === 'list-verifies') {
+    const vPage = Math.max(1, Number(event.page) || 1)
+    const vSize = Math.min(100, Math.max(1, Number(event.pageSize) || 20))
+    const vStatus = event.status === 'all' ? undefined : (event.status || 'pending')
+    const vWhere = vStatus ? { status: vStatus } : {}
+    const [listRes, totalRes] = await Promise.all([
+      db.collection('verify_requests').where(vWhere)
+        .orderBy('createdAt', 'asc').skip((vPage - 1) * vSize).limit(vSize).get(),
+      db.collection('verify_requests').where(vWhere).count()
+    ])
+    return ok({ list: listRes.data || [], total: totalRes.total })
+  }
+
+  // ---- 校园认证：审核通过/驳回（原子占位，防双击重复审批） ----
+  if (action === 'verify-review') {
+    const { requestId, approve, reason } = event
+    if (!requestId) throw new AppError('缺少申请ID', 'INVALID_PARAM')
+    const reqRes = await db.collection('verify_requests').doc(requestId).get().catch(() => ({ data: null }))
+    const reqDoc = reqRes && reqRes.data
+    if (!reqDoc) throw new AppError('申请不存在', 'NOT_FOUND')
+
+    const claim = await db.collection('verify_requests')
+      .where({ _id: requestId, status: 'pending' })
+      .update({
+        data: {
+          status: approve ? 'approved' : 'rejected',
+          rejectReason: approve ? '' : String(reason || '资料不符合要求').slice(0, 100),
+          reviewedBy: operatorOpenid,
+          reviewedAt: new Date()
+        }
+      })
+    if (!claim || !claim.stats || !claim.stats.updated) {
+      return ok({ reviewed: false, already: true })
+    }
+
+    await db.collection('users').doc(reqDoc.userId).update({
+      data: {
+        campusVerified: !!approve,
+        campusVerifyStatus: approve ? 'approved' : 'rejected'
+      }
+    }).catch(() => {})
+    return ok({ reviewed: true })
+  }
   throw new AppError('未知操作', 'INVALID_PARAM')
 })
 

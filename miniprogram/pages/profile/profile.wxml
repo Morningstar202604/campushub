@@ -5,7 +5,7 @@
     <view class="user-card" wx:if="{{user}}">
       <view class="user-avatar">
         <image wx:if="{{user.avatar}}" src="{{user.avatar}}" class="avatar-img" />
-        <view wx:else class="avatar-placeholder">{{user.nickname[0] || 'U'}}</view>
+        <view wx:else class="avatar-placeholder">{{user.nicknameFirst || 'U'}}</view>
       </view>
       <view class="user-info">
         <view class="user-name">{{user.nickname}}</view>
@@ -104,6 +104,11 @@
       <view class="badge" wx:if="{{unreadCount > 0}}">{{unreadCount}}</view>
       <text class="menu-arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="goVerify">
+      <text class="menu-icon">🎖️</text>
+      <text class="menu-text">校园认证</text>
+      <text class="menu-arrow">{{campusVerified ? '已认证 ✓' : '未认证 ›'}}</text>
+    </view>
     <view class="menu-item" bindtap="goAbout">
       <text class="menu-icon">ℹ️</text>
       <text class="menu-text">关于我们</text>
@@ -122,5 +127,5 @@
     </view>
   </view>
 
-  <view class="version-text">v0.6.0 · CampusHub</view>
+  <view class="version-text">v0.7.0 · CampusHub</view>
 </view>

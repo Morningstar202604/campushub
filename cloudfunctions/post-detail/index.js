@@ -1,6 +1,6 @@
-// cloudfunctions/post-detail/index.js
+﻿// cloudfunctions/post-detail/index.js
 // 帖子详情：浏览量 + 基于可信 OPENID 的点赞/收藏状态（不再依赖前端传 userId）
-const { cloud, getDB, getCmd, AppError, ok, wrap } = require('./common-bundle')
+const { cloud, getDB, getCmd, AppError, ok, wrap, countViewOnce } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const db = getDB()
@@ -12,8 +12,9 @@ exports.main = wrap(async (event) => {
   const post = postRes.data
   if (!post || post.status === 'deleted') throw new AppError('帖子不存在或已删除', 'NOT_FOUND')
 
-  await db.collection('posts').doc(postId).update({ data: { viewCount: _.inc(1) } })
-  post.viewCount = (post.viewCount || 0) + 1
+  // 浏览量按 (openid, 文档, 自然日) 去重自增，防脚本/反复刷新刷量
+  const viewed = await countViewOnce('posts', postId)
+  if (viewed) post.viewCount = (post.viewCount || 0) + 1
 
   const openid = cloud.getWXContext().OPENID
   let isLiked = false

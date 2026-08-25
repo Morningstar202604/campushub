@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -12,21 +13,41 @@ concurrency:
 
 jobs:
   validate:
-    name: Validate dependencies
+    name: Syntax & consistency
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - name: Install root dependencies
-        run: npm ci
-      - name: Validate cloudfunctions
+
+      - name: Validate JSON configs
         run: |
-          for dir in cloudfunctions/*/; do
-            if [ -f "$dir/package.json" ]; then
-              echo "Checking $dir"
-              node -e "require('./$dir/package.json')"
-            fi
-          done
+          node -e "
+            const fs=require('fs');
+            const files=['package.json','project.config.json','miniprogram/app.json'];
+            fs.readdirSync('cloudfunctions').forEach(d=>{
+              const p='cloudfunctions/'+d+'/package.json';
+              if(fs.existsSync(p)) files.push(p);
+              const c='cloudfunctions/'+d+'/config.json';
+              if(fs.existsSync(c)) files.push(c);
+            });
+            files.forEach(f=>{JSON.parse(fs.readFileSync(f,'utf8'));console.log('OK',f)});
+          "
+
+      - name: Syntax-check all JS (cloud functions + miniprogram)
+        run: |
+          set -e
+          find cloudfunctions -name '*.js' -not -path '*/node_modules/*' -print0 | xargs -0 -n1 node --check
+          find miniprogram scripts -name '*.js' -not -path '*/node_modules/*' -not -path '*/miniprogram_npm/*' -print0 | xargs -0 -n1 node --check
+          echo "All JS syntax OK"
+
+      - name: Common layer sync consistency
+        run: |
+          npm run sync:common
+          if ! git diff --exit-code -- 'cloudfunctions/*/common-*'; then
+            echo '::error::common kernel out of sync, run npm run sync:common'
+            exit 1
+          fi
+          echo "Common layer consistent"

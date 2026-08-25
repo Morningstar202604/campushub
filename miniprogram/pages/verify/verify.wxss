@@ -1,0 +1,91 @@
+/* pages/verify/verify.wxss */
+.page {
+  min-height: 100vh;
+  background: var(--color-bg-page);
+  padding: 24rpx;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 36rpx 32rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.banner-icon { font-size: 60rpx; }
+.banner-title { font-size: var(--font-size-md); font-weight: 600; color: var(--color-text-primary); }
+.banner-sub { font-size: var(--font-size-sm); color: var(--color-text-tertiary); margin-top: 6rpx; }
+
+.form-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 36rpx 32rpx;
+  margin-top: 24rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.form-title { font-size: var(--font-size-md); font-weight: 600; color: var(--color-text-primary); }
+.form-desc { font-size: var(--font-size-xs); color: var(--color-text-placeholder); margin: 8rpx 0 28rpx; }
+
+.field { margin-bottom: 28rpx; }
+
+.label {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 12rpx;
+}
+
+.input {
+  height: 84rpx;
+  background: var(--color-bg-gray);
+  border-radius: var(--radius-md);
+  padding: 0 24rpx;
+  font-size: var(--font-size-base);
+}
+
+.upload-box {
+  position: relative;
+  width: 320rpx;
+  height: 220rpx;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-bg-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-preview { width: 100%; height: 100%; }
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.upload-plus { font-size: 56rpx; color: var(--color-text-placeholder); line-height: 1; }
+.upload-text { font-size: 22rpx; color: var(--color-text-tertiary); text-align: center; }
+
+.upload-remove {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 22rpx;
+  padding: 6rpx 16rpx;
+  border-radius: var(--radius-md) 0 0 0;
+}
+
+.submit-btn {
+  margin-top: 40rpx;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: #fff;
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-full);
+}

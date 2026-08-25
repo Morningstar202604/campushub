@@ -1,0 +1,58 @@
+<!-- pages/verify/verify.wxml -->
+<view class="page">
+  <!-- 已认证 -->
+  <view class="banner banner-ok" wx:if="{{campusVerified}}">
+    <view class="banner-icon">✅</view>
+    <view>
+      <view class="banner-title">已通过校园认证</view>
+      <view class="banner-sub">你的帖子与商品会展示「已认证」标识</view>
+    </view>
+  </view>
+
+  <!-- 审核中 / 被驳回 -->
+  <view class="banner banner-pending" wx:elif="{{status === 'pending'}}">
+    <view class="banner-icon">⏳</view>
+    <view>
+      <view class="banner-title">审核中</view>
+      <view class="banner-sub">管理员会尽快处理，请耐心等待</view>
+    </view>
+  </view>
+
+  <block wx:else>
+    <view class="banner banner-reject" wx:if="{{status === 'rejected'}}">
+      <view class="banner-icon">❌</view>
+      <view style="flex:1">
+        <view class="banner-title">上次申请未通过</view>
+        <view class="banner-sub" wx:if="{{request.rejectReason}}">原因：{{request.rejectReason}}</view>
+        <view class="banner-sub" wx:else>可补充材料后重新提交</view>
+      </view>
+    </view>
+
+    <view class="form-card">
+      <view class="form-title">提交校园认证</view>
+      <view class="form-desc">认证信息仅管理员可见，通过后用于二手交易信任标识</view>
+
+      <view class="field">
+        <text class="label">学校</text>
+        <input class="input" placeholder="如：韩山师范学院" value="{{school}}" bindinput="onSchoolInput" />
+      </view>
+      <view class="field">
+        <text class="label">学号</text>
+        <input class="input" placeholder="4~20 位字母或数字" value="{{studentId}}" bindinput="onStudentIdInput" />
+      </view>
+      <view class="field">
+        <text class="label">证件照片</text>
+        <view class="upload-box" bindtap="chooseImage">
+          <image wx:if="{{localPreview}}" src="{{localPreview}}" mode="aspectFill" class="upload-preview" />
+          <view wx:else class="upload-placeholder">
+            <text class="upload-plus">＋</text>
+            <text class="upload-text">上传校卡/学生证照片\n(遮挡敏感信息亦可)</text>
+          </view>
+          <view wx:if="{{localPreview}}" class="upload-remove" catchtap="removeImage">✕ 重选</view>
+        </view>
+      </view>
+
+      <button class="submit-btn" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">提交认证</button>
+    </view>
+  </block>
+</view>

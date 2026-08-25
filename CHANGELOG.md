@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-26
+
+### Added — 校园场景功能补齐（路线图 v0.8/v0.9 主体）
+- **失物招领模块**：`kind='lost'/'found'` 复用帖子体系；专属列表页（全部/我丢了/我捡到筛选 + 地点展示 + 已找回标记）；发布页新增失物/招领类型与地点字段；详情页显示 📍 地点；resolve 支持「已找回/已归还」
+- **表白墙模式**：`kind='confession'` 强匿名（服务端强制，正文限 500 字）；独立 wall 列表页；首页顶部「💌墙」入口 + 发布菜单入口
+- **热榜**：post-list 新增 `tab=hot`（近 7 天按点赞排序，新索引 idx_posts_status_likes）；首页新增「热门」Tab
+- **校园身份认证**：新增 `verify` 云函数 + `verify_requests` 集合；用户提交 学校+学号+校卡照片（图片过审 fail-closed）→ 管理员人工审核（admin 新增 list-verifies / verify-review 原子审批）；个人中心认证入口与状态页；通过后发帖/商品冗余 `authorVerified` 并在信息流/详情页展示 🎖️ 已认证标识
+- **订阅消息框架**：新增 `common-subscribe` 共享模块（TMPL_COMMENT/TMPL_LIKE/TMPL_FOLLOW 环境变量配置模板 ID，未配置自动跳过零成本）；评论事件 best-effort 推送；客户端在发帖/评论成功后请求订阅授权
+- 新生专区：由指南「新生入学」分类承载（init-db 已含种子），配合开学季运营
+
+### Changed
+- 发布菜单扩至 4 项（帖子/二手/失物招领/表白墙）；kind 选择器 5 类
+- post-create 参数校验加固（content 缺参不再 TypeError）
+
+### 升级注意
+- 存量环境需重新部署全部云函数（新增 verify、common 层 9 文件）并重跑 init-db（自动创建 verify_requests 集合）
+- 热榜需在控制台补建索引 `idx_posts_status_likes`
+- 订阅消息为可选能力：在小程序后台申请订阅模板后，将模板 ID 配置到相关云函数环境变量即可启用
+
+## [0.6.1] - 2026-08-26
+
+### Fixed — 安全与正确性（四角色联合审计修复）
+- **P0 notification**：`module.exports = { createNotification }` 覆盖 `exports.main` 导致通知云函数整体失效；已移除死代码导出
+- **P0 expired 页**：初始 `loading:true` 与加载守卫死锁，页面永远卡"加载中"；改为 false 并允许 reset 打断
+- **图片审核 fail-open 后门**：非 `cloud://` 图片值此前被静默放行；现入口与 `checkImage` 双层强校验，外链/垃圾值一律拒绝（fail-closed）
+- **管理员删除死代码**：`removeContent` 依赖不存在的 `actor.role`，管理员无法删他人内容；改走 `checkAdmin(openid)`
+- **删除原子化**：软删改为条件更新原子占位（`where status != deleted`），并发双删不再双重扣计数
+- **评论级联删除**：删主楼层时一并软删子回复并按实际条数回退目标 commentCount
+- **通知 markRead IDOR**：补属主过滤（`userId`），只能标记自己的通知
+- **签到时区**：按北京时间（UTC+8）计算自然日，修复北京 0~8 点签到记到昨天、同日可领双份积分
+- **点赞/收藏/签到幂等**：likes/collects (user,target,type) 与 checkins (user,date) 改唯一索引 + `insertIdempotent`；unlike/uncollect 按实际删除行数扣减（自愈历史重复）
+- **发布草稿复活**：成功后 `_published` 标记，onUnload 不再回写草稿
+- **重复提交窗口**：post/product-publish、feedback、profile-edit 成功后保持 submitting/saving 直至退出；补 JS 级防重入守卫
+- **my-list 类型误判**：`dataset.price` 对 0 元商品为 falsy 导致路由错页；统一用服务端口径 `itemType`
+- **通知路由错误**：like/comment 通知新增 `targetType`，商品类跳商品详情；follow 跳用户主页
+- **编辑模式加载失败**：立即退出，防止空白表单整篇覆盖原内容
+- **请求竞态**：index/market/search 增加序号守卫，切 tab/下拉刷新旧响应晚到不再污染新视图；admin 下拉刷新放行
+- **搜索分页错乱**：标题+正文合并为单查询（_.or），消除跨页重复/漏项
+- **init-db fail-closed**：INIT_SECRET 未配置直接拒绝执行；createCollection 错误区分 exists 与真实故障
+- **task-expire**：逐条循环改单条批量条件更新，消除 limit(100) 吞吐瓶颈
+- **分类树截断**：category-manage 三处树遍历显式 limit(1000) + 成环保险丝；category-list 上限 1000；管理端保存/删除后清前端分类缓存
+- **浏览量去重**：viewCount 按 (openid, 文档, 自然日) 去重自增（新增 view_logs 集合，_id 主键去重）
+
+### Changed — 体验
+- 评论分页：详情页触底加载更多评论（此前超 20 条静默丢失）；评论点赞状态由服务端回填（liked），已赞可取消
+- 楼中楼折叠开关真实生效：>2 条默认折叠、点击展开/收起
+- 分类选择器面包屑修复（WXML 不支持 .map().join()，改为 js 预算 pathText）
+- 通知页改为点开单条才标已读（不再一进页面全标）
+- 收藏列表支持取消收藏；收藏流按收藏时间排序
+- 登录后回跳来源页（ensureLogin 记录 redirect）；资料更新失败给出可见提示
+- emoji 昵称首字符安全渲染（firstChar 工具，10 处占位头像不再乱码）
+- market 页 onShow 同步校区过滤；登录后返回生效
+- 点赞/收藏/关注/签到增加在途锁 + 详情页乐观更新与失败回滚
+- app.js onLaunch 分段异常兜底，系统信息失败不阻断登录态恢复
+- 图片上传改逐张串行，中途失败保留进度（不产生云存储孤儿文件）
+- login 并发首登靠唯一索引兜底重读；移除每次登录无条件写 updatedAt 的写放大
+- user-update：college/major/grade 纳入内容安全检测；gender 白名单；头像强制 cloud:// 且过审；昵称 trim
+- feedback-create：type 白名单 + contact 限长；admin 用户搜索关键词正则转义；管理回复限长并过审
+- my-list 收藏 tab 显示已售标记
+
+### 升级注意（存量环境）
+1. 控制台将 likes/collects/checkins 三个索引重建为**唯一索引**（见 docs/INDEXES.md）
+2. 云函数环境变量配置 `INIT_SECRET`（现为必配）
+3. 全量重新部署所有云函数（common 层有变更）：`npm run sync:common && npm run deploy`
+
 ## [0.6.0] - 2026-08-11
 
 ### Added — P2 功能补齐

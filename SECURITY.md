@@ -5,7 +5,7 @@
 If you discover a security vulnerability in this project, please report it responsibly:
 
 1. **Do not** open a public GitHub issue.
-2. Use [GitHub's private vulnerability reporting](https://github.com/weed33834/campushub/security/advisories/new), or email the maintainer directly.
+2. Use [GitHub's private vulnerability reporting](https://github.com/Morningstar202604/campushub/security/advisories/new), or email the maintainer directly.
 3. Include a clear description of the vulnerability, steps to reproduce, and the potential impact.
 
 We will acknowledge receipt within 48 hours and aim to provide a fix or mitigation within 14 days, depending on severity.
@@ -30,6 +30,35 @@ CampusHub is designed with the following security principles:
 - **Safe search**: Keywords are regex-escaped and length-capped (20 chars), preventing ReDoS and regex injection.
 - **Input validation**: All cloud functions validate and whitelist input parameters (types, status, lengths) to prevent injection and abuse.
 - **Rate limiting**: Write operations (posts, comments, likes, follows, reports) are rate-limited via DB-backed counters.
+
+## UGC Compliance & Incident Response（平台义务与应急处置）
+
+CampusHub is a UGC (user-generated content) platform. Operators of every deployment
+carry the following obligations, independent of the technical safeguards above:
+
+### Operator obligations
+
+1. **Subject qualification**: The「社交 > 社区/论坛」category requires a non-individual
+   entity (organization / enterprise / individual business). Deployers must register the
+   mini program under a qualifying subject and complete ICP filing (小程序备案).
+2. **Real-name traceability**: End users are identified by `openid` and (optionally)
+   campus verification. Operators must be able to map an `openid` to a real identity
+   when legally required — keep registration logs; do not run fully anonymous deployments.
+3. **Content retention**: Deleted content uses soft-delete (`status='deleted'`) and is
+   preserved for traceability. Do not hard-delete records when handling regulator
+   requests; export the relevant collections instead.
+4. **Reporting channel**: The in-app report flow must stay enabled at all times.
+
+### Incident response
+
+| Scenario | Actions |
+|----------|---------|
+| Illegal/harmful content discovered | Delete via admin console → ban author if warranted → screenshot & archive evidence |
+| Politically sensitive / fraud content | Above steps + report to campus authorities as required by local regulations |
+| Regulator data request | Export relevant collections from CloudBase console; cooperate per applicable law |
+| Moderation API outage | Users cannot publish (fail-closed). Announce downtime; **never** disable fail-closed to "temporarily" allow posting |
+
+See [docs/OPERATIONS.md](./OPERATIONS.md) §3 for the day-to-day duty roster.
 
 ## Disclosure Policy
 

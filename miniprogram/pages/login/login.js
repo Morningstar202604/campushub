@@ -82,9 +82,9 @@ Page({
         return
       }
 
-      // 2. 更新用户信息
+      // 2. 更新用户信息（昵称 trim 后提交，避免首尾空格入库）
       const updateRes = await callFunction('user-update', {
-        nickname: this.data.nickname,
+        nickname: this.data.nickname.trim(),
         college: this.data.college,
         major: this.data.major,
         grade: this.data.grade,
@@ -94,13 +94,12 @@ Page({
       if (updateRes.success) {
         app.setUserInfo(updateRes.user)
         wx.showToast({ title: '欢迎来到 CampusHub', icon: 'success' })
-        setTimeout(() => {
-          wx.switchTab({ url: '/pages/index/index' })
-        }, 1500)
+        setTimeout(() => this.redirectAfterLogin(), 1500)
       } else {
-        // 即使更新失败也用 login 返回的数据
+        // 资料更新失败也放行登录，但要给出可见提示而非静默
+        wx.showToast({ title: '资料保存失败，可稍后在"我的"页补全', icon: 'none' })
         app.setUserInfo(loginRes.user)
-        wx.switchTab({ url: '/pages/index/index' })
+        setTimeout(() => this.redirectAfterLogin(), 1500)
       }
     } catch (err) {
       console.error('登录失败', err)
@@ -108,6 +107,26 @@ Page({
     }
 
     this.setData({ loading: false })
+  },
+
+  /**
+   * 登录后回跳：优先回来源页（ensureLogin 记录）；
+   * 来源页是 tabBar 页用 switchTab，非 tab 页直接 navigateBack 回到它。
+   */
+  redirectAfterLogin() {
+    const redirect = getApp().globalData.loginRedirect
+    getApp().globalData.loginRedirect = ''
+    const TAB_ROUTES = [
+      'pages/index/index', 'pages/market/market', 'pages/guide/guide', 'pages/profile/profile'
+    ]
+    if (redirect && TAB_ROUTES.some(r => redirect.indexOf(r) !== -1)) {
+      wx.switchTab({ url: '/' + (redirect.replace(/^\//, '')) })
+    } else if (redirect) {
+      // 非 tab 页来源：navigateBack 即回到发起登录的页面
+      wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) })
+    } else {
+      wx.switchTab({ url: '/pages/index/index' })
+    }
   },
 
   goAgreement() {

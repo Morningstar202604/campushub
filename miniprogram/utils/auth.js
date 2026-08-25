@@ -31,10 +31,16 @@ function getUserId() {
 }
 
 /**
- * 确保已登录，否则跳转登录页
+ * 确保已登录，否则记录来源页并跳转登录页。
+ * 登录成功后按来源页回跳（tabBar 页用 switchTab，其余 navigateBack 兜底）。
  */
 function ensureLogin() {
   if (!isLoggedIn()) {
+    const pages = getCurrentPages()
+    const current = pages && pages.length ? pages[pages.length - 1] : null
+    if (current) {
+      getAppInstance().globalData.loginRedirect = '/' + current.route
+    }
     wx.navigateTo({ url: '/pages/login/login' })
     return false
   }
@@ -77,6 +83,15 @@ function formatNumber(num) {
   return (num / 10000).toFixed(1) + 'w'
 }
 
+/**
+ * 取昵称首字符（emoji/代理对安全，WXML 的 str[0] 会截半个字符显示乱码）
+ */
+function firstChar(str) {
+  const s = String(str || '').trim()
+  if (!s) return ''
+  return Array.from(s)[0] || s[0]
+}
+
 module.exports = {
   isLoggedIn,
   getUserInfo,
@@ -84,5 +99,6 @@ module.exports = {
   ensureLogin,
   logout,
   formatTime,
-  formatNumber
+  formatNumber,
+  firstChar
 }

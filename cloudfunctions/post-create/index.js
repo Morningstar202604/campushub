@@ -1,10 +1,12 @@
 // cloudfunctions/post-create/index.js
 // 发帖：统一鉴权 + fail-closed 内容安全(文本+图片) + 频率限制 + 封禁拦截
 // 分类：必须选择到叶子节点（多级目录，避免内容淹没）
-// 任务类(kind='task')：带 expireAt，超时未解决由 task-expire 定时置为 expired
+// kind 类型：post 普通帖 / task 任务帖(带过期) / lost 失物 / found 招领 / confession 表白墙
+// 表白墙强制匿名；失物/招领可带地点，支持"已找回"标记（复用 resolved）
 const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit } = require('./common-bundle')
 
 const TASK_EXPIRE_DAYS = [3, 7, 15, 30]
+const VALID_KINDS = ['post', 'task', 'lost', 'found', 'confession']
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -13,18 +15,25 @@ exports.main = wrap(async (event) => {
 
   const {
     title, content, images = [], tags = [],
-    categoryId, categoryPath = [], kind = 'post', expireDays = 7, isAnonymous = false
+    categoryId, categoryPath = [], kind = 'post', expireDays = 7, isAnonymous = false,
+    location = ''
   } = event
 
   // 参数校验
   if (!title || !title.trim()) throw new AppError('请输入标题', 'INVALID_PARAM')
-  if (!content.trim() && (!Array.isArray(images) || images.length === 0)) {
-    throw new AppError('请输入内容或上传图片', 'INVALID_PARAM')
+  if (!content || !String(content).trim()) {
+    if (!Array.isArray(images) || images.length === 0) throw new AppError('请输入内容或上传图片', 'INVALID_PARAM')
   }
   if (title.length > 30) throw new AppError('标题不能超过30字', 'INVALID_PARAM')
-  if (content.length > 2000) throw new AppError('内容不能超过2000字', 'INVALID_PARAM')
+  const maxContent = kind === 'confession' ? 500 : 2000
+  if (content && String(content).length > maxContent) throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
   if (!Array.isArray(images) || images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
+  const safeKind = VALID_KINDS.includes(kind) ? kind : 'post'
   const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map(t => String(t).slice(0, 20)) : []
+  // 失物/招领地点（可选）
+  // 表白墙强制匿名（客户端传什么都不算数）
+  const isAnon = safeKind === 'confession' ? true : !!isAnonymous
+  const safeLocation = ['lost', 'found'].includes(safeKind) ? String(location || '').trim().slice(0, 50) : ''
 
   // 分类校验：必须存在且为叶子（无子分类）
   if (!categoryId) throw new AppError('请选择分类', 'INVALID_PARAM')
@@ -45,7 +54,7 @@ exports.main = wrap(async (event) => {
   await rateLimit({ collection: 'posts', match: { userId: user._id }, windowMs: 30000, max: 1 })
 
   // 任务类：计算过期时间
-  const isTask = kind === 'task'
+  const isTask = safeKind === 'task'
   let expireAt = null
   if (isTask) {
     const days = TASK_EXPIRE_DAYS.includes(Number(expireDays)) ? Number(expireDays) : 7
@@ -57,13 +66,14 @@ exports.main = wrap(async (event) => {
 
   const post = {
     userId: user._id,
-    userNickname: isAnonymous ? '匿名同学' : user.nickname,
-    userAvatar: isAnonymous ? '' : user.avatar,
+    userNickname: isAnon ? '匿名同学' : user.nickname,
+    userAvatar: isAnon ? '' : user.avatar,
     schoolId,
     categoryId,
     categoryPath: Array.isArray(categoryPath) ? categoryPath : [],
     category: cat.name,
-    kind: isTask ? 'task' : 'post',
+    kind: safeKind,
+    location: safeLocation,
     expireAt,
     resolved: false,
     resolvedAt: null,
@@ -72,7 +82,8 @@ exports.main = wrap(async (event) => {
     content: content.trim(),
     images,
     tags: safeTags,
-    isAnonymous,
+    isAnonymous: isAnon,
+    authorVerified: user.campusVerified === true,
     likeCount: 0,
     commentCount: 0,
     collectCount: 0,

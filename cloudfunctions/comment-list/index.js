@@ -1,15 +1,21 @@
 // cloudfunctions/comment-list/index.js
 // 评论列表：分页 + 楼中楼（parentId 为 null 的是主楼层，有 parentId 的是子回复）
-const { getDB, getCmd, AppError, ok, wrap } = require('./common-bundle')
+// 回填当前用户对楼层/子回复的点赞状态（liked），前端据此渲染与取消点赞。
+const { getDB, getCmd, AppError, ok, wrap, cloud } = require('./common-bundle')
+
+function toInt(v, def) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : def
+}
 
 exports.main = wrap(async (event) => {
   const db = getDB()
   const _ = getCmd()
-  const { targetId, page = 1, pageSize = 20 } = event
+  const { targetId } = event
   if (!targetId) throw new AppError('缺少目标ID', 'INVALID_PARAM')
-
-  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
-  const size = Math.min(100, Math.max(1, Number(pageSize)))
+  const page = Math.max(1, toInt(event.page, 1))
+  const size = Math.min(50, Math.max(1, toInt(event.pageSize, 20)))
+  const skip = (page - 1) * size
 
   // 获取主楼层（parentId 为 null 或不存在）
   const floorRes = await db.collection('comments')
@@ -24,7 +30,7 @@ exports.main = wrap(async (event) => {
   const replyRes = await db.collection('comments')
     .where({ parentId: _.in(floorIds), status: 'normal' })
     .orderBy('createdAt', 'asc')
-    .limit(200) // 每页最多加载 200 条子回复
+    .limit(500) // 子回复上限（超出极罕见；如需严格分页后续按楼层分组续拉）
     .get()
 
   const replies = replyRes.data || []
@@ -36,10 +42,33 @@ exports.main = wrap(async (event) => {
     replyMap[r.parentId].push(r)
   }
 
+  // 点赞状态回填：查出当前用户在本页全部评论上的点赞记录
+  let likedSet = null
+  try {
+    const wxContext = cloud.getWXContext()
+    const openid = wxContext && wxContext.OPENID
+    if (openid) {
+      const u = await db.collection('users').where({ openid }).field({ _id: true }).limit(1).get()
+      if (u.data && u.data[0]) {
+        const viewerId = u.data[0]._id
+        const allIds = [...floorIds, ...replies.map(r => r._id)]
+        const likedRes = await db.collection('likes')
+          .where({ userId: viewerId, targetId: _.in(allIds), type: 'comment' })
+          .field({ targetId: true }).get()
+        likedSet = new Set((likedRes.data || []).map(l => l.targetId))
+      }
+    }
+  } catch (e) {
+    // 未登录等场景静默降级：全部视为未赞
+    likedSet = null
+  }
+
+  const markLiked = (c) => ({ ...c, liked: likedSet ? likedSet.has(c._id) : false })
+
   const list = floors.map(f => ({
-    ...f,
-    replies: replyMap[f._id] || []
+    ...markLiked(f),
+    replies: (replyMap[f._id] || []).map(markLiked)
   }))
 
-  return ok({ list, hasMore: floorRes.data.length === size })
+  return ok({ list, hasMore: floors.length === size })
 })

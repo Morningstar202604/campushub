@@ -1,0 +1,9 @@
+{
+  "name": "verify",
+  "version": "1.0.0",
+  "description": "校园身份认证：提交学号+校卡照片，管理员人工审核",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

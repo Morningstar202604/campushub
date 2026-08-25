@@ -2,6 +2,7 @@
 // 真实权限在云端校验（category-manage 云函数 requireActiveUser + checkAdmin），
 // 前端仅用 admin.check 隐藏入口、拦截非管理员访问。
 const { callFunction } = require('../../utils/request.js')
+const { clearCache } = require('../../utils/cache.js')
 
 const KIND_OPTIONS = [
   { value: 'zone', label: '分区' },
@@ -135,10 +136,12 @@ Page({
   onCancel() { this.setData({ 'form.show': false }) },
 
   async onSubmit() {
+    if (this._saving) return // 防重复提交（showLoading 默认无遮罩，可被点穿）
     const f = this.data.form
     if (!f.name || !f.name.trim()) {
       return wx.showToast({ title: '请输入分类名称', icon: 'none' })
     }
+    this._saving = true
     const payload = {
       action: f.mode,
       name: f.name.trim(),
@@ -149,11 +152,13 @@ Page({
       order: f.order === '' ? undefined : Number(f.order)
     }
     if (f.mode === 'edit') payload.id = f.id
-    wx.showLoading({ title: '保存中' })
+    wx.showLoading({ title: '保存中', mask: true })
     try {
       const res = await callFunction('category-manage', payload)
       wx.hideLoading()
       if (res && res.success) {
+        // 分类树已变更：清掉本地缓存，选择器下次打开拉新树
+        clearCache('category_tree')
         wx.showToast({ title: '已保存', icon: 'success' })
         this.setData({ 'form.show': false })
         this.loadTree()
@@ -163,6 +168,8 @@ Page({
     } catch (e) {
       wx.hideLoading()
       wx.showToast({ title: '保存失败', icon: 'none' })
+    } finally {
+      this._saving = false
     }
   },
 
@@ -180,6 +187,7 @@ Page({
           const res = await callFunction('category-manage', { action: 'delete', id })
           wx.hideLoading()
           if (res && res.success) {
+            clearCache('category_tree') // 分类树变更，清本地缓存
             wx.showToast({ title: '已删除', icon: 'success' })
             this.loadTree()
           } else {

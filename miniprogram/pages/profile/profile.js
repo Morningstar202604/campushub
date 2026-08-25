@@ -1,6 +1,6 @@
 // pages/profile/profile.js
 const app = getApp()
-const { logout, ensureLogin } = require('../../utils/auth.js')
+const { logout, ensureLogin, firstChar } = require('../../utils/auth.js')
 const { callFunction } = require('../../utils/request.js')
 
 Page({
@@ -12,7 +12,7 @@ Page({
 
   onShow() {
     if (app.globalData.isLoggedIn) {
-      this.setData({ user: app.globalData.userInfo })
+      const u = app.globalData.userInfo; this.setData({ user: u ? { ...u, nicknameFirst: firstChar(u.nickname) } : null })
       this.checkAdmin()
       this.refreshUserData()
       this.loadUnreadCount()
@@ -27,7 +27,7 @@ Page({
       const res = await callFunction('login', {})
       if (res.success && res.user) {
         app.setUserInfo(res.user)
-        this.setData({ user: res.user })
+        this.setData({ user: { ...res.user, nicknameFirst: firstChar(res.user.nickname) }, campusVerified: res.user.campusVerified === true })
       }
     } catch (e) {}
   },
@@ -89,6 +89,8 @@ Page({
   // 每日签到
   async onCheckin() {
     if (!ensureLogin()) return
+    if (this._checkinLock) return // 在途锁：连点不重复发请求（服务端另有唯一索引兜底）
+    this._checkinLock = true
     try {
       const res = await callFunction('checkin', {})
       if (res.success) {
@@ -100,7 +102,14 @@ Page({
       }
     } catch (err) {
       wx.showToast({ title: '签到失败', icon: 'none' })
+    } finally {
+      this._checkinLock = false
     }
+  },
+
+  goVerify() {
+    if (!ensureLogin()) return
+    wx.navigateTo({ url: '/pages/verify/verify' })
   },
 
   onLogout() {

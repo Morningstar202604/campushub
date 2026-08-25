@@ -1,4 +1,4 @@
-// cloudfunctions/guide-list/index.js
+﻿// cloudfunctions/guide-list/index.js
 // 校园指南列表：按 categoryId 正确筛选（根本性修复原 category 字段不匹配问题）
 const { getDB, ok, wrap } = require('./common-bundle')
 
@@ -10,7 +10,7 @@ exports.main = wrap(async (event) => {
   const catWhere = {}
   if (schoolId) catWhere.schoolId = schoolId
   const catRes = await db.collection('guide_categories')
-    .where(catWhere).orderBy('sort', 'asc').get()
+    .where(catWhere).orderBy('sort', 'asc').limit(200).get()
   const categories = catRes.data
 
   const where = { status: 'published' }

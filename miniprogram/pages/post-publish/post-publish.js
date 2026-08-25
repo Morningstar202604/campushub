@@ -1,6 +1,7 @@
 // pages/post-publish/post-publish.js
 const app = getApp()
-const { callFunction, uploadImages } = require('../../utils/request.js')
+const { callFunction, uploadImage } = require('../../utils/request.js')
+const { requestSubscribe } = require('../../utils/subscribe.js')
 
 Page({
   data: {
@@ -20,6 +21,7 @@ Page({
     kind: 'post',
     expireDays: 7,
     expireOptions: [3, 7, 15, 30],
+    location: '',
     // 编辑模式
     isEdit: false,
     editId: '',
@@ -28,6 +30,12 @@ Page({
   },
 
   onLoad(options) {
+    // 支持从入口预设类型：?kind=confession / lost / found
+    const PRESET_KINDS = ['lost', 'found', 'confession']
+    if (options.kind && PRESET_KINDS.includes(options.kind)) {
+      this.setData({ kind: options.kind })
+      wx.setNavigationBarTitle({ title: options.kind === 'confession' ? '表白墙' : (options.kind === 'lost' ? '发布失物' : '发布招领') })
+    }
     if (options.id) {
       // 编辑模式
       this.setData({ isEdit: true, editId: options.id })
@@ -40,16 +48,21 @@ Page({
   },
 
   onUnload() {
-    // 非编辑模式下自动保存草稿
-    if (!this.data.isEdit && (this.data.title || this.data.content || this.data.images.length)) {
+    // 非编辑模式下自动保存草稿；已发布成功则不再"复活"草稿
+    if (!this.data.isEdit && !this._published &&
+        (this.data.title || this.data.content || this.data.images.length)) {
       this.saveDraft()
     }
   },
 
   // ---- 草稿 ----
+  // 注意：images 为临时路径，重启后失效，不入草稿
   saveDraft() {
-    const { title, content, tags } = this.data
-    wx.setStorageSync(this.data.draftKey, { title, content, tags, savedAt: Date.now() })
+    const { title, content, tags, kind, expireDays, isAnonymous, categoryId, categoryPath, categoryName } = this.data
+    wx.setStorageSync(this.data.draftKey, {
+      title, content, tags, kind, expireDays, isAnonymous,
+      categoryId, categoryPath, categoryName, savedAt: Date.now()
+    })
   },
 
   restoreDraft() {
@@ -58,7 +71,13 @@ Page({
       this.setData({
         title: draft.title || '',
         content: draft.content || '',
-        tags: draft.tags || []
+        tags: draft.tags || [],
+        kind: draft.kind || 'post',
+        expireDays: draft.expireDays || 7,
+        isAnonymous: !!draft.isAnonymous,
+        categoryId: draft.categoryId || '',
+        categoryPath: draft.categoryPath || [],
+        categoryName: draft.categoryName || ''
       })
     }
   },
@@ -88,11 +107,14 @@ Page({
         })
       } else {
         wx.showToast({ title: '加载失败', icon: 'none' })
+        // 加载失败立即退出：停留在一个"空白可提交"的表单会用残缺内容覆盖原帖
+        setTimeout(() => wx.navigateBack(), 1500)
       }
     } catch (err) {
       wx.hideLoading()
       console.error('加载帖子失败', err)
       wx.showToast({ title: '加载失败', icon: 'none' })
+      setTimeout(() => wx.navigateBack(), 1500)
     }
   },
 
@@ -205,10 +227,14 @@ Page({
   onExpireChange(e) {
     this.setData({ expireDays: Number(e.currentTarget.dataset.days) })
   },
+  onLocationInput(e) {
+    this.setData({ location: e.detail.value })
+  },
 
   async submit() {
+    if (this.data.submitting) return // JS 级防重入（不依赖按钮 loading 态）
     const {
-      title, content, images, tags, categoryId, categoryPath, kind, expireDays, isAnonymous,
+      title, content, images, tags, categoryId, categoryPath, kind, expireDays, isAnonymous, location,
       isEdit, editId
     } = this.data
 
@@ -232,10 +258,16 @@ Page({
       // 分离已上传的 cloud:// 图片和本地待上传图片
       const existingImages = images.filter(img => typeof img === 'string' && img.startsWith('cloud://'))
       const localImages = images.filter(img => typeof img === 'string' && !img.startsWith('cloud://'))
-      let uploadedImages = existingImages
-      if (localImages.length > 0) {
-        const newUploaded = await uploadImages(localImages, 'posts')
-        uploadedImages = [...existingImages, ...newUploaded]
+      const uploadedImages = [...existingImages]
+      // 逐张上传：中途失败时把"已成功 + 未上传"写回页面，重试不重复上传（不产生孤儿文件）
+      for (let i = 0; i < localImages.length; i++) {
+        try {
+          const fileID = await uploadImage(localImages[i], 'posts')
+          uploadedImages.push(fileID)
+        } catch (e) {
+          this.setData({ images: [...uploadedImages, ...localImages.slice(i)] })
+          throw e
+        }
       }
 
       if (isEdit) {
@@ -253,7 +285,9 @@ Page({
         if (res.success) {
           app.globalData.needRefresh = true
           wx.showToast({ title: '修改成功', icon: 'success' })
+          // 成功后不复位 submitting：跳转空窗期内按钮保持禁用，防重复保存
           setTimeout(() => wx.navigateBack(), 1500)
+          return
         } else {
           wx.showToast({ title: res.message || '修改失败', icon: 'none' })
         }
@@ -261,14 +295,19 @@ Page({
         // 新建模式
         const res = await callFunction('post-create', {
           title, content, images: uploadedImages, tags,
-          categoryId, categoryPath, kind, expireDays, isAnonymous
+          categoryId, categoryPath, kind, expireDays, isAnonymous, location
         })
         wx.hideLoading()
         if (res.success) {
+          // 标记已发布：onUnload 不再回写草稿；submitting 保持 true 防空窗期双击重发
+          this._published = true
           this.clearDraft()
           app.globalData.needRefresh = true
           wx.showToast({ title: '发布成功', icon: 'success' })
+          // 请求订阅「评论/回复」提醒（未配置模板时静默）
+          requestSubscribe(['comment'])
           setTimeout(() => wx.navigateBack(), 1500)
+          return
         } else {
           wx.showToast({ title: res.message || '发布失败', icon: 'none' })
         }
@@ -279,6 +318,7 @@ Page({
       wx.showToast({ title: '操作失败', icon: 'none' })
     }
 
+    // 只有失败路径才会走到这里复位，允许用户修改后重试
     this.setData({ submitting: false })
   }
 })

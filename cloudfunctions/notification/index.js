@@ -3,14 +3,19 @@
 // notifications 集合: { userId, type, content, targetId, isRead, createdAt }
 const { getDB, getCmd, AppError, ok, wrap, requireActiveUser } = require('./common-bundle')
 
+function toInt(v, def) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : def
+}
+
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
   const db = getDB()
-  const _ = getCmd()
-  const { action = 'list', page = 1, pageSize = 20 } = event
+  const { action = 'list' } = event
 
-  const pSize = Math.min(100, Math.max(1, Number(pageSize)))
-  const skip = Math.max(0, (Number(page) - 1) * pSize)
+  const page = Math.max(1, toInt(event.page, 1))
+  const pSize = Math.min(100, Math.max(1, toInt(event.pageSize, 20)))
+  const skip = (page - 1) * pSize
 
   // ---- 列表 ----
   if (action === 'list') {
@@ -33,8 +38,27 @@ exports.main = wrap(async (event) => {
   if (action === 'markRead') {
     const { notificationId } = event
     if (!notificationId) throw new AppError('缺少通知ID', 'INVALID_PARAM')
-    await db.collection('notifications').doc(notificationId).update({ data: { isRead: true } })
+    // 属主校验：只能标记自己的通知（防 IDOR）
+    const r = await db.collection('notifications')
+      .where({ _id: notificationId, userId: user._id, isRead: false })
+      .update({ data: { isRead: true } })
+    const updated = (r && r.stats && r.stats.updated) || 0
+    if (!updated) {
+      // 不存在、不属于本人或已读 —— 统一幂等返回，不泄露他人数据存在性
+      return ok({ marked: false })
+    }
     return ok({ marked: true })
+  }
+
+  // ---- 下发订阅消息模板 ID（未配置环境变量时返回空，客户端静默跳过） ----
+  if (action === 'tmplIds') {
+    return ok({
+      tmplIds: {
+        comment: process.env.TMPL_COMMENT || '',
+        like: process.env.TMPL_LIKE || '',
+        follow: process.env.TMPL_FOLLOW || ''
+      }
+    })
   }
 
   // ---- 全部已读 ----
@@ -47,26 +71,3 @@ exports.main = wrap(async (event) => {
 
   throw new AppError('未知操作', 'INVALID_PARAM')
 })
-
-// ---- 工具函数：创建通知（供其他云函数调用） ----
-// 用法：在 like/comment/follow 等云函数中 require 此函数
-async function createNotification(db, { userId, type, content, targetId }) {
-  if (!userId || !content) return
-  try {
-    await db.collection('notifications').add({
-      data: {
-        userId,
-        type: type || 'system',
-        content,
-        targetId: targetId || '',
-        isRead: false,
-        createdAt: new Date()
-      }
-    })
-  } catch (e) {
-    // 通知创建失败不影响主流程
-    console.error('创建通知失败:', e)
-  }
-}
-
-module.exports = { createNotification }

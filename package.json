@@ -1,17 +1,17 @@
 {
   "name": "campushub",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "CampusHub — An open-source campus & interest community for WeChat Mini Program + CloudBase",
   "engines": { "node": ">=16" },
   "license": "Apache-2.0",
-  "author": "weed33834",
+  "author": "Morningstar202604",
   "repository": {
     "type": "git",
     "url": "https://gitcode.com/badhope/campushub.git"
   },
   "homepage": "https://gitcode.com/badhope/campushub",
   "bugs": {
-    "url": "https://github.com/weed33834/campushub/issues"
+    "url": "https://github.com/Morningstar202604/campushub/issues"
   },
   "keywords": [
     "wechat-miniprogram",
@@ -23,9 +23,15 @@
   ],
   "scripts": {
     "sync:common": "node scripts/sync-common.js",
+    "deploy": "node scripts/deploy.js --env prod",
+    "deploy:dev": "node scripts/deploy.js --env dev",
+    "doctor": "node scripts/doctor.js",
     "prepublishOnly": "node scripts/sync-common.js"
   },
   "dependencies": {
     "tdesign-miniprogram": "^1.7.0"
+  },
+  "devDependencies": {
+    "miniprogram-ci": "^2.1.31"
   }
 }

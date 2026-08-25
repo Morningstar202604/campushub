@@ -2,36 +2,39 @@
 // 数据库初始化云函数 — 首次部署时调用一次
 // 根本性修复指南分类模型：分类使用稳定 categoryId，指南存储 categoryId 与之对应。
 //
-// ⚠️ 安全：本函数原无任何鉴权，任意客户端均可触发。现增加 INIT_SECRET 守卫：
-// 部署后在云函数环境变量中配置 INIT_SECRET，调用时须携带相同 secret 才允许执行；
-// 未配置 INIT_SECRET 时保持原行为（向后兼容），但强烈建议部署即配置。
-const { getDB, ok, wrap, AppError } = require('./common-bundle')
+// ⚠️ 安全（fail-closed）：必须在云函数环境变量配置 INIT_SECRET，调用时携带相同 secret 才允许执行；
+// 未配置时直接拒绝——初始化接口可重放种子数据/枚举索引清单，绝不能对客户端开放。
+const { getDB, isDuplicateKeyError, ok, wrap, AppError } = require('./common-bundle')
 // 索引的权威定义（单一事实来源）。微信云开发不支持用代码创建索引，
 // 故 init-db 仅据此自检并回显缺失清单，真正创建仍需在控制台手动完成。
 const { EXPECTED_INDEXES } = require('./common-indexes')
 
 exports.main = wrap(async (event = {}) => {
-  // 安全防护：若部署时配置了 INIT_SECRET，则必须携带正确 secret 才允许初始化
+  // 安全防护（fail-closed）：INIT_SECRET 未配置或校验失败一律拒绝
   const expected = process.env.INIT_SECRET
-  if (expected && event.secret !== expected) {
-    throw new AppError('无权执行数据库初始化', 'FORBIDDEN')
+  if (!expected || event.secret !== expected) {
+    throw new AppError(
+      expected ? '无权执行数据库初始化' : 'init-db 未配置 INIT_SECRET 环境变量，已拒绝执行；请先在云函数配置中设置',
+      'FORBIDDEN'
+    )
   }
 
   const db = getDB()
   const results = []
 
-  // 1. 创建集合
+  // 1. 创建集合（含 view_logs：浏览量去重日志）
   const collections = [
     'users', 'posts', 'products', 'comments', 'likes', 'collects',
     'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
-    'follows', 'checkins', 'notifications'
+    'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests'
   ]
   for (const name of collections) {
     try {
       await db.createCollection(name)
       results.push({ collection: name, status: 'created' })
     } catch (e) {
-      results.push({ collection: name, status: 'exists' })
+      // 区分"已存在"与真实故障：权限不足等错误不再被吞成 exists
+      results.push({ collection: name, status: isDuplicateKeyError(e) || /already exists|exists/i.test(String(e && (e.errMsg || e.message))) ? 'exists' : `error: ${String(e && (e.errMsg || e.message)).slice(0, 120)}` })
     }
   }
 

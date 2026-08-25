@@ -32,10 +32,11 @@
   <view class="seller-section" wx:if="{{product.userNickname}}">
     <view class="seller-avatar">
       <image wx:if="{{product.userAvatar}}" src="{{product.userAvatar}}" class="avatar-img" />
-      <view wx:else class="avatar-placeholder">{{product.userNickname[0]}}</view>
+      <view wx:else class="avatar-placeholder">{{product.userNicknameFirst || '用'}}</view>
     </view>
     <view class="seller-info">
       <view class="seller-name">{{product.userNickname}}</view>
+        <text class="author-v" wx:if="{{product.authorVerified}}">🎖️ 已认证</text>
       <view class="seller-meta">{{formatCreateTime}}发布</view>
     </view>
   </view>

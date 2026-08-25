@@ -20,6 +20,7 @@ const EXPECTED_INDEXES = [
   { collection: 'posts', name: 'idx_posts_category_status_created', fields: [{ key: 'categoryPath', direction: -1 }, { key: 'status', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
   { collection: 'posts', name: 'idx_posts_status_kind_expire', fields: [{ key: 'status', direction: -1 }, { key: 'kind', direction: -1 }, { key: 'expireAt', direction: -1 }], unique: false },
   { collection: 'posts', name: 'idx_posts_status_created', fields: [{ key: 'status', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  { collection: 'posts', name: 'idx_posts_status_likes', fields: [{ key: 'status', direction: -1 }, { key: 'likeCount', direction: -1 }], unique: false },
 
   // ===== categories =====
   { collection: 'categories', name: 'idx_categories_parent', fields: [{ key: 'parentId', direction: 1 }], unique: false },
@@ -36,8 +37,9 @@ const EXPECTED_INDEXES = [
   { collection: 'comments', name: 'idx_comments_user_created', fields: [{ key: 'userId', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
 
   // ===== likes / collects =====
-  { collection: 'likes', name: 'idx_likes_user_target_type', fields: [{ key: 'userId', direction: 1 }, { key: 'targetId', direction: 1 }, { key: 'type', direction: 1 }], unique: false },
-  { collection: 'collects', name: 'idx_collects_user_target_type', fields: [{ key: 'userId', direction: 1 }, { key: 'targetId', direction: 1 }, { key: 'type', direction: 1 }], unique: false },
+  // unique:true —— 并发双击/重复请求靠唯一索引兜底去重（配合 insertIdempotent 幂等插入）
+  { collection: 'likes', name: 'idx_likes_user_target_type', fields: [{ key: 'userId', direction: 1 }, { key: 'targetId', direction: 1 }, { key: 'type', direction: 1 }], unique: true },
+  { collection: 'collects', name: 'idx_collects_user_target_type', fields: [{ key: 'userId', direction: 1 }, { key: 'targetId', direction: 1 }, { key: 'type', direction: 1 }], unique: true },
   { collection: 'collects', name: 'idx_collects_user_created', fields: [{ key: 'userId', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
 
   // ===== reports / feedbacks =====
@@ -56,7 +58,8 @@ const EXPECTED_INDEXES = [
   { collection: 'follows', name: 'idx_follows_follower_following', fields: [{ key: 'followerId', direction: 1 }, { key: 'followingId', direction: 1 }], unique: true },
 
   // ===== checkins =====
-  { collection: 'checkins', name: 'idx_checkins_user_date', fields: [{ key: 'userId', direction: 1 }, { key: 'date', direction: 1 }], unique: false },
+  // unique:true —— 同一用户同一天只能有一条签到记录（防并发双签双积分）
+  { collection: 'checkins', name: 'idx_checkins_user_date', fields: [{ key: 'userId', direction: 1 }, { key: 'date', direction: 1 }], unique: true },
 
   // ===== comments (楼中楼) =====
   { collection: 'comments', name: 'idx_comments_parent_status_created', fields: [{ key: 'parentId', direction: 1 }, { key: 'status', direction: 1 }, { key: 'createdAt', direction: 1 }], unique: false },

@@ -6,7 +6,7 @@
       <view class="cat-title">{{levelName(path.length)}}</view>
       <view class="cat-close" bindtap="close">✕</view>
     </view>
-    <view class="cat-path" wx:if="{{path.length > 0}}">{{path.map(c => c.name).join(' / ')}}</view>
+    <view class="cat-path" wx:if="{{pathText}}">{{pathText}}</view>
     <scroll-view scroll-y class="cat-list">
       <view
         class="cat-item"

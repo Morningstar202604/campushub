@@ -10,6 +10,7 @@
     <view class="admin-tab {{activeTab === 'reports' ? 'active' : ''}}" data-key="reports" bindtap="onTabChange">举报审核</view>
     <view class="admin-tab {{activeTab === 'manage' ? 'active' : ''}}" data-key="manage" bindtap="onTabChange">帖子管理</view>
     <view class="admin-tab {{activeTab === 'users' ? 'active' : ''}}" data-key="users" bindtap="onTabChange">用户/封禁</view>
+    <view class="admin-tab {{activeTab === 'verify' ? 'active' : ''}}" data-key="verify" bindtap="onTabChange">校园认证</view>
   </view>
 
   <!-- 举报审核 -->
@@ -75,6 +76,33 @@
 
     <view class="admin-quick">
       <view class="quick-btn" bindtap="goCategoryAdmin">📂 分类管理</view>
+    </view>
+  </block>
+
+  <!-- 校园认证审核 -->
+  <block wx:if="{{activeTab === 'verify'}}">
+    <view class="verify-list">
+      <view class="panel-title">🎖️ 待审核申请（{{verifyTotal}}）</view>
+
+      <view class="verify-item" wx:for="{{verifyList}}" wx:key="_id">
+        <view class="verify-info">
+          <view class="verify-line"><text class="verify-label">申请人</text>{{item.nickname || item.userId}}</view>
+          <view class="verify-line"><text class="verify-label">学校</text>{{item.school}}</view>
+          <view class="verify-line"><text class="verify-label">学号</text>{{item.studentId}}</view>
+          <image src="{{item.imageFileID}}" mode="aspectFill" class="verify-img" data-url="{{item.imageFileID}}" bindtap="previewVerifyImage" />
+        </view>
+        <view class="verify-btns" wx:if="{{item.status === 'pending'}}">
+          <button class="btn btn-pin" loading="{{item._loading}}" data-id="{{item._id}}" data-approve="{{true}}" bindtap="onVerifyReview">✅ 通过</button>
+          <button class="btn btn-unban" data-id="{{item._id}}" data-approve="{{false}}" bindtap="onVerifyReview">❌ 驳回</button>
+        </view>
+        <view class="verify-status" wx:else>
+          {{item.status === 'approved' ? '✅ 已通过' : '❌ 已驳回'}}{{item.rejectReason ? '：' + item.rejectReason : ''}}
+        </view>
+      </view>
+
+      <view class="load-more" wx:if="{{verifyLoading}}">加载中…</view>
+      <view class="load-more" wx:elif="{{verifyList.length === 0}}">暂无待审核申请</view>
+      <view class="load-more" wx:elif="{{!verifyHasMore}}">没有更多了</view>
     </view>
   </block>
 </view>

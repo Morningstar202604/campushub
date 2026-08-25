@@ -1,0 +1,46 @@
+<!-- pages/lost-found/lost-found.wxml -->
+<view class="page">
+  <!-- 类型筛选 -->
+  <view class="chips">
+    <view
+      class="chip {{activeKind === item.key ? 'chip-active' : ''}}"
+      wx:for="{{chips}}" wx:key="key"
+      data-key="{{item.key}}" bindtap="onChipTap"
+    >{{item.name}}</view>
+  </view>
+
+  <view class="list" wx:if="{{list.length > 0}}">
+    <view class="card" wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onItemClick">
+      <image wx:if="{{item.images[0]}}" src="{{item.images[0]}}" mode="aspectFill" class="card-thumb" lazy-load />
+      <view class="card-body">
+        <view class="card-title-row">
+          <text class="card-kind {{item.kind === 'lost' ? 'kind-lost' : 'kind-found'}}">
+            {{item.kind === 'lost' ? '丢失' : '拾获'}}
+          </text>
+          <text class="card-title">{{item.title}}</text>
+          <text class="card-resolved" wx:if="{{item.resolved}}">✅ 已找回</text>
+        </view>
+        <view class="card-desc ellipsis-1" wx:if="{{item.content}}">{{item.content}}</view>
+        <view class="card-meta">
+          <text class="card-loc" wx:if="{{item.location}}">📍{{item.location}}</text>
+          <text class="card-time">{{item.timeText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-container" wx:if="{{!loading && list.length === 0}}">
+    <view class="empty-emoji">🎒</view>
+    <view class="empty-text">暂无失物招领信息</view>
+    <view class="empty-sub">丢了东西或捡到东西，点下方按钮发布</view>
+  </view>
+
+  <view class="load-more" wx:if="{{loading && list.length > 0}}"><text>加载中...</text></view>
+  <view class="no-more" wx:if="{{!hasMore && list.length > 0 && !loading}}"><text>到底了</text></view>
+</view>
+
+<!-- 双发布入口 -->
+<view class="fab-group">
+  <view class="fab fab-lost" data-kind="lost" bindtap="goPublish">🔍 丢了</view>
+  <view class="fab fab-found" data-kind="found" bindtap="goPublish">🎁 捡到</view>
+</view>

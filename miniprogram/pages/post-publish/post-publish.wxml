@@ -55,6 +55,9 @@
     <view class="kind-row">
       <view class="kind-item {{kind === 'post' ? 'active' : ''}}" data-kind="post" bindtap="onKindChange">💬 普通帖</view>
       <view class="kind-item {{kind === 'task' ? 'active' : ''}}" data-kind="task" bindtap="onKindChange">📌 任务/请求</view>
+      <view class="kind-item {{kind === 'lost' ? 'active' : ''}}" data-kind="lost" bindtap="onKindChange">🔍 失物</view>
+      <view class="kind-item {{kind === 'found' ? 'active' : ''}}" data-kind="found" bindtap="onKindChange">🎁 招领</view>
+      <view class="kind-item {{kind === 'confession' ? 'active' : ''}}" data-kind="confession" bindtap="onKindChange">💌 表白墙</view>
     </view>
     <view class="expire-row" wx:if="{{kind === 'task'}}">
       <text class="expire-label">有效期</text>
@@ -90,8 +93,14 @@
     </view>
   </view>
 
-  <!-- 匿名 -->
-  <view class="form-section anon-section">
+  <!-- 失物/招领：地点 -->
+  <view class="form-section" wx:if="{{kind === 'lost' || kind === 'found'}}">
+    <view class="section-label">📍 地点（选填）</view>
+    <input class="location-input" placeholder="如：图书馆三楼 / 东门快递站" value="{{location}}" bindinput="onLocationInput" maxlength="50" />
+  </view>
+
+  <!-- 匿名（表白墙强制匿名，隐藏开关） -->
+  <view class="form-section anon-section" wx:if="{{kind !== 'confession'}}">
     <view class="anon-info">
       <view class="anon-title">匿名发布</view>
       <view class="anon-desc">匿名可发帖和评论，但不能发布商品或交易</view>

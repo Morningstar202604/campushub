@@ -415,3 +415,13 @@
   padding: 16rpx 24rpx;
   border-radius: var(--radius-sm);
 }
+
+/* 认证作者标识 */
+.meta-v, .author-v {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: var(--color-primary);
+  background: var(--color-primary-bg, #eaf3fd);
+  padding: 2rpx 10rpx;
+  border-radius: var(--radius-sm);
+}

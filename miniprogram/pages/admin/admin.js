@@ -13,6 +13,11 @@ Page({
     banLoading: false,
     pinTarget: '',
     pinLoading: false,
+    verifyList: [],
+    verifyPage: 1,
+    verifyHasMore: true,
+    verifyLoading: false,
+    verifyTotal: 0,
     activeTab: 'reports'
   },
 
@@ -26,14 +31,19 @@ Page({
 
   onReachBottom() {
     if (this.data.activeTab === 'reports') this.loadReports(false)
+    if (this.data.activeTab === 'verify') this.loadVerifies(false)
   },
 
   onTabChange(e) {
-    this.setData({ activeTab: e.currentTarget.dataset.key })
+    const key = e.currentTarget.dataset.key
+    if (key === 'verify' && !this.data.verifyList.length && !this.data.verifyLoading) {
+      this.loadVerifies(true)
+    }
+    this.setData({ activeTab: key })
   },
 
   async loadReports(reset) {
-    if (this.data.loading) return
+    if (this.data.loading && !reset) return // 下拉刷新放行，不被在途请求吞掉
     if (!reset && !this.data.hasMore) return
     this.setData({ loading: true })
     try {
@@ -133,6 +143,17 @@ Page({
   async doBan() {
     const t = (this.data.banTarget || '').trim()
     if (!t) return wx.showToast({ title: '请输入用户ID', icon: 'none' })
+    // 手输 ID 封禁属高危操作：与列表内封禁一致，先二次确认
+    const confirm = await new Promise(resolve => {
+      wx.showModal({
+        title: '确认封禁',
+        content: `将封禁用户 ${t}，确定执行？`,
+        confirmColor: '#e64340',
+        success: r => resolve(r.confirm),
+        fail: () => resolve(false)
+      })
+    })
+    if (!confirm) return
     this.setData({ banLoading: true })
     try {
       const res = await this.banCall('ban', t)
@@ -243,6 +264,72 @@ Page({
     this.setData({ pinLoading: false })
   },
 
+  // ---- 校园认证审核 ----
+  loadVerifies(reset) {
+    if (this.data.verifyLoading) return
+    this.setData({ verifyLoading: true })
+    const page = reset ? 1 : this.data.verifyPage
+    callFunction('admin', { action: 'list-verifies', status: 'pending', page, pageSize: 20 })
+      .then(res => {
+        if (res.success) {
+          this.setData({
+            verifyList: reset ? res.list : [...this.data.verifyList, ...res.list],
+            verifyTotal: res.total || 0,
+            verifyPage: page + 1,
+            verifyHasMore: (res.list || []).length === 20,
+            verifyLoading: false
+          })
+        } else {
+          this.setData({ verifyLoading: false })
+        }
+      })
+      .catch(() => this.setData({ verifyLoading: false }))
+  },
+
+  previewVerifyImage(e) {
+    wx.previewImage({ current: e.currentTarget.dataset.url, urls: [e.currentTarget.dataset.url] })
+  },
+
+  async onVerifyReview(e) {
+    const { id, approve } = e.currentTarget.dataset
+    if (!id) return
+    let reason = ''
+    if (!approve) {
+      reason = await new Promise(resolve => {
+        wx.showModal({
+          title: '驳回原因',
+          editable: true,
+          placeholderText: '如：照片模糊 / 信息不一致',
+          success: r => resolve(r.confirm ? (r.content || '资料不符合要求') : ''),
+          fail: () => resolve('')
+        })
+      })
+      if (!reason) return
+    } else {
+      const okGo = await new Promise(resolve => {
+        wx.showModal({ title: '确认通过', content: '通过后该用户将获得校园认证标识', success: r => resolve(r.confirm), fail: () => resolve(false) })
+      })
+      if (!okGo) return
+    }
+
+    const idx = this.data.verifyList.findIndex(v => v._id === id)
+    if (idx !== -1) this.setData({ ['verifyList[' + idx + ']._loading']: true })
+
+    try {
+      const res = await callFunction('admin', { action: 'verify-review', requestId: id, approve: !!approve, reason })
+      if (res.success) {
+        wx.showToast({ title: approve ? '已通过' : '已驳回', icon: 'success' })
+        const rest = this.data.verifyList.filter(v => v._id !== id)
+        this.setData({ verifyList: rest, verifyTotal: Math.max(0, this.data.verifyTotal - 1) })
+      } else {
+        wx.showToast({ title: res.message || '操作失败', icon: 'none' })
+        if (idx !== -1) this.setData({ ['verifyList[' + idx + ']._loading']: false })
+      }
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+      if (idx !== -1) this.setData({ ['verifyList[' + idx + ']._loading']: false })
+    }
+  },
   goCategoryAdmin() {
     wx.navigateTo({ url: '/pages/category-admin/category-admin' })
   }

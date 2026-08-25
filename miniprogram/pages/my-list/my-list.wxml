@@ -1,21 +1,29 @@
 <!-- pages/my-list/my-list.wxml -->
 <view class="my-list-page">
   <view class="list" wx:if="{{list.length > 0}}">
-    <view class="list-item" wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" data-price="{{item.price}}" bindtap="onItemClick">
+    <view class="list-item" wx:for="{{list}}" wx:key="_id"
+      data-id="{{item._id}}"
+      data-item-type="{{item.price !== undefined ? 'product' : 'post'}}"
+      bindtap="onItemClick">
       <image wx:if="{{item.images[0]}}" src="{{item.images[0]}}" mode="aspectFill" class="item-thumb" />
       <view class="item-info">
         <view class="item-title ellipsis-2">{{item.title}}</view>
-        <view class="item-tags" wx:if="{{item.kind === 'task' || item.resolved || item.status === 'expired'}}">
+        <view class="item-tags" wx:if="{{item.kind === 'task' || item.resolved || item.status === 'expired' || item.status === 'sold'}}">
           <text class="item-tag tag-task" wx:if="{{item.kind === 'task'}}">任务</text>
           <text class="item-tag tag-resolved" wx:if="{{item.resolved}}">已解决</text>
           <text class="item-tag tag-expired" wx:if="{{item.status === 'expired'}}">已过期</text>
+          <text class="item-tag tag-expired" wx:if="{{item.status === 'sold'}}">已售</text>
         </view>
         <view class="item-meta">
-          <text wx:if="{{item.price}}" class="item-price">¥{{item.price}}</text>
+          <text wx:if="{{item.price !== undefined}}" class="item-price">¥{{item.price}}</text>
           <text class="item-time">{{item.timeText}}</text>
         </view>
       </view>
-      <view class="item-actions" wx:if="{{type !== 'collects'}}">
+      <!-- 收藏 tab：提供取消收藏入口 -->
+      <view class="item-actions" wx:if="{{type === 'collects'}}">
+        <view class="item-delete" catchtap="onUncollect" data-id="{{item._id}}" data-target-type="{{item.price !== undefined ? 'product' : 'post'}}">取消收藏</view>
+      </view>
+      <view class="item-actions" wx:else>
         <view
           class="item-edit"
           catchtap="onEdit"

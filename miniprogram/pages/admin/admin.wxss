@@ -184,3 +184,27 @@
 .btn-unpin { background: #f0f0f0; color: #666; }
 .btn-essence { background: #F5A623; color: #fff; }
 .btn-unessence { background: #f0f0f0; color: #666; }
+
+/* ===== 校园认证审核 ===== */
+.verify-item {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+.verify-line { font-size: var(--font-size-sm); color: var(--color-text-primary); margin-bottom: 8rpx; }
+.verify-label {
+  display: inline-block;
+  width: 96rpx;
+  color: var(--color-text-tertiary);
+}
+.verify-img {
+  width: 240rpx;
+  height: 160rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-gray);
+  margin-top: 8rpx;
+}
+.verify-btns { display: flex; gap: 16rpx; margin-top: 16rpx; }
+.verify-btns .btn { flex: 1; font-size: var(--font-size-sm); }
+.verify-status { margin-top: 12rpx; font-size: var(--font-size-sm); color: var(--color-text-secondary); }

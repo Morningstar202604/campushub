@@ -1,6 +1,8 @@
 // cloudfunctions/login/index.js
 // 用户登录/注册。允许被封禁用户登录（仅用于提示），但写操作会被统一拦截。
-const { getDB, ok, wrap, getOpenid } = require('./common-bundle')
+// 并发首登：add 撞 idx_users_openid 唯一索引后重读，不再可能建出重复用户；
+// 老用户回写 updatedAt 的"每次登录必写"已移除（写放大 + 与 user-update 的 updatedAt 语义重复）。
+const { getDB, isDuplicateKeyError, ok, wrap, getOpenid } = require('./common-bundle')
 
 exports.main = wrap(async (event, context) => {
   const openid = await getOpenid()
@@ -9,9 +11,7 @@ exports.main = wrap(async (event, context) => {
   const userRes = await db.collection('users').where({ openid }).get()
 
   if (userRes.data.length > 0) {
-    const user = userRes.data[0]
-    await db.collection('users').doc(user._id).update({ data: { updatedAt: new Date() } })
-    return ok({ user })
+    return ok({ user: userRes.data[0] })
   }
 
   const newUser = {
@@ -39,7 +39,16 @@ exports.main = wrap(async (event, context) => {
     updatedAt: new Date()
   }
 
-  const addRes = await db.collection('users').add({ data: newUser })
-  newUser._id = addRes._id
-  return ok({ user: newUser })
+  try {
+    const addRes = await db.collection('users').add({ data: newUser })
+    newUser._id = addRes._id
+    return ok({ user: newUser })
+  } catch (e) {
+    // 并发首次登录：另一个请求先建好了。唯一索引兜底 → 重读返回即可
+    if (isDuplicateKeyError(e)) {
+      const again = await db.collection('users').where({ openid }).get()
+      if (again.data && again.data[0]) return ok({ user: again.data[0] })
+    }
+    throw e
+  }
 })

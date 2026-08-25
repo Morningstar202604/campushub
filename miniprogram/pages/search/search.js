@@ -26,11 +26,27 @@ Page({
 
   clearInput() {
     this.setData({ keyword: '', searched: false, searchError: false })
+    this._lastKeyword = ''
   },
 
   async onSearch() {
     const keyword = this.data.keyword.trim()
     if (!keyword) return
+
+    // 相同关键词且已有结果：直接复用，不重复请求（搜索是正则全表扫，成本高）
+    if (this._lastKeyword === keyword && this.data.searched && !this.data.searchError) return
+
+    // 客户端限频（降本 C7）：2 秒内只放行一次真实搜索
+    const now = Date.now()
+    if (this._lastSearchAt && now - this._lastSearchAt < 2000) {
+      wx.showToast({ title: '搜索太频繁啦，休息一下', icon: 'none' })
+      return
+    }
+    this._lastSearchAt = now
+    this._lastKeyword = keyword
+    // 竞态防护：慢请求晚到不覆盖新关键词的结果
+    this._seq = (this._seq || 0) + 1
+    const seq = this._seq
 
     // 保存历史
     let history = wx.getStorageSync('searchHistory') || []
@@ -42,6 +58,7 @@ Page({
 
     try {
       const res = await callFunction('search', { keyword })
+      if (seq !== this._seq) { wx.hideLoading(); return } // 旧请求晚到，丢弃
       wx.hideLoading()
       if (res.success) {
         // 为每个结果添加高亮分段 + 时间格式化

@@ -1,14 +1,19 @@
 // pages/index/index.js
 const app = getApp()
 const { callFunction } = require('../../utils/request.js')
-const { ensureLogin } = require('../../utils/auth.js')
+const { ensureLogin, firstChar } = require('../../utils/auth.js')
+const { getCache, setCache } = require('../../utils/cache.js')
+
+// 首屏缓存：TTL 5 分钟；下拉刷新/发布后强制走网络并回写缓存（降本 C2）
+const FEED_CACHE_KEY = 'index_feed_v1'
+const FEED_CACHE_TTL = 5 * 60 * 1000
 
 Page({
   data: {
     tabs: [
       { key: 'recommend', name: '推荐' },
-      { key: 'latest', name: '最新' },
-      { key: 'products', name: '二手' }
+      { key: 'hot', name: '热门' },
+      { key: 'latest', name: '最新' }
     ],
     activeTab: 'recommend',
     leftList: [],
@@ -31,13 +36,13 @@ Page({
     if (app.globalData.needRefresh) {
       app.globalData.needRefresh = false
       this.setData({ page: 1, leftList: [], rightList: [], hasMore: true })
-      this.loadList(true)
+      this.loadList(true, { force: true })
     }
   },
 
   onPullDownRefresh() {
     this.setData({ page: 1, leftList: [], rightList: [], hasMore: true })
-    this.loadList(true)
+    this.loadList(true, { force: true })
   },
 
   onReachBottom() {
@@ -46,62 +51,77 @@ Page({
     }
   },
 
-  async loadList(reset = false) {
-    if (this.data.loading) return
+  /**
+   * 将接口返回的 items 水合成双列瀑布流数据
+   */
+  applyItems(items) {
+    const hydrated = items.map((item) => ({
+      ...item,
+      itemType: 'post',
+      userNicknameFirst: firstChar(item.userNickname),
+      tags: item.tags || [],
+      images: item.images || []
+    }))
+
+    const leftList = [...this.data.leftList]
+    const rightList = [...this.data.rightList]
+    hydrated.forEach((item) => {
+      if ((leftList.length + rightList.length) % 2 === 0) {
+        leftList.push(item)
+      } else {
+        rightList.push(item)
+      }
+    })
+    return { leftList, rightList }
+  },
+
+  async loadList(reset = false, opts = {}) {
+    // 竞态防护：翻页受 loading 守卫；reset（切tab/下拉/刷新）允许打断在途请求，
+    // 旧响应回来后凭序号丢弃，不会污染新视图
+    if (this.data.loading && !reset) return
+    this._seq = (this._seq || 0) + 1
+    const seq = this._seq
     this.setData({ loading: true })
 
-    const funcName = this.data.activeTab === 'products' ? 'product-list' : 'post-list'
-    
+    const force = !!opts.force
+    const isFeedFirstPage = reset && this.data.activeTab === 'recommend' && !this.data.selectedCategoryId
+
+    // 首屏缓存命中：直接渲染，跳过本次网络请求（下拉刷新强制绕过）
+    if (isFeedFirstPage && !force) {
+      const cachedItems = getCache(FEED_CACHE_KEY)
+      if (cachedItems && cachedItems.length) {
+        const lists = this.applyItems(cachedItems)
+        this.setData({
+          ...lists,
+          page: 2,
+          hasMore: cachedItems.length >= 20,
+          loading: false
+        })
+        wx.stopPullDownRefresh()
+        return
+      }
+    }
+
     try {
       const params = {
         tab: this.data.activeTab,
         page: reset ? 1 : this.data.page,
-        pageSize: 20
-      }
-      // 分类筛选只作用于帖子流；二手 tab 用商品自有分类，不传 categoryId
-      if (funcName === 'post-list') {
-        params.categoryId = this.data.selectedCategoryId || undefined
-      } else {
-        // 二手 tab：传用户 schoolId（可选）
-        const userInfo = app.globalData.userInfo
-        if (userInfo && userInfo.schoolId) {
-          params.schoolId = userInfo.schoolId
-        }
+        pageSize: 20,
+        categoryId: this.data.selectedCategoryId || undefined
       }
 
-      const res = await callFunction(funcName, params)
-      
+      const res = await callFunction('post-list', params)
+      if (seq !== this._seq) { wx.stopPullDownRefresh(); return } // 旧请求晚到，丢弃
+
       if (res.success && res.list) {
-        // 为每个 item 添加 itemType 字段，用于区分帖子/商品
-        const items = res.list.map(item => {
-          const isProduct = this.data.activeTab === 'products'
-          return {
-            ...item,
-            itemType: isProduct ? 'product' : 'post',
-            conditionText: this.getConditionText(item.condition),
-            // 确保 tags 是数组
-            tags: item.tags || [],
-            // 确保 images 是数组
-            images: item.images || []
-          }
-        })
+        if (isFeedFirstPage) {
+          // 只缓存无筛选的推荐流第一页
+          setCache(FEED_CACHE_KEY, res.list, FEED_CACHE_TTL)
+        }
 
-        // 分列：奇偶索引分配到左右列
-        let leftList = reset ? [] : [...this.data.leftList]
-        let rightList = reset ? [] : [...this.data.rightList]
-        
-        items.forEach((item, idx) => {
-          const globalIdx = leftList.length + rightList.length
-          if (globalIdx % 2 === 0) {
-            leftList.push(item)
-          } else {
-            rightList.push(item)
-          }
-        })
-
+        const lists = this.applyItems(res.list)
         this.setData({
-          leftList,
-          rightList,
+          ...lists,
           hasMore: res.hasMore,
           page: (reset ? 1 : this.data.page) + 1,
           loading: false
@@ -110,22 +130,13 @@ Page({
         this.setData({ loading: false })
       }
     } catch (err) {
+      if (seq !== this._seq) { wx.stopPullDownRefresh(); return }
       console.error('加载失败', err)
       this.setData({ loading: false })
       wx.showToast({ title: '加载失败，请检查网络', icon: 'none' })
     }
-    
-    wx.stopPullDownRefresh()
-  },
 
-  getConditionText(condition) {
-    const map = {
-      'new': '全新',
-      'almost_new': '几乎全新',
-      'good': '8成新',
-      'fair': '5成新'
-    }
-    return map[condition] || ''
+    wx.stopPullDownRefresh()
   },
 
   onTabChange(e) {
@@ -144,12 +155,6 @@ Page({
   onPostTap(e) {
     wx.navigateTo({
       url: `/pages/post-detail/post-detail?id=${e.currentTarget.dataset.id}`
-    })
-  },
-
-  onProductTap(e) {
-    wx.navigateTo({
-      url: `/pages/product-detail/product-detail?id=${e.currentTarget.dataset.id}`
     })
   },
 
@@ -188,6 +193,14 @@ Page({
     wx.navigateTo({ url: '/pages/expired/expired' })
   },
 
+  goWall() {
+    wx.navigateTo({ url: '/pages/wall/wall' })
+  },
+
+  goLostFound() {
+    wx.navigateTo({ url: '/pages/lost-found/lost-found' })
+  },
+
   goPublish() {
     if (!ensureLogin()) return
     this.setData({ showPublishMenu: true })
@@ -200,11 +213,17 @@ Page({
   onPublishSelect(e) {
     const type = e.currentTarget.dataset.type
     this.setData({ showPublishMenu: false })
-    
+
     if (type === 'post') {
       wx.navigateTo({ url: '/pages/post-publish/post-publish' })
     } else if (type === 'product') {
       wx.navigateTo({ url: '/pages/product-publish/product-publish' })
+    } else if (type === 'lostfound') {
+      this.goLostFound()
+    } else if (type === 'confession') {
+      if (ensureLogin()) {
+        wx.navigateTo({ url: '/pages/post-publish/post-publish?kind=confession' })
+      }
     }
   }
 })

@@ -3,7 +3,7 @@
 Thanks for your interest in contributing to **CampusHub**!
 
 CampusHub is a WeChat mini-program + CloudBase project. The canonical source repository is
-**GitHub** ([weed33834/campushub](https://github.com/weed33834/campushub)), which is also mirrored
+**GitHub** ([Morningstar202604/campushub](https://github.com/Morningstar202604/campushub)), which is also mirrored
 to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs against GitHub.
 
 ## Development Setup
@@ -41,7 +41,7 @@ to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs 
 
 ## Reporting Issues
 
-- Use [GitHub Issues](https://github.com/weed33834/campushub/issues) to report bugs or request features.
+- Use [GitHub Issues](https://github.com/Morningstar202604/campushub/issues) to report bugs or request features.
 - Include steps to reproduce for bug reports.
 - **Do not** open public issues for security vulnerabilities — see [SECURITY.md](SECURITY.md).
 

@@ -1,6 +1,7 @@
 // cloudfunctions/comment-create/index.js
 // 评论：统一鉴权 + fail-closed 内容安全 + 频率限制 + 目标存在性与状态校验 + 类型白名单
 const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, rateLimit } = require('./common-bundle')
+const { sendSubscribe, getOpenidByUserId } = require('./common-subscribe')
 
 const VALID_TARGET_TYPES = ['post', 'product']
 // 目标类型 → 集合名 + 删除态状态值
@@ -71,9 +72,18 @@ exports.main = wrap(async (event) => {
   try {
     if (targetRes.data.userId !== user._id) {
       await db.collection('notifications').add({
-        data: { userId: targetRes.data.userId, type: 'comment', content: `${user.nickname} 评论了你的内容`, targetId, isRead: false, createdAt: new Date() }
+        data: { userId: targetRes.data.userId, type: 'comment', targetType, content: `${user.nickname} 评论了你的内容`, targetId, isRead: false, createdAt: new Date() }
       })
     }
+  } catch (e) {}
+
+  // 订阅消息推送（best-effort：未配置模板/用户未订阅均静默）
+  try {
+    const targetOpenid = await getOpenidByUserId(db, targetRes.data.userId)
+    await sendSubscribe(targetOpenid, 'comment', 'pages/post-detail/post-detail?id=' + targetId, {
+      thing1: { value: (user.nickname + ' 评论了你的内容').slice(0, 20) },
+      time2: { value: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) }
+    })
   } catch (e) {}
 
   return ok({ commentId: addRes._id, comment })

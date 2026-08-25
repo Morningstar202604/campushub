@@ -37,7 +37,15 @@ exports.main = wrap(async (event) => {
       const r = await db.collection('products').where({ _id: _.in(productIds), status: _.neq('deleted') }).get()
       products = r.data
     }
-    return ok({ list: [...posts, ...products], hasMore: collectRes.data.length === size })
+
+    // 按收藏时间归一排序（旧实现帖子在前商品在后，与用户时间线预期不符）；
+    // 已删除/下架的收藏目标被过滤后自然消失
+    const orderMap = {}
+    collectRes.data.forEach((c, i) => { orderMap[c.targetId] = i })
+    const merged = [...posts, ...products].sort(
+      (a, b) => (orderMap[a._id] ?? 0) - (orderMap[b._id] ?? 0)
+    )
+    return ok({ list: merged, hasMore: collectRes.data.length === size })
   }
 
   throw new AppError('未知类型', 'INVALID_PARAM')

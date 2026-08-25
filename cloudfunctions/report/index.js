@@ -1,4 +1,4 @@
-// cloudfunctions/report/index.js
+﻿// cloudfunctions/report/index.js
 // 举报：登录 + 封禁拦截 + 内容安全 + 频率限制 + 类型白名单 + 防重复举报
 // 写操作统一经 requireActiveUser，封禁用户不可提交举报
 const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, rateLimit } = require('./common-bundle')
@@ -16,7 +16,7 @@ exports.main = wrap(async (event) => {
 
   // 防重复举报：同一用户对同一目标只允许一次 pending 举报
   const dupCheck = await db.collection('reports')
-    .where({ reporterId: user._id, targetId, status: 'pending' })
+    .where({ reporterId: user._id, targetId, targetType, status: 'pending' })
     .count()
   if (dupCheck.total > 0) throw new AppError('您已举报过该内容，请等待处理', 'ALREADY')
 

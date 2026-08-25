@@ -1,0 +1,59 @@
+name: Deploy Cloud Functions
+
+# 云函数部署（仅手动触发：仓库 Actions 页 → Deploy Cloud Functions → Run workflow）。
+# 需要在 GitHub Secrets 配置：
+#   WX_APPID                  小程序 AppID
+#   CLOUD_ENV_ID              云开发环境 ID
+#   WX_UPLOAD_PRIVATE_KEY_B64 小程序后台「开发管理→开发设置→小程序代码上传」下载的私钥（base64 编码）
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '目标环境（deploy.config.json 中 environments 的 key）'
+        required: true
+        default: 'prod'
+
+concurrency:
+  group: deploy-cloud-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps & sync common layer
+        run: |
+          npm install
+          npm run sync:common
+
+      - name: Doctor (pre-deploy checks)
+        run: npm run doctor
+
+      - name: Restore upload private key
+        env:
+          WX_UPLOAD_PRIVATE_KEY_B64: ${{ secrets.WX_UPLOAD_PRIVATE_KEY_B64 }}
+        run: |
+          if [ -z "$WX_UPLOAD_PRIVATE_KEY_B64" ]; then
+            echo "::error::Secret WX_UPLOAD_PRIVATE_KEY_B64 未配置"
+            exit 1
+          fi
+          echo "$WX_UPLOAD_PRIVATE_KEY_B64" | base64 -d > "$RUNNER_TEMP/private.key"
+
+      - name: Deploy all cloud functions
+        env:
+          WX_APPID: ${{ secrets.WX_APPID }}
+          CLOUD_ENV_ID: ${{ secrets.CLOUD_ENV_ID }}
+          WX_UPLOAD_PRIVATE_KEY_PATH: ${{ runner.temp }}/private.key
+        run: node scripts/deploy.js --env "${{ inputs.environment || 'prod' }}"
+
+      - name: Cleanup private key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/private.key"

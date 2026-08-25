@@ -26,4 +26,23 @@ function getCmd() {
   return getDB().command
 }
 
-module.exports = { cloud, initCloud, getCloud, getDB, getCmd }
+// 判断一个数据库异常是否为唯一键冲突（依赖控制台唯一索引）
+function isDuplicateKeyError(e) {
+  const msg = String((e && (e.errMsg || e.message)) || '')
+  return /duplicate|E11000|-502001/i.test(msg)
+}
+
+// 幂等插入：配合唯一索引使用。插入成功返回 true；
+// 唯一键冲突返回 false（调用方按"已存在"幂等处理）；其他异常原样抛出。
+async function insertIdempotent(collection, data) {
+  const db = getDB()
+  try {
+    await db.collection(collection).add({ data })
+    return true
+  } catch (e) {
+    if (isDuplicateKeyError(e)) return false
+    throw e
+  }
+}
+
+module.exports = { cloud, initCloud, getCloud, getDB, getCmd, isDuplicateKeyError, insertIdempotent }

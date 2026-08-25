@@ -1,7 +1,7 @@
-// pages/user-profile/user-profile.js
+﻿// pages/user-profile/user-profile.js
 const app = getApp()
 const { callFunction } = require('../../utils/request.js')
-const { formatTime, formatNumber } = require('../../utils/auth.js')
+const { formatTime, formatNumber, firstChar } = require('../../utils/auth.js')
 
 Page({
   data: {
@@ -17,6 +17,9 @@ Page({
     if (options.id) {
       this.setData({ userId: options.id })
       this.loadProfile(options.id)
+    } else {
+      // 无 id 直接进入错误态，避免骨架屏永不消失
+      this.setData({ loading: false })
     }
   },
 
@@ -31,7 +34,7 @@ Page({
           likeCountText: formatNumber(p.likeCount || 0)
         }))
         this.setData({
-          profile: res.profile,
+          profile: { ...res.profile, nicknameFirst: firstChar(res.profile.nickname) },
           isFollowing: res.isFollowing,
           posts,
           isSelf: myId === userId,
@@ -50,6 +53,8 @@ Page({
 
   async onFollow() {
     if (!app.ensureLogin()) return
+    if (this._followLock) return // 在途锁：连点不重复发请求
+    this._followLock = true
     const { isFollowing, userId } = this.data
     try {
       const res = await callFunction('follow', {
@@ -59,7 +64,7 @@ Page({
       if (res.success) {
         this.setData({
           isFollowing: res.following,
-          'profile.followerCount': (this.data.profile.followerCount || 0) + (res.following ? 1 : -1)
+          'profile.followerCount': Math.max(0, (this.data.profile.followerCount || 0) + (res.following ? 1 : -1))
         })
         wx.showToast({ title: res.following ? '已关注' : '已取关', icon: 'none' })
       } else {
@@ -67,6 +72,8 @@ Page({
       }
     } catch (err) {
       wx.showToast({ title: '操作失败', icon: 'none' })
+    } finally {
+      this._followLock = false
     }
   },
 
