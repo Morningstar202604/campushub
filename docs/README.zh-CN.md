@@ -3,7 +3,7 @@
 > **全国性校园 / 兴趣内容社区（微信小程序 + 云开发）—— 一个新时代的开源贴吧。**
 > 多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台，开箱即用、零成本。
 >
-> 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](https://Morningstar202604.github.io/campushub/)
+> 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](https://Morningstar202604.github.io/campushub/)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
 [![Version](https://img.shields.io/badge/version-0.6.0-green.svg)](../CHANGELOG.md)

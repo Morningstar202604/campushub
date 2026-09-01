@@ -1,7 +1,7 @@
 // cloudfunctions/notification/index.js
 // 站内通知：创建/列表/标记已读/全部已读/未读数
 // notifications 集合: { userId, type, content, targetId, isRead, createdAt }
-const { getDB, getCmd, AppError, ok, wrap, requireActiveUser } = require('./common-bundle')
+const { getDB, AppError, ok, wrap, requireActiveUser } = require('./common-bundle')
 
 function toInt(v, def) {
   const n = Number(v)

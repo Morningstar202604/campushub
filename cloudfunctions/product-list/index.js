@@ -1,5 +1,5 @@
 // cloudfunctions/product-list/index.js
-const { getDB, AppError, ok, wrap } = require('./common-bundle')
+const { getDB, ok, wrap } = require('./common-bundle')
 
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

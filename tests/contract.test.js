@@ -89,3 +89,32 @@ test('P4: 文档统计数字与事实一致（34 云函数 / 23 页面 / 16 集�
   assert.ok(zh.includes('| 数据集合 | 16 |'), 'zh-CN 集合=16')
   assert.ok(zh.includes('| 索引定义 | 36 |'), 'zh-CN 索引=36')
 })
+
+test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与 34 云函数', () => {
+  const guide = read('docs/USER_GUIDE.md')
+  const readme = read('README.md')
+  const zh = read('docs/README.zh-CN.md')
+  // README 两处入口
+  assert.ok(readme.includes('./docs/USER_GUIDE.md'), 'README 需链接使用说明书')
+  assert.ok(zh.includes('./USER_GUIDE.md'), 'zh-CN 需链接使用说明书')
+  // 覆盖全部 23 个页面（以页面目录名 + 页面标题出现为准）
+  const pages = ['admin', 'agreement', 'category-admin', 'expired', 'feedback', 'guide', 'guide-detail', 'index',
+    'login', 'lost-found', 'market', 'my-list', 'notifications', 'post-detail', 'post-publish', 'product-detail',
+    'product-publish', 'profile', 'profile-edit', 'search', 'user-profile', 'verify', 'wall']
+  for (const p of pages) {
+    assert.ok(guide.includes(p), `说明书应覆盖页面 ${p}`)
+  }
+  // 覆盖全部 34 个云函数
+  const cfs = ['admin', 'category-list', 'category-manage', 'checkin', 'collect', 'comment-create', 'comment-delete',
+    'comment-list', 'feedback-create', 'follow', 'guide-detail', 'guide-list', 'init-db', 'like', 'login', 'my-list',
+    'notification', 'post-create', 'post-delete', 'post-detail', 'post-list', 'post-update', 'product-create',
+    'product-delete', 'product-detail', 'product-list', 'product-update', 'report', 'resolve', 'search', 'task-expire',
+    'user-profile', 'user-update', 'verify']
+  for (const c of cfs) {
+    assert.ok(guide.includes(c), `说明书云函数清单应包含 ${c}`)
+  }
+  // 关键章节
+  for (const sec of ['角色与权限', '页面使用手册', '功能模块详解', '管理后台操作手册', '常见问题']) {
+    assert.ok(guide.includes(sec), `说明书应包含章节「${sec}」`)
+  }
+})

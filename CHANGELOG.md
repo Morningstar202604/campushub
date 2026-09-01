@@ -14,12 +14,15 @@
 - **user-update 空昵称校验**：昵称去空格后为空直接拒绝，不再允许覆盖成空昵称
 - **product-publish 死代码清理**：移除无 UI 引用的 `isBargain` 字段与方法
 - **UGC 入口防御加固**：post-create / comment-create / feedback-create / product-create / report 对非字符串输入统一 String 化，杜绝恶意传 null/数字/对象触发 `.trim()/.length` 抛 TypeError 导致 500
+- **前端死代码修复**：search 页热搜词标签误绑 `onHistoryTap`，导致 `onHotSearch` 成为死方法且热搜点击语义错误；已改回 `onHotSearch` + `data-keyword`
+- **云函数死导入清理**：notification / post-delete / product-delete / product-list 移除 `getDB`/`getCmd`/`AppError` 未使用的 require
 
 ### Changed
 - **索引补全**：`common-indexes.js` 新增 3 个复合索引（`idx_posts_status_pinned_created` / `idx_posts_category_status_pinned_created` / `idx_posts_status_likes_created`），覆盖全国默认推荐流、分类筛选推荐流、热榜的排序查询；`docs/INDEXES.md` 与定义完全对齐（36 个，含此前缺失的 checkins/follows/notifications/楼中楼 7 个）
 - **种子学校可配置**：`init-db` 支持环境变量 `SEED_SCHOOL_NAME` / `SEED_SCHOOL_ID` 覆盖示例学校（默认仍为韩山师范学院 HSFNC），全国性部署不再强绑定单一学校
 - **文档/落地页数据校准**：README（中英）与 `index.html` 的统计数字修正为 34 云函数 / 23 页面 / 16 集合 / 36 索引 / 9 内核模块；落地页旧账号链接 `weed33834` 统一改为 `Morningstar202604`，版本 badge 升至 0.7.0；`package.json` 仓库指向改回 GitHub
-- **新增单元测试**：`npm test`（node 内置 test runner，零额外依赖）22 用例覆盖错误模型、删除权限（含管理员回归防护）、幂等插入、UGC 输入防御、索引/文档/落地页对齐契约；已接入 CI
+- **新增单元测试**：`npm test`（node 内置 test runner，零额外依赖）23 用例覆盖错误模型、删除权限（含管理员回归防护）、幂等插入、UGC 输入防御、索引/文档/落地页对齐契约；已接入 CI
+- **新增使用说明书**：`docs/USER_GUIDE.md` 覆盖全部 23 个页面（界面元素 / 按钮 / 操作步骤）、角色权限、功能模块、管理后台操作手册、34 个云函数与 16 个集合总览、FAQ；README 中英文均已挂链接
 
 ## [0.7.0] - 2026-08-26
 

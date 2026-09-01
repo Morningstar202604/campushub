@@ -1,6 +1,6 @@
 // cloudfunctions/post-delete/index.js
 // 删除帖子：统一经 removeContent（软删除 + 归属校验/管理员 + 计数回退 + 回收云存储图片）
-const { getDB, getCmd, AppError, ok, wrap, getCurrentUser, requireActive, removeContent } = require('./common-bundle')
+const { AppError, ok, wrap, getCurrentUser, requireActive, removeContent } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await getCurrentUser()
