@@ -1,0 +1,14 @@
+{
+  "schoolName": "XX大学",
+  "schoolId": "SCHOOL_ID（建议 4~6 位大写字母缩写，如 HSFNC）",
+  "adminOpenids": ["部署后在云开发控制台 users 集合查到自己的 openid"],
+  "guideCategories": [
+    { "categoryId": "freshman", "name": "新生入学", "sort": 1, "icon": "🎓" },
+    { "categoryId": "study", "name": "学习攻略", "sort": 2, "icon": "📚" },
+    { "categoryId": "life", "name": "生活指南", "sort": 3, "icon": "🌿" },
+    { "categoryId": "food", "name": "美食地图", "sort": 4, "icon": "🍜" },
+    { "categoryId": "traffic", "name": "交通出行", "sort": 5, "icon": "🚌" },
+    { "categoryId": "play", "name": "周边玩乐", "sort": 6, "icon": "🎮" }
+  ],
+  "_note": "复制为 config/school.json 并填写后，把 schoolName/schoolId 注入云函数环境变量 SEED_SCHOOL_NAME/SEED_SCHOOL_ID（init-db 使用）。管理员 openid 注入 ADMIN_OPENIDS。"
+}

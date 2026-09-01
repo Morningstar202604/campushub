@@ -20,13 +20,23 @@ exports.main = wrap(async (event = {}) => {
   }
 
   const db = getDB()
+  // 种子数据学校可配置：默认示例为「韩山师范学院 / HSFNC」，
+  // 部署者可用云函数环境变量 SEED_SCHOOL_NAME / SEED_SCHOOL_ID 覆盖，避免全国性部署强绑定单一示例学校。
+  // applySchool 在写库前对种子数据做字符串级替换（覆盖分类、指南标题/正文中的校名与 schoolId）。
+  const SEED_SCHOOL_ID = process.env.SEED_SCHOOL_ID || 'HSFNC'
+  const SEED_SCHOOL_NAME = process.env.SEED_SCHOOL_NAME || '韩山师范学院'
+  const applySchool = (data) => JSON.parse(
+    JSON.stringify(data).split('HSFNC').join(SEED_SCHOOL_ID).split('韩山师范学院').join(SEED_SCHOOL_NAME)
+  )
   const results = []
 
   // 1. 创建集合（含 view_logs：浏览量去重日志）
   const collections = [
     'users', 'posts', 'products', 'comments', 'likes', 'collects',
     'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
-    'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests'
+    'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests',
+    // 新功能集合：自动备份 / 搜索热词与限频 / 管理审计日志 / 公告 / 积分商城订单
+    'backups', 'search_queries', 'admin_logs', 'announcements', 'points_orders'
   ]
   for (const name of collections) {
     try {
@@ -47,9 +57,9 @@ exports.main = wrap(async (event = {}) => {
     { categoryId: 'traffic', name: '交通出行', sort: 5, schoolId: 'HSFNC', icon: '🚌' },
     { categoryId: 'play', name: '周边玩乐', sort: 6, schoolId: 'HSFNC', icon: '🎮' }
   ]
-  const existingCats = await db.collection('guide_categories').where({ schoolId: 'HSFNC' }).count()
+  const existingCats = await db.collection('guide_categories').where({ schoolId: SEED_SCHOOL_ID }).count()
   if (existingCats.total === 0) {
-    for (const cat of categories) {
+    for (const cat of applySchool(categories)) {
       await db.collection('guide_categories').add({ data: { ...cat, createdAt: new Date() } })
     }
     results.push({ item: 'guide_categories', status: 'imported', count: categories.length })
@@ -84,7 +94,7 @@ exports.main = wrap(async (event = {}) => {
   ]
   const existingCatDocs = await db.collection('categories').where({ status: 'active' }).count().catch(() => ({ total: 0 }))
   if (existingCatDocs.total === 0) {
-    for (const cat of categorySeed) {
+    for (const cat of applySchool(categorySeed)) {
       await db.collection('categories').add({ data: { ...cat, createdAt: new Date() } })
     }
     results.push({ item: 'categories', status: 'imported', count: categorySeed.length })
@@ -144,9 +154,9 @@ exports.main = wrap(async (event = {}) => {
     }
   ]
 
-  const existingGuides = await db.collection('guides').where({ schoolId: 'HSFNC' }).count()
+  const existingGuides = await db.collection('guides').where({ schoolId: SEED_SCHOOL_ID }).count()
   if (existingGuides.total === 0) {
-    for (const guide of guides) {
+    for (const guide of applySchool(guides)) {
       await db.collection('guides').add({ data: guide })
     }
     results.push({ item: 'guides', status: 'imported', count: guides.length })

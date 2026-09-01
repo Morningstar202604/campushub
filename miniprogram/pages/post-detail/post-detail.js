@@ -29,7 +29,8 @@ Page({
     expandedReplies: {},
     // 评论分页
     commentPage: 1,
-    commentHasMore: false
+    commentHasMore: false,
+    commentCursor: null
   },
 
   onLoad(options) {
@@ -102,9 +103,11 @@ Page({
   async loadComments(targetId, { reset = true } = {}) {
     if (this._loadingComments) return
     this._loadingComments = true
-    const page = reset ? 1 : this.data.commentPage
+    const cursor = reset ? undefined : this.data.commentCursor
     try {
-      const res = await callFunction('comment-list', { targetId, page, pageSize: 20 })
+      const params = { targetId, pageSize: 20 }
+      if (cursor) params.cursor = cursor
+      const res = await callFunction('comment-list', params)
       if (res.success) {
         // 服务端已回填 liked；≤2 条子回复默认展开，更多的默认折叠
         const items = res.list.map(c => ({
@@ -119,9 +122,11 @@ Page({
             timeText: formatTime(r.createdAt)
           }))
         }))
+        const lastItem = res.list && res.list[res.list.length - 1]
         this.setData({
           comments: reset ? items : [...this.data.comments, ...items],
-          commentPage: page + 1,
+          commentCursor: lastItem ? lastItem.createdAt : this.data.commentCursor,
+          commentPage: (reset ? 1 : this.data.commentPage) + 1,
           commentHasMore: !!res.hasMore
         })
       }
@@ -265,12 +270,124 @@ Page({
     })
   },
 
+  // 分享海报：canvas 绘制帖子卡片并保存相册（朋友圈传播）
+  async onSharePoster() {
+    const post = this.data.post
+    if (!post) { wx.showToast({ title: '帖子加载中', icon: 'none' }); return }
+
+    // 相册权限
+    const auth = await new Promise(resolve => {
+      wx.getSetting({ success: s => resolve(s.authSetting && s.authSetting['scope.writePhotosAlbum']) })
+    })
+    if (!auth) {
+      const open = await new Promise(resolve => {
+        wx.authorize({ scope: 'scope.writePhotosAlbum', success: () => resolve(true), fail: () => resolve(false) })
+      })
+      if (!open) {
+        wx.showModal({ title: '需要相册权限', content: '请在设置中开启「保存到相册」权限', confirmText: '去设置',
+          success: r => { if (r.confirm) wx.openSetting() } })
+        return
+      }
+    }
+
+    wx.showLoading({ title: '生成海报中' })
+    const query = wx.createSelectorQuery()
+    query.select('#posterCanvas').fields({ node: true, size: true }).exec((res) => {
+      try {
+        const info = res && res[0]
+        if (!info || !info.node) { wx.hideLoading(); wx.showToast({ title: '生成失败', icon: 'none' }); return }
+        const canvas = info.node
+        const ctx = canvas.getContext('2d')
+        const W = 600, H = 800
+        const dpr = wx.getWindowInfo().pixelRatio || 2
+        canvas.width = W * dpr
+        canvas.height = H * dpr
+        ctx.scale(dpr, dpr)
+
+        // 背景
+        const bg = ctx.createLinearGradient(0, 0, 0, H)
+        bg.addColorStop(0, '#F4F3EE')
+        bg.addColorStop(1, '#E8ECF7')
+        ctx.fillStyle = bg
+        ctx.fillRect(0, 0, W, H)
+
+        // 顶部标识
+        ctx.fillStyle = '#4A90D9'
+        ctx.font = 'bold 34px sans-serif'
+        ctx.fillText('CampusHub 校园社区', 40, 80)
+
+        // 标题（最多 3 行截断）
+        ctx.fillStyle = '#1A1B1C'
+        ctx.font = 'bold 44px sans-serif'
+        this._wrapText(ctx, post.title || '（无标题）', 40, 150, W - 80, 60, 3)
+
+        // 内容摘要（最多 6 行）
+        ctx.fillStyle = '#444'
+        ctx.font = '28px sans-serif'
+        const summary = (post.content || '').replace(/\n+/g, ' ').slice(0, 120)
+        this._wrapText(ctx, summary, 40, 340, W - 80, 40, 6)
+
+        // 底部信息
+        ctx.fillStyle = '#6B7280'
+        ctx.font = '24px sans-serif'
+        ctx.fillText(`${post.userNickname || '匿名用户'}  ·  ${post.categoryPath && post.categoryPath.length ? post.categoryPath.join(' / ') : '校园'}`, 40, H - 90)
+        ctx.fillText(`${post.timeText || ''}   ·   长按转发给朋友`, 40, H - 50)
+
+        // 分隔线
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)'
+        ctx.beginPath()
+        ctx.moveTo(40, H - 130)
+        ctx.lineTo(W - 40, H - 130)
+        ctx.stroke()
+
+        wx.canvasToTempFilePath({
+          canvas,
+          success: (r) => {
+            wx.hideLoading()
+            wx.saveImageToPhotosAlbum({
+              filePath: r.tempFilePath,
+              success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+              fail: () => wx.showToast({ title: '保存失败', icon: 'none' })
+            })
+          },
+          fail: () => { wx.hideLoading(); wx.showToast({ title: '生成失败', icon: 'none' }) }
+        })
+      } catch (e) {
+        wx.hideLoading()
+        wx.showToast({ title: '生成失败', icon: 'none' })
+      }
+    })
+  },
+
+  // canvas 文本换行工具：超过 maxLines 截断加省略号
+  _wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+    const chars = String(text).split('')
+    let line = ''
+    let lines = 0
+    for (let i = 0; i < chars.length; i++) {
+      const test = line + chars[i]
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, x, y + lines * lineHeight)
+        lines++
+        if (lines >= maxLines) {
+          ctx.fillText('…', x, y + (maxLines - 1) * lineHeight)
+          return
+        }
+        line = chars[i]
+      } else {
+        line = test
+      }
+    }
+    if (line && lines < maxLines) ctx.fillText(line, x, y + lines * lineHeight)
+  },
+
   onShareAppMessage() {
     const post = this.data.post
     if (!post) return { title: 'CampusHub', path: '/pages/index/index' }
     return {
       title: post.title,
-      path: `/pages/post-detail/post-detail?id=${post._id}`
+      path: `/pages/post-detail/post-detail?id=${post._id}`,
+      imageUrl: post.images && post.images[0]
     }
   },
 

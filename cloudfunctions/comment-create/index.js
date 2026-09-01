@@ -15,11 +15,13 @@ exports.main = wrap(async (event) => {
   const db = getDB()
   const _ = getCmd()
 
-  const { targetId, targetType = 'post', content, replyToUserId, replyToNickname, parentId } = event
+  const { targetId, targetType = 'post', content: rawContent, replyToUserId, replyToNickname, parentId } = event
+  // 统一 String 化：客户端可传非字符串（null/数字/对象），避免 .trim()/.length 抛 TypeError
+  const content = String(rawContent == null ? '' : rawContent).trim()
 
   if (!targetId) throw new AppError('缺少目标ID', 'INVALID_PARAM')
   if (!VALID_TARGET_TYPES.includes(targetType)) throw new AppError('非法的目标类型', 'INVALID_PARAM')
-  if (!content || !content.trim()) throw new AppError('请输入评论内容', 'INVALID_PARAM')
+  if (!content) throw new AppError('请输入评论内容', 'INVALID_PARAM')
   if (content.length > 500) throw new AppError('评论不能超过500字', 'INVALID_PARAM')
 
   // 目标集合校验 + 状态校验（不允许评论已删除的内容）
@@ -48,7 +50,7 @@ exports.main = wrap(async (event) => {
     userId: user._id,
     userNickname: user.nickname,
     userAvatar: user.avatar,
-    content: content.trim(),
+    content,
     replyToUserId: replyToUserId || '',
     replyToNickname: replyToNickname || '',
     parentId: validParentId,

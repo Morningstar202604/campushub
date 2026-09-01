@@ -4,16 +4,32 @@
 
 ---
 
-## 1. 数据备份（每周必做，约 5 分钟）
+## 1. 数据备份（已自动化 + 手动兜底）
 
-云开发免费版无自动备份，数据丢失不可恢复。**每周日执行一次：**
+### 1.1 自动备份（推荐，已内置）
 
-1. 打开微信开发者工具 → 云开发控制台 → 数据库
-2. 依次导出以下集合（导出格式选 JSON）：
-   `users`、`posts`、`products`、`comments`、`likes`、`collects`、
-   `categories`、`guides`、`guide_categories`、`follows`、`checkins`、
-   `notifications`、`reports`、`feedbacks`
-3. 导出文件保存到本地 `backups/YYYY-MM-DD/` 目录（建议同步到网盘）
+`backup-db` 云函数已配置**每天 03:00 定时触发**，自动把核心业务集合快照写入
+`backups` 集合（JSON 分片），并清理超过保留期的旧备份：
+
+- 保留天数：环境变量 `BACKUP_RETENTION_DAYS`（默认 7 天）
+- 备份集合：users / posts / products / comments / likes / collects /
+  guides / guide_categories / categories / reports / feedbacks /
+  follows / checkins / notifications / verify_requests
+- **部署时必须**：上传 `backup-db` 函数 + 单独上传其**定时触发器**
+  （云开发控制台 → 云函数 → backup-db → 触发器）
+
+**手动恢复步骤**（数据误删时）：
+1. 云开发控制台 → 数据库 → `backups` 集合，按 `date` 筛选目标日期的快照
+2. 读取对应分片文档的 `records` 字段（JSON 数组）
+3. 手动写入原集合（或用脚本批量 `add`）
+
+### 1.2 手动兜底备份（每周日，约 5 分钟）
+
+自动备份之外，建议每周日手动导出一次到本地网盘（双保险）：
+云开发控制台 → 数据库 → 依次导出 JSON：
+`users`、`posts`、`products`、`comments`、`likes`、`collects`、
+`categories`、`guides`、`guide_categories`、`follows`、`checkins`、
+`notifications`、`reports`、`feedbacks`
 
 > ⚠️ 免费体验环境在小程序**发布上线后第 15 天到期**，到期未转付费会清空数据。
 > 上线当天请在日历设置「上线+14天」提醒，及时购买基础套餐（19.9 元/月）。
@@ -53,6 +69,22 @@
 2. 若数据库调用占比 >70%：检查是否有人高频爬列表（可用 rateLimit 收紧）
 3. 若 CDN 流量异常：检查是否有用户上传超大图（utils/image.js 压缩链路是否生效）
 4. 记录当月账单到 `docs/成本台账.md`（自建），对照 EXPERT_REVIEW_AND_ROADMAP.md §2.5 估算表
+
+## 5.5 监控与告警（建议）
+
+云开发控制台 → 云函数 → 每个函数 → 「监控」可看调用次数/错误率/资源点。建议：
+
+1. **每周**查看 `post-list` / `search` / `init-db` 的调用量与错误率
+2. **每月 1 日**按下方「成本监控」核对资源点用量
+3. 关注云开发控制台告警配置（如函数错误率、日资源点阈值），可推送微信通知
+4. `backup-db` 每天应有一次成功执行记录；若某天无记录，说明触发器未生效，需重新上传触发器
+
+## 5.6 搜索性能与降级（重要）
+
+`search` 云函数使用正则全表扫描（微信云开发无全文索引），数据量增长后：
+- 超过 ~1 万条内容时，搜索延迟与资源点消耗会显著上升
+- 服务端已加**每用户 10 秒 3 次**限频兜底，并写入 `search_queries` 供热词聚合
+- 若搜索成本失控，可在 `search` 函数临时关闭搜索（返回空结果）或接入外部检索（如腾讯云 ES）
 
 ## 6. 版本发布流程
 

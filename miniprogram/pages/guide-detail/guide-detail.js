@@ -35,7 +35,8 @@ Page({
     if (!guide) return { title: 'CampusHub', path: '/pages/index/index' }
     return {
       title: guide.title,
-      path: `/pages/guide-detail/guide-detail?id=${guide._id}`
+      path: `/pages/guide-detail/guide-detail?id=${guide._id}`,
+      imageUrl: guide.coverImage
     }
   }
 })

@@ -109,7 +109,7 @@
     <view class="hot-search">
       <view class="history-title">热门搜索</view>
       <view class="history-tags">
-        <view class="history-tag" wx:for="{{hotSearch}}" wx:key="*this" data-key="{{item}}" bindtap="onHistoryTap">{{item}}</view>
+        <view class="history-tag" wx:for="{{hotSearch}}" wx:key="*this" data-keyword="{{item}}" bindtap="onHotSearch">{{item}}</view>
       </view>
     </view>
   </view>

@@ -47,6 +47,7 @@ exports.main = wrap(async (event) => {
     const res = await db.collection('users').where({ openid: targetOpenid }).update({
       data: { verifyStatus: status, updatedAt: new Date() }
     })
+    await logAdmin(db, operatorOpenid, action, { targetOpenid })
     return ok({ action, targetOpenid, updated: res.stats ? res.stats.updated : undefined })
   }
 
@@ -84,9 +85,11 @@ exports.main = wrap(async (event) => {
     await removeContent({
       collection: cfg.col,
       docId: targetId,
-      actor: { _id: '__admin__', role: 'admin' }, // 管理员越权删除
+      // 内核按 openid 维度判定管理员（checkAdmin），必须传 openid，否则恒判 FORBIDDEN
+      actor: { _id: '__admin__', openid: operatorOpenid },
       opts: { userCountField: cfg.userCountField, targetComment: cfg.targetComment }
     })
+    await logAdmin(db, operatorOpenid, 'delete', { targetType, targetId })
     return ok({ deleted: true })
   }
 
@@ -98,6 +101,7 @@ exports.main = wrap(async (event) => {
     })
     const updated = updateRes.stats ? updateRes.stats.updated : 0
     if (updated === 0) throw new AppError('举报不存在或已处理', 'NOT_FOUND')
+    await logAdmin(db, operatorOpenid, 'resolve', { reportId })
     return ok({ resolved: true })
   }
 
@@ -109,6 +113,7 @@ exports.main = wrap(async (event) => {
       data: { isPinned: action === 'pin', updatedAt: new Date() }
     }).catch(() => ({ stats: { updated: 0 } }))
     if (updateRes.stats && updateRes.stats.updated === 0) throw new AppError('帖子不存在', 'NOT_FOUND')
+    await logAdmin(db, operatorOpenid, action, { postId })
     return ok({ action, postId, isPinned: action === 'pin' })
   }
 
@@ -120,6 +125,7 @@ exports.main = wrap(async (event) => {
       data: { isEssence: action === 'essence', updatedAt: new Date() }
     }).catch(() => ({ stats: { updated: 0 } }))
     if (updateRes.stats && updateRes.stats.updated === 0) throw new AppError('帖子不存在', 'NOT_FOUND')
+    await logAdmin(db, operatorOpenid, action, { postId })
     return ok({ action, postId, isEssence: action === 'essence' })
   }
 
@@ -165,6 +171,7 @@ exports.main = wrap(async (event) => {
     await db.collection('feedbacks').doc(feedbackId).update({
       data: { status: 'resolved', adminReply: safeReply, resolvedAt: new Date() }
     })
+    await logAdmin(db, operatorOpenid, 'resolve-feedback', { feedbackId })
     return ok({ resolved: true })
   }
 
@@ -210,10 +217,32 @@ exports.main = wrap(async (event) => {
         campusVerifyStatus: approve ? 'approved' : 'rejected'
       }
     }).catch(() => {})
+    await logAdmin(db, operatorOpenid, 'verify-review', { requestId, approve: !!approve })
     return ok({ reviewed: true })
+  }
+  // ---- 审计日志查询 ----
+  if (action === 'list-logs') {
+    const { page = 1, pageSize = 30 } = event
+    const pSize = Math.min(100, Math.max(1, Number(pageSize)))
+    const skip = Math.max(0, (Number(page) - 1) * pSize)
+    const [listRes, totalRes] = await Promise.all([
+      db.collection('admin_logs').orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
+      db.collection('admin_logs').count()
+    ])
+    return ok({ list: listRes.data || [], total: totalRes.total, page, pageSize: pSize })
   }
   throw new AppError('未知操作', 'INVALID_PARAM')
 })
+
+// 审计日志：所有敏感管理操作留痕，便于追责与合规调取
+// 写入失败不阻断主流程（避免审计拖垮正常操作）
+async function logAdmin(db, operatorOpenid, action, detail) {
+  try {
+    await db.collection('admin_logs').add({
+      data: { action, operator: operatorOpenid, detail: detail || {}, createdAt: new Date() }
+    })
+  } catch (e) { /* 静默 */ }
+}
 
 // 取被举报内容摘要（用于审核台展示）
 async function getTargetSummary(db, type, id) {

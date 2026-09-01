@@ -1,0 +1,7 @@
+{
+  "name": "points",
+  "version": "1.0.0",
+  "description": "积分商城：道具列表 + 积分兑换（改名卡）",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "~2.6.3" }
+}

@@ -12,6 +12,10 @@
   <view class="form-section">
     <view class="form-label">昵称</view>
     <input class="form-input" placeholder="输入昵称" maxlength="20" value="{{nickname}}" bindinput="onNicknameInput" />
+    <view class="rename-row">
+      <text class="rename-info">积分 {{creditScore}} · 改名卡 {{renameTokens}} 张（首次改名免费，之后每次消耗 1 张）</text>
+      <view class="rename-btn" bindtap="redeemRenameToken">兑换改名卡 100 积分</view>
+    </view>
   </view>
 
   <view class="form-section">

@@ -76,6 +76,10 @@
         <text class="action-icon">↗</text>
         <text class="action-text">分享</text>
       </view>
+      <view class="action-item" bindtap="onSharePoster">
+        <text class="action-icon">🖼️</text>
+        <text class="action-text">海报</text>
+      </view>
       <view class="action-item" wx:if="{{canEdit}}" bindtap="onEdit">
         <text class="action-icon">✏️</text>
         <text class="action-text">编辑</text>
@@ -185,3 +189,6 @@
   <view class="empty-emoji">😕</view>
   <view class="empty-text">帖子不存在或已被删除</view>
 </view>
+
+<!-- 分享海报离屏画布 -->
+<canvas type="2d" id="posterCanvas" style="position:fixed;left:-2000px;top:0;width:600px;height:800px;"></canvas>

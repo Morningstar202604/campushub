@@ -36,8 +36,11 @@
 | idx_posts_school_status_title | schoolId(降), status(降), title(降) | 否 |
 | idx_posts_category_status_created | categoryPath(降), status(降), createdAt(降) | 否 |
 | idx_posts_status_kind_expire | status(降), kind(降), expireAt(降) | 否 |
-| idx_posts_status_created | status(降), createdAt(降) |
+| idx_posts_status_created | status(降), createdAt(降) | 否 |
 | idx_posts_status_likes | status(降), likeCount(降) | 否 |
+| idx_posts_status_pinned_created | status(降), isPinned(降), createdAt(降) | 否 |
+| idx_posts_category_status_pinned_created | categoryPath(降), status(降), isPinned(降), createdAt(降) | 否 |
+| idx_posts_status_likes_created | status(降), likeCount(降), createdAt(降) | 否 |
 
 ### categories
 | 索引名称 | 字段（方向） | 唯一 |
@@ -58,17 +61,31 @@
 |---|---|---|
 | idx_comments_target_status_created | targetId(升), status(升), createdAt(降) | 否 |
 | idx_comments_user_created | userId(降), createdAt(降) | 否 |
+| idx_comments_parent_status_created | parentId(升), status(升), createdAt(升) | 否 |
 
-### likes / collects / checkins
-> ⚠️ likes / collects 的 (user, target, type) 与 checkins 的 (user, date) 为**唯一索引**——
+### likes / collects / checkins / follows
+> ⚠️ likes / collects 的 (user, target, type)、checkins 的 (user, date)、follows 的 (follower, following) 为**唯一索引**——
 > 并发双击/重复请求靠它们兜底去重（配合云函数 `insertIdempotent` 幂等插入）。
-> 已有环境升级 v0.6.1 时需在控制台把这三个索引改为唯一（或删掉重建为唯一索引）。
+> 已有环境升级时需在控制台把这几个索引改为唯一（或删掉重建为唯一索引）。
 
 | 集合 | 索引名称 | 字段（方向） | 唯一 |
 |---|---|---|---|
 | likes | idx_likes_user_target_type | userId(升), targetId(升), type(升) | **是** |
 | collects | idx_collects_user_target_type | userId(升), targetId(升), type(升) | **是** |
 | collects | idx_collects_user_created | userId(降), createdAt(降) | 否 |
+| checkins | idx_checkins_user_date | userId(升), date(升) | **是** |
+### follows
+> ⚠️ `idx_follows_follower_following` 为**唯一索引**——关注操作依赖它做幂等（`insertIdempotent`），并发双点关注不会产生重复关系。
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| follows | idx_follows_follower_created | followerId(升), createdAt(降) | 否 |
+| follows | idx_follows_following_created | followingId(升), createdAt(降) | 否 |
+| follows | idx_follows_follower_following | followerId(升), followingId(升) | **是** |
+### notifications
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| notifications | idx_notifications_user_created | userId(升), createdAt(降) | 否 |
+| notifications | idx_notifications_user_read | userId(升), isRead(升) | 否 |
 
 ### reports / feedbacks
 | 集合 | 索引名称 | 字段（方向） | 唯一 |
@@ -84,13 +101,23 @@
 | guides | idx_guides_school_status_title | schoolId(升), status(升), title(降) | 否 |
 | guide_categories | idx_guide_categories_school | schoolId(升) | 否 |
 
+### backups / search_queries / admin_logs / announcements / points_orders
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| backups | idx_backups_created | createdAt(降) | 否 |
+| search_queries | idx_search_queries_user_created | userId(升), createdAt(降) | 否 |
+| admin_logs | idx_admin_logs_created | createdAt(降) | 否 |
+| announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) | 否 |
+| points_orders | idx_points_orders_user_created | userId(升), createdAt(降) | 否 |
+
 ---
 
 ## 备注
 
 - `config` 集合的 `_id` 索引为系统自带，无需手动建。
 - `view_logs`（浏览量去重日志）靠 `_id` 主键天然去重，无需额外索引。
-- 频率限制（`rateLimit`）依赖 `(匹配字段, createdAt)` 的计数查询，已对应到各集合索引。
+- 频率限制（`rateLimit`）依赖 `(匹配字段, createdAt)` 的计数查询，已对应到各集合索引（`search_queries` 的 `idx_search_queries_user_created` 即服务端搜索限频所需）。
+- `backups` / `admin_logs` / `announcements` / `points_orders` 为新增功能集合（自动备份 / 管理审计日志 / 公告 / 积分订单），索引见上表。
 - 软删除内容通过 `status: _.neq('deleted')` 过滤，相关集合已包含对应索引。
 - 若未建索引，云函数内部 `wrap()` 会返回 `{ success:false }` 而非崩溃，但对应列表会**空白**——上线前请务必建全。
 - 新增索引后，下次部署跑一次 `init-db`，返回结果的 `missingIndexes` 应为空数组，即表示齐备。

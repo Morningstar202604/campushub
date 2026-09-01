@@ -128,5 +128,8 @@ Page({
         }
       }
     })
+  },
+  onShareAppMessage() {
+    return { title: '我的列表 · CampusHub', path: '/pages/my-list/my-list' }
   }
 })

@@ -21,6 +21,12 @@ const EXPECTED_INDEXES = [
   { collection: 'posts', name: 'idx_posts_status_kind_expire', fields: [{ key: 'status', direction: -1 }, { key: 'kind', direction: -1 }, { key: 'expireAt', direction: -1 }], unique: false },
   { collection: 'posts', name: 'idx_posts_status_created', fields: [{ key: 'status', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
   { collection: 'posts', name: 'idx_posts_status_likes', fields: [{ key: 'status', direction: -1 }, { key: 'likeCount', direction: -1 }], unique: false },
+  // 全国默认（无 schoolId）推荐流：where(status) + orderBy(isPinned, createdAt)
+  { collection: 'posts', name: 'idx_posts_status_pinned_created', fields: [{ key: 'status', direction: -1 }, { key: 'isPinned', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  // 分类筛选推荐流：where(categoryPath, status) + orderBy(isPinned, createdAt)
+  { collection: 'posts', name: 'idx_posts_category_status_pinned_created', fields: [{ key: 'categoryPath', direction: -1 }, { key: 'status', direction: -1 }, { key: 'isPinned', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  // 热榜：where(status, createdAt>since) + orderBy(likeCount, createdAt)
+  { collection: 'posts', name: 'idx_posts_status_likes_created', fields: [{ key: 'status', direction: -1 }, { key: 'likeCount', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
 
   // ===== categories =====
   { collection: 'categories', name: 'idx_categories_parent', fields: [{ key: 'parentId', direction: 1 }], unique: false },
@@ -66,7 +72,23 @@ const EXPECTED_INDEXES = [
 
   // ===== notifications =====
   { collection: 'notifications', name: 'idx_notifications_user_created', fields: [{ key: 'userId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false },
-  { collection: 'notifications', name: 'idx_notifications_user_read', fields: [{ key: 'userId', direction: 1 }, { key: 'isRead', direction: 1 }], unique: false }
+  { collection: 'notifications', name: 'idx_notifications_user_read', fields: [{ key: 'userId', direction: 1 }, { key: 'isRead', direction: 1 }], unique: false },
+
+  // ===== backups（backup-db 自动备份；按日期清理旧快照）=====
+  { collection: 'backups', name: 'idx_backups_created', fields: [{ key: 'createdAt', direction: -1 }], unique: false },
+
+  // ===== search_queries（搜索限频 + 热词聚合）=====
+  // rateLimit 查询：where({ userId, createdAt > since })，需 (userId, createdAt) 复合索引
+  { collection: 'search_queries', name: 'idx_search_queries_user_created', fields: [{ key: 'userId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false },
+
+  // ===== admin_logs（管理审计日志）=====
+  { collection: 'admin_logs', name: 'idx_admin_logs_created', fields: [{ key: 'createdAt', direction: -1 }], unique: false },
+
+  // ===== announcements（公告列表：status + 置顶优先 + 时间倒序）=====
+  { collection: 'announcements', name: 'idx_announcements_status_pinned_created', fields: [{ key: 'status', direction: 1 }, { key: 'isPinned', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
+
+  // ===== points_orders（积分商城订单，按用户查询）=====
+  { collection: 'points_orders', name: 'idx_points_orders_user_created', fields: [{ key: 'userId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false }
 ]
 
 module.exports = { EXPECTED_INDEXES }

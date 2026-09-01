@@ -135,6 +135,35 @@ function checkDeps() {
   }
 }
 
+// ---------- 5.5 新增功能函数检查 ----------
+const REQUIRED_NEW_FNS = ['backup-db', 'announcement', 'points']
+function checkNewFns() {
+  let missing = 0
+  for (const fn of REQUIRED_NEW_FNS) {
+    const dir = path.join(ROOT, 'cloudfunctions', fn)
+    if (!fs.existsSync(path.join(dir, 'index.js')) || !fs.existsSync(path.join(dir, 'package.json'))) {
+      err(`功能函数 ${fn} 目录不完整`)
+      missing++
+    }
+  }
+  if (!missing) ok('新增功能函数（backup-db / announcement / points）目录完整')
+  const backupCfg = path.join(ROOT, 'cloudfunctions', 'backup-db', 'config.json')
+  if (fs.existsSync(backupCfg)) ok('backup-db 定时触发器配置存在（需在控制台单独上传触发器）')
+  else warn('backup-db/config.json 缺失：将无法自动备份')
+}
+
+// ---------- 5.6 换校配置检查 ----------
+function checkSchoolConfig() {
+  const p = path.join(ROOT, 'config', 'school.json')
+  if (fs.existsSync(p)) {
+    ok('config/school.json 存在（换校配置就绪）')
+  } else if (fs.existsSync(path.join(ROOT, 'config', 'school.default.json'))) {
+    console.log('ℹ config/school.json 不存在：部署新学校时 cp config/school.default.json config/school.json 填写（见 docs/SCHOOL_SETUP.md）')
+  } else {
+    warn('config/ 目录缺少学校配置模板')
+  }
+}
+
 // ---------- 6. 部署配置 ----------
 function checkDeployConfig() {
   const p = path.join(__dirname, 'deploy.config.json')
@@ -149,6 +178,8 @@ console.log('CampusHub doctor 自检\n=====================')
 checkAppid()
 checkEnvId()
 checkFunctions()
+checkNewFns()
+checkSchoolConfig()
 checkDeps()
 checkDeployConfig()
 

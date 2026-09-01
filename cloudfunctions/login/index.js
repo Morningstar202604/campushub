@@ -4,6 +4,13 @@
 // 老用户回写 updatedAt 的"每次登录必写"已移除（写放大 + 与 user-update 的 updatedAt 语义重复）。
 const { getDB, isDuplicateKeyError, ok, wrap, getOpenid } = require('./common-bundle')
 
+// 返回给客户端的用户文档剔除 openid（openid 是服务端可信来源，客户端用 _id 即可识别身份）
+function stripOpenid(u) {
+  if (!u) return u
+  const { openid: _openid, ...safe } = u
+  return safe
+}
+
 exports.main = wrap(async (event, context) => {
   const openid = await getOpenid()
   const db = getDB()
@@ -11,7 +18,7 @@ exports.main = wrap(async (event, context) => {
   const userRes = await db.collection('users').where({ openid }).get()
 
   if (userRes.data.length > 0) {
-    return ok({ user: userRes.data[0] })
+    return ok({ user: stripOpenid(userRes.data[0]) })
   }
 
   const newUser = {
@@ -42,12 +49,12 @@ exports.main = wrap(async (event, context) => {
   try {
     const addRes = await db.collection('users').add({ data: newUser })
     newUser._id = addRes._id
-    return ok({ user: newUser })
+    return ok({ user: stripOpenid(newUser) })
   } catch (e) {
     // 并发首次登录：另一个请求先建好了。唯一索引兜底 → 重读返回即可
     if (isDuplicateKeyError(e)) {
       const again = await db.collection('users').where({ openid }).get()
-      if (again.data && again.data[0]) return ok({ user: again.data[0] })
+      if (again.data && again.data[0]) return ok({ user: stripOpenid(again.data[0]) })
     }
     throw e
   }

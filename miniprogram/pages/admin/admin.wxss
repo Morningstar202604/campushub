@@ -208,3 +208,44 @@
 .verify-btns { display: flex; gap: 16rpx; margin-top: 16rpx; }
 .verify-btns .btn { flex: 1; font-size: var(--font-size-sm); }
 .verify-status { margin-top: 12rpx; font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+/* 公告管理 */
+.admin-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 16rpx 0;
+  padding: 16rpx;
+  background: #fff;
+  border: 1rpx solid #E4E3DD;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+}
+.admin-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  height: 180rpx;
+  margin: 16rpx 0;
+  padding: 16rpx;
+  background: #fff;
+  border: 1rpx solid #E4E3DD;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+}
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16rpx 0;
+}
+.switch-label {
+  font-size: 26rpx;
+  color: #1A1B1C;
+}
+.report-desc {
+  font-size: 24rpx;
+  color: #6B7280;
+  margin: 8rpx 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

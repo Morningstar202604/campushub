@@ -11,16 +11,20 @@ function toInt(v, def) {
 exports.main = wrap(async (event) => {
   const db = getDB()
   const _ = getCmd()
-  const { targetId } = event
+  const { targetId, cursor } = event
   if (!targetId) throw new AppError('缺少目标ID', 'INVALID_PARAM')
   const page = Math.max(1, toInt(event.page, 1))
   const size = Math.min(50, Math.max(1, toInt(event.pageSize, 20)))
   const skip = (page - 1) * size
+  // 游标分页（深翻页优化）：楼层按时间正序，cursor=上一页最后一条 createdAt
+  const cursorDate = cursor ? new Date(String(cursor)) : null
+  const useCursor = !!(cursorDate && !isNaN(cursorDate.getTime()))
 
   // 获取主楼层（parentId 为 null 或不存在）
+  const floorWhere = { targetId, status: 'normal', parentId: _.or(_.eq(null), _.exists(false)) }
+  if (useCursor) floorWhere.createdAt = _.gt(cursorDate)
   const floorRes = await db.collection('comments')
-    .where({ targetId, status: 'normal', parentId: _.or(_.eq(null), _.exists(false)) })
-    .orderBy('createdAt', 'asc').skip(skip).limit(size).get()
+    .where(floorWhere).orderBy('createdAt', 'asc').skip(useCursor ? 0 : skip).limit(size).get()
 
   const floors = floorRes.data || []
   if (floors.length === 0) return ok({ list: [], hasMore: false })

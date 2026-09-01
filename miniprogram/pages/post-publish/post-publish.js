@@ -306,7 +306,11 @@ Page({
           wx.showToast({ title: '发布成功', icon: 'success' })
           // 请求订阅「评论/回复」提醒（未配置模板时静默）
           requestSubscribe(['comment'])
-          setTimeout(() => wx.navigateBack(), 1500)
+          // 有 id 则跳详情页立即看效果，否则返回列表
+          setTimeout(() => {
+            if (res.postId) wx.redirectTo({ url: `/pages/post-detail/post-detail?id=${res.postId}` })
+            else wx.navigateBack()
+          }, 1000)
           return
         } else {
           wx.showToast({ title: res.message || '发布失败', icon: 'none' })

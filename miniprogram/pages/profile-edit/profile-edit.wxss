@@ -117,3 +117,25 @@
   font-size: 22rpx;
   color: var(--color-text-placeholder);
 }
+
+/* 改名卡 */
+.rename-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+.rename-info {
+  font-size: 22rpx;
+  color: #6B7280;
+}
+.rename-btn {
+  font-size: 24rpx;
+  color: #4A90D9;
+  background: rgba(74,144,217,0.08);
+  border: 1rpx solid rgba(74,144,217,0.3);
+  border-radius: 999rpx;
+  padding: 6rpx 20rpx;
+}

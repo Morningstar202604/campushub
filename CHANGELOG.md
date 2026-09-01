@@ -5,6 +5,50 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.8.0] - 2026-09-01
+
+### Added — 战略落地（10 项全部实现）
+- **自动数据备份**（`backup-db`）：每日 03:00 定时快照 15 个核心集合写入 `backups`，保留 7 天自动清理，部署需单独上传触发器；OPERATIONS.md 更新为"自动备份为主 + 手动兜底"
+- **公告系统**（`announcement` 云函数 + 管理后台 Tab + 首页公告条）：发布 / 上线 / 下线 / 删除，首页顶部 ≤3 条置顶优先展示
+- **管理审计日志**（`admin` 增加 `logAdmin` + `list-logs`）：封禁 / 解封 / 删帖 / 处理举报 / 置顶 / 加精 / 认证审核 7 类敏感操作自动写入 `admin_logs`，后台「操作日志」可查最近 50 条
+- **搜索服务端限频 + 真实热词**（`search` 重写）：每用户 10 秒 3 次限频（游客不限），写入 `search_queries`；新增 `hot` 动作聚合近 7 天热词，前端热搜动态化（失败回退内置热词）
+- **深分页游标**（cursor）：`post-list` 最新流与 `comment-list` 支持 cursor 分页，前端帖子详情评论加载改用游标
+- **积分消费闭环**（`points` 云函数 + 改名卡）：100 积分兑换 1 张改名卡，`user-update` 首改免费、之后每次消耗 1 张（`RENAME_LIMITED`），「编辑资料」页展示积分/改名卡并支持兑换
+- **帖子海报**：详情页「🖼️ 海报」Canvas 生成标题/摘要/作者分享卡片，保存相册（含权限引导）
+- **一校一署配置化**：`config/school.default.json` 模板 + `docs/SCHOOL_SETUP.md` 换校清单（4 处）；`doctor` 扩展检查新功能函数 / 备份触发器 / 换校配置
+- **合规个人化**：删除 README / 落地页 / 文档中"贴吧 / 论坛 / 全国可见 / nationwide"定位词，改为"一校一署校园内容平台"；新增 `docs/COMPLIANCE.md`（个人主体 UGC 不可用的官方依据 + 个体工商户路径 / 备案 / 改名示例 / 隐私政策 / 身份认证兜底 / 功能裁剪方案）
+- **契约测试扩充**：25 用例全过（新增 P5 断言：新函数目录 / 新集合登记 / 公告 / 审计 / 限频 / 积分 / 深分页 / 海报 / 合规收敛）
+
+### Changed
+- 云函数 34 → **37**（+backup-db / +announcement / +points），集合 16 → **21**（+backups / search_queries / admin_logs / announcements / points_orders），索引 36 → **41**
+- README / zh-CN / 落地页 / USER_GUIDE / DEPLOY / INDEXES 全部数字与功能清单同步
+
+## [Unreleased]
+
+### Fixed — 代码审计修复
+- **P0 管理员删除回归**：`admin` 云函数 delete 分支传给 `removeContent` 的 actor 只带 `_id/role` 未带 `openid`，而内核已改走 `checkAdmin(openid)`，导致管理员在审核台删除内容恒报"无权删除"。已补传 `operatorOpenid`（v0.6.1 声称修复的管理员删除实际仍失效，本次彻底修复）
+- **关注幂等**：`follow` 改为 `insertIdempotent`（依赖 `idx_follows_follower_following` 唯一索引），并发双点关注不再撞唯一键抛 500
+- **登录/资料接口不再把 openid 回传客户端**（login/user-update 返回前剔除），减少身份字段暴露面
+- **user-update 空昵称校验**：昵称去空格后为空直接拒绝，不再允许覆盖成空昵称
+- **product-publish 死代码清理**：移除无 UI 引用的 `isBargain` 字段与方法
+- **UGC 入口防御加固**：post-create / comment-create / feedback-create / product-create / report 对非字符串输入统一 String 化，杜绝恶意传 null/数字/对象触发 `.trim()/.length` 抛 TypeError 导致 500
+- **前端死代码修复**：search 页热搜词标签误绑 `onHistoryTap`，导致 `onHotSearch` 成为死方法且热搜点击语义错误；已改回 `onHotSearch` + `data-keyword`
+- **全站分享增强**：首页 / 市场 / 表白墙 / 失物招领 / 指南 / 过期任务 / 我的列表 / 消息 / 搜索 / 我的 10 页补齐自定义分享（标题 + 路径）；帖子 / 商品 / 指南详情分享带封面图
+- **列表页体验增强**：首页 / 市场 / 表白墙 / 失物招领 加载失败显示「点击屏幕重试」状态、滚动超一屏出现「回到顶部」按钮
+- **发布即达**：帖子 / 商品发布成功自动跳转详情页，立即查看发布效果；编辑保存仍返回上一页
+- **首页标题**：导航栏标题由默认改为「校园社区」
+- **部署文档修正（关键）**：docs/DEPLOY.md 索引清单此前仅列 32 个（posts 缺 4 个推荐流/热榜复合索引），按旧文档部署会漏建索引导致查询超时；已补全至 36 个并与 common-indexes.js 双向对齐，同时修正云函数数 35→34
+- **主仓信息更正**：README / docs/SYNC.md 由「GitCode 主仓」更正为「GitHub 主仓（source of truth）」，与 package.json 及实际开发流程一致；README 索引数 32→36
+- **新增契约测试**：DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止将来再次漏建），测试增至 24 用例
+- **云函数死导入清理**：notification / post-delete / product-delete / product-list 移除 `getDB`/`getCmd`/`AppError` 未使用的 require
+
+### Changed
+- **索引补全**：`common-indexes.js` 新增 3 个复合索引（`idx_posts_status_pinned_created` / `idx_posts_category_status_pinned_created` / `idx_posts_status_likes_created`），覆盖全国默认推荐流、分类筛选推荐流、热榜的排序查询；`docs/INDEXES.md` 与定义完全对齐（36 个，含此前缺失的 checkins/follows/notifications/楼中楼 7 个）
+- **种子学校可配置**：`init-db` 支持环境变量 `SEED_SCHOOL_NAME` / `SEED_SCHOOL_ID` 覆盖示例学校（默认仍为韩山师范学院 HSFNC），全国性部署不再强绑定单一学校
+- **文档/落地页数据校准**：README（中英）与 `index.html` 的统计数字修正为 34 云函数 / 23 页面 / 16 集合 / 36 索引 / 9 内核模块；落地页旧账号链接 `weed33834` 统一改为 `Morningstar202604`，版本 badge 升至 0.7.0；`package.json` 仓库指向改回 GitHub
+- **新增单元测试**：`npm test`（node 内置 test runner，零额外依赖）23 用例覆盖错误模型、删除权限（含管理员回归防护）、幂等插入、UGC 输入防御、索引/文档/落地页对齐契约；已接入 CI
+- **新增使用说明书**：`docs/USER_GUIDE.md` 覆盖全部 23 个页面（界面元素 / 按钮 / 操作步骤）、角色权限、功能模块、管理后台操作手册、34 个云函数与 16 个集合总览、FAQ；README 中英文均已挂链接
+
 ## [0.7.0] - 2026-08-26
 
 ### Added — 校园场景功能补齐（路线图 v0.8/v0.9 主体）

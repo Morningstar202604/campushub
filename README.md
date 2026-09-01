@@ -3,7 +3,7 @@
 > **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
 > Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
 >
-> 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](https://Morningstar202604.github.io/campushub/)
+> 📖 [使用说明书](./docs/USER_GUIDE.md) ｜ 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](https://Morningstar202604.github.io/campushub/)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-0.7.0-green.svg)](./CHANGELOG.md)
@@ -19,20 +19,20 @@
 
 ## Overview
 
-CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBase**. Think of it as a modern, open-source forum: users can post, ask questions, trade, and connect with like-minded people under a **multi-level category tree**.
+CampusHub is a campus content platform built on **WeChat Mini Program + WeChat CloudBase**. It follows a **one-school-per-deployment** model: users post, ask questions, trade, and connect under a **multi-level category tree**.
 
-- Content is **nationwide by default** — not locked to a single campus.
-- The category tree (Zone → Forum → Board, 3 levels) is **managed via admin UI** — no code changes or redeployment needed to add a school or open a new forum.
+- Content **defaults to your own campus** — deploy one environment per school.
+- The category tree (Zone → Category → Board, 3 levels) is **managed via admin UI** — no code changes or redeployment needed to add a school or open a new category.
 - Task-type posts support **auto-expiry** and **resolved marking**, keeping the feed clean.
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-level Categories** | Zone → Forum → Board (3-tier); `categoryPath` ancestor array enables filtering by any parent node; posts restricted to leaf nodes |
+| **Multi-level Categories** | Zone → Category → Board (3-tier); `categoryPath` ancestor array enables filtering by any parent node; posts restricted to leaf nodes |
 | **Feed Homepage** | Waterfall layout for posts + products; Recommend / Latest / Second-hand tabs; category filter + expired archive entry |
 | **Rich Posts** | Image + text posts, categories, tags, anonymous posting, drafts, image preview |
-| **Task & Expiry** | Task posts with 3/7/15/30-day TTL; hourly cron scan auto-archives expired tasks; author/admin can mark "resolved" |
+| **Task & Expiry** | Task posts with 3/7/15/30-day TTL; 6-hourly cron scan auto-archives expired tasks; author/admin can mark "resolved" |
 | **Second-hand Market** | Product listings with price, condition, trade type, contact info; mark as sold; edit listings |
 | **Nested Comments** | Threaded replies (floors + sub-replies), comment likes, reply-to-user |
 | **Follow System** | Follow/unfollow users, follower/following counts, user profile pages |
@@ -42,8 +42,15 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 | **Search** | Cross-collection search (posts + products + guides) with title + content matching and keyword highlighting |
 | **User Profiles** | Public profile page with stats, recent posts, follow button |
 | **Content Safety** | All UGC goes through WeChat's `msgSecCheck` + `imgSecCheck` — **fail-closed** (any error = reject) |
-| **Admin Console** | Report review, ban/unban, pin/essence posts, user list, feedback management, category CRUD |
-| **Category Management** | Admin UI for adding schools, forums, boards — pure operational action, no code changes |
+| **Admin Console** | Report review, ban/unban, pin/essence posts, user list, feedback management, category CRUD, announcement management, operation audit logs |
+| **Category Management** | Admin UI for adding schools, categories, boards — pure operational action, no code changes |
+| **Announcements** | Admin-published notices shown at the top of the homepage (≤3, pinned first) |
+| **Points Mall** | Redeem check-in points for rename tokens (first nickname change is free) |
+| **Auto Backup** | Daily 03:00 scheduled snapshot of core collections into `backups` (7-day retention) |
+| **Admin Audit Logs** | Sensitive admin actions (ban/delete/pin/verify...) written to `admin_logs`, viewable in console |
+| **Post Poster** | One-tap Canvas share card with title/summary/author, saved to photo album |
+| **Search Rate-limit + Hot Words** | Server-side per-user rate limit (10s/3) + real hot queries aggregated from last 7 days |
+| **Cursor Pagination** | Latest-post feed & comments use cursor-based pagination for deep scroll efficiency |
 
 ## Tech Stack
 
@@ -56,11 +63,11 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 
 | Metric | Count |
 |--------|-------|
-| Cloud Functions | 35 |
+| Cloud Functions | 37 |
 | Mini Program Pages | 22 |
-| Database Collections | 16 |
-| Defined Indexes | 33 |
-| Cloud Function Common Modules | 9 (synced to all 35 functions) |
+| Database Collections | 21 |
+| Defined Indexes | 41 |
+| Cloud Function Common Modules | 9 (synced to all 34 functions) |
 
 ## Directory Structure
 
@@ -70,7 +77,7 @@ CampusHub/
 │   ├── app.js               # Entry (CloudBase init)
 │   ├── app.json             # Global config
 │   ├── app.wxss             # Global styles + Design Tokens
-│   ├── pages/               # 19 pages
+│   ├── pages/               # 23 pages
 │   ├── components/          # Shared components (category-picker)
 │   └── utils/               # Utilities (request, auth)
 ├── cloudfunctions/           # 34 cloud functions
@@ -121,7 +128,7 @@ CampusHub/
 │   └── SYNC.md              # Three-platform manual sync guide
 ├── docs/
 │   ├── DEPLOY.md             # ★ Deployment guide (10 steps)
-│   ├── INDEXES.md           # ★ Database index checklist (32 indexes)
+│   ├── INDEXES.md           # ★ Database index checklist (36 indexes)
 │   └── SYNC.md              # Three-platform sync instructions
 ├── .github/
 │   ├── workflows/
@@ -154,7 +161,7 @@ Before deploying, run the sync script (also auto-triggered by `npm install` via 
 npm run sync:common
 ```
 
-This copies the 8 common files into all 34 cloud function directories, ensuring "one source, zero drift."
+This copies the 9 common files into all 34 cloud function directories, ensuring "one source, zero drift."
 
 ## Quick Start
 
@@ -222,8 +229,8 @@ This project is open-sourced under **Apache License 2.0** and mirrored across th
 
 | Platform | URL | Role |
 |----------|-----|------|
-| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Canonical source |
-| **GitHub** | [github.com/Morningstar202604/campushub](https://github.com/Morningstar202604/campushub) | Mirror + CI + Issues |
+| **GitHub** | [github.com/Morningstar202604/campushub](https://github.com/Morningstar202604/campushub) | Canonical source |
+| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Mirror |
 | **Gitee** | [gitee.com/badhope/campushub](https://gitee.com/badhope/campushub) | Mirror (China access) |
 
 Sync is manual by design: commit once locally, push to all three remotes — see [`docs/SYNC.md`](./docs/SYNC.md).

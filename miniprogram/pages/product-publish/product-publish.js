@@ -14,7 +14,6 @@ Page({
     tradeType: 'face',
     location: '',
     contactInfo: '',
-    isBargain: false,
     submitting: false,
     isEdit: false,
     editId: '',
@@ -118,7 +117,6 @@ Page({
   onOriginalPriceInput(e) { this.setData({ originalPrice: e.detail.value }) },
   onLocationInput(e) { this.setData({ location: e.detail.value }) },
   onContactInput(e) { this.setData({ contactInfo: e.detail.value }) },
-  onBargainChange(e) { this.setData({ isBargain: e.detail.value }) },
 
   async chooseImage() {
     const remaining = 9 - this.data.images.length
@@ -222,7 +220,11 @@ Page({
           this.clearDraft()
           app.globalData.needRefresh = true
           wx.showToast({ title: '发布成功', icon: 'success' })
-          setTimeout(() => wx.navigateBack(), 1500)
+          // 有 id 则跳详情页立即看效果，否则返回列表
+          setTimeout(() => {
+            if (res.productId) wx.redirectTo({ url: `/pages/product-detail/product-detail?id=${res.productId}` })
+            else wx.navigateBack()
+          }, 1000)
           return
         } else {
           wx.showToast({ title: res.message || '发布失败', icon: 'none' })

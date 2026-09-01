@@ -17,6 +17,8 @@ Page({
     page: 1,
     hasMore: true,
     loading: false,
+    loadFail: false,
+    showBackTop: false,
     schoolId: ''
   },
 
@@ -109,7 +111,8 @@ Page({
           ...lists,
           page: 2,
           hasMore: cachedItems.length >= PAGE_SIZE,
-          loading: false
+          loading: false,
+          loadFail: false
         })
         wx.stopPullDownRefresh()
         return
@@ -135,15 +138,16 @@ Page({
           ...lists,
           hasMore: res.hasMore,
           page: (reset ? 1 : this.data.page) + 1,
-          loading: false
+          loading: false,
+          loadFail: false
         })
       } else {
-        this.setData({ loading: false })
+        this.setData({ loading: false, loadFail: this.data.leftList.length === 0 && this.data.rightList.length === 0 })
       }
     } catch (err) {
       if (seq !== this._seq) { wx.stopPullDownRefresh(); return }
       console.error('加载失败', err)
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFail: this.data.leftList.length === 0 && this.data.rightList.length === 0 })
       wx.showToast({ title: '加载失败，请检查网络', icon: 'none' })
     }
 
@@ -163,5 +167,23 @@ Page({
   goPublish() {
     if (!ensureLogin()) return
     wx.navigateTo({ url: '/pages/product-publish/product-publish' })
+  },
+  reloadList() {
+    if (this.data.loading) return
+    this.setData({ loadFail: false })
+    this.loadList(true)
+  },
+
+  onPageScroll(e) {
+    const show = (e.scrollTop || 0) > 600
+    if (show !== this.data.showBackTop) this.setData({ showBackTop: show })
+  },
+
+  goBackTop() {
+    wx.pageScrollTo({ scrollTop: 0, duration: 300 })
+  },
+
+  onShareAppMessage() {
+    return { title: '二手市场 · 来淘点好物', path: '/pages/market/market' }
   }
 })

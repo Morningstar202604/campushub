@@ -8,12 +8,14 @@ exports.main = wrap(async (event) => {
   const _ = getCmd()
 
   const {
-    title, description, images = [], price, originalPrice,
+    title: rawTitle, description, images = [], price, originalPrice,
     category = 'other', condition = 'good', tradeType = 'face',
     location = '', contactInfo = ''
   } = event
+  // 统一 String 化：客户端可传非字符串，避免 .trim()/.length 抛 TypeError
+  const title = String(rawTitle == null ? '' : rawTitle).trim()
 
-  if (!title || !title.trim()) throw new AppError('请输入商品标题', 'INVALID_PARAM')
+  if (!title) throw new AppError('请输入商品标题', 'INVALID_PARAM')
   const numPrice = Number(price)
   if (price === undefined || price === null || !Number.isFinite(numPrice) || numPrice < 0) throw new AppError('请输入有效价格', 'INVALID_PARAM')
   if (!Array.isArray(images) || images.length === 0) throw new AppError('请至少上传一张图片', 'INVALID_PARAM')
@@ -39,7 +41,7 @@ exports.main = wrap(async (event) => {
     authorVerified: user.campusVerified === true,
     userAvatar: user.avatar,
     schoolId: user.schoolId || '',
-    title: title.trim(),
+    title,
     description: String(description || '').trim().slice(0, 2000),
     images,
     price: numPrice,

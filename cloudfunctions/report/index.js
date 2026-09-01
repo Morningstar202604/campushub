@@ -10,9 +10,11 @@ exports.main = wrap(async (event) => {
   const db = getDB()
 
   const { targetId, targetType = 'post', reason, description = '' } = event
+  // 统一 String 化：description 可为 null/数字，避免 .length 抛 TypeError
+  const safeDescription = String(description == null ? '' : description)
   if (!targetId || !reason) throw new AppError('缺少必要参数', 'INVALID_PARAM')
   if (!VALID_TARGET_TYPES.includes(targetType)) throw new AppError('非法的目标类型', 'INVALID_PARAM')
-  if (description.length > 500) throw new AppError('补充说明不能超过500字', 'INVALID_PARAM')
+  if (safeDescription.length > 500) throw new AppError('补充说明不能超过500字', 'INVALID_PARAM')
 
   // 防重复举报：同一用户对同一目标只允许一次 pending 举报
   const dupCheck = await db.collection('reports')
@@ -20,7 +22,7 @@ exports.main = wrap(async (event) => {
     .count()
   if (dupCheck.total > 0) throw new AppError('您已举报过该内容，请等待处理', 'ALREADY')
 
-  await checkContents([reason, description], { openid: user.openid, scene: 2 })
+  await checkContents([reason, safeDescription], { openid: user.openid, scene: 2 })
   await rateLimit({ collection: 'reports', match: { reporterId: user._id }, windowMs: 60000, max: 5 })
 
   await db.collection('reports').add({
@@ -29,7 +31,7 @@ exports.main = wrap(async (event) => {
       targetType,
       reporterId: user._id,
       reason: String(reason).slice(0, 100),
-      description: String(description).slice(0, 500),
+      description: safeDescription.slice(0, 500),
       status: 'pending',
       createdAt: new Date()
     }

@@ -1,4 +1,5 @@
 {
+  "navigationBarTitleText": "校园社区",
   "usingComponents": {
     "category-picker": "/components/category-picker/category-picker"
   },

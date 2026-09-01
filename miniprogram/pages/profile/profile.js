@@ -122,5 +122,8 @@ Page({
         }
       }
     })
+  },
+  onShareAppMessage() {
+    return { title: '我的 · CampusHub', path: '/pages/profile/profile' }
   }
 })
