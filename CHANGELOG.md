@@ -19,6 +19,9 @@
 - **列表页体验增强**：首页 / 市场 / 表白墙 / 失物招领 加载失败显示「点击屏幕重试」状态、滚动超一屏出现「回到顶部」按钮
 - **发布即达**：帖子 / 商品发布成功自动跳转详情页，立即查看发布效果；编辑保存仍返回上一页
 - **首页标题**：导航栏标题由默认改为「校园社区」
+- **部署文档修正（关键）**：docs/DEPLOY.md 索引清单此前仅列 32 个（posts 缺 4 个推荐流/热榜复合索引），按旧文档部署会漏建索引导致查询超时；已补全至 36 个并与 common-indexes.js 双向对齐，同时修正云函数数 35→34
+- **主仓信息更正**：README / docs/SYNC.md 由「GitCode 主仓」更正为「GitHub 主仓（source of truth）」，与 package.json 及实际开发流程一致；README 索引数 32→36
+- **新增契约测试**：DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止将来再次漏建），测试增至 24 用例
 - **云函数死导入清理**：notification / post-delete / product-delete / product-list 移除 `getDB`/`getCmd`/`AppError` 未使用的 require
 
 ### Changed

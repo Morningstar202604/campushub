@@ -102,7 +102,7 @@ npm install
 >
 > 手动部署方式保留如下，适用于不想装 CLI 的场景。
 
-项目共 **35 个云函数**，全部需要部署。
+项目共 **34 个云函数**，全部需要部署。
 
 ### 4.1 批量部署
 
@@ -204,7 +204,7 @@ npm install
 
 云开发控制台 → 数据库 → 选择集合 →「索引管理」→「新建索引」
 
-### 7.2 索引清单（共 32 个）
+### 7.2 索引清单（共 36 个）
 
 > 完整定义见 `cloudfunctions/common/common-indexes.js` 和 `docs/INDEXES.md`
 
@@ -213,7 +213,7 @@ npm install
 |--------|------|------|
 | idx_users_openid | openid(升) | 是 |
 
-**posts**（7个）
+**posts**（11个）
 | 索引名 | 字段 |
 |--------|------|
 | idx_posts_school_status_created | schoolId(降), status(降), createdAt(降) |
@@ -223,6 +223,10 @@ npm install
 | idx_posts_category_status_created | categoryPath(降), status(降), createdAt(降) |
 | idx_posts_status_kind_expire | status(降), kind(降), expireAt(降) |
 | idx_posts_status_created | status(降), createdAt(降) |
+| idx_posts_status_likes | status(降), likeCount(降) |
+| idx_posts_status_pinned_created | status(降), isPinned(降), createdAt(降) |
+| idx_posts_category_status_pinned_created | categoryPath(降), status(降), isPinned(降), createdAt(降) |
+| idx_posts_status_likes_created | status(降), likeCount(降), createdAt(降) |
 
 **categories**（2个）
 | 索引名 | 字段 |

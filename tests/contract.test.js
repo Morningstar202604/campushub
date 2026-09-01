@@ -118,3 +118,18 @@ test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与
     assert.ok(guide.includes(sec), `说明书应包含章节「${sec}」`)
   }
 })
+test('DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止漏建索引）', () => {
+  const def = read('cloudfunctions/common/common-indexes.js')
+  const deploy = read('docs/DEPLOY.md')
+  const srcNames = new Set([...def.matchAll(/name: '(idx_[a-z_]+)'/g)].map(m => m[1]))
+  const depNames = new Set([...deploy.matchAll(/\|\s*(idx_[a-z_]+)\s*\|/g)].map(m => m[1]))
+  for (const n of srcNames) {
+    assert.ok(depNames.has(n), `DEPLOY.md 缺失索引 ${n}`)
+  }
+  for (const n of depNames) {
+    assert.ok(srcNames.has(n), `DEPLOY.md 出现未知索引 ${n}`)
+  }
+  assert.strictEqual(srcNames.size, 36, 'common-indexes.js 应为 36 个索引')
+  assert.strictEqual(depNames.size, 36, 'DEPLOY.md 应列出全部 36 个索引')
+})
+

@@ -4,8 +4,8 @@ CampusHub 同时托管在三个平台。**同步方式：本地一次提交，�
 
 | 平台 | 地址 | git 远端名 | 角色 |
 |------|------|-----------|------|
-| GitCode | `gitcode.com/badhope/campushub` | `gitcode` | 主仓（source of truth） |
-| GitHub  | `github.com/Morningstar202604/campushub` | `github` | 镜像 + Issue/PR |
+| GitHub  | `github.com/Morningstar202604/campushub` | `github` | 主仓（source of truth）+ Issue/PR |
+| GitCode | `gitcode.com/badhope/campushub` | `gitcode` | 镜像 |
 | Gitee   | `gitee.com/badhope/campushub` | `origin` | 镜像（国内访问） |
 
 ## 一次性配置

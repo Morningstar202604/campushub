@@ -121,7 +121,7 @@ CampusHub/
 │   └── SYNC.md              # Three-platform manual sync guide
 ├── docs/
 │   ├── DEPLOY.md             # ★ Deployment guide (10 steps)
-│   ├── INDEXES.md           # ★ Database index checklist (32 indexes)
+│   ├── INDEXES.md           # ★ Database index checklist (36 indexes)
 │   └── SYNC.md              # Three-platform sync instructions
 ├── .github/
 │   ├── workflows/
@@ -222,8 +222,8 @@ This project is open-sourced under **Apache License 2.0** and mirrored across th
 
 | Platform | URL | Role |
 |----------|-----|------|
-| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Canonical source |
-| **GitHub** | [github.com/Morningstar202604/campushub](https://github.com/Morningstar202604/campushub) | Mirror + CI + Issues |
+| **GitHub** | [github.com/Morningstar202604/campushub](https://github.com/Morningstar202604/campushub) | Canonical source |
+| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Mirror |
 | **Gitee** | [gitee.com/badhope/campushub](https://gitee.com/badhope/campushub) | Mirror (China access) |
 
 Sync is manual by design: commit once locally, push to all three remotes — see [`docs/SYNC.md`](./docs/SYNC.md).
