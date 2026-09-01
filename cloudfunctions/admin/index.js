@@ -84,7 +84,8 @@ exports.main = wrap(async (event) => {
     await removeContent({
       collection: cfg.col,
       docId: targetId,
-      actor: { _id: '__admin__', role: 'admin' }, // 管理员越权删除
+      // 内核按 openid 维度判定管理员（checkAdmin），必须传 openid，否则恒判 FORBIDDEN
+      actor: { _id: '__admin__', openid: operatorOpenid },
       opts: { userCountField: cfg.userCountField, targetComment: cfg.targetComment }
     })
     return ok({ deleted: true })

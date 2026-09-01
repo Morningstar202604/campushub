@@ -5,6 +5,20 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [Unreleased]
+
+### Fixed — 代码审计修复
+- **P0 管理员删除回归**：`admin` 云函数 delete 分支传给 `removeContent` 的 actor 只带 `_id/role` 未带 `openid`，而内核已改走 `checkAdmin(openid)`，导致管理员在审核台删除内容恒报"无权删除"。已补传 `operatorOpenid`（v0.6.1 声称修复的管理员删除实际仍失效，本次彻底修复）
+- **关注幂等**：`follow` 改为 `insertIdempotent`（依赖 `idx_follows_follower_following` 唯一索引），并发双点关注不再撞唯一键抛 500
+- **登录/资料接口不再把 openid 回传客户端**（login/user-update 返回前剔除），减少身份字段暴露面
+- **user-update 空昵称校验**：昵称去空格后为空直接拒绝，不再允许覆盖成空昵称
+- **product-publish 死代码清理**：移除无 UI 引用的 `isBargain` 字段与方法
+
+### Changed
+- **索引补全**：`common-indexes.js` 新增 3 个复合索引（`idx_posts_status_pinned_created` / `idx_posts_category_status_pinned_created` / `idx_posts_status_likes_created`），覆盖全国默认推荐流、分类筛选推荐流、热榜的排序查询；`docs/INDEXES.md` 与定义完全对齐（36 个，含此前缺失的 checkins/follows/notifications/楼中楼 7 个）
+- **种子学校可配置**：`init-db` 支持环境变量 `SEED_SCHOOL_NAME` / `SEED_SCHOOL_ID` 覆盖示例学校（默认仍为韩山师范学院 HSFNC），全国性部署不再强绑定单一学校
+- **新增单元测试**：`npm test`（node 内置 test runner，零额外依赖）覆盖错误模型、删除权限（含管理员回归防护）、幂等插入、索引/文档对齐契约；已接入 CI
+
 ## [0.7.0] - 2026-08-26
 
 ### Added — 校园场景功能补齐（路线图 v0.8/v0.9 主体）

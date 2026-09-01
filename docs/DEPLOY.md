@@ -147,8 +147,11 @@ npm install
 | Key | Value |
 |-----|-------|
 | `INIT_SECRET` | `你自定义的一串密钥`（如 `mySecret123`） |
+| `SEED_SCHOOL_NAME` | （可选）种子数据默认学校名，默认 `韩山师范学院` |
+| `SEED_SCHOOL_ID` | （可选）种子数据默认学校ID，默认 `HSFNC` |
 
 > 配置后，调用 `init-db` 时必须传 `{ secret: '你的密钥' }` 才能执行，防止被人恶意调用。
+> `SEED_SCHOOL_NAME` / `SEED_SCHOOL_ID` 用于覆盖种子数据里的示例学校（分类 + 指南），全国性部署可换成自己的学校，不改代码。
 
 ---
 

@@ -10,7 +10,11 @@ exports.main = wrap(async (event) => {
   const { nickname, avatar, bio, college, major, grade, gender, tags } = event
 
   const updateData = {}
-  if (nickname !== undefined) updateData.nickname = String(nickname).trim().slice(0, 20)
+  if (nickname !== undefined) {
+    const safeNickname = String(nickname).trim()
+    if (!safeNickname) throw new AppError('昵称不能为空', 'INVALID_PARAM')
+    updateData.nickname = safeNickname.slice(0, 20)
+  }
   if (avatar !== undefined) {
     // 头像必须是本云存储文件且过图片安全审核（fail-closed，拒绝外链/垃圾值）
     if (!avatar || typeof avatar !== 'string' || !avatar.startsWith('cloud://')) {
@@ -52,5 +56,7 @@ exports.main = wrap(async (event) => {
   await db.collection('users').where({ openid: user.openid }).update({ data: updateData })
 
   const updated = await db.collection('users').doc(user._id).get()
-  return ok({ user: updated.data })
+  // 返回给客户端的用户文档剔除 openid（与服务端可信来源解耦，客户端用 _id 识别身份）
+  const { openid: _openid, ...safe } = updated.data || {}
+  return ok({ user: safe })
 })

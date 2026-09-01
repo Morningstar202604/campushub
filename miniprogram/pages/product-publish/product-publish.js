@@ -14,7 +14,6 @@ Page({
     tradeType: 'face',
     location: '',
     contactInfo: '',
-    isBargain: false,
     submitting: false,
     isEdit: false,
     editId: '',
@@ -118,7 +117,6 @@ Page({
   onOriginalPriceInput(e) { this.setData({ originalPrice: e.detail.value }) },
   onLocationInput(e) { this.setData({ location: e.detail.value }) },
   onContactInput(e) { this.setData({ contactInfo: e.detail.value }) },
-  onBargainChange(e) { this.setData({ isBargain: e.detail.value }) },
 
   async chooseImage() {
     const remaining = 9 - this.data.images.length

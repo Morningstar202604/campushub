@@ -7,9 +7,9 @@
   "author": "Morningstar202604",
   "repository": {
     "type": "git",
-    "url": "https://gitcode.com/badhope/campushub.git"
+    "url": "https://github.com/Morningstar202604/campushub.git"
   },
-  "homepage": "https://gitcode.com/badhope/campushub",
+  "homepage": "https://github.com/Morningstar202604/campushub",
   "bugs": {
     "url": "https://github.com/Morningstar202604/campushub/issues"
   },
@@ -26,6 +26,7 @@
     "deploy": "node scripts/deploy.js --env prod",
     "deploy:dev": "node scripts/deploy.js --env dev",
     "doctor": "node scripts/doctor.js",
+    "test": "node --test tests/common-error.test.js tests/common-db.test.js tests/removeContent.test.js tests/contract.test.js",
     "prepublishOnly": "node scripts/sync-common.js"
   },
   "dependencies": {

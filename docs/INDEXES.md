@@ -36,8 +36,11 @@
 | idx_posts_school_status_title | schoolId(降), status(降), title(降) | 否 |
 | idx_posts_category_status_created | categoryPath(降), status(降), createdAt(降) | 否 |
 | idx_posts_status_kind_expire | status(降), kind(降), expireAt(降) | 否 |
-| idx_posts_status_created | status(降), createdAt(降) |
+| idx_posts_status_created | status(降), createdAt(降) | 否 |
 | idx_posts_status_likes | status(降), likeCount(降) | 否 |
+| idx_posts_status_pinned_created | status(降), isPinned(降), createdAt(降) | 否 |
+| idx_posts_category_status_pinned_created | categoryPath(降), status(降), isPinned(降), createdAt(降) | 否 |
+| idx_posts_status_likes_created | status(降), likeCount(降), createdAt(降) | 否 |
 
 ### categories
 | 索引名称 | 字段（方向） | 唯一 |
@@ -58,17 +61,31 @@
 |---|---|---|
 | idx_comments_target_status_created | targetId(升), status(升), createdAt(降) | 否 |
 | idx_comments_user_created | userId(降), createdAt(降) | 否 |
+| idx_comments_parent_status_created | parentId(升), status(升), createdAt(升) | 否 |
 
-### likes / collects / checkins
-> ⚠️ likes / collects 的 (user, target, type) 与 checkins 的 (user, date) 为**唯一索引**——
+### likes / collects / checkins / follows
+> ⚠️ likes / collects 的 (user, target, type)、checkins 的 (user, date)、follows 的 (follower, following) 为**唯一索引**——
 > 并发双击/重复请求靠它们兜底去重（配合云函数 `insertIdempotent` 幂等插入）。
-> 已有环境升级 v0.6.1 时需在控制台把这三个索引改为唯一（或删掉重建为唯一索引）。
+> 已有环境升级时需在控制台把这几个索引改为唯一（或删掉重建为唯一索引）。
 
 | 集合 | 索引名称 | 字段（方向） | 唯一 |
 |---|---|---|---|
 | likes | idx_likes_user_target_type | userId(升), targetId(升), type(升) | **是** |
 | collects | idx_collects_user_target_type | userId(升), targetId(升), type(升) | **是** |
 | collects | idx_collects_user_created | userId(降), createdAt(降) | 否 |
+| checkins | idx_checkins_user_date | userId(升), date(升) | **是** |
+### follows
+> ⚠️ `idx_follows_follower_following` 为**唯一索引**——关注操作依赖它做幂等（`insertIdempotent`），并发双点关注不会产生重复关系。
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| follows | idx_follows_follower_created | followerId(升), createdAt(降) | 否 |
+| follows | idx_follows_following_created | followingId(升), createdAt(降) | 否 |
+| follows | idx_follows_follower_following | followerId(升), followingId(升) | **是** |
+### notifications
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| notifications | idx_notifications_user_created | userId(升), createdAt(降) | 否 |
+| notifications | idx_notifications_user_read | userId(升), isRead(升) | 否 |
 
 ### reports / feedbacks
 | 集合 | 索引名称 | 字段（方向） | 唯一 |

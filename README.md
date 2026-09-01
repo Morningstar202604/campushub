@@ -32,7 +32,7 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 | **Multi-level Categories** | Zone → Forum → Board (3-tier); `categoryPath` ancestor array enables filtering by any parent node; posts restricted to leaf nodes |
 | **Feed Homepage** | Waterfall layout for posts + products; Recommend / Latest / Second-hand tabs; category filter + expired archive entry |
 | **Rich Posts** | Image + text posts, categories, tags, anonymous posting, drafts, image preview |
-| **Task & Expiry** | Task posts with 3/7/15/30-day TTL; hourly cron scan auto-archives expired tasks; author/admin can mark "resolved" |
+| **Task & Expiry** | Task posts with 3/7/15/30-day TTL; 6-hourly cron scan auto-archives expired tasks; author/admin can mark "resolved" |
 | **Second-hand Market** | Product listings with price, condition, trade type, contact info; mark as sold; edit listings |
 | **Nested Comments** | Threaded replies (floors + sub-replies), comment likes, reply-to-user |
 | **Follow System** | Follow/unfollow users, follower/following counts, user profile pages |
@@ -56,11 +56,11 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 
 | Metric | Count |
 |--------|-------|
-| Cloud Functions | 35 |
+| Cloud Functions | 34 |
 | Mini Program Pages | 22 |
 | Database Collections | 16 |
-| Defined Indexes | 33 |
-| Cloud Function Common Modules | 9 (synced to all 35 functions) |
+| Defined Indexes | 36 |
+| Cloud Function Common Modules | 9 (synced to all 34 functions) |
 
 ## Directory Structure
 
@@ -154,7 +154,7 @@ Before deploying, run the sync script (also auto-triggered by `npm install` via 
 npm run sync:common
 ```
 
-This copies the 8 common files into all 34 cloud function directories, ensuring "one source, zero drift."
+This copies the 9 common files into all 34 cloud function directories, ensuring "one source, zero drift."
 
 ## Quick Start
 

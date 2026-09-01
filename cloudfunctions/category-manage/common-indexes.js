@@ -21,6 +21,12 @@ const EXPECTED_INDEXES = [
   { collection: 'posts', name: 'idx_posts_status_kind_expire', fields: [{ key: 'status', direction: -1 }, { key: 'kind', direction: -1 }, { key: 'expireAt', direction: -1 }], unique: false },
   { collection: 'posts', name: 'idx_posts_status_created', fields: [{ key: 'status', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
   { collection: 'posts', name: 'idx_posts_status_likes', fields: [{ key: 'status', direction: -1 }, { key: 'likeCount', direction: -1 }], unique: false },
+  // 全国默认（无 schoolId）推荐流：where(status) + orderBy(isPinned, createdAt)
+  { collection: 'posts', name: 'idx_posts_status_pinned_created', fields: [{ key: 'status', direction: -1 }, { key: 'isPinned', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  // 分类筛选推荐流：where(categoryPath, status) + orderBy(isPinned, createdAt)
+  { collection: 'posts', name: 'idx_posts_category_status_pinned_created', fields: [{ key: 'categoryPath', direction: -1 }, { key: 'status', direction: -1 }, { key: 'isPinned', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
+  // 热榜：where(status, createdAt>since) + orderBy(likeCount, createdAt)
+  { collection: 'posts', name: 'idx_posts_status_likes_created', fields: [{ key: 'status', direction: -1 }, { key: 'likeCount', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
 
   // ===== categories =====
   { collection: 'categories', name: 'idx_categories_parent', fields: [{ key: 'parentId', direction: 1 }], unique: false },

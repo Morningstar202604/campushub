@@ -1,7 +1,7 @@
 ﻿// cloudfunctions/follow/index.js
 // 关注/取关 + 关注状态查询 + 关注/粉丝列表
 // follows 集合: { followerId, followingId, createdAt }
-const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, rateLimit } = require('./common-bundle')
+const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, rateLimit, insertIdempotent } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -24,15 +24,12 @@ exports.main = wrap(async (event) => {
     if (!targetRes || !targetRes.data) throw new AppError('目标用户不存在', 'NOT_FOUND')
 
     if (action === 'follow') {
-      // 检查是否已关注
-      const existing = await db.collection('follows')
-        .where({ followerId: user._id, followingId: targetUserId })
-        .count()
-      if (existing.total > 0) throw new AppError('已关注该用户', 'ALREADY')
-
-      await db.collection('follows').add({
-        data: { followerId: user._id, followingId: targetUserId, createdAt: new Date() }
+      // 幂等插入：依赖 idx_follows_follower_following 唯一索引，
+      // 并发双点关注只有一次插入生效，另一个按"已关注"幂等返回（不再撞唯一键抛 500）
+      const inserted = await insertIdempotent('follows', {
+        followerId: user._id, followingId: targetUserId, createdAt: new Date()
       })
+      if (!inserted) throw new AppError('已关注该用户', 'ALREADY')
       // 更新双方计数
       await db.collection('users').doc(user._id).update({ data: { followingCount: _.inc(1) } })
       await db.collection('users').doc(targetUserId).update({ data: { followerCount: _.inc(1) } })
