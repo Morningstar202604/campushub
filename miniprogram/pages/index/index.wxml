@@ -138,13 +138,23 @@
     <view class="no-more-line"></view>
   </view>
 
+  <!-- 加载失败：点击重试 -->
+  <view class="empty-container" wx:if="{{loadFail && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+    <view class="empty-emoji">😵</view>
+    <view class="empty-text">加载失败</view>
+    <view class="empty-sub">点击屏幕重试</view>
+  </view>
+
   <!-- 空状态 -->
-  <view class="empty-container" wx:if="{{!loading && leftList.length === 0 && rightList.length === 0}}">
+  <view class="empty-container" wx:elif="{{!loading && leftList.length === 0 && rightList.length === 0}}">
     <view class="empty-emoji">📭</view>
     <view class="empty-text">还没有内容</view>
     <view class="empty-sub">快来发布第一条吧</view>
   </view>
 </view>
+
+<!-- 回到顶部 -->
+<view class="back-top" wx:if="{{showBackTop}}" bindtap="goBackTop">↑</view>
 
 <!-- 悬浮发布按钮 -->
 <view class="fab" bindtap="goPublish">

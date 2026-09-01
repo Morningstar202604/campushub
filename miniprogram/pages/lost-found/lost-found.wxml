@@ -29,7 +29,14 @@
     </view>
   </view>
 
-  <view class="empty-container" wx:if="{{!loading && list.length === 0}}">
+  <!-- 加载失败：点击重试 -->
+  <view class="empty-container" wx:if="{{loadFail && !loading && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+    <view class="empty-emoji">😵</view>
+    <view class="empty-text">加载失败</view>
+    <view class="empty-sub">点击屏幕重试</view>
+  </view>
+
+  <view class="empty-container" wx:elif="{{!loading && list.length === 0}}">
     <view class="empty-emoji">🎒</view>
     <view class="empty-text">暂无失物招领信息</view>
     <view class="empty-sub">丢了东西或捡到东西，点下方按钮发布</view>
@@ -40,6 +47,9 @@
 </view>
 
 <!-- 双发布入口 -->
+<!-- 回到顶部 -->
+<view class="back-top" wx:if="{{showBackTop}}" bindtap="goBackTop">↑</view>
+
 <view class="fab-group">
   <view class="fab fab-lost" data-kind="lost" bindtap="goPublish">🔍 丢了</view>
   <view class="fab fab-found" data-kind="found" bindtap="goPublish">🎁 捡到</view>

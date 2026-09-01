@@ -117,7 +117,14 @@
   </view>
 
   <!-- 空状态 -->
-  <view class="empty-container" wx:if="{{!loading && leftList.length === 0 && rightList.length === 0}}">
+  <!-- 加载失败：点击重试 -->
+  <view class="empty-container" wx:if="{{loadFail && !loading && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+    <view class="empty-emoji">😵</view>
+    <view class="empty-text">加载失败</view>
+    <view class="empty-sub">点击屏幕重试</view>
+  </view>
+
+  <view class="empty-container" wx:elif="{{!loading && leftList.length === 0 && rightList.length === 0}}">
     <view class="empty-emoji">🛒</view>
     <view class="empty-text">还没有人出闲置</view>
     <view class="empty-sub">点击右上角「+ 出闲置」发布第一件</view>

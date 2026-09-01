@@ -46,5 +46,8 @@ Page({
     wx.navigateTo({
       url: `/pages/guide-detail/guide-detail?id=${e.currentTarget.dataset.id}`
     })
+  },
+  onShareAppMessage() {
+    return { title: '校园指南 · 新生必备攻略', path: '/pages/guide/guide' }
   }
 })

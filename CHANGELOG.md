@@ -15,6 +15,10 @@
 - **product-publish 死代码清理**：移除无 UI 引用的 `isBargain` 字段与方法
 - **UGC 入口防御加固**：post-create / comment-create / feedback-create / product-create / report 对非字符串输入统一 String 化，杜绝恶意传 null/数字/对象触发 `.trim()/.length` 抛 TypeError 导致 500
 - **前端死代码修复**：search 页热搜词标签误绑 `onHistoryTap`，导致 `onHotSearch` 成为死方法且热搜点击语义错误；已改回 `onHotSearch` + `data-keyword`
+- **全站分享增强**：首页 / 市场 / 表白墙 / 失物招领 / 指南 / 过期任务 / 我的列表 / 消息 / 搜索 / 我的 10 页补齐自定义分享（标题 + 路径）；帖子 / 商品 / 指南详情分享带封面图
+- **列表页体验增强**：首页 / 市场 / 表白墙 / 失物招领 加载失败显示「点击屏幕重试」状态、滚动超一屏出现「回到顶部」按钮
+- **发布即达**：帖子 / 商品发布成功自动跳转详情页，立即查看发布效果；编辑保存仍返回上一页
+- **首页标题**：导航栏标题由默认改为「校园社区」
 - **云函数死导入清理**：notification / post-delete / product-delete / product-list 移除 `getDB`/`getCmd`/`AppError` 未使用的 require
 
 ### Changed

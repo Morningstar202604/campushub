@@ -270,7 +270,8 @@ Page({
     if (!post) return { title: 'CampusHub', path: '/pages/index/index' }
     return {
       title: post.title,
-      path: `/pages/post-detail/post-detail?id=${post._id}`
+      path: `/pages/post-detail/post-detail?id=${post._id}`,
+      imageUrl: post.images && post.images[0]
     }
   },
 

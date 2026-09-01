@@ -25,7 +25,9 @@ Page({
     // 分类筛选（多级目录，传节点 id 即可按任意层级筛选）
     selectedCategoryId: '',
     selectedCategoryName: '',
-    showCatPicker: false
+    showCatPicker: false,
+    loadFail: false,
+    showBackTop: false
   },
 
   onLoad() {
@@ -95,7 +97,8 @@ Page({
           ...lists,
           page: 2,
           hasMore: cachedItems.length >= 20,
-          loading: false
+          loading: false,
+          loadFail: false
         })
         wx.stopPullDownRefresh()
         return
@@ -124,15 +127,16 @@ Page({
           ...lists,
           hasMore: res.hasMore,
           page: (reset ? 1 : this.data.page) + 1,
-          loading: false
+          loading: false,
+          loadFail: false
         })
       } else {
-        this.setData({ loading: false })
+        this.setData({ loading: false, loadFail: this.data.leftList.length === 0 && this.data.rightList.length === 0 })
       }
     } catch (err) {
       if (seq !== this._seq) { wx.stopPullDownRefresh(); return }
       console.error('加载失败', err)
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFail: this.data.leftList.length === 0 && this.data.rightList.length === 0 })
       wx.showToast({ title: '加载失败，请检查网络', icon: 'none' })
     }
 
@@ -225,5 +229,23 @@ Page({
         wx.navigateTo({ url: '/pages/post-publish/post-publish?kind=confession' })
       }
     }
+  },
+  reloadList() {
+    if (this.data.loading) return
+    this.setData({ loadFail: false })
+    this.loadList(true)
+  },
+
+  onPageScroll(e) {
+    const show = (e.scrollTop || 0) > 600
+    if (show !== this.data.showBackTop) this.setData({ showBackTop: show })
+  },
+
+  goBackTop() {
+    wx.pageScrollTo({ scrollTop: 0, duration: 300 })
+  },
+
+  onShareAppMessage() {
+    return { title: 'CampusHub 校园社区，看看新鲜事', path: '/pages/index/index' }
   }
 })

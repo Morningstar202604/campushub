@@ -88,5 +88,8 @@ Page({
     } else if (item.targetType === 'post' || !item.targetType) {
       wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${item.targetId}` })
     }
+  },
+  onShareAppMessage() {
+    return { title: '我的消息 · CampusHub', path: '/pages/notifications/notifications' }
   }
 })

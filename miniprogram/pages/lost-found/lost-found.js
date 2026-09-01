@@ -15,7 +15,9 @@ Page({
     list: [],
     page: 1,
     hasMore: true,
-    loading: false
+    loading: false,
+    loadFail: false,
+    showBackTop: false
   },
 
   onLoad(options) {
@@ -77,15 +79,16 @@ Page({
           list: reset ? items : [...this.data.list, ...items],
           hasMore: res.hasMore,
           page: (reset ? 1 : this.data.page) + 1,
-          loading: false
+          loading: false,
+          loadFail: false
         })
       } else {
-        this.setData({ loading: false })
+        this.setData({ loading: false, loadFail: this.data.list.length === 0 })
       }
     } catch (err) {
       if (seq !== this._seq) { wx.stopPullDownRefresh(); return }
       console.error('失物招领加载失败', err)
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFail: this.data.list.length === 0 })
     }
     wx.stopPullDownRefresh()
   },
@@ -98,5 +101,38 @@ Page({
 
   onItemClick(e) {
     wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${e.currentTarget.dataset.id}` })
+  },
+  reloadList() {
+    if (this.data.loading) return
+    this.setData({ loadFail: false })
+    this.loadList(true)
+  },
+
+  onPageScroll(e) {
+    const show = (e.scrollTop || 0) > 600
+    if (show !== this.data.showBackTop) this.setData({ showBackTop: show })
+  },
+
+  goBackTop() {
+    wx.pageScrollTo({ scrollTop: 0, duration: 300 })
+  },
+
+  reloadList() {
+    if (this.data.loading) return
+    this.setData({ loadFail: false })
+    this.loadList(true)
+  },
+
+  onPageScroll(e) {
+    const show = (e.scrollTop || 0) > 600
+    if (show !== this.data.showBackTop) this.setData({ showBackTop: show })
+  },
+
+  goBackTop() {
+    wx.pageScrollTo({ scrollTop: 0, duration: 300 })
+  },
+
+  onShareAppMessage() {
+    return { title: '失物招领 · 帮东西回家', path: '/pages/lost-found/lost-found' }
   }
 })

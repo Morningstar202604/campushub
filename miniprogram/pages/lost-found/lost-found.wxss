@@ -1,3 +1,21 @@
+/* 回到顶部 */
+.back-top {
+  position: fixed;
+  right: 24rpx;
+  bottom: 200rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(30, 30, 30, 0.6);
+  color: #fff;
+  font-size: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+}
+
 /* pages/lost-found/lost-found.wxss */
 .page {
   min-height: 100vh;

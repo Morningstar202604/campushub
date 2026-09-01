@@ -17,7 +17,14 @@
     </view>
   </view>
 
-  <view class="empty-container" wx:if="{{!loading && list.length === 0}}">
+  <!-- 加载失败：点击重试 -->
+  <view class="empty-container" wx:if="{{loadFail && !loading && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+    <view class="empty-emoji">😵</view>
+    <view class="empty-text">加载失败</view>
+    <view class="empty-sub">点击屏幕重试</view>
+  </view>
+
+  <view class="empty-container" wx:elif="{{!loading && list.length === 0}}">
     <view class="empty-emoji">💌</view>
     <view class="empty-text">墙上还空着</view>
     <view class="empty-sub">点右下角 + 说出你的心里话</view>
@@ -30,5 +37,8 @@
     <text>到底了</text>
   </view>
 </view>
+
+<!-- 回到顶部 -->
+<view class="back-top" wx:if="{{showBackTop}}" bindtap="goBackTop">↑</view>
 
 <view class="fab" bindtap="goPublish"><text class="fab-icon">✍️</text></view>

@@ -53,5 +53,8 @@ Page({
   onItemTap(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` })
+  },
+  onShareAppMessage() {
+    return { title: '过期任务归档', path: '/pages/expired/expired' }
   }
 })

@@ -141,5 +141,8 @@ Page({
     const keyword = e.currentTarget.dataset.keyword
     this.setData({ keyword })
     this.onSearch()
+  },
+  onShareAppMessage() {
+    return { title: '搜索 CampusHub', path: '/pages/search/search' }
   }
 })

@@ -198,7 +198,8 @@ Page({
     if (!product) return { title: 'CampusHub', path: '/pages/index/index' }
     return {
       title: product.title,
-      path: `/pages/product-detail/product-detail?id=${product._id}`
+      path: `/pages/product-detail/product-detail?id=${product._id}`,
+      imageUrl: product.images && product.images[0]
     }
   }
 })
