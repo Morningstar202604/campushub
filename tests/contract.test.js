@@ -56,3 +56,36 @@ test('P4: init-db 种子学校支持环境变量覆盖（SEED_SCHOOL_NAME / SEED
   assert.match(src, /SEED_SCHOOL_ID/, 'init-db 需读取 SEED_SCHOOL_ID')
   assert.match(src, /applySchool/, 'init-db 需有 applySchool 替换逻辑')
 })
+
+test('P4: 所有 UGC 写入入口对非字符串输入做 String 化（防 .trim()/.length 抛 TypeError → 500）', () => {
+  const targets = ['post-create', 'comment-create', 'feedback-create', 'product-create', 'report']
+  for (const fn of targets) {
+    const src = read(`cloudfunctions/${fn}/index.js`)
+    assert.ok(!/if \(!title \|\| !title\.trim\(\)\)/.test(src), `${fn}: title 不应再裸 .trim()`)
+    assert.ok(!/if \(!content \|\| !content\.trim\(\)\)/.test(src), `${fn}: content 不应再裸 .trim()`)
+    assert.match(src, /统一 String 化|String\(raw|String\([^)]*== null/, `${fn}: 需对非字符串输入做 String 化`)
+  }
+})
+
+test('P4: 落地页 index.html 统计与链接应保持最新（34/23/16/36/9 + Morningstar202604）', () => {
+  const src = read('index.html')
+  assert.ok(src.includes('Morningstar202604'), '落地页链接应指向当前仓库账号')
+  assert.ok(!src.includes('weed33834'), '落地页不应残留旧账号 weed33834')
+  for (const n of ['>34<', '>23<', '>16<', '>36<', '>9<']) {
+    assert.ok(src.includes(n), `落地页统计应包含 ${n}`)
+  }
+  assert.match(src, /version-0.7.0-green/, '落地页版本 badge 应为 0.7.0')
+})
+
+test('P4: 文档统计数字与事实一致（34 云函数 / 23 页面 / 16 集合 / 36 索引 / 9 内核）', () => {
+  const readme = read('README.md')
+  const zh = read('docs/README.zh-CN.md')
+  assert.ok(!readme.includes('| Cloud Functions | 35 |'), 'README 不应残留 35')
+  assert.ok(!readme.includes('synced to all 35'), 'README 不应残留同步 35 函数')
+  assert.ok(!zh.includes('35 个云函数'), 'zh-CN 不应残留 35 个云函数')
+  assert.ok(readme.includes('| Cloud Functions | 34 |'), 'README 云函数=34')
+  assert.ok(readme.includes('Defined Indexes | 36'), 'README 索引=36')
+  assert.ok(zh.includes('| 云函数 | 34 |'), 'zh-CN 云函数=34')
+  assert.ok(zh.includes('| 数据集合 | 16 |'), 'zh-CN 集合=16')
+  assert.ok(zh.includes('| 索引定义 | 36 |'), 'zh-CN 索引=36')
+})

@@ -14,19 +14,22 @@ exports.main = wrap(async (event) => {
   const _ = getCmd()
 
   const {
-    title, content, images = [], tags = [],
+    title: rawTitle, content: rawContent, images = [], tags = [],
     categoryId, categoryPath = [], kind = 'post', expireDays = 7, isAnonymous = false,
     location = ''
   } = event
+  // 统一 String 化：客户端可传非字符串，避免 .trim()/.length 抛 TypeError
+  const title = String(rawTitle == null ? '' : rawTitle).trim()
+  const content = String(rawContent == null ? '' : rawContent).trim()
 
   // 参数校验
-  if (!title || !title.trim()) throw new AppError('请输入标题', 'INVALID_PARAM')
-  if (!content || !String(content).trim()) {
+  if (!title) throw new AppError('请输入标题', 'INVALID_PARAM')
+  if (!content) {
     if (!Array.isArray(images) || images.length === 0) throw new AppError('请输入内容或上传图片', 'INVALID_PARAM')
   }
   if (title.length > 30) throw new AppError('标题不能超过30字', 'INVALID_PARAM')
   const maxContent = kind === 'confession' ? 500 : 2000
-  if (content && String(content).length > maxContent) throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
+  if (content.length > maxContent) throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
   if (!Array.isArray(images) || images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
   const safeKind = VALID_KINDS.includes(kind) ? kind : 'post'
   const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map(t => String(t).slice(0, 20)) : []
@@ -78,8 +81,8 @@ exports.main = wrap(async (event) => {
     resolved: false,
     resolvedAt: null,
     type: images.length > 0 ? 'image' : 'text',
-    title: title.trim(),
-    content: content.trim(),
+    title,
+    content,
     images,
     tags: safeTags,
     isAnonymous: isAnon,

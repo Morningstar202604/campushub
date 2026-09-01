@@ -70,7 +70,7 @@ CampusHub/
 │   ├── app.js               # Entry (CloudBase init)
 │   ├── app.json             # Global config
 │   ├── app.wxss             # Global styles + Design Tokens
-│   ├── pages/               # 19 pages
+│   ├── pages/               # 23 pages
 │   ├── components/          # Shared components (category-picker)
 │   └── utils/               # Utilities (request, auth)
 ├── cloudfunctions/           # 34 cloud functions

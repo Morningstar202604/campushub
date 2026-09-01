@@ -7,8 +7,10 @@ exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
   const db = getDB()
 
-  const { content, contact = '', type = 'suggest' } = event
-  if (!content || !content.trim()) throw new AppError('请输入反馈内容', 'INVALID_PARAM')
+  const { content: rawContent, contact = '', type = 'suggest' } = event
+  // 统一 String 化：客户端可传非字符串，避免 .trim()/.length 抛 TypeError
+  const content = String(rawContent == null ? '' : rawContent).trim()
+  if (!content) throw new AppError('请输入反馈内容', 'INVALID_PARAM')
   if (content.length > 500) throw new AppError('反馈内容不能超过500字', 'INVALID_PARAM')
   // type 白名单 + contact 限长，防任意大对象/垃圾枚举入库
   const VALID_TYPES = ['suggest', 'bug', 'other']
@@ -22,7 +24,7 @@ exports.main = wrap(async (event) => {
     data: {
       userId: user._id,
       nickname: user.nickname,
-      content: content.trim(),
+      content,
       contact: safeContact,
       type: safeType,
       status: 'pending',
