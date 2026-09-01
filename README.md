@@ -19,17 +19,17 @@
 
 ## Overview
 
-CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBase**. Think of it as a modern, open-source forum: users can post, ask questions, trade, and connect with like-minded people under a **multi-level category tree**.
+CampusHub is a campus content platform built on **WeChat Mini Program + WeChat CloudBase**. It follows a **one-school-per-deployment** model: users post, ask questions, trade, and connect under a **multi-level category tree**.
 
-- Content is **nationwide by default** — not locked to a single campus.
-- The category tree (Zone → Forum → Board, 3 levels) is **managed via admin UI** — no code changes or redeployment needed to add a school or open a new forum.
+- Content **defaults to your own campus** — deploy one environment per school.
+- The category tree (Zone → Category → Board, 3 levels) is **managed via admin UI** — no code changes or redeployment needed to add a school or open a new category.
 - Task-type posts support **auto-expiry** and **resolved marking**, keeping the feed clean.
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-level Categories** | Zone → Forum → Board (3-tier); `categoryPath` ancestor array enables filtering by any parent node; posts restricted to leaf nodes |
+| **Multi-level Categories** | Zone → Category → Board (3-tier); `categoryPath` ancestor array enables filtering by any parent node; posts restricted to leaf nodes |
 | **Feed Homepage** | Waterfall layout for posts + products; Recommend / Latest / Second-hand tabs; category filter + expired archive entry |
 | **Rich Posts** | Image + text posts, categories, tags, anonymous posting, drafts, image preview |
 | **Task & Expiry** | Task posts with 3/7/15/30-day TTL; 6-hourly cron scan auto-archives expired tasks; author/admin can mark "resolved" |
@@ -42,8 +42,15 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 | **Search** | Cross-collection search (posts + products + guides) with title + content matching and keyword highlighting |
 | **User Profiles** | Public profile page with stats, recent posts, follow button |
 | **Content Safety** | All UGC goes through WeChat's `msgSecCheck` + `imgSecCheck` — **fail-closed** (any error = reject) |
-| **Admin Console** | Report review, ban/unban, pin/essence posts, user list, feedback management, category CRUD |
-| **Category Management** | Admin UI for adding schools, forums, boards — pure operational action, no code changes |
+| **Admin Console** | Report review, ban/unban, pin/essence posts, user list, feedback management, category CRUD, announcement management, operation audit logs |
+| **Category Management** | Admin UI for adding schools, categories, boards — pure operational action, no code changes |
+| **Announcements** | Admin-published notices shown at the top of the homepage (≤3, pinned first) |
+| **Points Mall** | Redeem check-in points for rename tokens (first nickname change is free) |
+| **Auto Backup** | Daily 03:00 scheduled snapshot of core collections into `backups` (7-day retention) |
+| **Admin Audit Logs** | Sensitive admin actions (ban/delete/pin/verify...) written to `admin_logs`, viewable in console |
+| **Post Poster** | One-tap Canvas share card with title/summary/author, saved to photo album |
+| **Search Rate-limit + Hot Words** | Server-side per-user rate limit (10s/3) + real hot queries aggregated from last 7 days |
+| **Cursor Pagination** | Latest-post feed & comments use cursor-based pagination for deep scroll efficiency |
 
 ## Tech Stack
 
@@ -56,10 +63,10 @@ CampusHub is a content community built on **WeChat Mini Program + WeChat CloudBa
 
 | Metric | Count |
 |--------|-------|
-| Cloud Functions | 34 |
+| Cloud Functions | 37 |
 | Mini Program Pages | 22 |
-| Database Collections | 16 |
-| Defined Indexes | 36 |
+| Database Collections | 21 |
+| Defined Indexes | 41 |
 | Cloud Function Common Modules | 9 (synced to all 34 functions) |
 
 ## Directory Structure

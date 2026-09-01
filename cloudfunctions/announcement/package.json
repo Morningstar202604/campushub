@@ -1,0 +1,7 @@
+{
+  "name": "announcement",
+  "version": "1.0.0",
+  "description": "公告系统：首页公告展示 + 管理员发布/上下线/删除",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "~2.6.3" }
+}

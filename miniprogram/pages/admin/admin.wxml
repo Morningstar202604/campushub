@@ -11,6 +11,8 @@
     <view class="admin-tab {{activeTab === 'manage' ? 'active' : ''}}" data-key="manage" bindtap="onTabChange">帖子管理</view>
     <view class="admin-tab {{activeTab === 'users' ? 'active' : ''}}" data-key="users" bindtap="onTabChange">用户/封禁</view>
     <view class="admin-tab {{activeTab === 'verify' ? 'active' : ''}}" data-key="verify" bindtap="onTabChange">校园认证</view>
+    <view class="admin-tab {{activeTab === 'announcements' ? 'active' : ''}}" data-key="announcements" bindtap="onTabChange">公告管理</view>
+    <view class="admin-tab {{activeTab === 'logs' ? 'active' : ''}}" data-key="logs" bindtap="onTabChange">操作日志</view>
   </view>
 
   <!-- 举报审核 -->
@@ -103,6 +105,53 @@
       <view class="load-more" wx:if="{{verifyLoading}}">加载中…</view>
       <view class="load-more" wx:elif="{{verifyList.length === 0}}">暂无待审核申请</view>
       <view class="load-more" wx:elif="{{!verifyHasMore}}">没有更多了</view>
+    </view>
+  </block>
+
+  <!-- 公告管理 -->
+  <block wx:if="{{activeTab === 'announcements'}}">
+    <view class="ban-panel">
+      <view class="panel-title">📢 发布公告</view>
+      <view class="panel-desc">公告将展示在首页顶部公告条，置顶公告优先展示</view>
+      <input class="admin-input" placeholder="公告标题（≤50字）" value="{{annTitle}}" bindinput="onAnnTitleInput" />
+      <textarea class="admin-textarea" placeholder="公告内容（≤1000字）" value="{{annContent}}" bindinput="onAnnContentInput" />
+      <view class="switch-row">
+        <text class="switch-label">置顶展示</text>
+        <switch checked="{{annPinned}}" bindchange="onAnnPinnedChange" color="#4A90D9" />
+      </view>
+      <button class="btn btn-pin" loading="{{annLoading}}" bindtap="createAnnouncement">发布</button>
+    </view>
+
+    <view class="ban-panel">
+      <view class="panel-title">已发布公告（{{announcements.length}}）</view>
+      <view class="empty" wx:if="{{announcements.length === 0}}">还没有公告</view>
+      <view class="report-card" wx:for="{{announcements}}" wx:key="_id">
+        <view class="report-top">
+          <text class="type-tag type-post">{{item.status === 'active' ? '展示中' : '已下线'}}</text>
+          <text class="reason">{{item.isPinned ? '📌 ' : ''}}{{item.title}}</text>
+        </view>
+        <view class="report-desc">{{item.content}}</view>
+        <view class="report-actions">
+          <button class="btn btn-unpin" data-id="{{item._id}}" bindtap="toggleAnnouncement">{{item.status === 'active' ? '下线' : '上线'}}</button>
+          <button class="btn btn-unban" data-id="{{item._id}}" bindtap="deleteAnnouncement">删除</button>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 操作日志 -->
+  <block wx:if="{{activeTab === 'logs'}}">
+    <view class="ban-panel">
+      <view class="panel-title">🕵️ 管理操作日志（最近 50 条）</view>
+      <view class="empty" wx:if="{{!logsLoading && adminLogs.length === 0}}">暂无操作记录</view>
+      <view class="load-more" wx:if="{{logsLoading}}">加载中…</view>
+      <view class="report-card" wx:for="{{adminLogs}}" wx:key="_id">
+        <view class="report-top">
+          <text class="type-tag type-post">{{item.action}}</text>
+          <text class="reason">{{item.detail && item.detail.targetId || item.detail && item.detail.targetOpenid || item.detail && item.detail.postId || item.detail && item.detail.feedbackId || item.detail && item.detail.requestId || '-'}}</text>
+        </view>
+        <view class="report-desc">{{item.createdAt}}</view>
+      </view>
     </view>
   </block>
 </view>

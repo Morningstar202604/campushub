@@ -475,3 +475,34 @@
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
 }
+/* 公告条 */
+.announcement-bar {
+  background: linear-gradient(90deg, rgba(155,187,244,0.18), rgba(155,187,244,0.06));
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
+  padding: 6rpx 24rpx;
+}
+.announcement-item {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 0;
+  overflow: hidden;
+}
+.announcement-tag {
+  margin-right: 10rpx;
+  flex-shrink: 0;
+}
+.announcement-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #1A1B1C;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.announcement-more {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  color: #9BBBF4;
+}

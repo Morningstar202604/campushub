@@ -102,7 +102,7 @@ npm install
 >
 > 手动部署方式保留如下，适用于不想装 CLI 的场景。
 
-项目共 **34 个云函数**，全部需要部署。
+项目共 **37 个云函数**，全部需要部署。
 
 ### 4.1 批量部署
 
@@ -111,8 +111,8 @@ npm install
 2. **逐个**右键每个云函数文件夹 →「上传并部署：云端安装依赖」
 3. 等待每个部署完成（状态栏有进度提示）
 
-> 34 个函数列表：
-> `login`, `user-update`, `user-profile`, `post-create`, `post-list`, `post-detail`, `post-delete`, `post-update`, `product-create`, `product-list`, `product-detail`, `product-delete`, `product-update`, `comment-create`, `comment-list`, `comment-delete`, `like`, `collect`, `report`, `feedback-create`, `search`, `my-list`, `category-list`, `category-manage`, `guide-list`, `guide-detail`, `admin`, `resolve`, `task-expire`, `init-db`, `follow`, `checkin`, `notification`, `verify`
+> 37 个函数列表：
+> `login`, `user-update`, `user-profile`, `post-create`, `post-list`, `post-detail`, `post-delete`, `post-update`, `product-create`, `product-list`, `product-detail`, `product-delete`, `product-update`, `comment-create`, `comment-list`, `comment-delete`, `like`, `collect`, `report`, `feedback-create`, `search`, `my-list`, `category-list`, `category-manage`, `guide-list`, `guide-detail`, `admin`, `resolve`, `task-expire`, `init-db`, `follow`, `checkin`, `notification`, `verify`, `backup-db`, `announcement`, `points`
 
 ### 4.2 部署 task-expire 定时触发器
 
@@ -204,7 +204,7 @@ npm install
 
 云开发控制台 → 数据库 → 选择集合 →「索引管理」→「新建索引」
 
-### 7.2 索引清单（共 36 个）
+### 7.2 索引清单（共 41 个）
 
 > 完整定义见 `cloudfunctions/common/common-indexes.js` 和 `docs/INDEXES.md`
 
@@ -287,6 +287,15 @@ npm install
 |--------|------|
 | idx_notifications_user_created | userId(升), createdAt(降) |
 | idx_notifications_user_read | userId(升), isRead(升) |
+
+**backups / search_queries / admin_logs / announcements / points_orders**（5个）
+| 集合 | 索引名 | 字段 |
+|------|--------|------|
+| backups | idx_backups_created | createdAt(降) |
+| search_queries | idx_search_queries_user_created | userId(升), createdAt(降) |
+| admin_logs | idx_admin_logs_created | createdAt(降) |
+| announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) |
+| points_orders | idx_points_orders_user_created | userId(升), createdAt(降) |
 
 ### 7.3 验证索引齐全
 
@@ -389,7 +398,7 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 ```
 CampusHub/
 ├── miniprogram/           # 小程序前端（19 个页面）
-├── cloudfunctions/        # 云函数（34 个）
+├── cloudfunctions/        # 云函数（37 个）
 │   └── common/            # 共享内核层（单一事实来源）
 ├── scripts/
 │   ├── sync-common.js     # 内核同步脚本

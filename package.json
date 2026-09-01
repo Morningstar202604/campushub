@@ -1,8 +1,10 @@
 {
   "name": "campushub",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "CampusHub — An open-source campus & interest community for WeChat Mini Program + CloudBase",
-  "engines": { "node": ">=16" },
+  "engines": {
+    "node": ">=16"
+  },
   "license": "Apache-2.0",
   "author": "Morningstar202604",
   "repository": {

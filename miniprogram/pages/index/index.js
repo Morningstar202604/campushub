@@ -27,11 +27,35 @@ Page({
     selectedCategoryName: '',
     showCatPicker: false,
     loadFail: false,
-    showBackTop: false
+    showBackTop: false,
+    announcements: []
   },
 
   onLoad() {
     this.loadList(true)
+    this.loadAnnouncements()
+  },
+
+  loadAnnouncements() {
+    callFunction('announcement', { action: 'list' })
+      .then(res => {
+        if (res.success && res.list && res.list.length) {
+          this.setData({ announcements: res.list.slice(0, 3) })
+        }
+      })
+      .catch(() => { /* 公告拉取失败静默，不阻塞首页 */ })
+  },
+
+  onAnnouncementTap(e) {
+    const idx = e.currentTarget.dataset.index
+    const item = this.data.announcements[idx]
+    if (!item) return
+    wx.showModal({
+      title: item.title,
+      content: item.content,
+      showCancel: false,
+      confirmText: '知道了'
+    })
   },
 
   onShow() {

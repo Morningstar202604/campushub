@@ -1,0 +1,7 @@
+{
+  "name": "backup-db",
+  "version": "1.0.0",
+  "description": "数据备份：定时导出业务集合快照到 backups 集合，保留 N 天",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "~2.6.3" }
+}

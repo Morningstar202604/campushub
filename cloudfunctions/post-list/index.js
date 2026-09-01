@@ -9,7 +9,10 @@ const { getDB, ok, wrap } = require('./common-bundle')
 exports.main = wrap(async (event) => {
   const db = getDB()
   const _ = db.command
-  const { tab = 'recommend', page = 1, pageSize = 20, categoryId, schoolId, status = 'normal', kind } = event
+  const { tab = 'recommend', page = 1, pageSize = 20, categoryId, schoolId, status = 'normal', kind, cursor } = event
+  // 游标分页（深翻页优化）：latest 流支持传上一页最后一条 createdAt，用索引定位而非 skip
+  const cursorDate = cursor ? new Date(String(cursor)) : null
+  const useCursor = !!(cursorDate && !isNaN(cursorDate.getTime()) && tab === 'latest')
 
   // 状态白名单 — 仅允许 normal 与 expired，防止客户端枚举已删帖
   const ALLOWED_STATUS = ['normal', 'expired']
@@ -50,8 +53,9 @@ exports.main = wrap(async (event) => {
       .orderBy('likeCount', 'desc').orderBy('createdAt', 'desc')
       .skip(skip).limit(size).get()
   } else if (tab === 'latest') {
+    const q = useCursor ? _.and([where, { createdAt: _.lt(cursorDate) }]) : where
     res = await db.collection('posts')
-      .where(where).orderBy('createdAt', 'desc').skip(skip).limit(size).get()
+      .where(q).orderBy('createdAt', 'desc').skip(useCursor ? 0 : skip).limit(size).get()
   } else {
     // 推荐：置顶优先 + 时间倒序（需为 isPinned, createdAt 建复合索引，定义见 docs/INDEXES.md 与 common-indexes.js）
     res = await db.collection('posts')

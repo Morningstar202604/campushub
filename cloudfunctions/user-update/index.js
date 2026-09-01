@@ -9,11 +9,27 @@ exports.main = wrap(async (event) => {
 
   const { nickname, avatar, bio, college, major, grade, gender, tags } = event
 
+  // 改名额度校验需要完整用户文档（hasRenamed / renameTokens 不在公共字段子集内）
+  const fullRes = await db.collection('users').doc(user._id).get().catch(() => ({ data: null }))
+  const profile = (fullRes && fullRes.data) || user
+  const prevNickname = profile.nickname || ''
+
   const updateData = {}
   if (nickname !== undefined) {
     const safeNickname = String(nickname).trim()
     if (!safeNickname) throw new AppError('昵称不能为空', 'INVALID_PARAM')
-    updateData.nickname = safeNickname.slice(0, 20)
+    const newNickname = safeNickname.slice(0, 20)
+    // 积分商城闭环：首次改名免费，之后每次改名消耗 1 张改名卡（可由积分兑换）
+    if (newNickname !== prevNickname) {
+      if (!profile.hasRenamed) {
+        updateData.hasRenamed = true
+      } else if ((profile.renameTokens || 0) >= 1) {
+        updateData.renameTokens = profile.renameTokens - 1
+      } else {
+        throw new AppError('昵称修改次数已用完，请到「编辑资料」用积分兑换改名卡', 'RENAME_LIMITED')
+      }
+    }
+    updateData.nickname = newNickname
   }
   if (avatar !== undefined) {
     // 头像必须是本云存储文件且过图片安全审核（fail-closed，拒绝外链/垃圾值）

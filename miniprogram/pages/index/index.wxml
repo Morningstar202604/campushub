@@ -11,6 +11,15 @@
     <view class="top-expired" bindtap="goWall">💌墙</view>
   </view>
 
+  <!-- 公告条（运营公告，置顶优先，最多展示 3 条） -->
+  <view class="announcement-bar" wx:if="{{announcements.length > 0}}">
+    <view class="announcement-item" wx:for="{{announcements}}" wx:key="_id" data-index="{{index}}" bindtap="onAnnouncementTap">
+      <text class="announcement-tag">📢</text>
+      <text class="announcement-title">{{item.title}}</text>
+      <text class="announcement-more">详情</text>
+    </view>
+  </view>
+
   <!-- 分类筛选条（多级目录） -->
   <view class="cat-filter" bindtap="onCategoryTap">
     <text class="cat-filter-icon">📂</text>

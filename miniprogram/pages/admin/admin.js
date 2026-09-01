@@ -18,7 +18,14 @@ Page({
     verifyHasMore: true,
     verifyLoading: false,
     verifyTotal: 0,
-    activeTab: 'reports'
+    activeTab: 'reports',
+    announcements: [],
+    annTitle: '',
+    annContent: '',
+    annPinned: false,
+    annLoading: false,
+    adminLogs: [],
+    logsLoading: false
   },
 
   onLoad() {
@@ -38,6 +45,12 @@ Page({
     const key = e.currentTarget.dataset.key
     if (key === 'verify' && !this.data.verifyList.length && !this.data.verifyLoading) {
       this.loadVerifies(true)
+    }
+    if (key === 'announcements' && !this.data.announcements.length) {
+      this.loadAnnouncements()
+    }
+    if (key === 'logs' && !this.data.adminLogs.length && !this.data.logsLoading) {
+      this.loadLogs()
     }
     this.setData({ activeTab: key })
   },
@@ -330,6 +343,103 @@ Page({
       if (idx !== -1) this.setData({ ['verifyList[' + idx + ']._loading']: false })
     }
   },
+  async loadAnnouncements() {
+    try {
+      const res = await callFunction('announcement', { action: 'list-all' })
+      if (res.success) {
+        this.setData({ announcements: res.list || [] })
+      } else {
+        wx.showToast({ title: res.message || '加载失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '加载失败', icon: 'none' })
+    }
+  },
+
+  onAnnTitleInput(e) { this.setData({ annTitle: e.detail.value }) },
+  onAnnContentInput(e) { this.setData({ annContent: e.detail.value }) },
+  onAnnPinnedChange(e) { this.setData({ annPinned: e.detail.value }) },
+
+  async createAnnouncement() {
+    const title = this.data.annTitle.trim()
+    const content = this.data.annContent.trim()
+    if (!title || !content) { wx.showToast({ title: '标题和内容不能为空', icon: 'none' }); return }
+    if (this.data.annLoading) return
+    this.setData({ annLoading: true })
+    try {
+      const res = await callFunction('announcement', {
+        action: 'create',
+        title,
+        content,
+        isPinned: this.data.annPinned
+      })
+      if (res.success) {
+        wx.showToast({ title: '发布成功', icon: 'success' })
+        this.setData({ annTitle: '', annContent: '', annPinned: false })
+        this.loadAnnouncements()
+      } else {
+        wx.showToast({ title: res.message || '发布失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '发布失败', icon: 'none' })
+    } finally {
+      this.setData({ annLoading: false })
+    }
+  },
+
+  async toggleAnnouncement(e) {
+    const id = e.currentTarget.dataset.id
+    try {
+      const res = await callFunction('announcement', { action: 'toggle', id })
+      if (res.success) {
+        this.loadAnnouncements()
+      } else {
+        wx.showToast({ title: res.message || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
+  deleteAnnouncement(e) {
+    const id = e.currentTarget.dataset.id
+    wx.showModal({
+      title: '确认删除',
+      content: '删除后不可恢复，确定删除这条公告？',
+      confirmColor: '#EA6668',
+      success: async (r) => {
+        if (!r.confirm) return
+        try {
+          const res = await callFunction('announcement', { action: 'delete', id })
+          if (res.success) {
+            wx.showToast({ title: '已删除', icon: 'success' })
+            this.loadAnnouncements()
+          } else {
+            wx.showToast({ title: res.message || '删除失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  async loadLogs() {
+    this.setData({ logsLoading: true })
+    try {
+      const res = await callFunction('admin', { action: 'list-logs', pageSize: 50 })
+      if (res.success) {
+        this.setData({ adminLogs: res.list || [] })
+      } else {
+        wx.showToast({ title: res.message || '加载失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '加载失败', icon: 'none' })
+    } finally {
+      this.setData({ logsLoading: false })
+    }
+  },
+
   goCategoryAdmin() {
     wx.navigateTo({ url: '/pages/category-admin/category-admin' })
   }

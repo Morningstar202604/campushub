@@ -18,6 +18,17 @@ Page({
   onLoad() {
     const history = wx.getStorageSync('searchHistory') || []
     this.setData({ history })
+    this.loadHotSearch()
+  },
+
+  // 真实热搜：拉取近 7 天聚合热词；失败或为空则保留内置默认热词
+  async loadHotSearch() {
+    try {
+      const res = await callFunction('search', { action: 'hot' })
+      if (res.success && res.hot && res.hot.length) {
+        this.setData({ hotSearch: res.hot.slice(0, 6) })
+      }
+    } catch (e) { /* 保留默认热词 */ }
   },
 
   onInput(e) {

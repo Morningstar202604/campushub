@@ -101,13 +101,23 @@
 | guides | idx_guides_school_status_title | schoolId(升), status(升), title(降) | 否 |
 | guide_categories | idx_guide_categories_school | schoolId(升) | 否 |
 
+### backups / search_queries / admin_logs / announcements / points_orders
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| backups | idx_backups_created | createdAt(降) | 否 |
+| search_queries | idx_search_queries_user_created | userId(升), createdAt(降) | 否 |
+| admin_logs | idx_admin_logs_created | createdAt(降) | 否 |
+| announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) | 否 |
+| points_orders | idx_points_orders_user_created | userId(升), createdAt(降) | 否 |
+
 ---
 
 ## 备注
 
 - `config` 集合的 `_id` 索引为系统自带，无需手动建。
 - `view_logs`（浏览量去重日志）靠 `_id` 主键天然去重，无需额外索引。
-- 频率限制（`rateLimit`）依赖 `(匹配字段, createdAt)` 的计数查询，已对应到各集合索引。
+- 频率限制（`rateLimit`）依赖 `(匹配字段, createdAt)` 的计数查询，已对应到各集合索引（`search_queries` 的 `idx_search_queries_user_created` 即服务端搜索限频所需）。
+- `backups` / `admin_logs` / `announcements` / `points_orders` 为新增功能集合（自动备份 / 管理审计日志 / 公告 / 积分订单），索引见上表。
 - 软删除内容通过 `status: _.neq('deleted')` 过滤，相关集合已包含对应索引。
 - 若未建索引，云函数内部 `wrap()` 会返回 `{ success:false }` 而非崩溃，但对应列表会**空白**——上线前请务必建全。
 - 新增索引后，下次部署跑一次 `init-db`，返回结果的 `missingIndexes` 应为空数组，即表示齐备。

@@ -34,7 +34,9 @@ exports.main = wrap(async (event = {}) => {
   const collections = [
     'users', 'posts', 'products', 'comments', 'likes', 'collects',
     'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
-    'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests'
+    'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests',
+    // 新功能集合：自动备份 / 搜索热词与限频 / 管理审计日志 / 公告 / 积分商城订单
+    'backups', 'search_queries', 'admin_logs', 'announcements', 'points_orders'
   ]
   for (const name of collections) {
     try {

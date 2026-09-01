@@ -9,6 +9,9 @@ Page({
     avatar: '',
     avatarChanged: false,
     nickname: '',
+    renameTokens: 0,
+    creditScore: 0,
+    redeeming: false,
     bio: '',
     college: '',
     major: '',
@@ -33,9 +36,46 @@ Page({
         selectedTags: user.tags || []
       })
     }
+    this.loadPoints()
   },
 
   onNicknameInput(e) { this.setData({ nickname: e.detail.value }) },
+
+  // 积分商城状态：剩余改名卡与当前积分
+  async loadPoints() {
+    try {
+      const res = await callFunction('points', { action: 'products' })
+      if (res.success) {
+        this.setData({ renameTokens: res.renameTokens || 0, creditScore: res.creditScore || 0 })
+      }
+    } catch (e) { /* 静默 */ }
+  },
+
+  // 积分兑换改名卡（100 积分）
+  async redeemRenameToken() {
+    if (this.data.redeeming) return
+    const ok2 = await new Promise(resolve => wx.showModal({
+      title: '兑换改名卡',
+      content: '消耗 100 积分兑换 1 张改名卡？兑换后可在本页再次修改昵称。',
+      confirmText: '兑换',
+      success: r => resolve(!!r.confirm)
+    }))
+    if (!ok2) return
+    this.setData({ redeeming: true })
+    try {
+      const res = await callFunction('points', { action: 'redeem', productId: 'rename-token' })
+      if (res.success) {
+        wx.showToast({ title: '兑换成功', icon: 'success' })
+        this.setData({ renameTokens: (this.data.renameTokens || 0) + 1, creditScore: res.creditScore != null ? res.creditScore : this.data.creditScore })
+      } else {
+        wx.showToast({ title: res.message || '兑换失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.showToast({ title: '兑换失败', icon: 'none' })
+    } finally {
+      this.setData({ redeeming: false })
+    }
+  },
   onBioInput(e) { this.setData({ bio: e.detail.value }) },
   onCollegeInput(e) { this.setData({ college: e.detail.value }) },
   onMajorInput(e) { this.setData({ major: e.detail.value }) },
@@ -95,7 +135,7 @@ Page({
         setTimeout(() => wx.navigateBack(), 1500)
         return
       } else {
-        wx.showToast({ title: '保存失败', icon: 'none' })
+        wx.showToast({ title: res.message || '保存失败', icon: 'none' })
       }
     } catch (err) {
       wx.showToast({ title: '保存失败', icon: 'none' })

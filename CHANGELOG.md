@@ -5,6 +5,24 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.8.0] - 2026-09-01
+
+### Added — 战略落地（10 项全部实现）
+- **自动数据备份**（`backup-db`）：每日 03:00 定时快照 15 个核心集合写入 `backups`，保留 7 天自动清理，部署需单独上传触发器；OPERATIONS.md 更新为"自动备份为主 + 手动兜底"
+- **公告系统**（`announcement` 云函数 + 管理后台 Tab + 首页公告条）：发布 / 上线 / 下线 / 删除，首页顶部 ≤3 条置顶优先展示
+- **管理审计日志**（`admin` 增加 `logAdmin` + `list-logs`）：封禁 / 解封 / 删帖 / 处理举报 / 置顶 / 加精 / 认证审核 7 类敏感操作自动写入 `admin_logs`，后台「操作日志」可查最近 50 条
+- **搜索服务端限频 + 真实热词**（`search` 重写）：每用户 10 秒 3 次限频（游客不限），写入 `search_queries`；新增 `hot` 动作聚合近 7 天热词，前端热搜动态化（失败回退内置热词）
+- **深分页游标**（cursor）：`post-list` 最新流与 `comment-list` 支持 cursor 分页，前端帖子详情评论加载改用游标
+- **积分消费闭环**（`points` 云函数 + 改名卡）：100 积分兑换 1 张改名卡，`user-update` 首改免费、之后每次消耗 1 张（`RENAME_LIMITED`），「编辑资料」页展示积分/改名卡并支持兑换
+- **帖子海报**：详情页「🖼️ 海报」Canvas 生成标题/摘要/作者分享卡片，保存相册（含权限引导）
+- **一校一署配置化**：`config/school.default.json` 模板 + `docs/SCHOOL_SETUP.md` 换校清单（4 处）；`doctor` 扩展检查新功能函数 / 备份触发器 / 换校配置
+- **合规个人化**：删除 README / 落地页 / 文档中"贴吧 / 论坛 / 全国可见 / nationwide"定位词，改为"一校一署校园内容平台"；新增 `docs/COMPLIANCE.md`（个人主体 UGC 不可用的官方依据 + 个体工商户路径 / 备案 / 改名示例 / 隐私政策 / 身份认证兜底 / 功能裁剪方案）
+- **契约测试扩充**：25 用例全过（新增 P5 断言：新函数目录 / 新集合登记 / 公告 / 审计 / 限频 / 积分 / 深分页 / 海报 / 合规收敛）
+
+### Changed
+- 云函数 34 → **37**（+backup-db / +announcement / +points），集合 16 → **21**（+backups / search_queries / admin_logs / announcements / points_orders），索引 36 → **41**
+- README / zh-CN / 落地页 / USER_GUIDE / DEPLOY / INDEXES 全部数字与功能清单同步
+
 ## [Unreleased]
 
 ### Fixed — 代码审计修复
