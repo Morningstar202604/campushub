@@ -1,9 +1,9 @@
-# CampusHub
+<p align="center"><img src="docs/logo.svg" alt="CampusHub Logo" width="200" height="60" /></p>`n`n# CampusHub
 
 > **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
 > Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
 >
-> 📖 [使用说明书](./docs/USER_GUIDE.md) ｜ 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](https://Morningstar202604.github.io/campushub/)
+> 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](https://Morningstar202604.github.io/campushub/)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-0.7.0-green.svg)](./CHANGELOG.md)
@@ -196,33 +196,6 @@ npm install
 - **Safe search**: Regex-escaped keywords + 20-char limit, no ReDoS/injection
 - **Near-zero cost**: CloudBase free-trial env for dev, 19.9 CNY/mo entry plan in production
 
-## Roadmap
-
-- [x] Admin console (ban/review/pin/essence)
-- [x] Image content safety (`imgSecCheck`)
-- [x] Multi-level categories + admin CRUD
-- [x] Task expiry & resolved marking
-- [x] Nested comments (threaded replies) + comment likes
-- [x] Follow system + user profiles
-- [x] Daily check-in + credit points
-- [x] In-app notifications
-- [x] Post/product editing
-- [x] Draft auto-save
-- [x] One-command cloud function deploy (`npm run deploy` + GitHub Actions + `npm run doctor` self-check)
-- [x] Cost pack: upload image compression, feed/category TTL cache, lazy task expiry, search throttle
-- [x] Dedicated second-hand market tab page
-- [x] Confession wall (forced-anonymous short posts)
-- [x] Hot ranking tab (last-7-day likes)
-- [x] Subscribe message framework (env-configurable templates)
-- [x] Lost & found module (kind=lost/found + dedicated page)
-- [x] Campus identity verification (student-ID + card photo, admin review)
-- [ ] Self-hosted backend migration (Node.js + PostgreSQL)
-- [x] Real-time push via subscribe messages (framework; enable by setting TMPL_* env vars)
-- [ ] Campus events module
-- [ ] Multi-language UI (i18n)
-
-> Strategy & expert review: see [`docs/EXPERT_REVIEW_AND_ROADMAP.md`](./docs/EXPERT_REVIEW_AND_ROADMAP.md)
-
 ## Mirrors & Sync
 
 This project is open-sourced under **Apache License 2.0** and mirrored across three platforms:
@@ -248,3 +221,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 ## License
 
 [Apache License 2.0](./LICENSE) © 2026 Morningstar202604. See [NOTICE](./NOTICE) for details.
+
+
+
+
