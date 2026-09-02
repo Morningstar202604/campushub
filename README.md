@@ -1,4 +1,4 @@
-# CampusHub
+<p align="center"><img src="docs/logo.svg" alt="CampusHub Logo" width="200" height="60" /></p>`n`n# CampusHub
 
 > **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
 > Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
@@ -195,33 +195,6 @@ npm install
 - **Soft delete**: Deletion sets `status='deleted'`, preserving data traceability; counters sync-rollback
 - **Safe search**: Regex-escaped keywords + 20-char limit, no ReDoS/injection
 - **Near-zero cost**: CloudBase free-trial env for dev, 19.9 CNY/mo entry plan in production
-
-## Roadmap
-
-- [x] Admin console (ban/review/pin/essence)
-- [x] Image content safety (`imgSecCheck`)
-- [x] Multi-level categories + admin CRUD
-- [x] Task expiry & resolved marking
-- [x] Nested comments (threaded replies) + comment likes
-- [x] Follow system + user profiles
-- [x] Daily check-in + credit points
-- [x] In-app notifications
-- [x] Post/product editing
-- [x] Draft auto-save
-- [x] One-command cloud function deploy (`npm run deploy` + GitHub Actions + `npm run doctor` self-check)
-- [x] Cost pack: upload image compression, feed/category TTL cache, lazy task expiry, search throttle
-- [x] Dedicated second-hand market tab page
-- [x] Confession wall (forced-anonymous short posts)
-- [x] Hot ranking tab (last-7-day likes)
-- [x] Subscribe message framework (env-configurable templates)
-- [x] Lost & found module (kind=lost/found + dedicated page)
-- [x] Campus identity verification (student-ID + card photo, admin review)
-- [ ] Self-hosted backend migration (Node.js + PostgreSQL)
-- [x] Real-time push via subscribe messages (framework; enable by setting TMPL_* env vars)
-- [ ] Campus events module
-- [ ] Multi-language UI (i18n)
-
-> Strategy & expert review: see [`docs/EXPERT_REVIEW_AND_ROADMAP.md`](./docs/EXPERT_REVIEW_AND_ROADMAP.md)
 
 ## Mirrors & Sync
 
