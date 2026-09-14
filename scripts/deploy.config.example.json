@@ -1,0 +1,16 @@
+{
+  "$comment": "复制本文件为 scripts/deploy.config.json 并填写（该文件已被 .gitignore 排除，不会入库）。私钥路径也可用环境变量 WX_UPLOAD_PRIVATE_KEY_PATH / WX_UPLOAD_PRIVATE_KEY_B64 代替。上传密钥在 mp.weixin.qq.com → 开发管理 → 开发设置 → 小程序代码上传 生成下载。",
+  "privateKeyPath": "/absolute/path/to/private.key",
+  "environments": {
+    "prod": {
+      "envId": "你的云环境ID，形如 campushub-0gxxxxxx"
+    },
+    "dev": {
+      "envId": "开发环境ID（可选）"
+    }
+  },
+  "$usage": [
+    "npm run deploy -- --env prod        # 批量部署全部 37 个云函数",
+    "npm run deploy -- --env prod --only login,post-list   # 只部署指定函数"
+  ]
+}
