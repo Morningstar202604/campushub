@@ -3,7 +3,7 @@
 > **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
 > Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
 >
-> 📖 [使用说明书](./docs/USER_GUIDE.md) ｜ 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](./index.html)
+> 📖 [使用说明书](./docs/USER_GUIDE.md) ｜ 🚀 [部署上线指南](./docs/DEPLOY.md) ｜ 💰 [成本方案](./docs/COST.md) ｜ ⚖️ [合规要点](./docs/COMPLIANCE.md) ｜ 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](./index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-0.8.1-green.svg)](./CHANGELOG.md)

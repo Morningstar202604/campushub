@@ -4,11 +4,33 @@
 
 ---
 
+## 发布前快速 Checklist（30 秒版）
+
+```bash
+npm install          # 装依赖 + 自动同步 common 内核
+npm run sync:common  # （保险起见再同步一次）
+npm run doctor       # 自检：AppID / envId / 内核一致性 —— 错误必须清零
+npm run verify       # 发布级静态校验：页面/组件/WXML/WXSS/依赖/图片 —— 必须 0 错误
+npm test             # 单元 + 契约测试 —— 必须 25/25
+```
+
+- [ ] `project.config.json` 已填 AppID
+- [ ] `miniprogram/app.js` env 已改为真实环境 ID
+- [ ] 37 个云函数已部署 + 2 个触发器已上传（第四步）
+- [ ] 41 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
+- [ ] 真机预览回归通过，重点看 TDesign 组件渲染（第九步）
+- [ ] 主体资质与类目已确认：**UGC 社区类目需个体工商户及以上主体**，个人主体请先读 [`docs/COMPLIANCE.md`](./COMPLIANCE.md)
+- [ ] 成本方案已确认：开发阶段用云开发免费体验版（¥0），上线前评估转个人版（¥19.9/月），详见 [`docs/COST.md`](./COST.md)
+
+---
+
 ## 前置条件
 
 - 注册了微信小程序账号（[mp.weixin.qq.com](https://mp.weixin.qq.com)）
 - 已安装微信开发者工具（最新稳定版）
 - Node.js >= 16（本地装 npm 依赖用）
+
+> 💰 **省钱提示**：创建云开发环境时优先选**免费体验版**（¥0/月，开发阶段无需续费）。免费环境在小程序发布上线后有 15 天宽限期，届时再转个人版。详细成本对比见 [`docs/COST.md`](./COST.md)。
 
 ---
 
@@ -73,8 +95,8 @@ npm install
 
 微信开发者工具 → 菜单栏「工具」→「构建 npm」
 
-> 构建成功后会在 `miniprogram/miniprogram_npm/` 下生成 TDesign 组件。
-> **每次改了 package.json 或重新 npm install 后都要重新构建 npm。**
+> **本仓库的 `miniprogram/miniprogram_npm/` 已提交入库**（标准结构：`miniprogram_npm/tdesign-miniprogram/` + `miniprogram_npm/dayjs/`），正常情况下**无需重新构建**，直接编译即可。
+> 只有在升级 `tdesign-miniprogram` 版本后才有必要重新构建；构建后务必跑 `npm run verify` 校验产物结构（历史上曾因产物平铺缺包名层导致真机组件全部不渲染，verify 会拦住这类问题）。
 
 ---
 
@@ -114,15 +136,17 @@ npm install
 > 37 个函数列表：
 > `login`, `user-update`, `user-profile`, `post-create`, `post-list`, `post-detail`, `post-delete`, `post-update`, `product-create`, `product-list`, `product-detail`, `product-delete`, `product-update`, `comment-create`, `comment-list`, `comment-delete`, `like`, `collect`, `report`, `feedback-create`, `search`, `my-list`, `category-list`, `category-manage`, `guide-list`, `guide-detail`, `admin`, `resolve`, `task-expire`, `init-db`, `follow`, `checkin`, `notification`, `verify`, `backup-db`, `announcement`, `points`
 
-### 4.2 部署 task-expire 定时触发器
+### 4.2 部署定时触发器（共 2 个）
 
-`task-expire` 是定时任务，除了上传代码外，还需要单独部署触发器：
+项目有 **2 个定时任务**，除了上传代码外，都需要单独部署触发器：
 
 1. 右键 `cloudfunctions/task-expire/` →「上传触发器」
-2. 确认 `config.json` 中的 cron 表达式 `"0 0 */6 * * *"` 被正确部署
+2. 右键 `cloudfunctions/backup-db/` →「上传触发器」
+3. 确认 cron 表达式被正确部署：
+   - `task-expire/config.json` → `"0 0 */6 * * *"`：每 6 小时执行（降本 C3：信息流已惰性过滤过期任务，cron 仅作归档兜底）
+   - `backup-db/config.json` → `"0 0 3 * * * *"`：每日 03:00 全库备份到 `backups` 集合
 
 > cron 格式为 6 字段：秒 分 时 日 月 周
-> `0 0 */6 * * *` = 每 6 小时执行一次（降本 C3：信息流已惰性过滤过期任务，cron 仅作归档兜底）
 
 ---
 
@@ -325,6 +349,14 @@ mp.weixin.qq.com → 开发管理 → 接口设置 → 找到「内容安全」�
 
 ## 第九步：本地测试
 
+### 9.0 发布级静态校验（先跑这个）
+
+```bash
+npm run verify
+```
+
+覆盖：页面四件套 / tabBar 图标 / JS 语法 / require 解析 / WXML 标签平衡与组件注册 / WXSS 变量 / 图片引用 / 云函数依赖。**0 错误才继续往下**（有错误时输出会指明文件与原因）。
+
 ### 9.1 预览测试
 
 微信开发者工具 → 点击「预览」→ 用手机扫码体验
@@ -350,8 +382,8 @@ mp.weixin.qq.com → 开发管理 → 接口设置 → 找到「内容安全」�
 | 发帖提示"内容审核服务暂不可用" | 内容安全 API 未开通 | 第八步检查 |
 | 管理后台不显示 | 未配 ADMIN_OPENIDS | 第五步配置 |
 | 云函数调用报错 | 云函数未部署 | 第四步部署 |
-| TDesign 组件不显示 | 未构建 npm | 第三步构建 npm |
-| 定时任务不执行 | 触发器未部署 | 第四步 4.2 部署触发器 |
+| TDesign 组件不显示 | 未构建 npm，或 `miniprogram_npm` 产物结构被破坏 | 第三步重建 npm 后跑 `npm run verify` |
+| 定时任务不执行 | 触发器未部署 | 第四步 4.2 部署触发器（task-expire + backup-db 共 2 个） |
 
 ---
 
@@ -359,7 +391,7 @@ mp.weixin.qq.com → 开发管理 → 接口设置 → 找到「内容安全」�
 
 ### 10.1 上传代码
 
-微信开发者工具 → 上传 → 填写版本号（如 `0.6.0`）和备注 → 上传
+微信开发者工具 → 上传 → 填写版本号（当前为 `0.8.1`）和备注 → 上传
 
 ### 10.2 提交审核
 
@@ -367,10 +399,11 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 
 ### 10.3 审核注意事项
 
-- 类目选择：建议选「社交 > 社区/论坛」+「工具」
+- ⚠️ **类目与主体资格先确认**：本项目为 UGC 社区，类目「社交 > 社区/论坛」**要求个体工商户及以上主体**，个人主体无法选该类目。三条可行路径（办个体工商户 / 收敛为工具形态 / 先发体验版）详见 [`docs/COMPLIANCE.md`](./COMPLIANCE.md)——**提交审核前必读**，避免白跑审核
 - 内容安全已内置（fail-closed），审核一般能过
 - 用户协议页面已配（登录必须勾选）
 - 不涉及支付交易（商品仅信息展示）
+- 纯 wx.cloud 架构无需配置 request 合法域名；若后续接入自有后端，域名必须 ICP 备案（详见 [`docs/COST.md`](./COST.md) 第一节）
 
 ### 10.4 发布上线
 
@@ -388,8 +421,11 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 | init-db 密钥 | 云函数 `init-db` 环境变量 `INIT_SECRET` | 自定义密钥 |
 | 数据库索引 | 云开发控制台手动创建 | 见第七步 |
 | 定时触发器 | `task-expire/config.json` | `0 0 */6 * * *`（每 6 小时） |
-| 一键部署配置 | `scripts/deploy.config.json`（不入库） | appid / privateKeyPath / environments |
+| 一键部署配置 | `scripts/deploy.config.json`（不入库，模板见 `deploy.config.example.json`） | appid / privateKeyPath / environments |
 | 部署前自检 | 终端执行 `npm run doctor` | 错误阻断，警告提示 |
+| 发布级校验 | 终端执行 `npm run verify` | 必须 0 错误，可接 CI |
+| 成本方案 | [`docs/COST.md`](./COST.md) | 免费体验版 ¥0 → 个人版 ¥19.9/月 |
+| 主体/类目/备案合规 | [`docs/COMPLIANCE.md`](./COMPLIANCE.md) | UGC 类目需个体工商户及以上 |
 
 ---
 
@@ -397,15 +433,21 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 
 ```
 CampusHub/
-├── miniprogram/           # 小程序前端（19 个页面）
+├── miniprogram/           # 小程序前端（23 个页面，TDesign 组件库）
+│   └── miniprogram_npm/   # npm 构建产物（已入库，标准结构，勿手动改动）
 ├── cloudfunctions/        # 云函数（37 个）
 │   └── common/            # 共享内核层（单一事实来源）
 ├── scripts/
 │   ├── sync-common.js     # 内核同步脚本
+│   ├── deploy.js          # miniprogram-ci 一键部署（配合 deploy.config.json）
+│   ├── doctor.js          # 部署前自检（npm run doctor）
+│   ├── verify-release.js  # 发布级静态校验（npm run verify）
 │   └── sync-mirrors.sh    # 三平台同步脚本
 ├── docs/
+│   ├── DEPLOY.md          # 本文件
+│   ├── COST.md            # 成本与云服务选型（CF 可行性分析）
+│   ├── COMPLIANCE.md      # 主体资质 / 类目 / 备案合规
 │   ├── INDEXES.md         # 索引必建清单
-│   ├── SYNC.md            # 三端同步说明
-│   └── DEPLOY.md          # 本文件
+│   └── SYNC.md            # 三端同步说明
 └── project.config.json    # 项目配置
 ```
