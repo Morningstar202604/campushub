@@ -11,7 +11,8 @@ Page({
     list: [],
     loading: true,
     page: 1,
-    hasMore: true
+    hasMore: true,
+    unreadCount: 0
   },
 
   onLoad() {
@@ -36,8 +37,31 @@ Page({
       const res = await callFunction('notification', { action: 'unreadCount' })
       if (res.success) {
         app.globalData.unreadCount = res.unreadCount || 0
+        this.setData({ unreadCount: res.unreadCount || 0 })
       }
     } catch (e) { /* 静默 */ }
+  },
+
+  // 全部已读（WXML「全部已读」按钮）：乐观更新列表，服务端幂等
+  async markAllRead() {
+    const unread = this.data.unreadCount || 0
+    if (!unread || this._markingAll) return
+    this._markingAll = true
+    try {
+      const res = await callFunction('notification', { action: 'markAllRead' })
+      if (res.success) {
+        const list = (this.data.list || []).map(n => (n.isRead ? n : { ...n, isRead: true }))
+        this.setData({ list, unreadCount: 0 })
+        app.globalData.unreadCount = 0
+        wx.showToast({ title: '已全部标记为已读', icon: 'none' })
+      } else {
+        wx.showToast({ title: res.message || '操作失败', icon: 'none' })
+      }
+    } catch (e) {
+      wx.showToast({ title: '网络异常，请重试', icon: 'none' })
+    } finally {
+      this._markingAll = false
+    }
   },
 
   async loadList(reset) {

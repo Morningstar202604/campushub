@@ -11,6 +11,7 @@ npm install          # 装依赖 + 自动同步 common 内核
 npm run sync:common  # （保险起见再同步一次）
 npm run doctor       # 自检：AppID / envId / 内核一致性 —— 错误必须清零
 npm run verify       # 发布级静态校验：页面/组件/WXML/WXSS/依赖/图片 —— 必须 0 错误
+npm run contract     # 跨端契约校验：前端 callFunction 与云函数 action 比对 —— 必须 0 错误
 npm test             # 单元 + 契约测试 —— 必须 25/25
 ```
 
