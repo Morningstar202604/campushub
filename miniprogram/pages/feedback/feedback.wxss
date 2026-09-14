@@ -44,3 +44,20 @@
 .submit-area {
   margin-top: 48rpx;
 }
+
+/* 反馈类型 chips */
+.type-chips { display: flex; gap: 16rpx; }
+.type-chip {
+  padding: 12rpx 28rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-gray);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  border: 2rpx solid transparent;
+}
+.type-chip.active {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  font-weight: 600;
+}

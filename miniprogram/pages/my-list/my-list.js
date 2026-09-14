@@ -11,6 +11,15 @@ Page({
     hasMore: true
   },
 
+  onShow() {
+    // 编辑/发布返回后刷新列表（app.globalData.needRefresh 约定）
+    if (getApp().globalData.needRefresh) {
+      getApp().globalData.needRefresh = false
+      this.setData({ page: 1, list: [], hasMore: true })
+      this.loadList(true)
+    }
+  },
+
   onLoad(options) {
     const type = options.type || 'posts'
     const titles = { posts: '我的帖子', products: '我的商品', collects: '我的收藏' }

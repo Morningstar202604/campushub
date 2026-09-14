@@ -17,7 +17,13 @@ Page({
     major: '',
     grade: '',
     selectedTags: [],
-    gradeOptions: ['2020级', '2021级', '2022级', '2023级', '2024级', '2025级', '研究生'],
+    gradeOptions: (() => {
+      const y = new Date().getFullYear()
+      const opts = []
+      for (let i = 6; i >= 0; i--) opts.push(`${y - i}级`)
+      opts.push('研究生')
+      return opts
+    })(),
     tagOptions: ['学习', '考研', '摄影', '篮球', '音乐', '美食', '旅行', '游戏', '阅读', '运动', '追剧', '兼职'],
     saving: false
   },

@@ -19,7 +19,17 @@ Page({
     loading: false,
     loadFail: false,
     showBackTop: false,
-    schoolId: ''
+    schoolId: '',
+    catFilter: 'all',
+    categories: [
+      { value: 'digital', label: '数码电子' },
+      { value: 'book', label: '书籍教材' },
+      { value: 'daily', label: '生活用品' },
+      { value: 'clothing', label: '服饰鞋包' },
+      { value: 'cosmetic', label: '美妆护肤' },
+      { value: 'food', label: '食品零食' },
+      { value: 'other', label: '其他' }
+    ]
   },
 
   onLoad() {
@@ -125,6 +135,7 @@ Page({
         pageSize: PAGE_SIZE
       }
       if (this.data.schoolId) params.schoolId = this.data.schoolId
+      if (this.data.catFilter && this.data.catFilter !== 'all') params.category = this.data.catFilter
 
       const res = await callFunction('product-list', params)
       if (seq !== this._seq) { wx.stopPullDownRefresh(); return } // 旧请求晚到，丢弃
@@ -168,6 +179,26 @@ Page({
     if (!ensureLogin()) return
     wx.navigateTo({ url: '/pages/product-publish/product-publish' })
   },
+  // 切换分类筛选
+  onCatFilter(e) {
+    const value = e.currentTarget.dataset.value
+    if (value === this.data.catFilter) return
+    this.setData({ catFilter: value, page: 1, leftList: [], rightList: [], hasMore: true, loadFail: false })
+    this.loadList(true)
+  },
+
+  // 图片加载失败兜底
+  onImgError(e) {
+    const { side, index } = e.currentTarget.dataset
+    if (side === undefined || index === undefined) return
+    this.setData({ [`${side}List[${index}]._coverFail`]: true })
+  },
+  onAvatarError(e) {
+    const { side, index } = e.currentTarget.dataset
+    if (side === undefined || index === undefined) return
+    this.setData({ [`${side}List[${index}]._avatarFail`]: true })
+  },
+
   reloadList() {
     if (this.data.loading) return
     this.setData({ loadFail: false })

@@ -65,6 +65,7 @@
     <t-button theme="primary" size="large" block bindtap="onLogin" loading="{{loading}}" disabled="{{!agreed}}">
       进入校园通
     </t-button>
+    <view class="skip-login" bindtap="skipLogin">先逛逛，暂不登录 ›</view>
     <view class="agreement">
       <view class="agree-checkbox {{agreed ? 'checked' : ''}}" bindtap="toggleAgree">
         <text wx:if="{{agreed}}">✓</text>

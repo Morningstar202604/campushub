@@ -1,5 +1,8 @@
 <!-- pages/notifications/notifications.wxml -->
 <view class="notif-page">
+  <view class="notif-toolbar" wx:if="{{list.length > 0}}">
+    <view class="mark-all {{unreadCount === 0 ? 'disabled' : ''}}" bindtap="{{unreadCount === 0 ? '' : 'markAllRead'}}">{{unreadCount > 0 ? '全部已读 (' + unreadCount + ')' : '全部已读'}}</view>
+  </view>
   <view class="notif-list" wx:if="{{list.length > 0}}">
     <view class="notif-item {{!item.isRead ? 'unread' : ''}}" wx:for="{{list}}" wx:key="_id" data-item="{{item}}" bindtap="onItemTap">
       <view class="notif-dot" wx:if="{{!item.isRead}}"></view>

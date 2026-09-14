@@ -105,3 +105,7 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
 }
+
+/* 空状态补齐 */
+.empty-emoji { font-size: 96rpx; margin-bottom: 16rpx; }
+.empty-sub { font-size: var(--font-size-sm); color: var(--color-text-placeholder); margin-top: 8rpx; }

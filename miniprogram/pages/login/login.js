@@ -12,7 +12,13 @@ Page({
     loading: false,
     agreed: false,
     selectedTags: [],
-    gradeOptions: ['2020级', '2021级', '2022级', '2023级', '2024级', '2025级', '研究生'],
+    gradeOptions: (() => {
+      const y = new Date().getFullYear()
+      const opts = []
+      for (let i = 6; i >= 0; i--) opts.push(`${y - i}级`)
+      opts.push('研究生')
+      return opts
+    })(),
     tagOptions: ['学习', '考研', '摄影', '篮球', '音乐', '美食', '旅行', '游戏', '阅读', '运动', '追剧', '兼职']
   },
 
@@ -95,11 +101,13 @@ Page({
         app.setUserInfo(updateRes.user)
         wx.showToast({ title: '欢迎来到 CampusHub', icon: 'success' })
         setTimeout(() => this.redirectAfterLogin(), 1500)
+        return // 成功路径保持 loading，直至跳转，避免空窗期二次提交
       } else {
         // 资料更新失败也放行登录，但要给出可见提示而非静默
         wx.showToast({ title: '资料保存失败，可稍后在"我的"页补全', icon: 'none' })
         app.setUserInfo(loginRes.user)
         setTimeout(() => this.redirectAfterLogin(), 1500)
+        return
       }
     } catch (err) {
       console.error('登录失败', err)
@@ -107,6 +115,11 @@ Page({
     }
 
     this.setData({ loading: false })
+  },
+
+  // 未登录先逛逛（不填资料也可浏览；触发需登录的操作时会带来源跳转）
+  skipLogin() {
+    wx.switchTab({ url: '/pages/index/index' })
   },
 
   /**

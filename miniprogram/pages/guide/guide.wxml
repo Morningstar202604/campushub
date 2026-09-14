@@ -21,7 +21,7 @@
   <!-- 指南列表 -->
   <view class="guide-list" wx:if="{{guides.length > 0}}">
     <view class="guide-card" wx:for="{{guides}}" wx:key="_id" data-id="{{item._id}}" bindtap="onGuideTap">
-      <image wx:if="{{item.coverImage}}" src="{{item.coverImage}}" mode="aspectFill" class="guide-cover" />
+      <image wx:if="{{item.coverImage && !item._coverFail}}" src="{{item.coverImage}}" mode="aspectFill" class="guide-cover" data-index="{{index}}" binderror="onImgError" />
       <view class="guide-body">
         <view class="guide-title ellipsis-2">{{item.title}}</view>
         <view class="guide-summary ellipsis-2" wx:if="{{item.summary}}">{{item.summary}}</view>
@@ -47,7 +47,12 @@
   </view>
 
   <!-- 空状态 -->
-  <view class="empty-container" wx:if="{{!loading && guides.length === 0}}">
+  <view class="empty-container" wx:if="{{loadFail && !loading && guides.length === 0}}" bindtap="reloadGuides">
+    <view class="empty-emoji">😵</view>
+    <view class="empty-text">加载失败</view>
+    <view class="empty-sub">点击屏幕重试</view>
+  </view>
+  <view class="empty-container" wx:elif="{{!loading && guides.length === 0}}">
     <view class="empty-emoji">📖</view>
     <view class="empty-text">指南正在编写中</view>
   </view>

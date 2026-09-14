@@ -89,8 +89,23 @@ Page({
       }
     } catch (err) {
       console.error('加载帖子失败', err)
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFail: true })
+      wx.showToast({ title: '网络异常，请重试', icon: 'none' })
     }
+  },
+
+  // 失败重试
+  retryLoad() {
+    if (this.postId) {
+      this.setData({ loadFail: false })
+      this.loadPost(this.postId)
+    }
+  },
+
+  // 长按标题复制帖子ID（管理置顶等场景）
+  copyPostId() {
+    if (!this.postId) return
+    wx.setClipboardData({ data: this.postId })
   },
 
   async checkFollowing(targetUserId) {
@@ -237,7 +252,8 @@ Page({
   },
 
   onShare() {
-    wx.showShareMenu({ withShareTicket: true })
+    // 分享面板由 <button open-type="share"> 触发；此处兜底提示
+    wx.showToast({ title: '点击右上角"..."也可转发', icon: 'none' })
   },
 
   onEdit() {
@@ -331,7 +347,7 @@ Page({
         ctx.fillStyle = '#6B7280'
         ctx.font = '24px sans-serif'
         ctx.fillText(`${post.userNickname || '匿名用户'}  ·  ${post.categoryPath && post.categoryPath.length ? post.categoryPath.join(' / ') : '校园'}`, 40, H - 90)
-        ctx.fillText(`${post.timeText || ''}   ·   长按转发给朋友`, 40, H - 50)
+        ctx.fillText(`${this.data.formatCreateTime || ''}   ·   长按转发给朋友`, 40, H - 50)
 
         // 分隔线
         ctx.strokeStyle = 'rgba(0,0,0,0.08)'
@@ -443,6 +459,10 @@ Page({
   // 删除自己的评论
   async onDeleteComment(e) {
     const commentId = e.currentTarget.dataset.id
+    const confirmed = await new Promise(resolve => {
+      wx.showModal({ title: '删除评论', content: '确定要删除这条评论吗？', confirmColor: '#FF3B30', success: r => resolve(r.confirm) })
+    })
+    if (!confirmed) return
     try {
       const r = await callFunction('comment-delete', { commentId })
       if (r.success) {
@@ -478,13 +498,16 @@ Page({
 
   async sendComment() {
     if (!app.ensureLogin()) return
+    if (this._sendingLock) return // 防连点多发
     const { commentText, post, replyTo, replyToUserId, replyToCommentId } = this.data
-    
+
     if (!commentText.trim()) {
       wx.showToast({ title: '请输入评论内容', icon: 'none' })
       return
     }
-    
+
+    this._sendingLock = true
+    this.setData({ sending: true })
     try {
       const res = await callFunction('comment-create', {
         targetId: post._id,
@@ -511,6 +534,16 @@ Page({
       }
     } catch (err) {
       wx.showToast({ title: '评论失败', icon: 'none' })
+    } finally {
+      this._sendingLock = false
+      this.setData({ sending: false })
+    }
+  },
+
+  // 评论加载更多（wxml 入口 + 触底共用）
+  loadMoreComments() {
+    if (this.postId && this.data.commentHasMore && !this._loadingComments) {
+      this.loadComments(this.postId)
     }
   },
 

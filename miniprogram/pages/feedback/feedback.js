@@ -4,10 +4,19 @@ const { callFunction } = require('../../utils/request.js')
 Page({
   data: {
     content: '',
+    fbType: 'suggest',
+    typeOptions: [
+      { value: 'bug', label: '🐛 问题' },
+      { value: 'suggest', label: '💡 建议' },
+      { value: 'complaint', label: '📣 投诉' }
+    ],
     contact: '',
     submitting: false
   },
 
+  onTypeSelect(e) {
+    this.setData({ fbType: e.currentTarget.dataset.value })
+  },
   onContentInput(e) { this.setData({ content: e.detail.value }) },
   onContactInput(e) { this.setData({ contact: e.detail.value }) },
 
@@ -25,7 +34,7 @@ Page({
       const res = await callFunction('feedback-create', {
         content: this.data.content.trim(),
         contact: this.data.contact.trim(),
-        type: 'suggest'
+        type: this.data.fbType
       })
 
       if (res && res.success) {

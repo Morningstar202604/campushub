@@ -131,8 +131,15 @@ Page({
   },
 
   clearHistory() {
-    wx.removeStorageSync('searchHistory')
-    this.setData({ history: [] })
+    wx.showModal({
+      title: '清空搜索历史',
+      content: '确定要清空全部搜索历史吗？',
+      success: (r) => {
+        if (!r.confirm) return
+        wx.removeStorageSync('searchHistory')
+        this.setData({ history: [] })
+      }
+    })
   },
 
   goPostDetail(e) {

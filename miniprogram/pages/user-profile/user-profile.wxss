@@ -157,3 +157,7 @@
 .meta-dot {
   color: var(--color-text-quaternary);
 }
+
+/* 空状态补齐 */
+.empty-emoji { font-size: 96rpx; margin-bottom: 16rpx; }
+.empty-sub { font-size: var(--font-size-sm); color: var(--color-text-placeholder); margin-top: 8rpx; }

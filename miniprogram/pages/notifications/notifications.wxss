@@ -66,3 +66,21 @@
   color: var(--color-text-quaternary);
   font-size: var(--font-size-xs);
 }
+
+/* 通知工具栏 */
+.notif-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16rpx 32rpx 0;
+}
+.mark-all {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  padding: 8rpx 20rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-bg);
+}
+.mark-all.disabled {
+  color: var(--color-text-placeholder);
+  background: var(--color-bg-gray);
+}

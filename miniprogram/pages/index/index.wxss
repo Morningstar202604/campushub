@@ -2,7 +2,7 @@
 .back-top {
   position: fixed;
   right: 24rpx;
-  bottom: 200rpx;
+  bottom: 380rpx;
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
@@ -495,7 +495,7 @@
   flex: 1;
   min-width: 0;
   font-size: 24rpx;
-  color: #1A1B1C;
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -504,5 +504,14 @@
   flex-shrink: 0;
   margin-left: 12rpx;
   font-size: 22rpx;
-  color: #9BBBF4;
+  color: var(--color-primary-light);
+}
+
+/* 封面加载失败占位 */
+.card-cover-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-gray);
+  font-size: 60rpx;
 }

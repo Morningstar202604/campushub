@@ -138,13 +138,15 @@ Page({
         sizeType: ['compressed']
       })
 
-      const oversized = res.tempFiles.filter(f => f.size > 9 * 1024 * 1024)
-      if (oversized.length) {
-        wx.showToast({ title: '单张图片不能超过9MB', icon: 'none' })
-        return
+      // 超限图跳过而非整批拒绝，并提示
+      const okFiles = res.tempFiles.filter(f => f.size <= 9 * 1024 * 1024)
+      const oversizeCount = res.tempFiles.length - okFiles.length
+      if (oversizeCount > 0) {
+        wx.showToast({ title: `已跳过 ${oversizeCount} 张超过9MB的图片`, icon: 'none' })
       }
+      if (!okFiles.length) return
 
-      const newPaths = res.tempFiles.map(f => f.tempFilePath)
+      const newPaths = okFiles.map(f => f.tempFilePath)
       this.setData({ images: [...this.data.images, ...newPaths] })
     } catch (err) {
       // 用户取消选择，静默处理

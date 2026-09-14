@@ -2,6 +2,15 @@
 <view class="page">
   <view class="wall-tip">💌 匿名表白 / 树洞，请文明发言</view>
 
+  <!-- 骨架屏 -->
+  <view class="wall-skeleton" wx:if="{{loading && list.length === 0}}">
+    <view class="card" wx:for="{{[1,2,3]}}" wx:key="*this" style="padding:24rpx;margin:16rpx 32rpx;">
+      <view class="skeleton-block" style="height:32rpx;width:50%;margin-bottom:16rpx;"></view>
+      <view class="skeleton-block" style="height:24rpx;width:90%;margin-bottom:12rpx;"></view>
+      <view class="skeleton-block" style="height:24rpx;width:70%;"></view>
+    </view>
+  </view>
+
   <view class="list" wx:if="{{list.length > 0}}">
     <view class="card" wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onItemClick">
       <view class="card-title">{{item.title}}</view>
@@ -11,14 +20,14 @@
         <view class="card-stats">
           <text class="stat">❤ {{item.likeCount || 0}}</text>
           <text class="stat">💬 {{item.commentCount || 0}}</text>
-          <text class="stat" wx:if="{{item.resolved}}">✅ 已送达</text>
+          <text class="stat" wx:if="{{item.resolved}}">✅ 已送达</text><!-- resolved 由任务帖复用，表白墙语义=已送达 -->
         </view>
       </view>
     </view>
   </view>
 
   <!-- 加载失败：点击重试 -->
-  <view class="empty-container" wx:if="{{loadFail && !loading && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+  <view class="empty-container" wx:if="{{loadFail && !loading && list.length === 0}}" bindtap="reloadList">
     <view class="empty-emoji">😵</view>
     <view class="empty-text">加载失败</view>
     <view class="empty-sub">点击屏幕重试</view>

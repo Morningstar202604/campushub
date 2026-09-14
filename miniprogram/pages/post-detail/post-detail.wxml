@@ -30,7 +30,7 @@
     </view>
 
     <!-- 标题 -->
-    <view class="post-title">{{post.title}}</view>
+    <view class="post-title" bindlongpress="copyPostId">{{post.title}}</view>
 
     <!-- 正文 -->
     <view class="post-content" wx:if="{{post.content}}">{{post.content}}</view>
@@ -72,10 +72,10 @@
         <text class="action-icon">{{isCollected ? '⭐' : '☆'}}</text>
         <text class="action-text">{{post.collectCount || 0}}</text>
       </view>
-      <view class="action-item" bindtap="onShare">
+      <button class="action-item share-btn" open-type="share" plain hover-class="none">
         <text class="action-icon">↗</text>
         <text class="action-text">分享</text>
-      </view>
+      </button>
       <view class="action-item" bindtap="onSharePoster">
         <text class="action-icon">🖼️</text>
         <text class="action-text">海报</text>
@@ -150,6 +150,10 @@
       </view>
     </view>
 
+    <!-- 评论分页提示 -->
+    <view class="comment-more" wx:if="{{commentHasMore}}" bindtap="loadMoreComments">加载更多评论</view>
+    <view class="comment-no-more" wx:elif="{{comments.length > 3}}">— 没有更多评论了 —</view>
+
     <!-- 空评论 -->
     <view class="empty-comment" wx:else>
       <text class="empty-comment-text">还没有评论，快来抢沙发</text>
@@ -166,13 +170,14 @@
         class="comment-input" 
         placeholder="{{replyTo ? '回复 @' + replyTo + '...' : '写评论...'}}" 
         value="{{commentText}}"
+        maxlength="500"
         bindinput="onCommentInput"
         confirm-type="send"
         bindconfirm="sendComment"
         cursor-spacing="20"
         adjust-position="{{true}}"
       />
-      <view class="send-btn {{commentText ? 'active' : ''}}" bindtap="sendComment">发送</view>
+      <view class="send-btn {{commentText && !sending ? 'active' : ''}}" bindtap="{{commentText && !sending ? 'sendComment' : ''}}">{{sending ? '发送中' : '发送'}}</view>
     </view>
   </view>
 </view>
@@ -185,9 +190,10 @@
 </view>
 
 <!-- 加载失败 -->
-<view class="empty-container" wx:if="{{!post && !loading}}">
-  <view class="empty-emoji">😕</view>
-  <view class="empty-text">帖子不存在或已被删除</view>
+<view class="empty-container" wx:if="{{!post && !loading}}" bindtap="retryLoad">
+  <view class="empty-emoji">{{loadFail ? '😵' : '😕'}}</view>
+  <view class="empty-text">{{loadFail ? '加载失败' : '帖子不存在或已被删除'}}</view>
+  <view class="empty-sub" wx:if="{{loadFail}}">点击屏幕重试</view>
 </view>
 
 <!-- 分享海报离屏画布 -->

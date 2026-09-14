@@ -7,7 +7,7 @@
       <text class="search-icon">🔍</text>
       <text class="search-placeholder">搜索帖子、商品、指南</text>
     </view>
-    <view class="top-expired" bindtap="goExpired">⏰过期</view>
+    <view class="top-expired" bindtap="goLostFound">🎒失物</view>
     <view class="top-expired" bindtap="goWall">💌墙</view>
   </view>
 
@@ -50,12 +50,16 @@
         <!-- 帖子卡片 -->
         <view class="feed-card" data-id="{{item._id}}" bindtap="onPostTap">
           <image
-            wx:if="{{item.images.length > 0}}"
+            wx:if="{{item.images.length > 0 && !item._coverFail}}"
             src="{{item.images[0]}}"
             mode="widthFix"
             class="card-cover"
             lazy-load
+            data-side="left"
+            data-index="{{index}}"
+            binderror="onImgError"
           />
+          <view wx:if="{{item.images.length > 0 && item._coverFail}}" class="card-cover card-cover-fallback">🖼️</view>
           <view class="card-body">
             <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
             <view class="card-title ellipsis-2">{{item.title}}</view>
@@ -65,7 +69,7 @@
             </view>
             <view class="card-meta">
               <view class="meta-user">
-                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="left" data-index="{{index}}" binderror="onAvatarError" />>
                 <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '匿'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
                 <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>
@@ -82,12 +86,16 @@
       <block wx:for="{{rightList}}" wx:key="_id">
         <view class="feed-card" data-id="{{item._id}}" bindtap="onPostTap">
           <image
-            wx:if="{{item.images.length > 0}}"
+            wx:if="{{item.images.length > 0 && !item._coverFail}}"
             src="{{item.images[0]}}"
             mode="widthFix"
             class="card-cover"
             lazy-load
+            data-side="right"
+            data-index="{{index}}"
+            binderror="onImgError"
           />
+          <view wx:if="{{item.images.length > 0 && item._coverFail}}" class="card-cover card-cover-fallback">🖼️</view>
           <view class="card-body">
             <view class="card-pin-badge" wx:if="{{item.isPinned}}">📌 置顶</view>
             <view class="card-title ellipsis-2">{{item.title}}</view>
@@ -97,7 +105,7 @@
             </view>
             <view class="card-meta">
               <view class="meta-user">
-                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="right" data-index="{{index}}" binderror="onAvatarError" />>
                 <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '匿'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
                 <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>
@@ -135,27 +143,27 @@
   </view>
 
   <!-- 加载更多 -->
-  <view class="load-more" wx:if="{{loading && leftList.length > 0}}">
+  <view class="load-more" wx:if="{{loading && leftList.length + rightList.length > 0}}">
     <view class="loading-dot"></view>
     <text class="load-text">加载中...</text>
   </view>
   
   <!-- 没有更多 -->
-  <view class="no-more" wx:if="{{!hasMore && leftList.length > 0 && !loading}}">
+  <view class="no-more" wx:if="{{!hasMore && leftList.length + rightList.length > 0 && !loading}}">
     <view class="no-more-line"></view>
     <text class="no-more-text">到底了</text>
     <view class="no-more-line"></view>
   </view>
 
   <!-- 加载失败：点击重试 -->
-  <view class="empty-container" wx:if="{{loadFail && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+  <view class="empty-container" wx:if="{{loadFail && !loading && leftList.length + rightList.length === 0}}" bindtap="reloadList">
     <view class="empty-emoji">😵</view>
     <view class="empty-text">加载失败</view>
     <view class="empty-sub">点击屏幕重试</view>
   </view>
 
   <!-- 空状态 -->
-  <view class="empty-container" wx:elif="{{!loading && leftList.length === 0 && rightList.length === 0}}">
+  <view class="empty-container" wx:elif="{{!loading && leftList.length + rightList.length === 0}}">
     <view class="empty-emoji">📭</view>
     <view class="empty-text">还没有内容</view>
     <view class="empty-sub">快来发布第一条吧</view>

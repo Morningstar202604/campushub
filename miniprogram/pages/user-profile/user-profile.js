@@ -46,6 +46,7 @@ Page({
         wx.showToast({ title: res.message || '加载失败', icon: 'none' })
       }
     } catch (err) {
+      this.setData({ loadFail: true })
       console.error('加载用户主页失败', err)
       this.setData({ loading: false })
     }

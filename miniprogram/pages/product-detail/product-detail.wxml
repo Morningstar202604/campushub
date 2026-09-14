@@ -17,7 +17,7 @@
     <view class="price-tags">
       <view class="price-tag">{{conditionText}}</view>
       <view class="price-tag">{{tradeTypeText}}</view>
-      <view class="price-tag" wx:if="{{isSold}}" style="background:#e64340;color:#fff;">已售出</view>
+      <view class="price-tag price-tag-sold" wx:if="{{isSold}}">已售出</view>
       <view class="price-tag" wx:if="{{product.viewCount}}">👁 {{product.viewCount}}</view>
     </view>
   </view>
@@ -29,7 +29,7 @@
   </view>
 
   <!-- 卖家信息 -->
-  <view class="seller-section" wx:if="{{product.userNickname}}">
+  <view class="seller-section" wx:if="{{product.userNickname}}" bindtap="goSellerProfile">
     <view class="seller-avatar">
       <image wx:if="{{product.userAvatar}}" src="{{product.userAvatar}}" class="avatar-img" />
       <view wx:else class="avatar-placeholder">{{product.userNicknameFirst || '用'}}</view>
@@ -87,8 +87,8 @@
       <text class="bar-icon">🗑️</text>
       <text class="bar-text">下架</text>
     </view>
-    <t-button theme="primary" size="medium" bindtap="onContact" class="bar-btn">
-      {{product.contactInfo ? '查看联系方式' : '联系卖家'}}
+    <t-button theme="{{isSold ? 'default' : 'primary'}}" size="medium" bindtap="onContact" class="bar-btn {{isSold ? 'bar-btn-disabled' : ''}}">
+      {{isSold ? '已售出' : (product.contactInfo ? '查看联系方式' : '联系卖家')}}
     </t-button>
   </view>
 </view>

@@ -1,4 +1,5 @@
 {
+  "enablePullDownRefresh": true,
   "usingComponents": {},
   "navigationBarTitleText": "校园指南"
 }

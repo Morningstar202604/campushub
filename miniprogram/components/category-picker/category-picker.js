@@ -7,18 +7,26 @@ const { getCache, setCache } = require('../../utils/cache.js')
 const CATEGORY_CACHE_KEY = 'category_tree'
 const CATEGORY_CACHE_TTL = 10 * 60 * 1000
 
+const LEVEL_NAMES = ['选择分区', '选择吧', '选择子版块']
+
 Component({
   properties: {
     visible: { type: Boolean, value: false }
   },
   data: {
+    title: LEVEL_NAMES[0],
     allCats: null,
     path: [],        // 已选路径（分类对象数组）
     list: [],        // 当前层级可选项（带 hasChild）
     loading: false
   },
   observers: {
-    visible(v) { if (v) this.open() }
+    visible(v) { if (v) this.open() },
+    // 路径变化时同步标题（WXML 不能调用 methods，必须落 data）
+    'path': function (path) {
+      const depth = Array.isArray(path) ? path.length : 0
+      this.setData({ title: LEVEL_NAMES[Math.min(depth, LEVEL_NAMES.length - 1)] })
+    }
   },
   methods: {
     async loadCategories() {
@@ -55,9 +63,6 @@ Component({
       if (path.length === 0) items = (this.data.allCats || []).filter(c => !c.parentId)
       else items = this.childrenOf(path[path.length - 1]._id)
       return items.map(c => ({ ...c, hasChild: this.childrenOf(c._id).length > 0 }))
-    },
-    levelName(len) {
-      return ['选择分区', '选择吧', '选择子版块'][len] || '选择分类'
     },
     onSelect(e) {
       const cat = e.currentTarget.dataset.cat

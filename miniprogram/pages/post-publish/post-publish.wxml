@@ -2,7 +2,7 @@
 <view class="publish-page">
   <!-- 标题 -->
   <view class="form-section">
-    <input
+    <input maxlength="10"
       class="title-input"
       placeholder="标题（必填，30字以内）"
       maxlength="30"

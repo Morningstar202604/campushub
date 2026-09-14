@@ -30,7 +30,7 @@
   </view>
 
   <!-- 加载失败：点击重试 -->
-  <view class="empty-container" wx:if="{{loadFail && !loading && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+  <view class="empty-container" wx:if="{{loadFail && !loading && list.length === 0}}" bindtap="reloadList">
     <view class="empty-emoji">😵</view>
     <view class="empty-text">加载失败</view>
     <view class="empty-sub">点击屏幕重试</view>

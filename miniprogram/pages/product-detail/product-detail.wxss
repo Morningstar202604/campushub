@@ -54,9 +54,13 @@
   gap: 12rpx;
 }
 
+.price-tag-sold {
+  background: var(--color-danger);
+  color: #fff;
+}
 .price-tag {
   padding: 6rpx 20rpx;
-  background: #FFF4E6;
+  background: var(--color-primary-bg);
   color: var(--color-warning);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);
@@ -162,7 +166,7 @@
 .safety-tip {
   margin: 16rpx 32rpx;
   padding: 24rpx;
-  background: #FFF8E6;
+  background: var(--color-primary-bg);
   border-radius: var(--radius-md);
   display: flex;
   gap: 16rpx;
@@ -176,7 +180,7 @@
 
 .safety-text {
   font-size: var(--font-size-sm);
-  color: #8A6D3B;
+  color: var(--color-warning);
   line-height: 1.5;
 }
 
@@ -232,4 +236,7 @@
   background: var(--color-primary-bg, #eaf3fd);
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
+}
+.bar-btn-disabled {
+  opacity: 0.55;
 }

@@ -55,7 +55,11 @@ Page({
           hasMore: res.hasMore,
           loading: false
         })
-        if (reset) app.globalData.unreadCount = res.unreadCount || 0
+        if (reset) {
+          const unread = res.unreadCount || 0
+          app.globalData.unreadCount = unread
+          this.setData({ unreadCount: unread })
+        }
       } else {
         this.setData({ loading: false })
       }

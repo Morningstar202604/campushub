@@ -61,7 +61,15 @@ Page({
       }
     } catch (err) {
       console.error('加载商品失败', err)
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFail: true })
+      wx.showToast({ title: '网络异常，请重试', icon: 'none' })
+    }
+  },
+
+  retryLoad() {
+    if (this.productId) {
+      this.setData({ loadFail: false })
+      this.loadProduct(this.productId)
     }
   },
 
@@ -75,23 +83,46 @@ Page({
 
   async onCollect() {
     if (!app.ensureLogin()) return
+    if (this._collectLock) return
+    this._collectLock = true
+    // 乐观更新：点击立即反馈，失败回滚
+    const prev = this.data.isCollected
+    const next = !prev
+    this.setData({ isCollected: next, 'product.collectCount': Math.max(0, (this.data.product.collectCount || 0) + (next ? 1 : -1)) })
     try {
       const res = await callFunction('collect', {
         targetId: this.data.product._id,
         type: 'product',
-        action: this.data.isCollected ? 'uncollect' : 'collect'
+        action: prev ? 'uncollect' : 'collect'
       })
       if (res.success) {
         this.setData({ isCollected: res.collected })
         wx.showToast({ title: res.collected ? '已收藏' : '已取消', icon: 'none' })
+      } else {
+        this.setData({ isCollected: prev, 'product.collectCount': this.data.product.collectCount })
+        wx.showToast({ title: res.message || '操作失败', icon: 'none' })
       }
     } catch (err) {
+      this.setData({ isCollected: prev, 'product.collectCount': this.data.product.collectCount })
       wx.showToast({ title: '操作失败', icon: 'none' })
+    } finally {
+      this._collectLock = false
     }
   },
 
-  onContact() {
+  goSellerProfile() {
     const { product } = this.data
+    if (!product || !product.userId) return
+    if (product.isAnonymous) return
+    wx.navigateTo({ url: `/pages/user-profile/user-profile?userId=${product.userId}` })
+  },
+
+  onContact() {
+    const { product, isSold } = this.data
+    if (isSold) {
+      wx.showToast({ title: '该商品已售出', icon: 'none' })
+      return
+    }
     if (product.contactInfo) {
       wx.showModal({
         title: '联系方式',
@@ -108,7 +139,17 @@ Page({
         }
       })
     } else {
-      wx.showToast({ title: '卖家未留下联系方式', icon: 'none' })
+      wx.showModal({
+        title: '暂无联系方式',
+        content: '卖家未留下联系方式，可以到 ta 的主页看看其他商品',
+        confirmText: '看主页',
+        cancelText: '知道了',
+        success: (r) => {
+          if (r.confirm) {
+            wx.navigateTo({ url: `/pages/user-profile/user-profile?userId=${product.userId}` })
+          }
+        }
+      })
     }
   },
 

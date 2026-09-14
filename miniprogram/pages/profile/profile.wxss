@@ -121,7 +121,7 @@
   line-height: 36rpx;
   text-align: center;
   padding: 0 10rpx;
-  background: #e64340;
+  background: var(--color-danger);
   color: #fff;
   font-size: 20rpx;
   border-radius: 18rpx;
@@ -133,7 +133,7 @@
   justify-content: space-between;
   margin: 16rpx 32rpx 0;
   padding: 24rpx 32rpx;
-  background: linear-gradient(135deg, #4A90D9, #5BA0E9);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   border-radius: var(--radius-lg);
 }
 
@@ -195,6 +195,7 @@
 }
 
 .menu-item {
+  position: relative; /* 供 .badge 绝对定位 */
   display: flex;
   align-items: center;
   padding: 32rpx 24rpx;
@@ -242,4 +243,16 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
   padding: 48rpx 0;
+}
+
+/* 签到按钮：今日已签禁用态 */
+.checkin-btn.done {
+  background: rgba(255,255,255,0.25);
+  box-shadow: none;
+}
+/* 统计项说明 */
+.stat-hint {
+  font-size: 20rpx;
+  color: var(--color-text-placeholder);
+  margin-top: 4rpx;
 }

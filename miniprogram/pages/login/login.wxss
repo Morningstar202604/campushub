@@ -138,3 +138,11 @@
 .agreement-link {
   color: var(--color-primary);
 }
+
+/* 先逛逛出口 */
+.skip-login {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  padding: 24rpx 0 0;
+}

@@ -1,6 +1,6 @@
 {
   "name": "campushub",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "CampusHub — An open-source campus & interest community for WeChat Mini Program + CloudBase",
   "engines": {
     "node": ">=16"

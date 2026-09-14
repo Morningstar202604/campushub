@@ -7,7 +7,9 @@ Page({
   data: {
     user: null,
     isAdmin: false,
-    unreadCount: 0
+    unreadCount: 0,
+    checkedToday: false,
+    campusVerified: false
   },
 
   onShow() {
@@ -19,6 +21,21 @@ Page({
     } else {
       this.setData({ user: null, isAdmin: false, unreadCount: 0 })
     }
+    // 今日已签标记（本地判定，服务端仍有唯一索引兜底）
+    this.setData({ checkedToday: wx.getStorageSync('lastCheckinDate') === this.todayStr() })
+  },
+
+  todayStr() {
+    const d = new Date()
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+  },
+
+  onPullDownRefresh() {
+    if (app.globalData.isLoggedIn) {
+      Promise.all([this.refreshUserData(), this.loadUnreadCount()]).finally(() => wx.stopPullDownRefresh())
+    } else {
+      wx.stopPullDownRefresh()
+    }
   },
 
   // 从服务端刷新用户统计数据
@@ -28,8 +45,12 @@ Page({
       if (res.success && res.user) {
         app.setUserInfo(res.user)
         this.setData({ user: { ...res.user, nicknameFirst: firstChar(res.user.nickname) }, campusVerified: res.user.campusVerified === true })
+        wx.setStorageSync('campusVerified', res.user.campusVerified === true)
       }
-    } catch (e) {}
+    } catch (e) {
+      // 刷新失败时读取缓存，避免"已认证"被误显示为"未认证"
+      this.setData({ campusVerified: wx.getStorageSync('campusVerified') === true })
+    }
   },
 
   // 未读通知数
@@ -82,6 +103,10 @@ Page({
     wx.navigateTo({ url: '/pages/feedback/feedback' })
   },
 
+  goExpired() {
+    wx.navigateTo({ url: '/pages/expired/expired' })
+  },
+
   goNotification() {
     wx.navigateTo({ url: '/pages/notifications/notifications' })
   },
@@ -95,6 +120,8 @@ Page({
       const res = await callFunction('checkin', {})
       if (res.success) {
         wx.showToast({ title: res.message, icon: 'success' })
+        wx.setStorageSync('lastCheckinDate', this.todayStr())
+        this.setData({ checkedToday: true })
         // 刷新用户数据
         await this.refreshUserData()
       } else {

@@ -59,13 +59,10 @@ App({
     wx.removeStorageSync('userInfo')
   },
 
-  // 检查是否登录，未登录跳转登录页
+  // 检查是否登录，未登录跳转登录页（记录来源页，登录成功后自动回跳）
   ensureLogin() {
-    if (!this.globalData.isLoggedIn) {
-      wx.navigateTo({ url: '/pages/login/login' })
-      return false
-    }
-    return true
+    const { ensureLogin } = require('./utils/auth.js')
+    return ensureLogin()
   },
 
   // 刷新用户统计数据（发布/收藏后调用）

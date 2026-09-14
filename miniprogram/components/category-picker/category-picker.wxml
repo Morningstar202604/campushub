@@ -3,7 +3,7 @@
   <view class="cat-sheet" catchtap="noop">
     <view class="cat-head">
       <view class="cat-back" wx:if="{{path.length > 0}}" bindtap="onBack">← 返回</view>
-      <view class="cat-title">{{levelName(path.length)}}</view>
+      <view class="cat-title">{{title}}</view>
       <view class="cat-close" bindtap="close">✕</view>
     </view>
     <view class="cat-path" wx:if="{{pathText}}">{{pathText}}</view>
@@ -18,6 +18,7 @@
         <text class="cat-name">{{item.emoji}} {{item.name}}</text>
         <text class="cat-arrow" wx:if="{{item.hasChild}}">›</text>
       </view>
+      <view class="cat-empty" wx:if="{{loading}}">加载中…</view>
       <view class="cat-empty" wx:if="{{!loading && list.length === 0}}">暂无分类</view>
     </scroll-view>
   </view>

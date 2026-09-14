@@ -46,7 +46,8 @@
           <image wx:if="{{localPreview}}" src="{{localPreview}}" mode="aspectFill" class="upload-preview" />
           <view wx:else class="upload-placeholder">
             <text class="upload-plus">＋</text>
-            <text class="upload-text">上传校卡/学生证照片\n(遮挡敏感信息亦可)</text>
+            <text class="upload-text">上传校卡/学生证照片</text>
+            <text class="upload-text">(遮挡敏感信息亦可)</text>
           </view>
           <view wx:if="{{localPreview}}" class="upload-remove" catchtap="removeImage">✕ 重选</view>
         </view>

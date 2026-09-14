@@ -14,6 +14,10 @@ Page({
     this.loadGuides()
   },
 
+  onPullDownRefresh() {
+    this.loadGuides(this.data.activeCategory).finally(() => wx.stopPullDownRefresh())
+  },
+
   async loadGuides(categoryId = '') {
     this.setData({ loading: true })
     try {
@@ -31,14 +35,23 @@ Page({
         this.setData({ loading: false })
       }
     } catch (err) {
+      this.setData({ loadFail: true })
       console.error('加载指南失败', err)
       this.setData({ loading: false })
     }
   },
 
+  onImgError(e) {
+    const idx = e.currentTarget.dataset.index
+    this.setData({ [`guides[${idx}]._coverFail`]: true })
+  },
+  reloadGuides() {
+    this.setData({ loadFail: false })
+    this.loadGuides(this.data.activeCategory)
+  },
   onCategoryChange(e) {
     const id = e.currentTarget.dataset.id
-    this.setData({ activeCategory: id })
+    this.setData({ activeCategory: id, guides: [], loading: true })
     this.loadGuides(id)
   },
 

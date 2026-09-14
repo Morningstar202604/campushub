@@ -10,18 +10,28 @@
     <view class="top-publish" bindtap="goPublish">+ 出闲置</view>
   </view>
 
+  <!-- 分类筛选 -->
+  <scroll-view class="cat-chips" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="cat-chip {{catFilter === 'all' ? 'active' : ''}}" data-value="all" bindtap="onCatFilter">全部</view>
+    <view class="cat-chip {{catFilter === item.value ? 'active' : ''}}" wx:for="{{categories}}" wx:key="value" data-value="{{item.value}}" bindtap="onCatFilter">{{item.label}}</view>
+  </scroll-view>
+
   <!-- 商品瀑布流 -->
   <view class="feed" wx:if="{{leftList.length > 0 || rightList.length > 0}}">
     <view class="feed-col">
       <block wx:for="{{leftList}}" wx:key="_id">
         <view class="feed-card" data-id="{{item._id}}" bindtap="onProductTap">
           <image
-            wx:if="{{item.images.length > 0}}"
+            wx:if="{{item.images.length > 0 && !item._coverFail}}"
             src="{{item.images[0]}}"
             mode="widthFix"
             class="card-cover"
             lazy-load
+            data-side="left"
+            data-index="{{index}}"
+            binderror="onImgError"
           />
+          <view wx:if="{{item.images.length > 0 && item._coverFail}}" class="card-cover card-cover-fallback">📦</view>
           <view class="card-body">
             <view class="card-title ellipsis-2">{{item.title}}</view>
             <view class="card-price-row">
@@ -34,7 +44,7 @@
             </view>
             <view class="card-meta">
               <view class="meta-user">
-                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="left" data-index="{{index}}" binderror="onAvatarError" />
                 <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '用'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
                 <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>
@@ -50,12 +60,16 @@
       <block wx:for="{{rightList}}" wx:key="_id">
         <view class="feed-card" data-id="{{item._id}}" bindtap="onProductTap">
           <image
-            wx:if="{{item.images.length > 0}}"
+            wx:if="{{item.images.length > 0 && !item._coverFail}}"
             src="{{item.images[0]}}"
             mode="widthFix"
             class="card-cover"
             lazy-load
+            data-side="right"
+            data-index="{{index}}"
+            binderror="onImgError"
           />
+          <view wx:if="{{item.images.length > 0 && item._coverFail}}" class="card-cover card-cover-fallback">📦</view>
           <view class="card-body">
             <view class="card-title ellipsis-2">{{item.title}}</view>
             <view class="card-price-row">
@@ -68,7 +82,7 @@
             </view>
             <view class="card-meta">
               <view class="meta-user">
-                <image wx:if="{{item.userAvatar}}" src="{{item.userAvatar}}" class="meta-avatar" />
+                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="right" data-index="{{index}}" binderror="onAvatarError" />
                 <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '用'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
                 <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>
@@ -118,7 +132,7 @@
 
   <!-- 空状态 -->
   <!-- 加载失败：点击重试 -->
-  <view class="empty-container" wx:if="{{loadFail && !loading && !loading && leftList.length === 0 && rightList.length === 0}}" bindtap="reloadList">
+  <view class="empty-container" wx:if="{{loadFail && !loading && leftList.length + rightList.length === 0}}" bindtap="reloadList">
     <view class="empty-emoji">😵</view>
     <view class="empty-text">加载失败</view>
     <view class="empty-sub">点击屏幕重试</view>
@@ -130,3 +144,6 @@
     <view class="empty-sub">点击右上角「+ 出闲置」发布第一件</view>
   </view>
 </view>
+
+<!-- 回到顶部 -->
+<view class="back-top" wx:if="{{showBackTop}}" bindtap="goBackTop">↑</view>

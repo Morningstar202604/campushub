@@ -117,21 +117,6 @@ Page({
     wx.pageScrollTo({ scrollTop: 0, duration: 300 })
   },
 
-  reloadList() {
-    if (this.data.loading) return
-    this.setData({ loadFail: false })
-    this.loadList(true)
-  },
-
-  onPageScroll(e) {
-    const show = (e.scrollTop || 0) > 600
-    if (show !== this.data.showBackTop) this.setData({ showBackTop: show })
-  },
-
-  goBackTop() {
-    wx.pageScrollTo({ scrollTop: 0, duration: 300 })
-  },
-
   onShareAppMessage() {
     return { title: '失物招领 · 帮东西回家', path: '/pages/lost-found/lost-found' }
   }

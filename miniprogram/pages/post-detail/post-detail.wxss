@@ -151,9 +151,25 @@
 /* 互动栏 */
 .action-bar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-around;
+  row-gap: 16rpx;
   padding-top: 24rpx;
   border-top: 1rpx solid var(--color-border-light);
+}
+
+/* 分享按钮（原生 button 重置） */
+.share-btn {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  line-height: inherit;
+  font-size: inherit;
+  border-radius: 0;
+}
+.share-btn::after {
+  border: none;
 }
 
 .action-item {
@@ -425,3 +441,30 @@
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
 }
+/* 评论删除按钮 */
+.comment-delete {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  padding: 8rpx 12rpx;
+}
+.comment-delete:active {
+  opacity: 0.6;
+}
+
+/* 评论分页提示 */
+.comment-more {
+  text-align: center;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  padding: 24rpx 0;
+}
+.comment-no-more {
+  text-align: center;
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-xs);
+  padding: 24rpx 0;
+}
+
+/* 失败/空状态补齐 */
+.empty-emoji { font-size: 96rpx; margin-bottom: 16rpx; }
+.empty-sub { font-size: var(--font-size-sm); color: var(--color-text-placeholder); margin-top: 8rpx; }

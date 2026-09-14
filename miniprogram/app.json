@@ -36,23 +36,31 @@
     "color": "#999999",
     "selectedColor": "#4A90D9",
     "backgroundColor": "#FFFFFF",
-    "borderStyle": "white",
+    "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页"
+        "text": "首页",
+        "iconPath": "assets/tabbar/home.png",
+        "selectedIconPath": "assets/tabbar/home-active.png"
       },
       {
         "pagePath": "pages/market/market",
-        "text": "二手"
+        "text": "二手",
+        "iconPath": "assets/tabbar/market.png",
+        "selectedIconPath": "assets/tabbar/market-active.png"
       },
       {
         "pagePath": "pages/guide/guide",
-        "text": "指南"
+        "text": "指南",
+        "iconPath": "assets/tabbar/guide.png",
+        "selectedIconPath": "assets/tabbar/guide-active.png"
       },
       {
         "pagePath": "pages/profile/profile",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "assets/tabbar/profile.png",
+        "selectedIconPath": "assets/tabbar/profile-active.png"
       }
     ]
   },

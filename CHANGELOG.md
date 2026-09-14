@@ -23,6 +23,30 @@
 - 云函数 34 → **37**（+backup-db / +announcement / +points），集合 16 → **21**（+backups / search_queries / admin_logs / announcements / points_orders），索引 36 → **41**
 - README / zh-CN / 落地页 / USER_GUIDE / DEPLOY / INDEXES 全部数字与功能清单同步
 
+## [0.8.1] - 2026-09-14
+
+### Fixed — UI/UX 深度体检修复（23 处）
+- **致命：tdesign 组件不渲染**：仓库缺 `miniprogram_npm` 构建产物且被 .gitignore 忽略 → 登录/发帖/发布商品/反馈/编辑资料的提交按钮在 clone 环境全部消失。已构建并提交产物，.gitignore 改为保留 `miniprogram/miniprogram_npm/`（上传时 ignoreUploadUnusedFiles 自动裁剪）
+- **美观：tabBar 无图标**：新增 4×2 套手绘 PNG 图标（灰/蓝），borderStyle 改 black 增加层次
+- **美观：3 个未定义 token**（`--color-bg-secondary`/`--color-text-quaternary`）导致帖子详情楼中楼背景、登录勾选框边框、通知时间、用户主页 meta 颜色全部失效 —— 已在 app.wxss 补齐定义
+- **美观：个人页未读红点飞出菜单**（.badge absolute 无 relative 父级）—— .menu-item 加 position:relative
+- **美观：多套杂色统一**：profile 签到卡渐变/红点、lost-found 的 Element 橙 #e6a23c、product-detail 内联已售红、my-list 任务 tag、index 公告条、category-picker 全部硬编码色 → 全部收敛到设计 token
+- **交互：登录回跳断裂**：`app.ensureLogin()` 不记录来源页 → 点赞/评论/收藏后登录一律落首页。app.js 版本现委托 utils/auth.js（写 loginRedirect），全站回跳闭环
+- **交互：评论三连**：发评论无防重复锁（连点多发）、删评论无二次确认、删除按钮无样式无热区 —— 全部补齐，发送按钮带"发送中"态
+- **交互：分享按钮无效**：`wx.showShareMenu` 不弹面板 → 改原生 `button open-type="share"`
+- **交互：wall/lost-found 加载失败提示永不显示**（复制粘贴遗留 leftList/rightList 条件）—— 修正为 list；补骨架屏
+- **交互：market 回到顶部失效**（js/wxss 在而 wxml 无节点）—— 补节点；index/lost-found 回顶按钮与发布 FAB 重叠 —— 上移错开
+- **交互：category-picker 标题恒为空**（WXML 调用 methods 函数不支持）—— 改 observer 写 data；补 loading 态与底部安全区
+- **交互：收藏"没反应"**：product-detail 收藏无乐观更新无锁无失败提示 —— 对齐 post-detail（乐观更新+锁+回滚）
+- **交互：notifications 无"全部已读"**（云函数已支持 markAllRead）—— 补工具栏入口；unreadCount 从未写入 data 的 bug 一并修复
+- **易用：个人页新增"过期归档"入口**（原顶栏低频入口挪入），顶栏换上高频"🎒失物"入口；信用分加说明；签到"今日已签"禁用态（本地日期标记）；profile/guide 补下拉刷新
+- **易用：market 新增分类筛选 chips**（8 类，走 product-list 的 category 参数）
+- **易用：登录页"先逛逛"出口；成功路径 loading 保持到跳转防二次提交；年级选项动态生成（原写死到 2025 级，2026 新生无法选择）
+- **易用：商品已售禁用"联系卖家"、卖家信息区可跳主页、无联系方式时引导看主页
+- **易用：发帖图片超 9MB 由整批拒绝改为跳过并提示；tag 输入限长；商品价格两位小数校验；反馈页新增类型选择（问题/建议/投诉）；搜索清历史二次确认；长按帖子标题复制 ID（打通管理置顶链路）；海报时间字段修复
+- **兜底：全站图片 binderror 占位**（index/market/guide 列表封面与头像、user-profile 缩略图字段兜底）；guide/post-detail/product-detail/user-profile 加载失败态区分网络错误并支持点击重试
+- 版本徽章/个人页版本号统一 v0.8.1
+
 ## [Unreleased]
 
 ### Fixed — 代码审计修复

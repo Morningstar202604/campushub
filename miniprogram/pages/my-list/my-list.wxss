@@ -52,8 +52,8 @@
   border-radius: var(--radius-full);
   font-weight: 500;
 }
-.tag-task { background: #fff4e6; color: #d97706; }
-.tag-resolved { background: #e6f6ec; color: #16a34a; }
+.tag-task { background: var(--color-warning); color: var(--color-warning); }
+.tag-resolved { background: #E6F6EC; color: var(--color-success); }
 .tag-expired { background: #f0f0f0; color: #999; }
 
 .item-meta {
@@ -81,4 +81,49 @@
 .load-text {
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
+}
+
+/* ===== 操作按钮（编辑/删除/取消收藏） ===== */
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.item-edit {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  padding: 12rpx 16rpx;
+}
+.item-edit:active { opacity: 0.6; }
+.item-delete {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  padding: 12rpx 16rpx;
+}
+.item-delete:active { opacity: 0.6; }
+
+/* 分页提示 */
+.no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20rpx;
+  padding: 32rpx 0;
+}
+.no-more-line {
+  width: 80rpx;
+  height: 1rpx;
+  background: var(--color-border);
+}
+.no-more-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-placeholder);
+}
+
+/* 空状态 */
+.empty-emoji { font-size: 96rpx; margin-bottom: 16rpx; }
+.empty-sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-placeholder);
+  margin-top: 8rpx;
 }

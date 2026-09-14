@@ -2,7 +2,7 @@
 .back-top {
   position: fixed;
   right: 24rpx;
-  bottom: 200rpx;
+  bottom: 320rpx;
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
@@ -77,7 +77,7 @@
   color: #fff;
 }
 
-.kind-lost { background: #e6a23c; }
+.kind-lost { background: var(--color-warning); }
 .kind-found { background: var(--color-primary); }
 
 .card-title {
@@ -157,5 +157,5 @@
 
 .fab:active { transform: scale(0.95); }
 
-.fab-lost { background: #e6a23c; }
+.fab-lost { background: var(--color-warning); }
 .fab-found { background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); }

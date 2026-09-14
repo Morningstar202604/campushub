@@ -19,6 +19,7 @@ page {
   --color-text-secondary: #666666;
   --color-text-tertiary: #999999;
   --color-text-placeholder: #BFBFBF;
+  --color-text-quaternary: #B2B2B2;
   --color-text-inverse: #FFFFFF;
 
   /* 背景色 */
@@ -26,6 +27,7 @@ page {
   --color-bg-card: #FFFFFF;
   --color-bg-gray: #F5F5F5;
   --color-bg-hover: #F0F0F0;
+  --color-bg-secondary: #F7F8FA;
 
   /* 边框 */
   --color-border: #E8E8E8;
@@ -208,4 +210,66 @@ page {
 .tag-danger {
   background: #FFEBEB;
   color: var(--color-danger);
+}
+.tag-task {
+  background: var(--color-warning);
+  color: #fff;
+}
+.tag-success {
+  background: #E6F6EC;
+  color: var(--color-success);
+}
+
+/* ===== 通用按钮（替代未构建 npm 时的 t-button） ===== */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: #fff;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.btn-primary.disabled,
+.btn-primary[disabled] {
+  opacity: 0.5;
+}
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 2rpx solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+}
+.btn-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+.btn-hover {
+  opacity: 0.8;
+}
+
+/* ===== 通用文字操作（删除/危险动作，带触控热区） ===== */
+.text-action-danger {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  padding: 12rpx 16rpx;
+  transition: opacity 0.15s;
+}
+.text-action-danger:active {
+  opacity: 0.6;
 }

@@ -186,6 +186,18 @@ Page({
     })
   },
 
+  // 图片加载失败兜底
+  onImgError(e) {
+    const { side, index } = e.currentTarget.dataset
+    if (side === undefined || index === undefined) return
+    this.setData({ [`${side}List[${index}]._coverFail`]: true })
+  },
+  onAvatarError(e) {
+    const { side, index } = e.currentTarget.dataset
+    if (side === undefined || index === undefined) return
+    this.setData({ [`${side}List[${index}]._avatarFail`]: true })
+  },
+
   goSearch() {
     wx.navigateTo({ url: '/pages/search/search' })
   },

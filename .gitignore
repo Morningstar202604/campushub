@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
-miniprogram_npm/
+# NOTE: miniprogram/miniprogram_npm/ is the built npm output — it IS committed
+# so clones render tdesign components without running "build npm".
+# Unused components are stripped at upload time (ignoreUploadUnusedFiles: true).
 
 # Build output
 dist/
