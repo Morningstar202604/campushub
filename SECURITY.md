@@ -5,7 +5,7 @@
 If you discover a security vulnerability in this project, please report it responsibly:
 
 1. **Do not** open a public GitHub issue.
-2. Use [GitHub's private vulnerability reporting](https://github.com/Morningstar202604/campushub/security/advisories/new), or email the maintainer directly.
+2. Open a [security issue on GitCode](https://gitcode.com/badhope/campushub/issues) (mark it clearly as a security report), or email the maintainer directly.
 3. Include a clear description of the vulnerability, steps to reproduce, and the potential impact.
 
 We will acknowledge receipt within 48 hours and aim to provide a fix or mitigation within 14 days, depending on severity.

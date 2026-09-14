@@ -3,15 +3,15 @@
 > **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
 > Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
 >
-> 📖 [使用说明书](./docs/USER_GUIDE.md) ｜ 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](https://Morningstar202604.github.io/campushub/)
+> 📖 [使用说明书](./docs/USER_GUIDE.md) ｜ 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](./index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-0.7.0-green.svg)](./CHANGELOG.md)
 [![Cloud](https://img.shields.io/badge/WeChat-CloudBase-orange.svg)](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![Stars](https://img.shields.io/github/stars/Morningstar202604/campushub?style=social)](https://github.com/Morningstar202604/campushub)
+[![GitCode](https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue)](https://gitcode.com/badhope/campushub)
 
-> If this project helps you, please give it a ★ **Star** so more people can find it. Issues and [PRs](https://github.com/Morningstar202604/campushub/pulls) are welcome.
+> If this project helps you, please give it a ★ **Star** so more people can find it. Issues and [PRs](https://gitcode.com/badhope/campushub/issues) are welcome.
 >
 > **Search keywords**: wechat miniprogram open source / campus community / open-source forum / second-hand market mini program / cloudbase / tieba-style / student marketplace / WeChat Mini Program forum.
 
@@ -202,9 +202,9 @@ This project is open-sourced under **Apache License 2.0** and mirrored across th
 
 | Platform | URL | Role |
 |----------|-----|------|
-| **GitHub** | [github.com/Morningstar202604/campushub](https://github.com/Morningstar202604/campushub) | Canonical source |
-| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Mirror |
+| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Canonical source (currently reachable) |
 | **Gitee** | [gitee.com/badhope/campushub](https://gitee.com/badhope/campushub) | Mirror (China access) |
+| GitHub | github.com/Morningstar202604/campushub | ⚠️ Currently unreachable (404) — verify before syncing |
 
 Sync is manual by design: commit once locally, push to all three remotes — see [`docs/SYNC.md`](./docs/SYNC.md).
 

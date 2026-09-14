@@ -3,13 +3,13 @@
 > **面向本校师生的校园内容平台（微信小程序 + 云开发）—— 一校一署，开箱即用。**
 > 多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台，零成本部署。
 >
-> 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](https://Morningstar202604.github.io/campushub/)
+> 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](../index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
 [![Version](https://img.shields.io/badge/version-0.6.0-green.svg)](../CHANGELOG.md)
-[![Stars](https://img.shields.io/github/stars/Morningstar202604/campushub?style=social)](https://github.com/Morningstar202604/campushub)
+[![GitCode](https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue)](https://gitcode.com/badhope/campushub)
 
-> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://github.com/Morningstar202604/campushub/issues) 与 [PR](https://github.com/Morningstar202604/campushub/pulls)。
+> 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://gitcode.com/badhope/campushub/issues) 与 [PR](https://gitcode.com/badhope/campushub/pulls)。
 >
 > **搜索关键词**：微信小程序开源 / 校园小程序 / 校园服务 / 校园二手 / 云开发开源 / 校园信息发布 / 学习生活助手
 
@@ -87,7 +87,8 @@ npm install          # 安装依赖 + 自动同步内核层
 | 平台 | 地址 | 角色 |
 |------|------|------|
 | **GitCode** | gitcode.com/badhope/campushub | 源仓库 |
-| **GitHub** | github.com/Morningstar202604/campushub | 镜像 + CI |
+| **GitCode** | gitcode.com/badhope/campushub | 主源（当前可用） |
+| GitHub | github.com/Morningstar202604/campushub | ⚠️ 暂不可访问（404） |
 | **Gitee** | gitee.com/badhope/campushub | 镜像（国内访问） |
 
 ## 开源协议
