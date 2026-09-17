@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 580" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+<rect width="920" height="580" fill="#FFFFFF"/>
+<defs><marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#9AA7B8"/></marker></defs>
+<text x="460.0" y="40" font-size="22" font-weight="700" fill="#1F2D3D" text-anchor="middle">CampusHub 系统架构</text>
+<text x="460.0" y="62" font-size="13" font-weight="400" fill="#7A8699" text-anchor="middle">微信小程序 + 微信云开发（CloudBase）· 三层架构</text>
+<rect x="70" y="84" width="780" height="96" rx="12" fill="#EAF2FB" stroke="#4A90D9" stroke-width="1.6"/>
+<text x="90" y="112" font-size="15" font-weight="700" fill="#2F6FB0" text-anchor="start">① 微信小程序前端</text>
+<text x="90" y="134" font-size="12.5" font-weight="400" fill="#41506B" text-anchor="start">原生小程序 · TDesign 组件库 · 23 个页面 · rpx 自适应 · 全局登录态</text>
+<rect x="90" y="150" width="170" height="26" rx="6" fill="#FFFFFF" stroke="#9CC2E8" stroke-width="1"/>
+<text x="175.0" y="166.85" font-size="11" fill="#41506B" text-anchor="middle">首页瀑布流</text>
+<rect x="278" y="150" width="170" height="26" rx="6" fill="#FFFFFF" stroke="#9CC2E8" stroke-width="1"/>
+<text x="363.0" y="166.85" font-size="11" fill="#41506B" text-anchor="middle">二手市场</text>
+<rect x="466" y="150" width="170" height="26" rx="6" fill="#FFFFFF" stroke="#9CC2E8" stroke-width="1"/>
+<text x="551.0" y="166.85" font-size="11" fill="#41506B" text-anchor="middle">校园指南</text>
+<rect x="654" y="150" width="170" height="26" rx="6" fill="#FFFFFF" stroke="#9CC2E8" stroke-width="1"/>
+<text x="739.0" y="166.85" font-size="11" fill="#41506B" text-anchor="middle">个人中心</text>
+<line x1="460" y1="180" x2="460" y2="206" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="70" y="212" width="780" height="182" rx="12" fill="#F7F9FC" stroke="#4A90D9" stroke-width="1.6"/>
+<text x="90" y="240" font-size="15" font-weight="700" fill="#2F6FB0" text-anchor="start">② 云函数 API 层（34 个云函数）</text>
+<text x="90" y="260" font-size="12.5" font-weight="400" fill="#41506B" text-anchor="start">按资源分组的云函数，统一经共享内核做鉴权 / 内容安全 / 限流</text>
+<rect x="90" y="280" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="165.0" y="297.85" font-size="11" fill="#41506B" text-anchor="middle">post-* 发帖</text>
+<rect x="254" y="280" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="329.0" y="297.85" font-size="11" fill="#41506B" text-anchor="middle">product-* 二手</text>
+<rect x="418" y="280" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="493.0" y="297.85" font-size="11" fill="#41506B" text-anchor="middle">comment-* 评论</text>
+<rect x="90" y="320" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="165.0" y="337.85" font-size="11" fill="#41506B" text-anchor="middle">search 搜索</text>
+<rect x="254" y="320" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="329.0" y="337.85" font-size="11" fill="#41506B" text-anchor="middle">checkin 签到</text>
+<rect x="418" y="320" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="493.0" y="337.85" font-size="11" fill="#41506B" text-anchor="middle">notification 通知</text>
+<rect x="90" y="360" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="165.0" y="377.85" font-size="11" fill="#41506B" text-anchor="middle">admin 审核台</text>
+<rect x="254" y="360" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="329.0" y="377.85" font-size="11" fill="#41506B" text-anchor="middle">verify 校园认证</text>
+<rect x="418" y="360" width="150" height="28" rx="6" fill="#FFFFFF" stroke="#C7D2DE" stroke-width="1"/>
+<text x="493.0" y="377.85" font-size="11" fill="#41506B" text-anchor="middle">category 类目</text>
+<rect x="584" y="278" width="250" height="104" rx="12" fill="#FFF4E0" stroke="#F0A500" stroke-width="1.6"/>
+<text x="600" y="302" font-size="14" font-weight="700" fill="#B5790A" text-anchor="start">★ 共享内核层</text>
+<text x="600" y="324" font-size="12" font-weight="400" fill="#8A6212" text-anchor="start">cloudfunctions/common</text>
+<text x="600" y="344" font-size="11.5" font-weight="400" fill="#8A6212" text-anchor="start">9 个模块 · 单一数据源</text>
+<text x="600" y="362" font-size="11.5" font-weight="400" fill="#8A6212" text-anchor="start">鉴权 / 内容安全 / 限流</text>
+<text x="600" y="380" font-size="11.5" font-weight="400" fill="#8A6212" text-anchor="start">软删除 / 索引定义</text>
+<line x1="460" y1="394" x2="460" y2="416" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="70" y="420" width="780" height="120" rx="12" fill="#E9F7EF" stroke="#27AE60" stroke-width="1.6"/>
+<text x="90" y="446" font-size="15" font-weight="700" fill="#1E8449" text-anchor="start">③ 微信云开发 CloudBase</text>
+<rect x="90" y="460" width="232" height="66" rx="12" fill="#FFFFFF" stroke="#27AE60" stroke-width="1.2"/>
+<text x="206" y="486" font-size="13.5" font-weight="700" fill="#1E8449" text-anchor="middle">云数据库</text>
+<text x="206" y="508" font-size="11.5" font-weight="400" fill="#41506B" text-anchor="middle">21 个集合 · 41 索引</text>
+<rect x="346" y="460" width="232" height="66" rx="12" fill="#FFFFFF" stroke="#27AE60" stroke-width="1.2"/>
+<text x="462" y="486" font-size="13.5" font-weight="700" fill="#1E8449" text-anchor="middle">云存储</text>
+<text x="462" y="508" font-size="11.5" font-weight="400" fill="#41506B" text-anchor="middle">图片 / 海报资源</text>
+<rect x="602" y="460" width="232" height="66" rx="12" fill="#FFFFFF" stroke="#27AE60" stroke-width="1.2"/>
+<text x="718" y="486" font-size="13.5" font-weight="700" fill="#1E8449" text-anchor="middle">云调用</text>
+<text x="718" y="508" font-size="11.5" font-weight="400" fill="#41506B" text-anchor="middle">msgSecCheck / imgSecCheck · 订阅消息</text>
+<text x="460.0" y="562" font-size="11.5" font-weight="400" fill="#7A8699" text-anchor="middle">所有 UGC 经微信内容安全校验（fail-closed：任何异常即拒绝发布，绝不放行未检内容）</text>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 470" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+<rect width="880" height="470" fill="#FFFFFF"/>
+<defs><marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#9AA7B8"/></marker></defs>
+<text x="440.0" y="34" font-size="20" font-weight="700" fill="#1F2D3D" text-anchor="middle">内容模型与分类树</text>
+<text x="440.0" y="56" font-size="12.5" font-weight="400" fill="#7A8699" text-anchor="middle">多维分类 × 五类内容 · 单一索引覆盖任意层级筛选</text>
+<rect x="150" y="80" width="190" height="40" rx="10" fill="#EAF2FB" stroke="#4A90D9" stroke-width="1.6"/>
+<text x="245.0" y="104.725" font-size="13.5" font-weight="700" fill="#1F2D3D" text-anchor="middle">校区 / 兴趣圈 (Zone)</text>
+<rect x="30" y="170" width="165" height="38" rx="10" fill="#EAF2FB" stroke="#4A90D9" stroke-width="1.6"/>
+<text x="112.5" y="193.375" font-size="12.5" font-weight="700" fill="#1F2D3D" text-anchor="middle">版块大类 (Category)</text>
+<rect x="250" y="170" width="165" height="38" rx="10" fill="#EAF2FB" stroke="#4A90D9" stroke-width="1.6"/>
+<text x="332.5" y="193.375" font-size="12.5" font-weight="700" fill="#1F2D3D" text-anchor="middle">版块大类 (Category)</text>
+<line x1="245" y1="120" x2="112" y2="170" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="245" y1="120" x2="332" y2="170" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="20" y="270" width="140" height="40" rx="10" fill="#FFF4E0" stroke="#F0A500" stroke-width="1.6"/>
+<text x="90.0" y="294.375" font-size="12.5" font-weight="700" fill="#1F2D3D" text-anchor="middle">子版 (Board)</text>
+<rect x="160" y="270" width="140" height="40" rx="10" fill="#FFF4E0" stroke="#F0A500" stroke-width="1.6"/>
+<text x="230.0" y="294.375" font-size="12.5" font-weight="700" fill="#1F2D3D" text-anchor="middle">子版 (Board)</text>
+<rect x="305" y="270" width="140" height="40" rx="10" fill="#FFF4E0" stroke="#F0A500" stroke-width="1.6"/>
+<text x="375.0" y="294.375" font-size="12.5" font-weight="700" fill="#1F2D3D" text-anchor="middle">子版 (Board)</text>
+<rect x="445" y="270" width="140" height="40" rx="10" fill="#FFF4E0" stroke="#F0A500" stroke-width="1.6"/>
+<text x="515.0" y="294.375" font-size="12.5" font-weight="700" fill="#1F2D3D" text-anchor="middle">子版 (Board)</text>
+<line x1="112" y1="208" x2="90" y2="270" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="112" y1="208" x2="230" y2="270" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="332" y1="208" x2="375" y2="270" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="332" y1="208" x2="515" y2="270" stroke="#9AA7B8" stroke-width="2" marker-end="url(#ah)"/>
+<text x="245" y="335" font-size="11" font-weight="400" fill="#B5790A" text-anchor="middle">↑ 发帖仅限叶子节点（Board）</text>
+<rect x="20" y="356" width="430" height="84" rx="10" fill="#F7F9FC" stroke="#C7D2DE"/>
+<text x="36" y="384" font-size="13.5" font-weight="700" fill="#2F6FB0" text-anchor="start">categoryPath 祖先数组</text>
+<text x="36" y="406" font-size="11.5" font-weight="400" fill="#41506B" text-anchor="start">• 单一索引即可按任意父级（Zone/Category）筛选</text>
+<text x="36" y="426" font-size="11.5" font-weight="400" fill="#41506B" text-anchor="start">• 发帖绑定叶子节点，层级结构由后台管理</text>
+<rect x="500" y="80" width="360" height="360" rx="12" fill="#F7F9FC" stroke="#4A90D9"/>
+<text x="680" y="108" font-size="14" font-weight="700" fill="#2F6FB0" text-anchor="middle">五类内容 VALID_KINDS</text>
+<rect x="524" y="130" width="312" height="44" rx="8" fill="#FFFFFF" stroke="#C7D2DE"/>
+<text x="540" y="157" font-size="13" font-weight="700" fill="#1F2D3D" text-anchor="start">📝 帖子 post</text>
+<text x="700" y="157" font-size="11.5" font-weight="400" fill="#7A8699" text-anchor="start">普通图文贴</text>
+<rect x="524" y="184" width="312" height="44" rx="8" fill="#FFFFFF" stroke="#C7D2DE"/>
+<text x="540" y="211" font-size="13" font-weight="700" fill="#1F2D3D" text-anchor="start">✅ 任务 task</text>
+<text x="700" y="211" font-size="11.5" font-weight="400" fill="#7A8699" text-anchor="start">带 TTL 自动过期</text>
+<rect x="524" y="238" width="312" height="44" rx="8" fill="#FFFFFF" stroke="#C7D2DE"/>
+<text x="540" y="265" font-size="13" font-weight="700" fill="#1F2D3D" text-anchor="start">🔍 失物 lost</text>
+<text x="700" y="265" font-size="11.5" font-weight="400" fill="#7A8699" text-anchor="start">失物登记</text>
+<rect x="524" y="292" width="312" height="44" rx="8" fill="#FFFFFF" stroke="#C7D2DE"/>
+<text x="540" y="319" font-size="13" font-weight="700" fill="#1F2D3D" text-anchor="start">🎁 招领 found</text>
+<text x="700" y="319" font-size="11.5" font-weight="400" fill="#7A8699" text-anchor="start">拾得招领</text>
+<rect x="524" y="346" width="312" height="44" rx="8" fill="#FFFFFF" stroke="#C7D2DE"/>
+<text x="540" y="373" font-size="13" font-weight="700" fill="#1F2D3D" text-anchor="start">💌 表白 confession</text>
+<text x="700" y="373" font-size="11.5" font-weight="400" fill="#7A8699" text-anchor="start">表白墙</text>
+<text x="680" y="440" font-size="11" font-weight="400" fill="#7A8699" text-anchor="middle">任务贴支持 3/7/15/30 天 TTL，定时归档 + 已解决标记</text>
+</svg>

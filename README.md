@@ -4,242 +4,262 @@
 
 > **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
 > Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
->
-> 📖 [使用说明书](./docs/USER_GUIDE.md) ｜ 🚀 [部署上线指南](./docs/DEPLOY.md) ｜ 💰 [成本方案](./docs/COST.md) ｜ ⚖️ [合规要点](./docs/COMPLIANCE.md) ｜ 🇨🇳 [中文文档](./docs/README.zh-CN.md) ｜ 🇬🇧 [English](#overview) | 🌐 [Landing Page](./index.html)
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-0.8.1-green.svg)](./CHANGELOG.md)
-[![Cloud](https://img.shields.io/badge/WeChat-CloudBase-orange.svg)](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![GitCode](https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue)](https://gitcode.com/badhope/campushub)
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"/></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.8.1-green.svg" alt="Version"/></a>
+  <a href="https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html"><img src="https://img.shields.io/badge/WeChat-CloudBase-orange.svg" alt="CloudBase"/></a>
+  <a href="https://gitcode.com/badhope/campushub"><img src="https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue" alt="GitCode"/></a>
+  <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"/></a>
+</p>
 
-> If this project helps you, please give it a ★ **Star** so more people can find it. Issues and [PRs](https://gitcode.com/badhope/campushub/issues) are welcome.
->
-> **Search keywords**: wechat miniprogram open source / campus community / open-source forum / second-hand market mini program / cloudbase / tieba-style / student marketplace / WeChat Mini Program forum.
+<p align="center">
+  📖 <a href="./docs/USER_GUIDE.md">使用说明书</a> ｜
+  🚀 <a href="./docs/DEPLOY.md">部署上线指南</a> ｜
+  💰 <a href="./docs/COST.md">成本方案</a> ｜
+  ⚖️ <a href="./docs/COMPLIANCE.md">合规要点</a> ｜
+  🇨🇳 <a href="./docs/README.zh-CN.md">中文文档</a> ｜
+  🌐 <a href="./index.html">Landing Page</a>
+</p>
+
+> If this project helps you, please give it a ⭐ **Star** on <a href="https://gitcode.com/badhope/campushub">GitCode</a> so more campuses can find it. Issues and PRs are welcome.
 
 ---
 
-## Overview
-
-CampusHub is a campus content platform built on **WeChat Mini Program + WeChat CloudBase**. It follows a **one-school-per-deployment** model: users post, ask questions, trade, and connect under a **multi-level category tree**.
-
-- Content **defaults to your own campus** — deploy one environment per school.
-- The category tree (Zone → Category → Board, 3 levels) is **managed via admin UI** — no code changes or redeployment needed to add a school or open a new category.
-- Task-type posts support **auto-expiry** and **resolved marking**, keeping the feed clean.
-
-## Screenshots / 截图
+## 📸 Screenshots / 截图
 
 <p align="center">
-  <img src="docs/screenshots/index.png" alt="首页" width="180" />
-  <img src="docs/screenshots/market.png" alt="二手市场" width="180" />
-  <img src="docs/screenshots/admin.png" alt="管理台" width="180" />
+  <img src="docs/screenshots/index.png" alt="首页" width="160" />
+  <img src="docs/screenshots/market.png" alt="二手市场" width="160" />
+  <img src="docs/screenshots/lost-found.png" alt="失物招领" width="160" />
+  <img src="docs/screenshots/profile.png" alt="个人中心" width="160" />
 </p>
 
-> 24 个核心页面整机长图（按「核心主流程 / 交易闭环 / 校园特色 / 个人中心 / 管理端」5 组排版）。
-> Full 24-screen overview wall, grouped into 5 flows: core flow / market loop / campus features / profile / admin.
+<p align="center">
+  <a href="./docs/screenshots/overview.png"><b>查看 24 页总览长图（1634×6170）</b></a> ｜
+  <a href="./docs/screenshots/demo.mp4"><b>观看使用视频（37s）</b></a> ｜
+  <a href="./docs/preview.html"><b>打开可交互原型</b></a>
+</p>
 
-- 📷 **单页高清截图（24 张，750×1624）**：[`docs/screenshots/`](./docs/screenshots/)
-- 🖼️ **24 页总览长图**：[`docs/screenshots/overview.png`](./docs/screenshots/overview.png)
-- 🎬 **使用演示视频（37s，1080×1920，带中文字幕）**：[`docs/screenshots/demo.mp4`](./docs/screenshots/demo.mp4)
-- 💻 **可交互 HTML 原型（24 页可点跳转）**：[`docs/preview.html`](./docs/preview.html)
-- 🛠️ **界面与体验优化方案**：[`docs/OPTIMIZATION_PLAN.md`](./docs/OPTIMIZATION_PLAN.md)
+- 📁 **24 张单页高清截图（750×1624）**：[`docs/screenshots/`](./docs/screenshots/)
+- 🛠️ **界面与后端优化方案**：[`docs/OPTIMIZATION_PLAN.md`](./docs/OPTIMIZATION_PLAN.md)
 
-## Features
+---
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-level Categories** | Zone → Category → Board (3-tier); `categoryPath` ancestor array enables filtering by any parent node; posts restricted to leaf nodes |
-| **Feed Homepage** | Waterfall layout for posts + products; Recommend / Latest / Second-hand tabs; category filter + expired archive entry |
-| **Rich Posts** | Image + text posts, categories, tags, anonymous posting, drafts, image preview |
-| **Task & Expiry** | Task posts with 3/7/15/30-day TTL; 6-hourly cron scan auto-archives expired tasks; author/admin can mark "resolved" |
-| **Second-hand Market** | Product listings with price, condition, trade type, contact info; mark as sold; edit listings |
-| **Nested Comments** | Threaded replies (floors + sub-replies), comment likes, reply-to-user |
-| **Follow System** | Follow/unfollow users, follower/following counts, user profile pages |
-| **Daily Check-in** | Consecutive check-in streak + credit points with weekly bonus |
-| **In-app Notifications** | Auto-generated notifications for likes, comments, and follows |
-| **Campus Guides** | Curated articles (freshman guide, study tips, etc.) with category filter |
-| **Search** | Cross-collection search (posts + products + guides) with title + content matching and keyword highlighting |
-| **User Profiles** | Public profile page with stats, recent posts, follow button |
-| **Content Safety** | All UGC goes through WeChat's `msgSecCheck` + `imgSecCheck` — **fail-closed** (any error = reject) |
-| **Admin Console** | Report review, ban/unban, pin/essence posts, user list, feedback management, category CRUD, announcement management, operation audit logs |
-| **Category Management** | Admin UI for adding schools, categories, boards — pure operational action, no code changes |
-| **Announcements** | Admin-published notices shown at the top of the homepage (≤3, pinned first) |
-| **Points Mall** | Redeem check-in points for rename tokens (first nickname change is free) |
-| **Auto Backup** | Daily 03:00 scheduled snapshot of core collections into `backups` (7-day retention) |
-| **Admin Audit Logs** | Sensitive admin actions (ban/delete/pin/verify...) written to `admin_logs`, viewable in console |
-| **Post Poster** | One-tap Canvas share card with title/summary/author, saved to photo album |
-| **Search Rate-limit + Hot Words** | Server-side per-user rate limit (10s/3) + real hot queries aggregated from last 7 days |
-| **Cursor Pagination** | Latest-post feed & comments use cursor-based pagination for deep scroll efficiency |
+## 🎯 Overview / 项目简介
 
-## Tech Stack
+CampusHub 是一个基于 **微信小程序 + 微信云开发（CloudBase）** 的开源校园内容社区。采用「**一校一部署**」模式：每个学校/组织独立部署一套环境，学生在多层级分类树下发帖、提问、交易、互动。
 
-- **Frontend**: Native WeChat Mini Program (WebView rendering)
-- **UI Components**: TDesign Mini Program component library
-- **Backend**: WeChat CloudBase (Cloud Functions + Cloud Database + Cloud Storage)
-- **Architecture**: `cloudfunctions/common/` shared kernel layer — single source of truth for auth, content safety, ban enforcement, rate limiting, response format, content deletion, and index definitions
+| 核心能力 | 说明 |
+|---|---|
+| **多级分类** | Zone（校区/兴趣圈）→ Category（版块大类）→ Board（子版），后台 UI 即可调整，无需改代码 |
+| **多元内容** | 帖子、任务、失物、招领、表白、二手商品、校园指南等 7 类内容 |
+| **完整闭环** | 发帖 → 评论 → 点赞收藏 → 关注 → 通知 → 管理审核，覆盖社区全链路 |
+| **安全优先** | 所有 UGC 经微信 `msgSecCheck` / `imgSecCheck`，**fail-closed**：任何异常即拒绝发布 |
+| **近零成本** | 云开发免费额度起步，生产环境 19.9 元/月起 |
 
-## Project Stats
+![CampusHub 系统架构](docs/architecture.svg)
 
-| Metric | Count |
-|--------|-------|
-| Cloud Functions | 37 |
-| Mini Program Pages | 22 |
-| Database Collections | 21 |
-| Defined Indexes | 41 |
-| Cloud Function Common Modules | 9 (synced to all 34 functions) |
+### 为谁而建？
 
-## Directory Structure
+| 👤 角色 | 典型场景 | 关键页面 |
+|---|---|---|
+| 普通学生 | 刷帖、找二手、看指南、评论互动 | 首页 / 帖子详情 / 搜索 |
+| 卖家 | 发布闲置、管理在售、标记已售 | 发布商品 / 我的发布 / 商品详情 |
+| 买家 | 搜索商品、联系卖家、收藏比价 | 二手市场 / 商品详情 / 通知 |
+| 失主 / 拾主 | 发布失物或招领信息 | 发帖（失物/招领）|
+| 管理员 | 审核举报、置顶公告、用户管理 | 审核台 / 校园认证 / 反馈 |
+
+---
+
+## 🏗️ Architecture / 系统架构
+
+系统由 **微信小程序前端 → 云函数 API 层 → 微信云开发后端** 三层构成。
+
+- **前端**：原生小程序，使用 TDesign 组件库，23 个页面，rpx 自适应，全局登录态
+- **API 层**：34 个云函数，按资源（post / product / comment / user 等）分组
+- **共享内核**：`cloudfunctions/common/` 下 9 个模块（auth / security / rate / db / context / content / indexes / bundle / error），通过 `common-bundle.js` 一行的方式同步到所有云函数，保证单一数据源、零漂移
+- **后端**：CloudBase 云数据库（21 集合 / 41 索引）、云存储、云调用（内容安全、订阅消息）
+
+---
+
+## 🧩 Data Model / 内容模型
+
+![CampusHub 内容模型与分类树](docs/data-model.svg)
+
+- **分类树 3 级**：`Zone → Category → Board`，后台可直接增删改，运营动作无需发版
+- **`categoryPath` 祖先数组**：任一节点都保存从根到自身的路径 ID，**单一索引即可按任意父级筛选**，同时强制发帖必须选择叶子节点 `Board`
+- **内容类型 `VALID_KINDS`**：`post` 帖子、`task` 任务、`lost` 失物、`found` 招领、`confession` 表白墙；任务帖支持 3/7/15/30 天 TTL 自动归档
+
+---
+
+## ✨ Features / 核心特性
+
+| 特性 | 描述 |
+|---|---|
+| 🌳 **多级分类** | Zone → Category → Board（3 级）；`categoryPath` 祖先数组支持任意层级筛选；发帖限定叶子节点 |
+| 🏠 **Feed 首页** | 双列瀑布流（帖子 + 商品）；推荐 / 热门 / 最新 Tab；分类筛选；过期归档入口 |
+| 📝 **富文本帖子** | 图文混排、分类、标签、匿名发帖、草稿箱、图片预览 |
+| ⏳ **任务与过期** | 任务帖支持 3/7/15/30 天 TTL；6 小时 cron 自动归档过期任务；作者/管理员可标记「已解决」|
+| 🛒 **二手市场** | 商品列表、价格/成色/交易方式、联系信息、标记已售、编辑商品 |
+| 💬 **嵌套评论** | 楼层 + 子回复、评论点赞、@ 回复 |
+| 👥 **关注系统** | 关注/取关、粉丝/关注数、个人主页 |
+| 📅 **每日签到** | 连续签到 + 积分 + 每周奖励 |
+| 🔔 **站内通知** | 点赞、评论、关注自动生成通知 |
+| 📚 **校园指南** | 新生指南、学习攻略等文章，支持分类筛选 |
+| 🔍 **搜索** | 跨集合搜索（帖子 / 商品 / 指南），标题 + 正文匹配，关键词高亮 |
+| 👤 **用户主页** | 公开资料、最近发布、关注按钮 |
+| 🛡️ **内容安全** | 全部 UGC 经微信内容安全接口；**fail-closed**：异常/超限/违规均拒绝发布 |
+| ⚙️ **管理后台** | 举报审核、封禁/解封、置顶/精华、用户列表、反馈管理、类目 CRUD、公告管理、操作审计 |
+| 🗂️ **类目管理** | 后台 UI 直接添加学校/分类/子版，纯运营动作，无需发版 |
+| 📣 **公告栏** | 管理员发布，首页顶部展示 ≤3 条，支持置顶 |
+| 🪙 **积分商城** | 签到积分兑换改名卡，首次改名免费 |
+| 💾 **自动备份** | 每日 03:00 自动快照核心集合到 `backups`，保留 7 天 |
+| 📋 **管理审计** | 封禁/删除/置顶/认证等敏感操作写入 `admin_logs`，后台可查 |
+| 🖼️ **分享海报** | 一键生成 Canvas 分享卡片，保存到相册 |
+| 🔥 **搜索限流 + 热词** | 服务端按用户限流（10s/3），热词聚合最近 7 天搜索 |
+| 📜 **游标分页** | 最新 feed 与评论使用游标分页，深层滚动不丢序 |
+
+---
+
+## ⚙️ Tech Stack / 技术栈
+
+| 层级 | 技术 |
+|---|---|
+| 前端框架 | 原生微信小程序（WebView 渲染） |
+| UI 组件库 | TDesign Mini Program |
+| 后端服务 | 微信云开发 Cloud Functions |
+| 数据存储 | 微信云数据库 + 云存储 |
+| 开放能力 | 微信登录、内容安全 `msgSecCheck` / `imgSecCheck`、订阅消息、Canvas |
+| 构建工具 | 微信开发者工具 + npm |
+| 同步脚本 | `scripts/sync-common.js`（9 个公共模块自动同步到 34 个云函数） |
+
+---
+
+## 📊 Project Stats / 项目规模
+
+| 指标 | 数量 |
+|---|---|
+| 云函数 | 37 |
+| 小程序页面 | 22 |
+| 数据库集合 | 21 |
+| 已定义索引 | 41 |
+| 公共模块 | 9（同步到 34 个云函数） |
+
+---
+
+## 📂 Directory Structure / 目录结构
 
 ```
 CampusHub/
-├── miniprogram/              # Mini Program frontend
-│   ├── app.js               # Entry (CloudBase init)
-│   ├── app.json             # Global config
-│   ├── app.wxss             # Global styles + Design Tokens
-│   ├── pages/               # 23 pages
-│   ├── components/          # Shared components (category-picker)
-│   └── utils/               # Utilities (request, auth)
-├── cloudfunctions/           # 34 cloud functions
-│   ├── common/              # ★ Shared kernel layer (single source of truth)
-│   │   ├── common-db.js      # Cloud SDK singleton & DB access
-│   │   ├── common-error.js   # Unified error model + wrap()
-│   │   ├── common-context.js # User context & auth (requireActiveUser)
-│   │   ├── common-security.js# fail-closed content safety + checkAdmin
-│   │   ├── common-rate.js    # Rate limiting
-│   │   ├── common-content.js # Content deletion (soft-delete + image recycle + counter rollback)
-│   │   ├── common-indexes.js # ★ Index definitions (single source of truth)
-│   │   └── common-bundle.js  # One-line aggregator export
-│   ├── post-create/          # Create post (leaf-node validation + task expiry)
-│   ├── post-update/          # Edit post (owner only, fail-closed safety)
-│   ├── post-list/            # Post listing (category/status filter)
-│   ├── post-detail/          # Post detail + view count + like/collect status
-│   ├── post-delete/          # Delete post (owner/admin)
-│   ├── product-create/       # Create product (NaN-safe price + safety)
-│   ├── product-update/       # Edit product + mark sold/relite
-│   ├── product-list/         # Product listing
-│   ├── product-detail/       # Product detail + view count
-│   ├── product-delete/       # Delete product (owner/admin)
-│   ├── comment-create/       # Create comment (nested replies + target status check)
-│   ├── comment-list/         # Comment list (threaded: floors + sub-replies)
-│   ├── comment-delete/       # Delete comment (owner/admin)
-│   ├── like/                 # Like/unlike (posts + products + comments)
-│   ├── collect/              # Collect/uncollect + user count sync
-│   ├── follow/               # Follow/unfollow + lists + status check
-│   ├── checkin/              # Daily check-in + streak + points
-│   ├── notification/         # In-app notifications (list/read/unread)
-│   ├── report/               # Report content (dedup + type whitelist)
-│   ├── feedback-create/      # Submit feedback (content safety)
-│   ├── search/               # Cross-collection search (title + content, dedup)
-│   ├── my-list/              # User's own posts/products/collects
-│   ├── category-list/        # Category tree (by parentId drill-down)
-│   ├── category-manage/      # Category CRUD (admin, anti-cycle, level cascade)
-│   ├── guide-list/           # Guide list (paginated)
-│   ├── guide-detail/         # Guide detail (status-filtered)
-│   ├── admin/                # Admin hub (ban/unban/reports/pin/essence/users/feedbacks)
-│   ├── resolve/              # Mark task resolved (author/admin)
-│   ├── task-expire/          # Hourly cron: expire overdue unresolved tasks
-│   ├── user-update/          # Update profile (avatar safety + field validation)
-│   ├── user-profile/         # View other user's profile
-│   ├── login/                # Login/register (openid-based)
-│   └── init-db/              # One-time DB bootstrap (collections + seeds + index check)
-├── scripts/
-│   ├── sync-common.js       # Sync common/ into every cloud function directory
-│   └── SYNC.md              # Three-platform manual sync guide
+├── miniprogram/              # 小程序前端
+│   ├── app.js                # 入口（CloudBase 初始化）
+│   ├── app.json              # 全局配置
+│   ├── app.wxss              # 全局样式 + Design Tokens
+│   ├── pages/                # 23 个页面
+│   ├── components/           # 共享组件（如 category-picker）
+│   └── utils/                # 工具（请求、鉴权）
+├── cloudfunctions/           # 34 个云函数
+│   ├── common/               # ★ 共享内核层（单一数据源）
+│   │   ├── common-bundle.js  # 一行的聚合导出
+│   │   ├── common-context.js # 用户上下文 & 鉴权
+│   │   ├── common-security.js# fail-closed 内容安全
+│   │   ├── common-rate.js    # 限流
+│   │   ├── common-db.js      # 数据库单例
+│   │   ├── common-content.js # 内容删除（软删 + 图片回收 + 计数回滚）
+│   │   ├── common-indexes.js # 索引定义
+│   │   └── common-error.js   # 统一错误模型
+│   ├── post-create/          # 发帖
+│   ├── product-create/       # 发布商品
+│   ├── admin/                # 管理后台
+│   └── ...
 ├── docs/
-│   ├── DEPLOY.md             # ★ Deployment guide (10 steps)
-│   ├── INDEXES.md           # ★ Database index checklist (36 indexes)
-│   ├── SYNC.md              # Three-platform sync instructions
-│   ├── screenshots/         # ★ Showcase assets (24 PNGs + overview + demo.mp4 + README)
-│   ├── preview.html          # Interactive HTML prototype (24 clickable screens)
-│   └── OPTIMIZATION_PLAN.md # UI/UX & backend optimization plan
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml            # CI: JSON validity + JS syntax + common-layer consistency
-│   │   └── deploy.yml        # Manual cloud-function deploy (workflow_dispatch)
-│   └── dependabot.yml
-├── project.config.json      # WeChat DevTools project config (fill your AppID)
-├── package.json             # npm deps + sync:common script + OSS metadata
-├── LICENSE                  # Apache License 2.0
-├── NOTICE                   # Apache NOTICE
-├── CODE_OF_CONDUCT.md       # Contributor Covenant 2.1
-├── CONTRIBUTING.md          # Contribution guide
-├── SECURITY.md              # Security vulnerability reporting
-└── CHANGELOG.md             # Version history
+│   ├── DEPLOY.md             # ★ 部署指南（10 步）
+│   ├── USER_GUIDE.md         # 使用说明书
+│   ├── INDEXES.md            # 索引检查清单
+│   ├── SYNC.md               # 多平台同步说明
+│   ├── screenshots/          # ★ 截图 / 视频 / 展示索引
+│   ├── preview.html          # 可交互 HTML 原型
+│   ├── architecture.svg      # 系统架构图
+│   ├── data-model.svg        # 内容模型与分类树
+│   └── OPTIMIZATION_PLAN.md  # UI/UX 与后端优化方案
+├── scripts/
+│   ├── sync-common.js        # 同步 common/ 到各云函数
+│   └── SYNC.md               # 手动同步指南
+├── .github/workflows/         # CI / CD
+├── project.config.json       # 微信开发者工具配置
+├── package.json              # npm 依赖 + sync:common 脚本
+├── LICENSE                   # Apache-2.0
+└── README.md                 # 本文件
 ```
 
-## Architecture: Shared Kernel Layer
+---
 
-All cloud functions share a single kernel for auth, content safety, ban enforcement, rate limiting, response format, content deletion, and index definitions — all in `cloudfunctions/common/`.
+## 🚀 Quick Start / 快速开始
 
-Each function imports it with one line:
-
-```js
-const { getDB, ok, wrap, requireActiveUser, checkContents, rateLimit, removeContent, checkAdmin } = require('./common-bundle')
-```
-
-Before deploying, run the sync script (also auto-triggered by `npm install` via `prepublishOnly`):
+> 完整部署指南见 [`docs/DEPLOY.md`](./docs/DEPLOY.md) —— 从 AppID 到上线的 10 步。
 
 ```bash
-npm run sync:common
-```
-
-This copies the 9 common files into all 34 cloud function directories, ensuring "one source, zero drift."
-
-## Quick Start
-
-> **Full deployment guide: [`docs/DEPLOY.md`](./docs/DEPLOY.md)** — 10 steps from AppID to production.
-
-```bash
-# 1. Install deps (auto-syncs common layer)
+# 1. 安装依赖（会自动执行 sync:common 同步公共模块）
 npm install
 
-# 2. Build npm in WeChat DevTools (Tools → Build npm)
+# 2. 在微信开发者工具中：工具 → 构建 npm
 
-# 3. Fill in your AppID in project.config.json
-# 4. Fill in your CloudBase env ID in miniprogram/app.js
-# 5. Deploy all 34 cloud functions (right-click each → Upload & Deploy)
-# 6. Configure admin OpenID (cloud function env var: ADMIN_OPENIDS)
-# 7. Call init-db cloud function once (creates collections + seeds + index check)
-# 8. Create 32 database indexes manually in CloudBase console
-# 9. Preview & test
-# 10. Upload → Submit for review → Publish
+# 3. 填写你的小程序 AppID 到 project.config.json
+# 4. 填写你的云开发环境 ID 到 miniprogram/app.js
+# 5. 右键每个云函数 → 上传并部署：云端安装依赖
+# 6. 配置管理员 OpenID（云函数环境变量 ADMIN_OPENIDS）
+# 7. 调用一次 init-db 云函数（创建集合 + 种子数据 + 索引检查）
+# 8. 在云开发控制台手动创建 32 个索引（或按 docs/INDEXES.md 核对）
+# 9. 预览 & 测试
+# 10. 微信开发者工具：上传 → 提交审核 → 发布
 ```
 
-## Design Principles
+---
 
-- **Anonymous posting**: Posts/comments can be anonymous; products cannot (trust isolation)
-- **Fail-closed content safety**: Any content safety API error (unavailable/over-quota/violation) → reject publish, never let content through unchecked
-- **Centralized ban enforcement**: `requireActiveUser()` gates all write operations — no scattered checks
-- **Single source for deletion**: `removeContent()` handles soft-delete + cloud storage image recycle + counter rollback + admin override
-- **Multi-level category filtering**: `categoryPath` ancestor array — one index covers filtering at any tree depth
-- **Task expiry & resolution**: `task-expire` cron excludes resolved tasks; `resolve` checks post status
-- **Index self-check**: `init-db` compares `common-indexes.js` against live indexes and reports `missingIndexes`
-- **Soft delete**: Deletion sets `status='deleted'`, preserving data traceability; counters sync-rollback
-- **Safe search**: Regex-escaped keywords + 20-char limit, no ReDoS/injection
-- **Near-zero cost**: CloudBase free-trial env for dev, 19.9 CNY/mo entry plan in production
+## 🛡️ Design Principles / 设计原则
 
-## Mirrors & Sync
+- **匿名发帖**：帖子/评论支持匿名；商品不允许匿名，便于建立交易信任
+- **Fail-closed 内容安全**：内容安全 API 异常/超限/违规 → 一律拒绝发布，不让任何未检内容通过
+- **集中封禁**：`requireActiveUser()` 统一拦截所有写操作，检查封禁状态，不在各函数里散落校验
+- **单一删除入口**：`removeContent()` 统一处理软删除 + 云存储图片回收 + 计数回滚 + 管理员覆盖
+- **分类索引复用**：`categoryPath` 祖先数组让一个索引覆盖任意层级筛选
+- **任务生命周期**：`task-expire` cron 排除已解决任务，`resolve` 严格校验帖子状态
+- **索引自检**：`init-db` 对比 `common-indexes.js` 与线上索引，输出 `missingIndexes`
+- **软删除优先**：删除只改 `status='deleted'`，保留数据可追踪性
+- **搜索安全**：关键词正则转义 + 20 字符限制，避免 ReDoS / 注入
+- **成本可控**：开发期使用云开发免费环境，生产环境 19.9 元/月起
 
-This project is open-sourced under **Apache License 2.0** and mirrored across three platforms:
+---
 
-| Platform | URL | Role |
-|----------|-----|------|
-| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | Canonical source (currently reachable) |
-| **Gitee** | [gitee.com/badhope/campushub](https://gitee.com/badhope/campushub) | Mirror (China access) |
-| GitHub | github.com/Morningstar202604/campushub | ⚠️ Currently unreachable (404) — verify before syncing |
+## 🌐 Mirrors & Sync / 多平台镜像
 
-Sync is manual by design: commit once locally, push to all three remotes — see [`docs/SYNC.md`](./docs/SYNC.md).
+本项目以 **Apache License 2.0** 开源，并镜像到以下平台：
 
-## Contributing
+| 平台 | 地址 | 说明 |
+|---|---|---|
+| **GitCode** | [gitcode.com/badhope/campushub](https://gitcode.com/badhope/campushub) | 主源（当前可访问） |
+| **Gitee** | [gitee.com/badhope/campushub](https://gitee.com/badhope/campushub) | 国内镜像 |
+| GitHub | github.com/Morningstar202604/campushub | ⚠️ 当前 404，同步前请确认 |
 
-Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, code style, and PR process.
+同步采用本地一次提交、多远端推送的方式，详见 [`docs/SYNC.md`](./docs/SYNC.md)。
 
-## Changelog
+---
 
-See [CHANGELOG.md](./CHANGELOG.md) for version history.
+## 🤝 Contributing / 贡献
 
-**Latest: v0.7.0** — Lost & found, confession wall, hot ranking, campus verification, subscribe-message framework; v0.6.1 security audit fixes (fail-closed images, idempotent likes/checkin, atomic deletes). See [CHANGELOG](./CHANGELOG.md).
+欢迎提交 Issue 和 PR。请先阅读 [`CONTRIBUTING.md`](./CONTRIBUTING.md) 了解开发环境、代码规范和提交流程。
 
-## License
+---
+
+## 📝 Changelog / 更新日志
+
+详见 [`CHANGELOG.md`](./CHANGELOG.md)。
+
+**Latest: v0.8.1**
+
+---
+
+## ⚖️ License / 许可证
 
 [Apache License 2.0](./LICENSE) © 2026 Morningstar202604. See [NOTICE](./NOTICE) for details.
