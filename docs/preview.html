@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CampusHub 校园社区 · 交互原型 v2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+:root{
+  --brand:#4A90D9; --brand-d:#3A7BC0; --brand-l:rgba(74,144,217,.10);
+  --bg:#F5F6FA; --card:#FFF; --t1:#1F2329; --t2:#646A73; --t3:#8F959E;
+  --line:#EBEDF0; --red:#FA5151; --green:#07C160; --orange:#FF976A; --purple:#8B5CF6;
+  --r:12px; --sd:0 1px 2px rgba(31,35,41,.06),0 2px 8px rgba(31,35,41,.04);
+}
+body{background:#20242B;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;gap:28px;flex-wrap:wrap;}
+
+/* ============ 手机外框 ============ */
+.phone{width:375px;height:812px;background:var(--bg);border-radius:44px;overflow:hidden;position:relative;
+  box-shadow:0 32px 80px rgba(0,0,0,.5);border:11px solid #0D0F12;flex-shrink:0;}
+.statusbar{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+  font-size:12.5px;font-weight:600;color:var(--t1);position:absolute;top:0;left:0;right:0;z-index:60;pointer-events:none;}
+.statusbar .sb-r{display:flex;gap:5px;align-items:center;}
+.screen{position:absolute;top:32px;left:0;right:0;bottom:0;display:none;flex-direction:column;background:var(--bg);}
+.screen.active{display:flex;}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;}
+.scroll::-webkit-scrollbar{display:none;}
+
+/* ============ 导航栏 ============ */
+.nav{height:44px;display:flex;align-items:center;padding:0 12px;gap:8px;background:#fff;flex-shrink:0;
+  border-bottom:.5px solid var(--line);position:relative;z-index:10;}
+.nav .nback{width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--t1);}
+.nav .ntitle{font-size:16px;font-weight:600;color:var(--t1);}
+.nav .nspacer{flex:1;}
+.nav .nact{font-size:13px;color:var(--brand);font-weight:600;display:flex;align-items:center;gap:3px;}
+
+/* 首页顶栏（真实项目为顶部自绘栏） */
+.topbar{padding:10px 12px 8px;background:#fff;flex-shrink:0;}
+.topbar-row{display:flex;align-items:center;gap:8px;}
+.topbar-title{font-size:18px;font-weight:700;color:var(--t1);letter-spacing:-.3px;}
+.topbar-title span{color:var(--brand);}
+.topbar-search{flex:1;height:34px;background:var(--bg);border-radius:17px;display:flex;align-items:center;
+  padding:0 11px;gap:6px;color:var(--t3);font-size:12.5px;}
+.topbar-search svg{width:14px;height:14px;flex-shrink:0;}
+.topbar-ico{width:32px;height:32px;border-radius:10px;background:var(--bg);display:flex;align-items:center;
+  justify-content:center;color:var(--t2);position:relative;flex-shrink:0;}
+.topbar-ico .dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--red);
+  border:1.5px solid #fff;}
+
+/* 公告条 */
+.ann{background:linear-gradient(90deg,#FFF7E6,#FFFBF2);margin:8px 12px 0;border-radius:9px;
+  padding:8px 11px;display:flex;align-items:center;gap:7px;font-size:12px;color:#B26A00;border-left:3px solid #FFB020;}
+.ann b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.ann .more{color:#D48806;font-size:11px;flex-shrink:0;}
+
+/* 首页 tab + 筛选 */
+.idxbar{display:flex;align-items:center;background:#fff;padding:0 12px 8px;gap:4px;flex-shrink:0;}
+.idxtab{font-size:14px;color:var(--t2);padding:6px 2px;position:relative;font-weight:500;}
+.idxtab.on{color:var(--t1);font-weight:700;}
+.idxtab.on::after{content:"";position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+  width:18px;height:3px;border-radius:2px;background:var(--brand);}
+.idxbar .grow{flex:1;}
+.catbtn{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--brand);background:var(--brand-l);
+  padding:5px 9px;border-radius:12px;font-weight:600;}
+.catbtn svg{width:13px;height:13px;}
+
+/* ============ 瀑布流 ============ */
+.feed{display:flex;gap:9px;padding:9px 12px 80px;}
+.fcol{flex:1;display:flex;flex-direction:column;gap:9px;min-width:0;}
+.fcard{background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--sd);}
+.ph{background:linear-gradient(135deg,#EEF2F7,#DCE4EE);display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;height:110px;}
+.ph::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 28% 22%,rgba(255,255,255,.55),transparent 58%);}
+.ph-tall{height:150px;}
+.ph-ico{color:#AEB8C4;opacity:.55;position:relative;z-index:1;}
+.g-a{background:linear-gradient(135deg,#E3EDF9,#C8DCF0);}
+.g-b{background:linear-gradient(135deg,#F0E9DE,#E2D5C0);}
+.g-c{background:linear-gradient(135deg,#EAF6EC,#D2EBD8);}
+.g-d{background:linear-gradient(135deg,#F3EAF7,#E2D2EE);}
+.g-e{background:linear-gradient(135deg,#FDF0E6,#F6DCC4);}
+.g-f{background:linear-gradient(135deg,#E9F3F4,#CFE4E8);}
+.fcard-body{padding:9px 10px 10px;}
+.pin-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#fff;background:var(--brand);
+  padding:2px 6px;border-radius:5px;margin-bottom:5px;font-weight:600;}
+.fcard-title{font-size:13.5px;font-weight:600;color:var(--t1);line-height:1.42;}
+.fcard-desc{font-size:12px;color:var(--t2);line-height:1.5;margin-top:4px;}
+.c2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.fcard-tags{margin-top:6px;}
+.ftag{font-size:10.5px;color:var(--brand);background:var(--brand-l);padding:2px 7px;border-radius:9px;font-weight:500;}
+.fcard-meta{display:flex;align-items:center;justify-content:space-between;margin-top:9px;}
+.fmeta-user{display:flex;align-items:center;gap:5px;min-width:0;}
+.fava{width:19px;height:19px;border-radius:50%;background:linear-gradient(135deg,#4A90D9,#7FB2E5);color:#fff;
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.fava.sm2{width:14px;height:14px;font-size:8px;}
+.fname{font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:64px;}
+.vbadge{width:12px;height:12px;border-radius:50%;background:var(--brand);color:#fff;display:inline-flex;
+  align-items:center;justify-content:center;flex-shrink:0;}
+.fstat{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--t3);flex-shrink:0;}
+.fstat svg{width:12px;height:12px;color:#C9CFD6;}
+
+/* ============ 二手网格 ============ */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:9px 12px 80px;}
+.pcard{background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--sd);}
+.pcard .ph{height:112px;}
+.pcard-body{padding:8px 9px 9px;}
+.pcard-title{font-size:12.5px;color:var(--t1);line-height:1.4;font-weight:500;}
+.pcard-price{color:var(--red);font-weight:700;font-size:14.5px;margin-top:5px;display:flex;align-items:baseline;gap:5px;}
+.pcard-orig{color:var(--t3);font-size:10px;font-weight:400;text-decoration:line-through;}
+.pcard-seller{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:10.5px;color:var(--t3);}
+.pcard-loc{margin-left:auto;display:flex;color:var(--t3);}
+
+/* 筛选 chips */
+.chips{display:flex;gap:7px;padding:9px 12px;overflow-x:auto;flex-shrink:0;background:#fff;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;font-size:12.5px;color:var(--t2);background:var(--bg);padding:5.5px 13px;border-radius:14px;}
+.chip.on{background:var(--brand);color:#fff;font-weight:600;}
+
+/* ============ 通用卡片/列表 ============ */
+.card{background:#fff;border-radius:var(--r);margin:9px 12px;padding:13px;box-shadow:var(--sd);}
+.li{display:flex;align-items:center;gap:11px;padding:13px 14px;background:#fff;border-bottom:.5px solid var(--line);}
+.li:last-child{border-bottom:none;}
+.li .lico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.li .ltxt{flex:1;font-size:14px;color:var(--t1);}
+.li .lsub{font-size:11.5px;color:var(--t3);margin-top:2px;}
+.li .larrow{color:#C9CFD6;display:flex;}
+.lgroup{background:#fff;border-radius:var(--r);margin:9px 12px;overflow:hidden;box-shadow:var(--sd);}
+
+/* ============ 详情页 ============ */
+.detail-img{height:230px;background:linear-gradient(135deg,#E3EDF9,#C8DCF0);display:flex;align-items:center;
+  justify-content:center;position:relative;}
+.detail-img .ph-ico{color:#9FB4CA;}
+.detail-img .pageidx{position:absolute;right:11px;bottom:11px;background:rgba(0,0,0,.42);color:#fff;
+  font-size:11px;padding:3px 9px;border-radius:11px;backdrop-filter:blur(6px);}
+.detail-body{background:#fff;border-radius:16px 16px 0 0;margin-top:-16px;position:relative;padding:16px 14px 90px;}
+.detail-title{font-size:18px;font-weight:700;color:var(--t1);line-height:1.4;}
+.detail-price{color:var(--red);font-size:24px;font-weight:700;margin:10px 0 4px;}
+.detail-price small{font-size:14px;font-weight:500;}
+.detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.dtag{font-size:11px;background:var(--bg);color:var(--t2);padding:3.5px 9px;border-radius:8px;}
+.dtag.b{background:var(--brand-l);color:var(--brand);font-weight:600;}
+.detail-text{font-size:14.5px;color:var(--t1);line-height:1.72;margin-top:13px;white-space:pre-wrap;}
+.detail-meta{display:flex;gap:16px;margin-top:14px;padding-top:13px;border-top:.5px solid var(--line);
+  font-size:11.5px;color:var(--t3);}
+.detail-meta span{display:flex;align-items:center;gap:4px;}
+.detail-meta svg{width:13px;height:13px;}
+
+/* 卖家/作者卡 */
+.seller{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;
+  border-top:.5px solid var(--line);border-bottom:.5px solid var(--line);margin-top:12px;}
+.seller-ava{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#4A90D9,#7FB2E5);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;}
+.seller-name{font-size:14px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:5px;}
+.seller-sub{font-size:11.5px;color:var(--t3);margin-top:3px;}
+.btn-follow{margin-left:auto;font-size:12.5px;color:#fff;background:var(--brand);padding:6px 15px;border-radius:15px;font-weight:600;}
+.btn-follow.on{background:var(--bg);color:var(--t2);}
+
+/* 底部操作条 */
+.actionbar{position:absolute;bottom:0;left:0;right:0;height:62px;background:#fff;border-top:.5px solid var(--line);
+  display:flex;align-items:center;gap:10px;padding:0 14px;z-index:30;}
+.abico{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--t3);font-size:10px;width:38px;flex-shrink:0;}
+.abico svg{width:21px;height:21px;}
+.abico.on{color:var(--brand);}
+.abico.on svg{color:var(--red);}
+.abbtn{flex:1;height:42px;border-radius:21px;background:var(--brand);color:#fff;font-size:15px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:6px;}
+.abbtn.ghost{background:#fff;color:var(--brand);border:1.5px solid var(--brand);}
+.abbtn svg{width:17px;height:17px;}
+
+/* ============ 指南 ============ */
+.gcard{background:#fff;border-radius:var(--r);margin:9px 12px;padding:13px;box-shadow:var(--sd);display:flex;gap:11px;}
+.gcard-thumb{width:72px;height:72px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;color:#AEB8C4;}
+.gcard-main{flex:1;min-width:0;}
+.gcard-title{font-size:14px;font-weight:600;color:var(--t1);line-height:1.42;}
+.gcard-desc{font-size:12px;color:var(--t2);line-height:1.5;margin-top:5px;}
+.gcard-foot{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:10.5px;}
+.gcat{color:var(--brand);background:var(--brand-l);padding:2px 7px;border-radius:8px;font-weight:500;}
+.ghot{color:#FF6B35;display:flex;align-items:center;gap:2px;}
+.ghot svg{width:10px;height:10px;}
+.gv{color:var(--t3);display:flex;align-items:center;gap:2px;}
+.gv svg{width:10px;height:10px;}
+
+/* ============ 我的 ============ */
+.hero{background:linear-gradient(140deg,#4A90D9,#6BA9E4);padding:22px 16px 24px;color:#fff;}
+.hero-top{display:flex;align-items:center;gap:12px;}
+.hero-ava{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.22);
+  border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;
+  font-size:23px;font-weight:700;flex-shrink:0;}
+.hero-name{font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.hero-badge{font-size:10.5px;background:rgba(255,255,255,.26);padding:2.5px 8px;border-radius:8px;font-weight:500;}
+.hero-sub{font-size:11.5px;color:rgba(255,255,255,.82);margin-top:5px;}
+.hero-edit{margin-left:auto;color:rgba(255,255,255,.9);display:flex;}
+.stats{display:flex;background:#fff;margin:-14px 12px 0;border-radius:var(--r);padding:14px 0;
+  box-shadow:0 3px 12px rgba(31,35,41,.07);position:relative;}
+.stats>div{flex:1;text-align:center;}
+.stats .sn{font-size:18px;font-weight:700;color:var(--t1);}
+.stats .sl{font-size:11px;color:var(--t3);margin-top:3px;}
+.points-bar{display:flex;align-items:center;gap:9px;background:linear-gradient(90deg,#FFF7E6,#FFFBF2);
+  margin:9px 12px;padding:11px 13px;border-radius:var(--r);border-left:3px solid #FFB020;}
+.points-bar .pn{font-size:20px;font-weight:700;color:#D48806;}
+.points-bar .pl{font-size:11.5px;color:#B26A00;}
+.points-bar .pbtn{margin-left:auto;font-size:11.5px;color:#fff;background:#FFB020;padding:5px 12px;
+  border-radius:12px;font-weight:600;}
+
+/* ============ 底部 tabBar ============ */
+.tabbar{height:58px;background:#fff;border-top:.5px solid var(--line);display:flex;position:absolute;
+  bottom:0;left:0;right:0;z-index:40;padding-bottom:2px;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--t3);font-size:10.5px;}
+.tab svg{width:23px;height:23px;}
+.tab.on{color:var(--brand);font-weight:600;}
+
+/* ============ FAB + 发布面板 ============ */
+.fab{position:absolute;right:16px;bottom:74px;width:50px;height:50px;border-radius:50%;
+  background:linear-gradient(135deg,#4A90D9,#6BA9E4);color:#fff;display:flex;align-items:center;
+  justify-content:center;box-shadow:0 6px 18px rgba(74,144,217,.42);z-index:35;}
+.fab svg{width:26px;height:26px;}
+.sheet-mask{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:70;display:none;}
+.sheet-mask.on{display:block;}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;
+  z-index:71;padding:14px 14px 20px;transform:translateY(100%);transition:transform .26s cubic-bezier(.32,.72,0,1);}
+.sheet.on{transform:translateY(0);}
+.sheet-bar{width:34px;height:4px;border-radius:2px;background:#E4E7EB;margin:0 auto 14px;}
+.pitem{display:flex;align-items:center;gap:12px;padding:13px 6px;border-radius:10px;}
+.pitem:active{background:var(--bg);}
+.pitem-ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  color:#fff;flex-shrink:0;}
+.pitem-t{font-size:14.5px;font-weight:600;color:var(--t1);}
+.pitem-d{font-size:11.5px;color:var(--t3);margin-top:3px;}
+.pcancel{margin-top:10px;height:46px;border-radius:13px;background:var(--bg);display:flex;
+  align-items:center;justify-content:center;font-size:15px;color:var(--t2);font-weight:600;}
+
+/* ============ 表单 ============ */
+.fgroup{background:#fff;margin:9px 12px;border-radius:var(--r);padding:13px;box-shadow:var(--sd);}
+.flabel{font-size:12.5px;color:var(--t2);display:flex;align-items:center;gap:5px;margin-bottom:9px;}
+.flabel .req{color:var(--red);}
+.finput{width:100%;border:none;outline:none;font-size:14.5px;color:var(--t1);background:transparent;font-family:inherit;}
+.fta{height:88px;resize:none;line-height:1.6;border:none;outline:none;background:transparent;
+  font-family:inherit;font-size:14.5px;color:var(--t1);display:block;}
+input.finput::placeholder,textarea::placeholder{color:#B7BEC8;font-weight:400;}
+textarea:focus,input:focus{outline:none;border:none;box-shadow:none;}
+.ann-ico{display:flex;align-items:center;color:#E8A33D;flex-shrink:0;}
+.fcounter{text-align:right;font-size:11px;color:var(--t3);margin-top:5px;}
+.fupload{border:1.5px dashed #D6DBE1;border-radius:10px;height:82px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;color:var(--t3);font-size:12px;gap:5px;background:#FAFBFC;}
+.fupload svg{width:20px;height:20px;color:#C9CFD6;}
+.imgsel{display:flex;gap:7px;flex-wrap:wrap;}
+.imgslot{width:78px;height:78px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#AEB8C4;}
+.imgslot.add{border:1.5px dashed #D6DBE1;background:#FAFBFC;color:#C9CFD6;}
+.frow{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--t1);padding:3px 0;}
+.frow .fval{color:var(--t3);font-size:13px;display:flex;align-items:center;gap:4px;}
+.switch{width:44px;height:25px;border-radius:13px;background:#DDE1E6;position:relative;transition:background .2s;}
+.switch.on{background:var(--brand);}
+.switch::after{content:"";position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.switch.on::after{transform:translateX(19px);}
+.submit{height:46px;border-radius:23px;background:var(--brand);color:#fff;display:flex;align-items:center;
+  justify-content:center;font-size:16px;font-weight:600;margin:16px 12px 24px;box-shadow:0 4px 14px rgba(74,144,217,.3);}
+.submit.disabled{background:#D6DBE1;box-shadow:none;}
+
+/* ============ 其他 ============ */
+.notice{padding:11px 13px;border-radius:10px;font-size:12.5px;line-height:1.55;margin:0 12px 8px;
+  display:flex;gap:8px;align-items:flex-start;}
+.notice svg{width:15px;height:15px;flex-shrink:0;margin-top:1px;}
+.notice.warn{background:#FFF9EC;color:#B26A00;}
+.notice.info{background:var(--brand-l);color:var(--brand-d);}
+.notice.good{background:#EAF9EF;color:#0A8F4A;}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 30px;gap:9px;}
+.empty-ico{width:62px;height:62px;border-radius:50%;background:#fff;display:flex;align-items:center;
+  justify-content:center;color:#C9CFD6;box-shadow:var(--sd);}
+.empty-ico svg{width:28px;height:28px;}
+.empty-t{font-size:14px;color:var(--t2);font-weight:500;}
+.empty-s{font-size:12px;color:var(--t3);text-align:center;line-height:1.5;}
+.sec-title{font-size:12.5px;color:var(--t3);padding:14px 16px 5px;font-weight:500;}
+.badge-n{background:var(--red);color:#fff;font-size:9.5px;min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 5px;font-weight:600;}
+.sk{background:linear-gradient(90deg,#EEF0F3 25%,#F7F8FA 37%,#EEF0F3 63%);background-size:400% 100%;
+  animation:sh 1.3s ease infinite;border-radius:7px;}
+@keyframes sh{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/* 说明面板 */
+.legend{width:310px;color:#C6CCD4;font-size:12.5px;line-height:1.85;}
+.legend h3{color:#fff;font-size:15px;margin-bottom:11px;font-weight:700;}
+.legend h4{color:#4A90D9;font-size:12.5px;margin:15px 0 7px;font-weight:700;}
+.legend ul{list-style:none;}
+.legend li{padding-left:15px;position:relative;margin-bottom:5px;}
+.legend li::before{content:"▸";position:absolute;left:0;color:#4A90D9;}
+.legend code{background:#2C323B;padding:1.5px 5px;border-radius:4px;color:#8FC7F5;font-size:11.5px;}
+.legend .k{color:#F5C26B;}
+@media(max-width:760px){body{flex-direction:column;padding:14px;}.legend{width:330px;}}
+
+/* ===== 纯净截图模式：?clean=1 时只留手机本体，无黑边无说明面板 ===== */
+body.clean{background:#fff;padding:0;gap:0;}
+body.clean .legend{display:none;}
+body.clean .phone{border:none;border-radius:0;box-shadow:none;margin:0;
+  width:375px;height:812px;max-width:none;max-height:none;flex:0 0 375px;}
+body.clean{display:block;align-items:stretch;justify-content:flex-start;
+  min-height:0;padding:0;overflow:hidden;}
+body.clean .phone{position:absolute;top:0;left:0;}
+body.clean .scroll{overflow:hidden;}
+body.clean .statusbar{height:28px;padding:0 16px;font-size:12px;}
+body.clean .screen{top:28px;}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span class="sb-r">5G
+    <svg width="17" height="11" viewBox="0 0 24 16" fill="currentColor"><rect x="2" y="4" width="3" height="10" rx="1"/><rect x="7" y="2" width="3" height="12" rx="1"/><rect x="12" y="5" width="3" height="9" rx="1"/><rect x="17" y="1" width="3" height="13" rx="1"/></svg> 100%</span></div>
+
+<!-- ==================== 1. 登录 ==================== -->
+<section class="screen" id="s-login">
+  <div class="scroll" style="display:flex;flex-direction:column;justify-content:center;padding:0 30px;background:linear-gradient(180deg,#EDF4FC,#F5F6FA);">
+    <div style="text-align:center;">
+      <div style="width:78px;height:78px;border-radius:22px;margin:0 auto;background:linear-gradient(135deg,#4A90D9,#6BA9E4);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 10px 26px rgba(74,144,217,.34);"><svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor" ><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4V4zm16 0h-7a2 2 0 00-2 2v14a2 2 0 012-2h7V4z"/></svg></div>
+      <div style="font-size:23px;font-weight:700;color:var(--t1);margin-top:16px;">CampusHub</div>
+      <div style="font-size:12.5px;color:var(--t3);margin-top:6px;">一个校内可信的社区</div>
+    </div>
+    <div style="margin-top:26px;">
+      <div style="background:#fff;border-radius:13px;padding:14px 15px;display:flex;align-items:center;gap:10px;margin-bottom:11px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#EAF9EF;display:flex;align-items:center;justify-content:center;color:var(--green);"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;color:var(--t1);">微信一键登录</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;">openid 静默登录，无需填手机号</div>
+        </div>
+        <div style="color:#C9CFD6;display:flex;"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></div>
+      </div>
+      <div style="background:#fff;border-radius:13px;padding:14px 15px;display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--brand-l);display:flex;align-items:center;justify-content:center;color:var(--brand);"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;color:var(--t1);">完善资料</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;">昵称 + 头像 + 校区，30 秒</div>
+        </div>
+      </div>
+    </div>
+    <div class="notice info" style="margin:16px 0 0;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg><span>微信规定：用户资料由你主动选择提供，我们只用于展示与身份识别</span></div>
+    <div style="text-align:center;font-size:11px;color:var(--t3);margin-top:18px;line-height:1.7;">
+      登录即表示同意<br><span style="color:var(--brand);">《用户协议》</span> 与 <span style="color:var(--brand);">《隐私政策》</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 2. 首页（瀑布流） ==================== -->
+<section class="screen" id="s-index">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="topbar-title">Campus<span>Hub</span></div>
+      <div class="topbar-search"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" ><path d="M10 3a7 7 0 015.6 11.2l4.6 4.6-1.4 1.4-4.6-4.6A7 7 0 1110 3zm0 2a5 5 0 100 10 5 5 0 000-10z"/></svg> 搜索帖子、商品、指南</div>
+      <div class="topbar-ico" data-go="notifications"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" ><path d="M12 22a2.5 2.5 0 002.5-2.5h-5A2.5 2.5 0 0012 22zm7-6v-5a7 7 0 00-5.5-6.8V3a1.5 1.5 0 00-3 0v1.2A7 7 0 005 11v5l-2 2v1h18v-1l-2-2z"/></svg><span class="dot"></span></div>
+    </div>
+  </div>
+  <div class="ann"><span class="ann-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 22a2.5 2.5 0 002.5-2.5h-5A2.5 2.5 0 0012 22zm7-6v-5a7 7 0 00-5.5-6.8V3a1.5 1.5 0 00-3 0v1.2A7 7 0 005 11v5l-2 2v1h18v-1l-2-2z"/></svg></span><b>开学季活动：发布第一条帖子送 50 积分</b><span class="more">详情</span></div>
+  <div class="idxbar">
+    <div class="idxtab on">推荐</div>
+    <div class="idxtab">热门</div>
+    <div class="idxtab">最新</div>
+    <div class="grow"></div>
+    <div class="catbtn" data-go="picker"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg> 全部分类</div>
+  </div>
+  <div class="scroll" style="padding-top:0;">
+    <div class="feed">
+      <div class="fcol">
+<div class="fcard" data-post="0">
+  <div class="ph g-a ph-tall"><span class="ph-ico"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="fcard-body">
+    <div class="pin-badge"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" ><path d="M14 2l8 8-3 1-4 4-1 5-3-3-5 5-2-1 5-5-3-3 5-1 4-4z"/></svg> 置顶</div>
+    <div class="fcard-title c2">周五电竞社 vs 动漫社友谊赛，欢迎围观</div>
+    <div class="fcard-desc c2">本周五晚 7 点，大学生活动中心 3 楼。现场有应援手幅和抽奖，来的人都能拿周边～</div>
+    <div class="fcard-tags"><span class="ftag">#社团活动</span></div>
+    <div class="fcard-meta">
+      <div class="fmeta-user">
+        <div class="fava">计</div>
+        <span class="fname">计算机协会</span>
+        <span class="vbadge"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      </div>
+      <span class="fstat"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 128</span>
+    </div>
+  </div>
+</div>
+<div class="fcard" data-post="3">
+  <div class="ph g-d "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="fcard-body">
+    
+    <div class="fcard-title c2">急！求解高数下册 7.3 课后题</div>
+    <div class="fcard-desc c2">第 12 题卡了俩小时，有没有大佬能给个思路，在线等</div>
+    <div class="fcard-tags"><span class="ftag">#求助</span></div>
+    <div class="fcard-meta">
+      <div class="fmeta-user">
+        <div class="fava">匿</div>
+        <span class="fname">匿名同学</span>
+        
+      </div>
+      <span class="fstat"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 31</span>
+    </div>
+  </div>
+</div>
+<div class="fcard" data-post="4">
+  <div class="ph g-e ph-tall"><span class="ph-ico"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="fcard-body">
+    
+    <div class="fcard-title c2">旧教材免费送，自提</div>
+    <div class="fcard-desc c2">大二转专业了，这些书用不上。高数/线代/大物都有，先到先得</div>
+    <div class="fcard-tags"><span class="ftag">#福利</span></div>
+    <div class="fcard-meta">
+      <div class="fmeta-user">
+        <div class="fava">阿</div>
+        <span class="fname">阿哲</span>
+        <span class="vbadge"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      </div>
+      <span class="fstat"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 210</span>
+    </div>
+  </div>
+</div></div>
+      <div class="fcol">
+<div class="fcard" data-post="1">
+  <div class="ph g-b "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="fcard-body">
+    
+    <div class="fcard-title c2">图书馆四楼自习位拼团</div>
+    <div class="fcard-desc c2">每天下午 2-6 点固定位，互相监督，限 4 人</div>
+    <div class="fcard-tags"><span class="ftag">#学习</span></div>
+    <div class="fcard-meta">
+      <div class="fmeta-user">
+        <div class="fava">小</div>
+        <span class="fname">小林</span>
+        
+      </div>
+      <span class="fstat"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 42</span>
+    </div>
+  </div>
+</div>
+<div class="fcard" data-post="2">
+  <div class="ph g-c ph-tall"><span class="ph-ico"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="fcard-body">
+    
+    <div class="fcard-title c2">南门新开的麻辣香锅测评</div>
+    <div class="fcard-desc c2">人均 25 吃到撑，麻辣度可以选，老板是校友还打 8 折！</div>
+    <div class="fcard-tags"><span class="ftag">#食堂测评</span></div>
+    <div class="fcard-meta">
+      <div class="fmeta-user">
+        <div class="fava">美</div>
+        <span class="fname">美食探索小队</span>
+        <span class="vbadge"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      </div>
+      <span class="fstat"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 76</span>
+    </div>
+  </div>
+</div>
+<div class="fcard" data-post="5">
+  <div class="ph g-f "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="fcard-body">
+    
+    <div class="fcard-title c2">校园卡在二食堂丢了，急</div>
+    <div class="fcard-desc c2">名字首字母 L，卡套是蓝色的，捡到的同学麻烦联系我，重谢！</div>
+    <div class="fcard-tags"><span class="ftag">#寻物</span></div>
+    <div class="fcard-meta">
+      <div class="fmeta-user">
+        <div class="fava">L</div>
+        <span class="fname">L 同学</span>
+        
+      </div>
+      <span class="fstat"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 18</span>
+    </div>
+  </div>
+</div></div>
+    </div>
+  </div>
+  <div class="fab" data-go="publish"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" ><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6v-2z"/></svg></div>
+  <div class="tabbar">
+    <div class="tab on"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1v-10.5z"/></svg><span>首页</span></div>
+    <div class="tab" data-go="market"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M7 4h10l2 5v11a1 1 0 01-1 1H6a1 1 0 01-1-1V9l2-5zm1.2 5l1 6m5.6-6l-1 6M9.5 4l.5 5m4.5-5l-.5 5"/></svg><span>二手</span></div>
+    <div class="tab" data-go="guide"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4V4zm16 0h-7a2 2 0 00-2 2v14a2 2 0 012-2h7V4z"/></svg><span>指南</span></div>
+    <div class="tab" data-go="profile"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg><span>我的</span></div>
+  </div>
+</section>
+
+<!-- ==================== 3. 二手市场 ==================== -->
+<section class="screen" id="s-market">
+  <div class="nav">
+    <div class="ntitle">二手市场</div><div class="nspacer"></div>
+    <div class="nact" data-go="product-publish"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6v-2z"/></svg> 发布</div>
+  </div>
+  <div class="topbar" style="padding:9px 12px;">
+    <div class="topbar-search" style="width:100%;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" ><path d="M10 3a7 7 0 015.6 11.2l4.6 4.6-1.4 1.4-4.6-4.6A7 7 0 1110 3zm0 2a5 5 0 100 10 5 5 0 000-10z"/></svg> 搜商品名 / 分类 / 卖家</div>
+  </div>
+  <div class="chips"><div class="chip on">全部</div><div class="chip">数码</div><div class="chip">书籍</div><div class="chip">出行</div><div class="chip">宿舍</div><div class="chip">穿搭</div></div>
+  <div class="notice info" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg><span>带 <b>蓝 V</b> 的卖家已通过校园认证，交易更放心</span></div>
+  <div class="scroll">
+    <div class="pgrid">
+<div class="pcard" data-product="0">
+  <div class="ph g-a "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">iPad Air 4 64G WiFi 95新</div>
+    <div class="pcard-price">¥1899<span class="pcard-orig">¥2299</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">小</div>
+      <span>小宇</span>
+      <span class="vbadge"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div>
+<div class="pcard" data-product="1">
+  <div class="ph g-b "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">《算法导论》第三版 无笔记</div>
+    <div class="pcard-price">¥45<span class="pcard-orig">¥128</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">林</div>
+      <span>林同学</span>
+      
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div>
+<div class="pcard" data-product="2">
+  <div class="ph g-c "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">九成新山地车 变速 包邮</div>
+    <div class="pcard-price">¥260<span class="pcard-orig">¥699</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">陈</div>
+      <span>陈同学</span>
+      <span class="vbadge"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div>
+<div class="pcard" data-product="3">
+  <div class="ph g-d "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">宿舍小冰箱 静音 制冷好</div>
+    <div class="pcard-price">¥120<span class="pcard-orig">¥399</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">王</div>
+      <span>王同学</span>
+      
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div>
+<div class="pcard" data-product="4">
+  <div class="ph g-e "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">索尼 WH-1000XM4 降噪耳机</div>
+    <div class="pcard-price">¥980<span class="pcard-orig">¥2299</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">阿</div>
+      <span>阿哲</span>
+      <span class="vbadge"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div>
+<div class="pcard" data-product="5">
+  <div class="ph g-f "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">考研英语一 全套资料</div>
+    <div class="pcard-price">¥60<span class="pcard-orig">¥180</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">小</div>
+      <span>小周</span>
+      
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div></div>
+  </div>
+  <div class="tabbar">
+    <div class="tab" data-go="index"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1v-10.5z"/></svg><span>首页</span></div>
+    <div class="tab on"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M7 4h10l2 5v11a1 1 0 01-1 1H6a1 1 0 01-1-1V9l2-5zm1.2 5l1 6m5.6-6l-1 6M9.5 4l.5 5m4.5-5l-.5 5"/></svg><span>二手</span></div>
+    <div class="tab" data-go="guide"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4V4zm16 0h-7a2 2 0 00-2 2v14a2 2 0 012-2h7V4z"/></svg><span>指南</span></div>
+    <div class="tab" data-go="profile"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg><span>我的</span></div>
+  </div>
+</section>
+
+<!-- ==================== 4. 商品详情 ==================== -->
+<section class="screen" id="s-product-detail">
+  <div class="nav"><div class="nback" data-go="market"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div>
+    <div class="ntitle">商品详情</div><div class="nspacer"></div>
+    <div class="nact" data-go="report"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M5 3h2v18H5V3zm3 1h9l-1.5 4L18 12H8V4z"/></svg></div></div>
+  <div class="scroll" style="padding-bottom:74px;">
+    <div class="detail-img"><span class="ph-ico"><svg viewBox="0 0 24 24" width="46" height="46" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span><span class="pageidx">1 / 4</span></div>
+    <div class="detail-body">
+      <div class="detail-title">iPad Air 4 64G WiFi 95新</div>
+      <div class="detail-price"><small>¥</small>1899 <span style="font-size:12px;color:var(--t3);font-weight:400;text-decoration:line-through;margin-left:6px;">¥2299</span></div>
+      <div class="detail-tags">
+        <span class="dtag b">95 新</span><span class="dtag">可小刀</span><span class="dtag">校内自提</span><span class="dtag">当面验机</span>
+      </div>
+      <div class="seller">
+        <div class="seller-ava">小</div>
+        <div style="flex:1;">
+          <div class="seller-name">小宇同学 <span class="vbadge" style="width:14px;height:14px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span></div>
+          <div class="seller-sub">已认证 · 计算机学院 · 发布 12 件 · 好评率 100%</div>
+        </div>
+        <div class="btn-follow">关注</div>
+      </div>
+      <div class="detail-text">大一买的，主要用于记笔记和看网课。屏幕无划痕，成色 95 新，电池健康 92%。配原装充电器 + 保护壳 + 钢化膜（已贴）。
+
+可当面验机，我在东区宿舍，晚上 7 点后都方便。价格小刀可议，谢绝屠龙刀哈。</div>
+      <div class="detail-meta">
+        <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 5c5 0 9 4.5 9 7s-4 7-9 7-9-4.5-9-7 4-7 9-7zm0 2c-3.9 0-7 3.5-7 5s3.1 5 7 5 7-3.5 7-5-3.1-5-7-5zm0 2a3 3 0 110 6 3 3 0 010-6z"/></svg> 286 浏览</span>
+        <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 34 收藏</span>
+        <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm1 5h-2v6l5 3 1-1.7-4-2.3V7z"/></svg> 2 小时前</span>
+      </div>
+      <div class="notice warn" style="margin:14px 0 0;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M5 3h2v18H5V3zm3 1h9l-1.5 4L18 12H8V4z"/></svg><span><b>交易安全提示：</b>请在校内公共场所当面交易、当面验货，拒绝任何形式的提前转账</span></div>
+    </div>
+  </div>
+  <div class="actionbar">
+    <div class="abico"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg><span>收藏</span></div>
+    <div class="abico"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M18 16a3 3 0 012.8 4L21 20v1h-3l-4-4H7l-4-3V4h7l3 3h4a3 3 0 013 3v6h-2zm-9-9H5v9h6.5l1.2 1H15v-8h-4.8L8.8 7H9z"/></svg><span>分享</span></div>
+    <div class="abbtn ghost">私信</div>
+    <div class="abbtn">我想要</div>
+  </div>
+</section>
+
+<!-- ==================== 5. 帖子详情 ==================== -->
+<section class="screen" id="s-post-detail">
+  <div class="nav"><div class="nback" data-go="index"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div>
+    <div class="ntitle">帖子详情</div><div class="nspacer"></div>
+    <div class="nact"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M18 16a3 3 0 012.8 4L21 20v1h-3l-4-4H7l-4-3V4h7l3 3h4a3 3 0 013 3v6h-2zm-9-9H5v9h6.5l1.2 1H15v-8h-4.8L8.8 7H9z"/></svg></div></div>
+  <div class="scroll" style="padding-bottom:74px;">
+    <div class="card" style="margin-bottom:0;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="fava" style="width:36px;height:36px;font-size:15px;">计</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:5px;">
+            计算机协会 <span class="vbadge" style="width:14px;height:14px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span></div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;">社团活动 · 2 分钟前</div>
+        </div>
+        <div class="btn-follow">关注</div>
+      </div>
+      <div class="detail-title" style="font-size:17px;margin-top:13px;">周五电竞社 vs 动漫社友谊赛，欢迎围观</div>
+      <div class="detail-text" style="font-size:14.5px;">本周五晚 7 点，大学生活动中心 3 楼。
+
+现场有应援手幅和抽奖环节，来的人都能拿周边。也欢迎其他社团来串场表演～</div>
+      <div style="display:flex;gap:7px;margin-top:12px;">
+        <div class="ph g-a" style="flex:1;height:96px;border-radius:9px;"></div>
+        <div class="ph g-c" style="flex:1;height:96px;border-radius:9px;"></div>
+        <div class="ph g-e" style="flex:1;height:96px;border-radius:9px;"></div>
+      </div>
+      <div class="detail-meta">
+        <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 5c5 0 9 4.5 9 7s-4 7-9 7-9-4.5-9-7 4-7 9-7zm0 2c-3.9 0-7 3.5-7 5s3.1 5 7 5 7-3.5 7-5-3.1-5-7-5zm0 2a3 3 0 110 6 3 3 0 010-6z"/></svg> 428 浏览</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 128 赞</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg> 36 评论</span>
+      </div>
+    </div>
+
+    <!-- 评论（楼中楼） -->
+    <div class="sec-title">全部评论 36</div>
+    <div class="card" style="margin-top:0;">
+      <div style="display:flex;gap:9px;">
+        <div class="fava" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#FF976A,#FFB88A);">林</div>
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--t3);">小林</div>
+          <div style="font-size:13.5px;color:var(--t1);line-height:1.6;margin-top:5px;">几点开始呀？想带室友一起去</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:7px;font-size:11px;color:var(--t3);">
+            <span>2 分钟前</span><span style="display:flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 8</span><span>回复</span>
+          </div>
+          <!-- 子回复 -->
+          <div style="background:var(--bg);border-radius:9px;padding:10px;margin-top:9px;">
+            <div style="display:flex;gap:7px;">
+              <div class="fava sm2" style="width:20px;height:20px;font-size:9px;">计</div>
+              <div style="flex:1;">
+                <div style="font-size:11px;color:var(--t3);">计算机协会 <span style="color:var(--brand);">回复</span> 小林</div>
+                <div style="font-size:13px;color:var(--t1);line-height:1.55;margin-top:4px;">晚 7 点整开始，建议 6:40 就到，前三排视野好～</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:9px;">
+        <div class="fava" style="width:30px;height:30px;font-size:12px;background:#B7BEC8;">匿</div>
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--t3);">匿名同学</div>
+          <div style="font-size:13.5px;color:var(--t1);line-height:1.6;margin-top:5px;">去年去了，氛围很好，还有免费奶茶</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:7px;font-size:11px;color:var(--t3);">
+            <span>20 分钟前</span><span style="display:flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 21</span><span>回复</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="actionbar">
+    <div style="flex:1;height:38px;background:var(--bg);border-radius:19px;display:flex;align-items:center;padding:0 14px;color:var(--t3);font-size:13px;">说点什么…</div>
+    <div class="abico on"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg><span>128</span></div>
+    <div class="abico"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1L12 2z"/></svg><span>收藏</span></div>
+  </div>
+</section>
+
+<!-- ==================== 6. 指南 ==================== -->
+<section class="screen" id="s-guide">
+  <div class="nav"><div class="ntitle">校园指南</div></div>
+  <div class="topbar" style="padding:9px 12px 4px;"><div class="topbar-search" style="width:100%;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" ><path d="M10 3a7 7 0 015.6 11.2l4.6 4.6-1.4 1.4-4.6-4.6A7 7 0 1110 3zm0 2a5 5 0 100 10 5 5 0 000-10z"/></svg> 搜索指南</div></div>
+  <div class="chips"><div class="chip on">全部</div><div class="chip">新生指南</div><div class="chip">选课攻略</div><div class="chip">食堂测评</div><div class="chip">学习攻略</div></div>
+  <div class="scroll">
+    
+    <div class="gcard" data-go="guide-detail">
+      <div class="gcard-thumb ph g-a"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></div>
+      <div class="gcard-main">
+        <div class="gcard-title c2">新生必读：报到第一天要做的 8 件事</div>
+        <div class="gcard-desc c2">从宿舍入住到校园卡激活，按这个顺序走能省半天时间</div>
+        <div class="gcard-foot">
+          <span class="gcat">新生指南</span>
+          <span class="ghot"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2s1 3.5-1 6c-2 2.5-4 4-4 7a5 5 0 0010 0c0-2-1-3-1-3s3 1 3 4a7 7 0 01-14 0c0-5 4-7 5-10 .8-2 2-4 2-4z"/></svg> 热</span>
+          <span class="gv"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg> 已核验</span>
+        </div>
+      </div>
+    </div>
+    <div class="gcard" data-go="guide-detail">
+      <div class="gcard-thumb ph g-b"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></div>
+      <div class="gcard-main">
+        <div class="gcard-title c2">选课避坑指南（2026 修订版）</div>
+        <div class="gcard-desc c2">哪些老师给分好、哪些课作业多，学长学姐的肺腑之言</div>
+        <div class="gcard-foot">
+          <span class="gcat">选课攻略</span>
+          <span class="ghot"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2s1 3.5-1 6c-2 2.5-4 4-4 7a5 5 0 0010 0c0-2-1-3-1-3s3 1 3 4a7 7 0 01-14 0c0-5 4-7 5-10 .8-2 2-4 2-4z"/></svg> 热</span>
+          <span class="gv"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg> 已核验</span>
+        </div>
+      </div>
+    </div>
+    <div class="gcard" data-go="guide-detail">
+      <div class="gcard-thumb ph g-c"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></div>
+      <div class="gcard-main">
+        <div class="gcard-title c2">食堂测评：三个食堂 32 个窗口全吃了一遍</div>
+        <div class="gcard-desc c2">附推荐指数和人均价格，文末有避雷清单</div>
+        <div class="gcard-foot">
+          <span class="gcat">食堂测评</span>
+          <span class="ghot"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2s1 3.5-1 6c-2 2.5-4 4-4 7a5 5 0 0010 0c0-2-1-3-1-3s3 1 3 4a7 7 0 01-14 0c0-5 4-7 5-10 .8-2 2-4 2-4z"/></svg> 热</span>
+          
+        </div>
+      </div>
+    </div>
+    <div class="gcard" data-go="guide-detail">
+      <div class="gcard-thumb ph g-d"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></div>
+      <div class="gcard-main">
+        <div class="gcard-title c2">图书馆自习位生存指南</div>
+        <div class="gcard-desc c2">几点去有座、哪些楼层最安静、充电口在哪</div>
+        <div class="gcard-foot">
+          <span class="gcat">学习攻略</span>
+          
+          <span class="gv"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg> 已核验</span>
+        </div>
+      </div>
+    </div>
+    <div class="gcard" data-go="guide-detail">
+      <div class="gcard-thumb ph g-e"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></div>
+      <div class="gcard-main">
+        <div class="gcard-title c2">校医院、报销、医保：大一新生最容易踩的坑</div>
+        <div class="gcard-desc c2">报销流程其实很简单，附需要准备的全部材料</div>
+        <div class="gcard-foot">
+          <span class="gcat">生活服务</span>
+          
+          <span class="gv"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg> 已核验</span>
+        </div>
+      </div>
+    </div>
+    <div class="gcard" data-go="guide-detail">
+      <div class="gcard-thumb ph g-f"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></div>
+      <div class="gcard-main">
+        <div class="gcard-title c2">社团招新怎么选？300 个社团挑出这 10 个</div>
+        <div class="gcard-desc c2">按兴趣、时间投入和能学到的东西分类</div>
+        <div class="gcard-foot">
+          <span class="gcat">社团活动</span>
+          
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab" data-go="index"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1v-10.5z"/></svg><span>首页</span></div>
+    <div class="tab" data-go="market"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M7 4h10l2 5v11a1 1 0 01-1 1H6a1 1 0 01-1-1V9l2-5zm1.2 5l1 6m5.6-6l-1 6M9.5 4l.5 5m4.5-5l-.5 5"/></svg><span>二手</span></div>
+    <div class="tab on"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4V4zm16 0h-7a2 2 0 00-2 2v14a2 2 0 012-2h7V4z"/></svg><span>指南</span></div>
+    <div class="tab" data-go="profile"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg><span>我的</span></div>
+  </div>
+</section>
+
+<!-- ==================== 7. 指南详情 ==================== -->
+<section class="screen" id="s-guide-detail">
+  <div class="nav"><div class="nback" data-go="guide"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">指南详情</div><div class="nspacer"></div>
+    <div class="nact"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M18 16a3 3 0 012.8 4L21 20v1h-3l-4-4H7l-4-3V4h7l3 3h4a3 3 0 013 3v6h-2zm-9-9H5v9h6.5l1.2 1H15v-8h-4.8L8.8 7H9z"/></svg></div></div>
+  <div class="scroll">
+    <div class="card">
+      <div class="detail-title">新生必读：报到第一天要做的 8 件事</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:11px;color:var(--t3);">
+        <span class="gcat">新生指南</span><span>学工处 · 已核验</span><span>·</span><span>2026-08-20</span>
+      </div>
+      <div class="detail-text">1. 到宿舍楼管处领钥匙，押金条收好
+2. 激活校园卡（图书馆一楼自助机，5 分钟）
+3. 绑定校园网（学号 + 初始密码是身份证后 6 位）
+4. 去校医院体检（记得空腹，带 2 张一寸照）
+5. 到学院报到点交档案，领学生手册
+6. 买床品：校内超市比外面贵 20%，可提前网购寄到快递点
+7. 加班级群 + 辅导员微信
+8. 逛一圈校园，记住食堂、图书馆、超市位置</div>
+      <div class="notice good" style="margin:14px 0 0;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg><span>这篇指南由<b>学工处</b>核验，内容准确</span></div>
+    </div>
+    <div class="sec-title">相关指南</div>
+    <div class="gcard" data-go="guide-detail">
+      <div class="gcard-thumb ph g-b"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></div>
+      <div class="gcard-main"><div class="gcard-title">选课避坑指南（2026 修订版）</div>
+        <div class="gcard-desc">哪些老师给分好、哪些课作业多</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 8. 我的 ==================== -->
+<section class="screen" id="s-profile">
+  <div class="scroll">
+    <div class="hero">
+      <div class="hero-top">
+        <div class="hero-ava">林</div>
+        <div style="flex:1;">
+          <div class="hero-name">同学小林 <span class="hero-badge">已认证</span></div>
+          <div class="hero-sub">计算机学院 · 大二 · 某某大学</div>
+        </div>
+        <div class="hero-edit" data-go="profile-edit"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" ><path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2zM20.7 7.3a1 1 0 000-1.4l-2.6-2.6a1 1 0 00-1.4 0l-2 2L18.7 9l2-1.7z"/></svg></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div><div class="sn">12</div><div class="sl">发布</div></div>
+      <div><div class="sn">8</div><div class="sl">收藏</div></div>
+      <div><div class="sn">34</div><div class="sl">粉丝</div></div>
+      <div><div class="sn">27</div><div class="sl">关注</div></div>
+    </div>
+    <div class="points-bar">
+      <div><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1L12 2z"/></svg></div>
+      <div><div class="pn">860</div><div class="pl">积分 · 连续签到 7 天 (+20 周奖励)</div></div>
+      <div class="pbtn">去兑换</div>
+    </div>
+    <div class="notice info" style="margin-top:0;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1L12 2z"/></svg><span>今天还没签到，签到可得 10 积分，连签 7 天额外 +20</span></div>
+    <div class="lgroup">
+      <div class="li" data-go="my-list"><span class="lico" style="background:var(--brand-l);color:var(--brand);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></span>
+        <span class="ltxt">我的发布<span class="lsub" style="display:block;">帖子 8 · 商品 4</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" data-go="my-list"><span class="lico" style="background:#FFF1F0;color:var(--red);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1L12 2z"/></svg></span>
+        <span class="ltxt">我的收藏<span class="lsub" style="display:block;">8 条内容</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" data-go="notifications"><span class="lico" style="background:#F3F0FF;color:var(--purple);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 22a2.5 2.5 0 002.5-2.5h-5A2.5 2.5 0 0012 22zm7-6v-5a7 7 0 00-5.5-6.8V3a1.5 1.5 0 00-3 0v1.2A7 7 0 005 11v5l-2 2v1h18v-1l-2-2z"/></svg></span>
+        <span class="ltxt">消息通知</span>
+        <span class="badge-n" style="margin-right:8px;">3</span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+    </div>
+    <div class="lgroup">
+      <div class="li" data-go="verify"><span class="lico" style="background:#EAF9EF;color:var(--green);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+        <span class="ltxt">校园认证<span class="lsub" style="display:block;">已通过 · 二手帖将带蓝 V 标识</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" data-go="expired"><span class="lico" style="background:#FFF7E6;color:#D48806;"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm1 5h-2v6l5 3 1-1.7-4-2.3V7z"/></svg></span>
+        <span class="ltxt">过期归档<span class="lsub" style="display:block;">3 条过期任务帖</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+    </div>
+    <div class="lgroup">
+      <div class="li" data-go="feedback"><span class="lico" style="background:var(--bg);color:var(--t2);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg></span>
+        <span class="ltxt">意见反馈</span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" data-go="agreement"><span class="lico" style="background:var(--bg);color:var(--t2);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></span>
+        <span class="ltxt">用户协议与隐私政策</span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" data-go="admin"><span class="lico" style="background:var(--bg);color:var(--t2);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 8a4 4 0 110 8 4 4 0 010-8zm9 4l-2-.5a7 7 0 00-.7-1.7l1.2-1.7-1.4-1.4-1.7 1.2a7 7 0 00-1.7-.7L14 7V5h-2v2l-.5.2a7 7 0 00-1.7.7L8.1 6.7 6.7 8.1l1.2 1.7a7 7 0 00-.7 1.7L5 12v2l2 .5a7 7 0 00.7 1.7l-1.2 1.7 1.4 1.4 1.7-1.2a7 7 0 001.7.7l.7.2v2h2v-2l.5-.2a7 7 0 001.7-.7l1.7 1.2 1.4-1.4-1.2-1.7a7 7 0 00.7-1.7L21 14v-2z"/></svg></span>
+        <span class="ltxt">管理后台<span class="lsub" style="display:block;">仅管理员可见</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+    </div>
+    <div style="height:70px;"></div>
+  </div>
+  <div class="tabbar">
+    <div class="tab" data-go="index"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1v-10.5z"/></svg><span>首页</span></div>
+    <div class="tab" data-go="market"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M7 4h10l2 5v11a1 1 0 01-1 1H6a1 1 0 01-1-1V9l2-5zm1.2 5l1 6m5.6-6l-1 6M9.5 4l.5 5m4.5-5l-.5 5"/></svg><span>二手</span></div>
+    <div class="tab" data-go="guide"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4V4zm16 0h-7a2 2 0 00-2 2v14a2 2 0 012-2h7V4z"/></svg><span>指南</span></div>
+    <div class="tab on"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" ><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg><span>我的</span></div>
+  </div>
+</section>
+
+<!-- ==================== 9. 通知 ==================== -->
+<section class="screen" id="s-notifications">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">消息通知</div>
+    <div class="nspacer"></div><div class="nact">全部已读</div></div>
+  <div class="scroll">
+    
+    <div class="li">
+      <span class="lico" style="background:#4A90D91A;color:#4A90D9;"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg></span>
+      <span class="ltxt" style="flex:1;">
+        <span style="display:flex;align-items:center;gap:6px;">小林 评论了你的帖子<span class="badge-n">新</span></span>
+        <span class="lsub" style="display:block;">「这个我也想去，几点集合呀？」</span>
+      </span>
+      <span style="font-size:11px;color:var(--t3);flex-shrink:0;">3 分钟前</span>
+    </div>
+    <div class="li">
+      <span class="lico" style="background:#FA51511A;color:#FA5151;"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg></span>
+      <span class="ltxt" style="flex:1;">
+        <span style="display:flex;align-items:center;gap:6px;">阿哲 赞了你的帖子<span class="badge-n">新</span></span>
+        <span class="lsub" style="display:block;">图书馆四楼自习位拼团</span>
+      </span>
+      <span style="font-size:11px;color:var(--t3);flex-shrink:0;">20 分钟前</span>
+    </div>
+    <div class="li">
+      <span class="lico" style="background:#07C1601A;color:#07C160;"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      <span class="ltxt" style="flex:1;">
+        <span style="display:flex;align-items:center;gap:6px;">你的校园认证已通过<span class="badge-n">新</span></span>
+        <span class="lsub" style="display:block;">现在发布二手帖会带上「已认证」标识</span>
+      </span>
+      <span style="font-size:11px;color:var(--t3);flex-shrink:0;">1 小时前</span>
+    </div>
+    <div class="li">
+      <span class="lico" style="background:#8B5CF61A;color:#8B5CF6;"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg></span>
+      <span class="ltxt" style="flex:1;">
+        <span style="display:flex;align-items:center;gap:6px;">美食探索小队 关注了你</span>
+        
+      </span>
+      <span style="font-size:11px;color:var(--t3);flex-shrink:0;">昨天 18:20</span>
+    </div>
+    <div class="li">
+      <span class="lico" style="background:#FF976A1A;color:#FF976A;"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm1 5h-2v6l5 3 1-1.7-4-2.3V7z"/></svg></span>
+      <span class="ltxt" style="flex:1;">
+        <span style="display:flex;align-items:center;gap:6px;">你的任务帖即将过期</span>
+        <span class="lsub" style="display:block;">「求购二手自行车」还剩 1 天，可续期或标记已解决</span>
+      </span>
+      <span style="font-size:11px;color:var(--t3);flex-shrink:0;">昨天 12:00</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 10. 校园认证 ==================== -->
+<section class="screen" id="s-verify">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">校园认证</div></div>
+  <div class="scroll">
+    <div class="notice good" style="margin-top:12px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg><span><b>已通过认证</b> · 你的二手帖与帖子会展示蓝 V 标识</span></div>
+    <div class="fgroup"><div class="flabel">认证状态</div>
+      <div style="display:flex;align-items:center;gap:9px;">
+        <span class="lico" style="width:38px;height:38px;background:#EAF9EF;color:var(--green);"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+        <div><div style="font-size:14.5px;font-weight:600;color:var(--t1);">已认证</div>
+          <div style="font-size:11.5px;color:var(--t3);margin-top:3px;">某某大学 · 学号 2023****41 · 2026-08-12 通过</div></div>
+      </div>
+    </div>
+    <div class="sec-title">为什么需要认证？</div>
+    <div class="card" style="margin-top:0;">
+      <div style="font-size:13px;color:var(--t2);line-height:1.8;">
+        · 二手交易需要信任基础，认证卖家成交率高出 <b style="color:var(--t1);">2.3 倍</b><br>
+        · 平台 UGC 合规要求身份可追溯<br>
+        · 认证完全免费，管理员 1 个工作日内人工审核
+      </div>
+    </div>
+    <div class="notice warn"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M5 3h2v18H5V3zm3 1h9l-1.5 4L18 12H8V4z"/></svg><span>证件照仅用于人工审核，审核完成后不会公开展示</span></div>
+    <div style="height:20px;"></div>
+  </div>
+</section>
+
+<!-- ==================== 11. 发布面板 ==================== -->
+<section class="screen" id="s-publish" style="background:transparent;">
+  <div class="sheet-mask on"></div>
+  <div class="sheet on">
+    <div class="sheet-bar"></div>
+    <div class="pitem" data-go="post-publish">
+      <div class="pitem-ico" style="background:linear-gradient(135deg,#4A90D9,#6BA9E4);"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M3 17.2V21h3.8L18 9.8 14.2 6 3 17.2zM20.7 7.3a1 1 0 000-1.4l-2.6-2.6a1 1 0 00-1.4 0l-2 2L18.7 9l2-1.7z"/></svg></div>
+      <div><div class="pitem-t">发帖子</div><div class="pitem-d">分享日常、吐槽、求助</div></div>
+    </div>
+    <div class="pitem" data-go="product-publish">
+      <div class="pitem-ico" style="background:linear-gradient(135deg,#FF976A,#FFB88A);"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M6 7h12l1 13H5L6 7zm3 0a3 3 0 016 0v1H9V7z"/></svg></div>
+      <div><div class="pitem-t">卖东西</div><div class="pitem-d">二手商品信息发布</div></div>
+    </div>
+    <div class="pitem" data-go="lost-found">
+      <div class="pitem-ico" style="background:linear-gradient(135deg,#07C160,#34D399);"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
+      <div><div class="pitem-t">失物招领</div><div class="pitem-d">丢了东西 / 捡到东西</div></div>
+    </div>
+    <div class="pitem" data-go="wall">
+      <div class="pitem-ico" style="background:linear-gradient(135deg,#FA5151,#FF8585);"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg></div>
+      <div><div class="pitem-t">表白墙</div><div class="pitem-d">匿名说出心里话</div></div>
+    </div>
+    <div class="pcancel" data-go="index">取消</div>
+  </div>
+</section>
+
+<!-- ==================== 12. 发帖 ==================== -->
+<section class="screen" id="s-post-publish">
+  <div class="nav"><div class="nback" data-go="publish"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">发帖子</div>
+    <div class="nspacer"></div><div class="nact">存草稿</div></div>
+  <div class="scroll">
+    <div class="fgroup">
+      <div class="flabel"><span class="req">*</span>标题</div>
+      <input class="finput" placeholder="一句话说清你要发什么" maxlength="30">
+      <div class="fcounter">0 / 30</div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel">正文</div>
+      <textarea class="fta" placeholder="详细说说…支持换行"></textarea>
+      <div class="fcounter">0 / 2000</div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel">图片（选填，最多 9 张）</div>
+      <div class="imgsel">
+        <div class="imgslot add"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6v-2z"/></svg></div>
+        <div class="imgslot ph g-a" style="width:78px;height:78px;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></div>
+      </div>
+      <div style="font-size:11px;color:var(--t3);margin-top:8px;">上传前会自动压缩到长边 1280px，省流量也更清晰</div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel"><span class="req">*</span>分类（必须选到最末级）</div>
+      <div class="frow"><span style="color:var(--t2);font-size:13.5px;">社团活动 › 电竞社</span>
+        <span class="fval"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel">更多设置</div>
+      <div class="frow" style="padding:7px 0;"><span>标签</span><span class="fval">添加标签 ›</span></div>
+      <div class="frow" style="padding:7px 0;"><span>匿名发布</span><span class="switch"></span></div>
+      <div class="frow" style="padding:7px 0;"><span>任务帖（到期自动归档）</span><span class="fval">7 天 ›</span></div>
+    </div>
+    <div class="notice warn"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M5 3h2v18H5V3zm3 1h9l-1.5 4L18 12H8V4z"/></svg><span>发布内容会经过微信内容安全检测，含敏感信息将被拒绝</span></div>
+    <div class="submit disabled">发布</div>
+  </div>
+</section>
+
+<!-- ==================== 13. 发布二手 ==================== -->
+<section class="screen" id="s-product-publish">
+  <div class="nav"><div class="nback" data-go="publish"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">卖东西</div></div>
+  <div class="scroll">
+    <div class="fgroup">
+      <div class="flabel"><span class="req">*</span>商品图片（最多 9 张，第一张为封面）</div>
+      <div class="imgsel">
+        <div class="imgslot add"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6v-2z"/></svg></div>
+      </div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel"><span class="req">*</span>商品名称</div>
+      <input class="finput" placeholder="如：iPad Air 4 64G WiFi 95新" maxlength="30">
+      <div class="fcounter">0 / 30</div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel"><span class="req">*</span>售价</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="color:var(--red);font-size:19px;font-weight:700;">¥</span>
+        <input class="finput" placeholder="0.00" style="font-size:19px;font-weight:700;color:var(--red);">
+      </div>
+      <div class="frow" style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--line);">
+        <span style="font-size:13px;color:var(--t2);">原价（选填，会显示折扣对比）</span><span class="fval">¥ 0.00 ›</span></div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel">成色 / 分类 / 交易方式</div>
+      <div class="frow" style="padding:7px 0;"><span>成色</span><span class="fval">95 新 ›</span></div>
+      <div class="frow" style="padding:7px 0;"><span>分类</span><span class="fval">数码 ›</span></div>
+      <div class="frow" style="padding:7px 0;"><span>交易方式</span><span class="fval">校内自提 ›</span></div>
+    </div>
+    <div class="fgroup">
+      <div class="flabel">商品描述</div>
+      <textarea class="fta" placeholder="成色细节、购买时间、附件清单、交易地点和时间…"></textarea>
+      <div class="fcounter">0 / 1000</div>
+    </div>
+    <div class="notice info"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg><span>你是<b>已认证</b>用户，商品会自动带蓝 V 标识，成交率更高</span></div>
+    <div class="submit">发布商品</div>
+  </div>
+</section>
+
+<!-- ==================== 14. 失物招领 ==================== -->
+<section class="screen" id="s-lost-found">
+  <div class="nav"><div class="nback" data-go="publish"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">失物招领</div>
+    <div class="nspacer"></div><div class="nact"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6v-2z"/></svg> 发布</div></div>
+  <div class="chips"><div class="chip on">全部</div><div class="chip">寻物</div><div class="chip">招领</div><div class="chip">已找回</div></div>
+  <div class="scroll">
+    <div class="notice info" style="margin-top:0;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span>按宿舍区 / 教学楼附近筛选，找到的概率更高</span></div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <span style="font-size:10.5px;background:#FFF1F0;color:var(--red);padding:2.5px 8px;border-radius:7px;font-weight:600;">寻物</span>
+        <span style="font-size:15px;font-weight:600;color:var(--t1);">校园卡丢失</span>
+      </div>
+      <div style="font-size:13.5px;color:var(--t1);line-height:1.65;margin-top:9px;">今天中午在二食堂丢失一张校园卡，名字首字母 L，卡套是蓝色的。拾到的同学麻烦联系我，重谢！</div>
+      <div style="display:flex;gap:16px;margin-top:11px;font-size:11.5px;color:var(--t3);">
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg> 第二食堂</span>
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm1 5h-2v6l5 3 1-1.7-4-2.3V7z"/></svg> 今天 12:30</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <div class="abbtn ghost" style="height:36px;font-size:13.5px;">私信联系</div>
+        <div class="abbtn" style="height:36px;font-size:13.5px;background:#EAF9EF;color:var(--green);">我捡到了</div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <span style="font-size:10.5px;background:#EEF7FF;color:#3A8EE6;padding:2.5px 8px;border-radius:7px;font-weight:600;">招领</span>
+        <span style="font-size:15px;font-weight:600;color:var(--t1);">捡到一副耳机</span>
+      </div>
+      <div style="font-size:13.5px;color:var(--t1);line-height:1.65;margin-top:9px;">图书馆三楼捡到一副白色 AirPods，请失主凭特征认领（说出耳机的划痕位置）。</div>
+      <div style="display:flex;gap:16px;margin-top:11px;font-size:11.5px;color:var(--t3);">
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg> 图书馆 3F</span>
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm1 5h-2v6l5 3 1-1.7-4-2.3V7z"/></svg> 昨天 18:00</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <div class="abbtn ghost" style="height:36px;font-size:13.5px;">这是我的</div>
+      </div>
+    </div>
+    <div class="card" style="opacity:.62;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <span style="font-size:10.5px;background:#EAF9EF;color:var(--green);padding:2.5px 8px;border-radius:7px;font-weight:600;">已找回</span>
+        <span style="font-size:15px;font-weight:600;color:var(--t1);text-decoration:line-through;">丢失黑色伞</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--t3);margin-top:8px;">已在教学楼 A 区失物箱找到，感谢帮忙转发的同学</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 15. 表白墙 ==================== -->
+<section class="screen" id="s-wall">
+  <div class="nav"><div class="nback" data-go="publish"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">表白墙</div>
+    <div class="nspacer"></div><div class="nact"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6v-2z"/></svg> 匿名发布</div></div>
+  <div class="notice warn" style="margin-top:10px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M5 3h2v18H5V3zm3 1h9l-1.5 4L18 12H8V4z"/></svg><span>本版块<b>强制匿名</b>，禁止人身攻击与隐私泄露，违规将永久封禁</span></div>
+  <div class="scroll">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="fava" style="width:34px;height:34px;font-size:14px;background:#B7BEC8;">匿</div>
+        <div><div style="font-size:13.5px;font-weight:600;color:var(--t1);">匿名同学</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;">刚刚</div></div>
+      </div>
+      <div style="font-size:15px;color:var(--t1);line-height:1.68;margin-top:11px;font-style:italic;">"想对经管楼总坐靠窗位置的你说，你低头记笔记的样子很好看。如果看到，请来表白墙回我一句吧。"</div>
+      <div style="display:flex;gap:18px;margin-top:11px;font-size:11.5px;color:var(--t3);">
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 56</span>
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg> 9</span>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="fava" style="width:34px;height:34px;font-size:14px;background:#B7BEC8;">匿</div>
+        <div><div style="font-size:13.5px;font-weight:600;color:var(--t1);">匿名同学</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;">20 分钟前</div></div>
+      </div>
+      <div style="font-size:15px;color:var(--t1);line-height:1.68;margin-top:11px;font-style:italic;">"感谢昨晚陪我熬夜复习高数的室友，你是我大学最幸运的相遇。毕业前想认真说声谢谢。"</div>
+      <div style="display:flex;gap:18px;margin-top:11px;font-size:11.5px;color:var(--t3);">
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 203</span>
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg> 31</span>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="fava" style="width:34px;height:34px;font-size:14px;background:#B7BEC8;">匿</div>
+        <div><div style="font-size:13.5px;font-weight:600;color:var(--t1);">匿名同学</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;">1 小时前</div></div>
+      </div>
+      <div style="font-size:15px;color:var(--t1);line-height:1.68;margin-top:11px;font-style:italic;">"吐槽一下：食堂阿姨今天又手抖了，我的红烧肉变成了红烧汤……"</div>
+      <div style="display:flex;gap:18px;margin-top:11px;font-size:11.5px;color:var(--t3);">
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 89</span>
+        <span style="display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg> 47</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 16. 搜索 ==================== -->
+<section class="screen" id="s-search">
+  <div class="nav" style="padding:0 12px;gap:9px;">
+    <div style="flex:1;height:34px;background:var(--bg);border-radius:17px;display:flex;align-items:center;padding:0 12px;gap:6px;color:var(--t3);font-size:13px;">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" ><path d="M10 3a7 7 0 015.6 11.2l4.6 4.6-1.4 1.4-4.6-4.6A7 7 0 1110 3zm0 2a5 5 0 100 10 5 5 0 000-10z"/></svg> iPad</div>
+    <div style="font-size:14px;color:var(--brand);font-weight:600;">取消</div>
+  </div>
+  <div class="scroll">
+    <div class="sec-title" style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" ><path d="M12 2s1 3.5-1 6c-2 2.5-4 4-4 7a5 5 0 0010 0c0-2-1-3-1-3s3 1 3 4a7 7 0 01-14 0c0-5 4-7 5-10 .8-2 2-4 2-4z"/></svg> 热门搜索</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 14px;">
+      <span class="chip">军训时间</span><span class="chip">选课</span><span class="chip">二手自行车</span>
+      <span class="chip">考研自习室</span><span class="chip">校园卡补办</span><span class="chip">食堂测评</span>
+    </div>
+    <div class="sec-title">搜索 "iPad" 的结果（6 条）</div>
+    <div class="card" style="display:flex;gap:11px;">
+      <div class="ph g-a" style="width:64px;height:64px;border-radius:9px;flex-shrink:0;"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:600;color:var(--t1);">iPad Air 4 64G WiFi <b style="color:var(--brand);">95新</b></div>
+        <div style="color:var(--red);font-weight:700;font-size:14px;margin-top:5px;">¥1899</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:5px;">商品 · 小宇同学 · 2 小时前</div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;gap:11px;">
+      <div class="ph g-b" style="width:64px;height:64px;border-radius:9px;flex-shrink:0;"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:600;color:var(--t1);">想出 <b style="color:var(--brand);">iPad</b> 换安卓平板，有人换吗</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:5px;line-height:1.5;">iPad 2021 9 代，用了两年…</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:5px;">帖子 · 阿哲 · 昨天</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 17. 编辑资料 ==================== -->
+<section class="screen" id="s-profile-edit">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">编辑资料</div></div>
+  <div class="scroll">
+    <div class="fgroup" style="display:flex;align-items:center;gap:13px;">
+      <div class="hero-ava" style="width:56px;height:56px;background:linear-gradient(135deg,#4A90D9,#7FB2E5);font-size:22px;">林</div>
+      <div style="flex:1;"><div style="font-size:14.5px;font-weight:600;color:var(--t1);">头像</div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:3px;">点击更换，自动压缩</div></div>
+      <div class="fval"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></div>
+    </div>
+    <div class="fgroup"><div class="flabel">昵称</div><input class="finput" value="同学小林" maxlength="12">
+      <div style="font-size:11px;color:var(--t3);margin-top:7px;">首次修改免费，之后每次消耗 200 积分</div></div>
+    <div class="fgroup"><div class="flabel">个性签名</div><input class="finput" placeholder="介绍一下自己…" maxlength="30"></div>
+    <div class="fgroup">
+      <div class="flabel">学校信息</div>
+      <div class="frow" style="padding:7px 0;"><span>学校</span><span class="fval">某某大学</span></div>
+      <div class="frow" style="padding:7px 0;"><span>学院</span><span class="fval">计算机学院 ›</span></div>
+      <div class="frow" style="padding:7px 0;"><span>年级</span><span class="fval">大二 ›</span></div>
+      <div class="frow" style="padding:7px 0;"><span>性别</span><span class="fval">保密 ›</span></div>
+    </div>
+    <div class="submit">保存</div>
+  </div>
+</section>
+
+<!-- ==================== 18. 我的发布 ==================== -->
+<section class="screen" id="s-my-list">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">我的发布</div></div>
+  <div class="chips"><div class="chip on">帖子 8</div><div class="chip">商品 4</div><div class="chip">收藏 8</div></div>
+  <div class="scroll">
+    <div class="card" style="display:flex;gap:11px;">
+      <div class="ph g-b" style="width:60px;height:60px;border-radius:9px;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-size:13.5px;font-weight:600;color:var(--t1);line-height:1.45;">图书馆四楼自习位拼团</div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:7px;">3 天前 · <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" ><path d="M12 5c5 0 9 4.5 9 7s-4 7-9 7-9-4.5-9-7 4-7 9-7zm0 2c-3.9 0-7 3.5-7 5s3.1 5 7 5 7-3.5 7-5-3.1-5-7-5zm0 2a3 3 0 110 6 3 3 0 010-6z"/></svg> 142 · <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" ><path d="M12 21s-7.5-4.9-9.4-9.3C1.3 8.6 3 5 6.6 5c2 0 3.5 1.1 4.4 2.3H13c.9-1.2 2.4-2.3 4.4-2.3 3.6 0 5.3 3.6 4 6.7C20.5 16.1 13 21 12 21z"/></svg> 42</div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;gap:11px;">
+      <div class="ph g-e" style="width:60px;height:60px;border-radius:9px;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-size:13.5px;font-weight:600;color:var(--t1);line-height:1.45;">求购二手自行车，能骑就行</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:7px;">
+          <span style="font-size:10.5px;background:#FFF7E6;color:#D48806;padding:2px 7px;border-radius:6px;">任务 · 还剩 1 天</span></div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:6px;">5 天前 · <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" ><path d="M12 5c5 0 9 4.5 9 7s-4 7-9 7-9-4.5-9-7 4-7 9-7zm0 2c-3.9 0-7 3.5-7 5s3.1 5 7 5 7-3.5 7-5-3.1-5-7-5zm0 2a3 3 0 110 6 3 3 0 010-6z"/></svg> 88 · <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg> 12</div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;gap:11px;opacity:.6;">
+      <div class="ph g-f" style="width:60px;height:60px;border-radius:9px;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-size:13.5px;font-weight:600;color:var(--t1);line-height:1.45;">寻物：黑色雨伞（已解决）</div>
+        <div style="font-size:11.5px;color:var(--t3);margin-top:7px;">7 天前 · 已归档</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 19. 管理后台 ==================== -->
+<section class="screen" id="s-admin">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">管理后台</div>
+    <div class="nspacer"></div><div class="nact">版主</div></div>
+  <div class="scroll">
+    <div class="notice warn" style="margin-top:12px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M5 3h2v18H5V3zm3 1h9l-1.5 4L18 12H8V4z"/></svg><span>管理操作会写入 <b>admin_logs</b> 审计日志，操作留痕可追溯</span></div>
+    <div class="stats" style="margin:12px;">
+      <div><div class="sn" style="color:var(--red);">6</div><div class="sl">待审举报</div></div>
+      <div><div class="sn" style="color:#D48806;">4</div><div class="sl">待审认证</div></div>
+      <div><div class="sn">3</div><div class="sl">待审反馈</div></div>
+    </div>
+    <div class="lgroup">
+      <div class="li"><span class="lico" style="background:#FFF1F0;color:var(--red);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M5 3h2v18H5V3zm3 1h9l-1.5 4L18 12H8V4z"/></svg></span>
+        <span class="ltxt">举报审核<span class="lsub" style="display:block;">6 条待处理</span></span>
+        <span class="badge-n" style="margin-right:8px;">6</span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li"><span class="lico" style="background:#EAF9EF;color:var(--green);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+        <span class="ltxt">校园认证审核<span class="lsub" style="display:block;">4 位同学待审核</span></span>
+        <span class="badge-n" style="margin-right:8px;">4</span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li"><span class="lico" style="background:var(--brand-l);color:var(--brand);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg></span>
+        <span class="ltxt">用户管理<span class="lsub" style="display:block;">封禁 / 解封 / 查看</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li"><span class="lico" style="background:#F3F0FF;color:var(--purple);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm0 2.5L18.5 11H13V4.5z"/></svg></span>
+        <span class="ltxt">分类管理<span class="lsub" style="display:block;">校区 / 版块 / 子版三级，无需改代码</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li"><span class="lico" style="background:#FFF7E6;color:#D48806;"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M12 22a2.5 2.5 0 002.5-2.5h-5A2.5 2.5 0 0012 22zm7-6v-5a7 7 0 00-5.5-6.8V3a1.5 1.5 0 00-3 0v1.2A7 7 0 005 11v5l-2 2v1h18v-1l-2-2z"/></svg></span>
+        <span class="ltxt">公告管理<span class="lsub" style="display:block;">首页置顶公告，最多 3 条</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li"><span class="lico" style="background:var(--bg);color:var(--t2);"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" ><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg></span>
+        <span class="ltxt">意见反馈<span class="lsub" style="display:block;">3 条未读</span></span><span class="larrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+    </div>
+    <div class="sec-title">最近审计日志</div>
+    <div class="card" style="margin-top:0;font-size:12px;color:var(--t2);line-height:2;">
+      <div>· 版主 A <b style="color:var(--t1);">封禁用户</b> u_8821（原因：广告刷屏）</div>
+      <div>· 版主 A <b style="color:var(--t1);">通过认证</b> 学号 2023****41</div>
+      <div>· 版主 B <b style="color:var(--t1);">删除帖子</b> p_3391（原因：人身攻击）</div>
+      <div>· 版主 A <b style="color:var(--t1);">置顶帖子</b> p_1204（新生必读）</div>
+    </div>
+    <div style="height:30px;"></div>
+  </div>
+</section>
+
+<!-- ==================== 20. 分类选择器 ==================== -->
+<section class="screen" id="s-picker" style="background:transparent;">
+  <div class="sheet-mask on" data-go="index"></div>
+  <div class="sheet on" style="height:70%;display:flex;flex-direction:column;">
+    <div class="sheet-bar"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:700;color:var(--t1);">选择分类</div>
+      <div style="font-size:13px;color:var(--brand);">清除</div>
+    </div>
+    <div style="display:flex;gap:6px;font-size:11.5px;color:var(--t3);padding:0 4px 10px;border-bottom:.5px solid var(--line);">
+      <span style="color:var(--brand);font-weight:600;">全部</span><span>›</span>
+      <span style="color:var(--brand);">校园生活</span><span>›</span>
+      <span style="color:var(--t1);">社团活动</span>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding-top:6px;">
+      <div class="li" style="padding:13px 4px;">社团活动<span class="larrow" style="margin-left:auto;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" style="padding:13px 4px;">二手交易<span class="larrow" style="margin-left:auto;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" style="padding:13px 4px;">学习交流<span class="larrow" style="margin-left:auto;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" style="padding:13px 4px;">失物招领<span class="larrow" style="margin-left:auto;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M9 6l6 6-6 6-1.4-1.4L12.2 12 7.6 7.4 9 6z"/></svg></span></div>
+      <div class="li" style="padding:13px 4px;color:var(--brand);font-weight:600;">电竞社 <span style="font-size:11px;color:var(--t3);font-weight:400;margin-left:6px;">最末级</span></div>
+    </div>
+    <div class="pcancel" data-go="index">收起</div>
+  </div>
+</section>
+
+<!-- ==================== 21. 反馈 ==================== -->
+<section class="screen" id="s-feedback">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">意见反馈</div></div>
+  <div class="scroll">
+    <div class="fgroup"><div class="flabel">反馈类型</div>
+      <div class="chips" style="padding:0;"><div class="chip on">功能建议</div><div class="chip">Bug</div><div class="chip">内容举报</div><div class="chip">其他</div></div></div>
+    <div class="fgroup"><div class="flabel">详细描述</div>
+      <textarea class="fta" placeholder="说说你遇到的问题或想法，越具体越好…"></textarea>
+      <div class="fcounter">0 / 500</div></div>
+    <div class="fgroup"><div class="flabel">图片（选填）</div>
+      <div class="imgslot add"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" ><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6v-2z"/></svg></div></div>
+    <div class="submit">提交反馈</div>
+  </div>
+</section>
+
+<!-- ==================== 22. 用户主页 ==================== -->
+<section class="screen" id="s-user-profile">
+  <div class="nav"><div class="nback" data-go="index"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">个人主页</div></div>
+  <div class="scroll">
+    <div class="hero" style="padding:26px 16px 24px;">
+      <div class="hero-top">
+        <div class="hero-ava">小</div>
+        <div style="flex:1;">
+          <div class="hero-name">小宇同学 <span class="hero-badge">已认证</span></div>
+          <div class="hero-sub">计算机学院 · 大四 · 某某大学</div>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:rgba(255,255,255,.9);margin-top:13px;line-height:1.6;">即将毕业，闲置清仓中。可信交易，售后无忧。</div>
+    </div>
+    <div class="stats">
+      <div><div class="sn">21</div><div class="sl">发布</div></div>
+      <div><div class="sn">156</div><div class="sl">粉丝</div></div>
+      <div><div class="sn">43</div><div class="sl">关注</div></div>
+    </div>
+    <div style="display:flex;gap:10px;padding:14px 12px 4px;">
+      <div class="btn-follow" style="flex:1;text-align:center;padding:10px;">＋ 关注</div>
+      <div class="btn-follow on" style="flex:1;text-align:center;padding:10px;">发私信</div>
+    </div>
+    <div class="sec-title">TA 的发布</div>
+    <div class="pgrid" style="padding-top:0;">
+      
+<div class="pcard" data-product="0">
+  <div class="ph g-a "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">iPad Air 4 64G WiFi 95新</div>
+    <div class="pcard-price">¥1899<span class="pcard-orig">¥2299</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">小</div>
+      <span>小宇</span>
+      <span class="vbadge"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor" ><path d="M12 1l9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V5l9-4zm-1.5 15l6-6-1.4-1.4-4.6 4.6-2.2-2.2L7 12.4l3.5 3.6z"/></svg></span>
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div>
+<div class="pcard" data-product="1">
+  <div class="ph g-b "><span class="ph-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M9 3l1.5 2h7A2.5 2.5 0 0120 7.5v10A2.5 2.5 0 0117.5 20h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5h1L9 3zm3 6a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/></svg></span></div>
+  <div class="pcard-body">
+    <div class="pcard-title c2">《算法导论》第三版 无笔记</div>
+    <div class="pcard-price">¥45<span class="pcard-orig">¥128</span></div>
+    <div class="pcard-seller">
+      <div class="fava sm2">林</div>
+      <span>林同学</span>
+      
+      <span class="pcard-loc"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" ><path d="M12 2a7 7 0 017 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 017-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></span>
+    </div>
+  </div>
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 23. 过期归档 ==================== -->
+<section class="screen" id="s-expired">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">过期归档</div></div>
+  <div class="notice info" style="margin-top:12px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" ><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm1 5h-2v6l5 3 1-1.7-4-2.3V7z"/></svg><span>任务帖到期后自动归档到这里，不占用首页信息流</span></div>
+  <div class="scroll">
+    <div class="card" style="opacity:.72;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:14.5px;font-weight:600;color:var(--t1);">求购二手自行车，能骑就行</div>
+        <span style="font-size:10.5px;background:#F2F3F5;color:var(--t3);padding:2.5px 8px;border-radius:7px;">已过期</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--t3);margin-top:8px;">发布于 8 月 28 日 · 已于 9 月 4 日自动归档</div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <div class="abbtn ghost" style="height:34px;font-size:13px;">重新发布</div>
+        <div class="abbtn" style="height:34px;font-size:13px;background:#EAF9EF;color:var(--green);">标记已解决</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 24. 协议 ==================== -->
+<section class="screen" id="s-agreement">
+  <div class="nav"><div class="nback" data-go="profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" ><path d="M15 6l-6 6 6 6 1.4-1.4L11.8 12l4.6-4.6L15 6z"/></svg></div><div class="ntitle">用户协议与隐私政策</div></div>
+  <div class="scroll">
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;color:var(--t1);">隐私政策（摘要）</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.85;margin-top:11px;">
+        <b style="color:var(--t1);">我们收集什么</b><br>
+        · 微信 openid（用于识别账号，无法反向获取你的微信信息）<br>
+        · 你主动填写的昵称、头像、学校、学院<br>
+        · 你发布的帖子、商品、评论内容<br><br>
+        <b style="color:var(--t1);">我们怎么用</b><br>
+        · 展示你的公开内容与身份标识<br>
+        · 内容安全审核（微信官方接口，fail-closed）<br>
+        · 不向任何第三方出售或共享你的个人信息<br><br>
+        <b style="color:var(--t1);">你的权利</b><br>
+        · 可随时修改或删除你的全部发布内容<br>
+        · 可申请注销账号并清除全部个人数据
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- 说明面板 -->
+<div class="legend">
+  <h3>CampusHub 交互原型 v2</h3>
+  <p>基于 <code>gitcode.com/badhope/campushub</code> v0.8.1 真实源码重构，含 23 个核心页面。</p>
+  <h4>纠正的偏差</h4>
+  <ul>
+    <li>tabBar 还原为 <b>首页/二手/指南/我的</b></li>
+    <li>首页改为<b>双列瀑布流</b>（原为单列）</li>
+    <li>首页 tab 改为 <b>推荐/热门/最新</b></li>
+    <li>主色改为源码真实的 <code>#4A90D9</code></li>
+  </ul>
+  <h4>使用者视角设计</h4>
+  <ul>
+    <li><span class="k">买家</span>：蓝 V 认证标识、折扣对比、交易安全提示</li>
+    <li><span class="k">卖家</span>：成色/原价/交易方式、认证增益提示</li>
+    <li><span class="k">失主</span>：地点筛选、"我捡到了"双向按钮、已找回态</li>
+    <li><span class="k">学生</span>：指南已核验标、积分签到、任务帖到期提醒</li>
+    <li><span class="k">管理员</span>：举报/认证/反馈待办数、审计日志</li>
+  </ul>
+  <h4>操作</h4>
+  <ul>
+    <li>点击卡片进详情，点 tabBar 切主页面</li>
+    <li>点右下角 <code>+</code> 打开发布面板</li>
+  </ul>
+</div>
+
+<script>
+// 页面路由
+const ROUTES = {
+  'index':'s-index','market':'s-market','guide':'s-guide','profile':'s-profile',
+  'login':'s-login','publish':'s-publish','picker':'s-picker','search':'s-search',
+  'post-detail':'s-post-detail','product-detail':'s-product-detail','guide-detail':'s-guide-detail',
+  'post-publish':'s-post-publish','product-publish':'s-product-publish',
+  'notifications':'s-notifications','verify':'s-verify','profile-edit':'s-profile-edit',
+  'my-list':'s-my-list','admin':'s-admin','feedback':'s-feedback','wall':'s-wall',
+  'lost-found':'s-lost-found','user-profile':'s-user-profile','expired':'s-expired',
+  'agreement':'s-agreement','report':'s-post-detail'
+}
+// 返回栈
+const STACK = []
+let current = 'index'
+
+function show(name, push=true){
+  const id = ROUTES[name]
+  if(!id) return
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'))
+  const el = document.getElementById(id)
+  if(el) el.classList.add('active')
+  if(push && name!==current) STACK.push(current)
+  current = name
+}
+function back(){
+  const prev = STACK.pop() || 'index'
+  current = prev
+  const id = ROUTES[prev]
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'))
+  const el = document.getElementById(id)
+  if(el) el.classList.add('active')
+}
+
+// 绑定所有 data-go
+document.querySelectorAll('[data-go]').forEach(el=>{
+  el.addEventListener('click', (e)=>{
+    e.stopPropagation()
+    const target = el.dataset.go
+    if(!ROUTES[target]) return
+    // 主 tab 之间切换时清空栈
+    if(['index','market','guide','profile'].includes(target)) STACK.length = 0
+    show(target)
+  })
+})
+// 详情跳转
+document.querySelectorAll('[data-post]').forEach(el=>{
+  el.addEventListener('click', ()=> show('post-detail'))
+})
+document.querySelectorAll('[data-product]').forEach(el=>{
+  el.addEventListener('click', ()=> show('product-detail'))
+})
+// 返回按钮
+document.querySelectorAll('.nback').forEach(el=>{
+  el.addEventListener('click',(e)=>{ e.stopPropagation(); back() })
+})
+// 开关切换
+document.querySelectorAll('.switch').forEach(el=>{
+  el.addEventListener('click',(e)=>{ e.stopPropagation(); el.classList.toggle('on') })
+})
+// chips 单选
+document.querySelectorAll('.chips').forEach(g=>{
+  g.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',(e)=>{ e.stopPropagation();
+      g.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on') })
+  })
+})
+// 首页 tab 单选
+document.querySelectorAll('.idxbar').forEach(g=>{
+  g.querySelectorAll('.idxtab').forEach(c=>{
+    c.addEventListener('click',(e)=>{ e.stopPropagation();
+      g.querySelectorAll('.idxtab').forEach(x=>x.classList.remove('on')); c.classList.add('on') })
+  })
+})
+
+// URL 参数直达：?screen=xxx
+const _q = new URLSearchParams(location.search)
+if(_q.get('clean')) document.body.classList.add('clean')
+const p = _q.get('screen')
+if(p && ROUTES[p]) show(p, false)
+</script>
+</body>
+</html>

@@ -1,4 +1,6 @@
-<p align="center"><img src="docs/logo.svg" alt="CampusHub Logo" width="200" height="60" /></p>`n`n# CampusHub
+<p align="center"><img src="docs/logo.svg" alt="CampusHub Logo" width="200" height="60" /></p>
+
+# CampusHub
 
 > **An open-source campus & interest content community built on WeChat Mini Program + CloudBase — a modern, open forum for campuses and interest groups.**
 > Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
@@ -24,6 +26,23 @@ CampusHub is a campus content platform built on **WeChat Mini Program + WeChat C
 - Content **defaults to your own campus** — deploy one environment per school.
 - The category tree (Zone → Category → Board, 3 levels) is **managed via admin UI** — no code changes or redeployment needed to add a school or open a new category.
 - Task-type posts support **auto-expiry** and **resolved marking**, keeping the feed clean.
+
+## Screenshots / 截图
+
+<p align="center">
+  <img src="docs/screenshots/index.png" alt="首页" width="180" />
+  <img src="docs/screenshots/market.png" alt="二手市场" width="180" />
+  <img src="docs/screenshots/admin.png" alt="管理台" width="180" />
+</p>
+
+> 24 个核心页面整机长图（按「核心主流程 / 交易闭环 / 校园特色 / 个人中心 / 管理端」5 组排版）。
+> Full 24-screen overview wall, grouped into 5 flows: core flow / market loop / campus features / profile / admin.
+
+- 📷 **单页高清截图（24 张，750×1624）**：[`docs/screenshots/`](./docs/screenshots/)
+- 🖼️ **24 页总览长图**：[`docs/screenshots/overview.png`](./docs/screenshots/overview.png)
+- 🎬 **使用演示视频（37s，1080×1920，带中文字幕）**：[`docs/screenshots/demo.mp4`](./docs/screenshots/demo.mp4)
+- 💻 **可交互 HTML 原型（24 页可点跳转）**：[`docs/preview.html`](./docs/preview.html)
+- 🛠️ **界面与体验优化方案**：[`docs/OPTIMIZATION_PLAN.md`](./docs/OPTIMIZATION_PLAN.md)
 
 ## Features
 
@@ -129,7 +148,10 @@ CampusHub/
 ├── docs/
 │   ├── DEPLOY.md             # ★ Deployment guide (10 steps)
 │   ├── INDEXES.md           # ★ Database index checklist (36 indexes)
-│   └── SYNC.md              # Three-platform sync instructions
+│   ├── SYNC.md              # Three-platform sync instructions
+│   ├── screenshots/         # ★ Showcase assets (24 PNGs + overview + demo.mp4 + README)
+│   ├── preview.html          # Interactive HTML prototype (24 clickable screens)
+│   └── OPTIMIZATION_PLAN.md # UI/UX & backend optimization plan
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml            # CI: JSON validity + JS syntax + common-layer consistency
