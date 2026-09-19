@@ -35,7 +35,7 @@
     "prepublishOnly": "node scripts/sync-common.js"
   },
   "dependencies": {
-    "tdesign-miniprogram": "^1.7.0"
+    "tdesign-miniprogram": "^1.16.1"
   },
   "devDependencies": {
     "miniprogram-ci": "^2.1.31"
