@@ -260,6 +260,17 @@ npm install
 
 ---
 
+## 仓库地址
+
+四平台并列同步（同分支、同标签、同 HEAD），不分主次，任意选用：
+
+| 平台 | 地址 |
+|---|---|
+| GitHub | <https://github.com/x33834/campushub> |
+| GitHub | <https://github.com/Morningstar202604/campushub> |
+| GitCode | <https://gitcode.com/badhope/campushub> |
+| Gitee | <https://gitee.com/badhope/campushub> |
+
 ## ⚖️ License / 许可证
 
 [Apache License 2.0](./LICENSE) © 2026 Morningstar202604. See [NOTICE](./NOTICE) for details.
