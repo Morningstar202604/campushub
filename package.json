@@ -34,8 +34,8 @@
     "lint": "node scripts/ui-lint.js",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
-    "format": "prettier --check \"cloudfunctions/**/*.js\" \"miniprogram/**/*.js\" \"scripts/**/*.js\"",
-    "format:fix": "prettier --write \"cloudfunctions/**/*.js\" \"miniprogram/**/*.js\" \"scripts/**/*.js\"",
+    "format": "prettier --check \"cloudfunctions/**/*.js\" \"scripts/**/*.js\"",
+    "format:fix": "prettier --write \"cloudfunctions/**/*.js\" \"scripts/**/*.js\"",
     "test": "node --test tests/common-error.test.js tests/common-db.test.js tests/removeContent.test.js tests/contract.test.js",
     "prepublishOnly": "node scripts/sync-common.js"
   },

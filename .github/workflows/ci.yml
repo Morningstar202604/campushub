@@ -26,7 +26,7 @@ jobs:
         run: |
           node -e "
             const fs=require('fs');
-            const files=['package.json','project.config.json','miniprogram/app.json'];
+            const files=['package.json','uni-app/package.json','uni-app/src/pages.json','uni-app/src/manifest.json'];
             fs.readdirSync('cloudfunctions').forEach(d=>{
               const p='cloudfunctions/'+d+'/package.json';
               if(fs.existsSync(p)) files.push(p);
@@ -36,12 +36,14 @@ jobs:
             files.forEach(f=>{JSON.parse(fs.readFileSync(f,'utf8'));console.log('OK',f)});
           "
 
-      - name: Syntax-check all JS (cloud functions + miniprogram)
+      - name: Syntax-check all JS (cloud functions)
         run: |
           set -e
           find cloudfunctions -name '*.js' -not -path '*/node_modules/*' -print0 | xargs -0 -n1 node --check
-          find miniprogram scripts -name '*.js' -not -path '*/node_modules/*' -not -path '*/miniprogram_npm/*' -print0 | xargs -0 -n1 node --check
           echo "All JS syntax OK"
+
+      - name: uni-app structure & anti-pattern gate
+        run: python3 uni-app/scripts/verify_pages.py
 
       - name: Common layer sync consistency
         run: |
@@ -53,12 +55,3 @@ jobs:
           echo "Common layer consistent"
       - name: Run unit tests
         run: npm test
-
-      - name: Run verify-release
-        run: npm run verify
-
-      - name: Run contract check
-        run: npm run contract
-
-      - name: Run ui-lint
-        run: npm run lint

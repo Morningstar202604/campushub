@@ -1,0 +1,33 @@
+{
+  "$schema_note": "campushub-uni 版本与证书规划基线（P5）。人工读，CI/打包不消费。",
+  "packagename": "com.campushub.app",
+  "channel": "android-cloud-build",
+  "baseline": {
+    "versionName": "1.0.0",
+    "versionCode": 100,
+    "note": "versionCode 单调递增，绝不可回退；Google Play / 国内多渠道分发都要求 versionCode 严格大于历史最大。"
+  },
+  "sdk": {
+    "minSdkVersion": 21,
+    "targetSdkVersion": 34,
+    "compileSdkVersion": 34,
+    "abiFilters": ["armeabi-v7a", "arm64-v8a"],
+    "note": "minSdk 21 覆盖 99.9% 设备；targetSdk 34 (Android 14) 适配 2026 主流真机与 Play 政策。abi 双架构：arm64-v8a 给新机器、armeabi-v7a 兜底旧 32 位机。"
+  },
+  "upgrade_rules": {
+    "patch": "修 bug / 文案 / 视觉：versionName 末位 +1（1.0.0→1.0.1），versionCode +1。",
+    "minor": "新功能 / 新页面：versionName 中位 +1（1.0.1→1.1.0），versionCode 跨一位（101→110）。",
+    "major": "架构 / 数据契约 / 后端不兼容变更：versionName 首位 +1（1.1.0→2.0.0），versionCode 同步（110→200）。",
+    "hard_rule": "每次发版前：versionCode = 上一线上最大 versionCode + 1；versionName 同步语义化。改完 src/manifest.json 两处（顶层 versionName/versionCode + 本文档 baseline）必须一致。"
+  },
+  "keystore": {
+    "filename": "campushub-release.keystore（不入库，放工程外）",
+    "keyAlias": "campushub",
+    "validity_days": 10000,
+    "algorithm": "RSA-2048",
+    "renewal_alert": "证书 10000 天 ≈ 27 年，覆盖整个产品周期，无需续期；但若换公司主体/换签名工具链需重新生成并保留旧 keystore（丢 keystore = 无法更新已上架应用，只能改包名重新上架）。"
+  },
+  "history": [
+    { "versionName": "1.0.0", "versionCode": 100, "milestone": "P5 首版可安装 APK 基线", "date": "2026-09-21" }
+  ]
+}

@@ -1,0 +1,48 @@
+@charset "utf-8";
+
+/* ============================================================
+   墨荧 · Acid Campus 全局样式
+   ------------------------------------------------------------
+   只由 App.vue @import 一次（uni-app 的 App.vue <style> 是全局作用域）。
+   页面里不要再 import 本文件，也不要在这里放页面专属类。
+   变量定义在 src/styles/tokens.scss。
+   ============================================================ */
+
+/* 全局基础重置 */
+page {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'HarmonyOS Sans', 'MiSans', 'PingFang SC', system-ui, sans-serif;
+  font-size: 28rpx;
+  line-height: 1.65;
+}
+
+view,
+text {
+  box-sizing: border-box;
+}
+
+/* 标题字重（替代 700/800 硬编码） */
+.title-900 {
+  font-weight: var(--fw-title);
+  letter-spacing: -0.5rpx;
+}
+
+/* 数字等宽（价格 / 积分 / 计数 / 时间戳）
+   ⚠️ 这里**只**做等宽，不带颜色。
+   早期版本顺带写了 color: var(--accent)，导致凡是用了本类的时间戳也一并变荧光色，
+   直接破坏「每页只允许一个荧光焦点」的设计铁律。需要荧光数字的少量场景，
+   请由页面自己的类显式声明 color: var(--accent)。 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 硬投影（贴纸感） */
+.sticker {
+  box-shadow: 0 4rpx 0 rgba(0, 0, 0, 0.6);
+}
+
+/* 斜切角标签（品牌签名动作） */
+.clip-tag {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx));
+}

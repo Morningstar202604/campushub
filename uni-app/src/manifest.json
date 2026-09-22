@@ -1,0 +1,84 @@
+{
+  "name": "CampusHub",
+  "appid": "",
+  "description": "CampusHub — 校园私域基础设施（uni-app 三端）",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "locale": "zh-Hans",
+  "app-plus": {
+    "usingComponents": true,
+    "nvueCompiler": "uni-app",
+    "splashscreen": {
+      "alwaysSubTitle": true,
+      "autosize": true,
+      "waiting": true
+    },
+    "safearea": {
+      "bottom": {
+        "offset": "none"
+      }
+    },
+    "distribute": {
+      "modules": {},
+      "plugins": {},
+      "icons": {
+        "android": {
+          "hdpi": "static/app-icons/android/hdpi.png",
+          "xhdpi": "static/app-icons/android/xhdpi.png",
+          "xxhdpi": "static/app-icons/android/xxhdpi.png",
+          "xxxhdpi": "static/app-icons/android/xxxhdpi.png"
+        },
+        "ios": {
+          "appstore": "static/app-icons/ios/appstore.png"
+        }
+      },
+      "android": {
+        "packagename": "com.campushub.app",
+        "versionCode": 100,
+        "versionName": "1.0.0",
+        "minSdkVersion": 21,
+        "targetSdkVersion": 34,
+        "compileSdkVersion": 34,
+        "abiFilters": [
+          "armeabi-v7a",
+          "arm64-v8a"
+        ],
+        "permissions": [
+          "android.permission.INTERNET",
+          "android.permission.ACCESS_NETWORK_STATE",
+          "android.permission.ACCESS_WIFI_STATE",
+          "android.permission.CAMERA",
+          "android.permission.READ_MEDIA_IMAGES",
+          "android.permission.READ_EXTERNAL_STORAGE",
+          "android.permission.WRITE_EXTERNAL_STORAGE",
+          "android.permission.CALL_PHONE"
+        ]
+      },
+      "sdkConfigs": {}
+    },
+    "android": {},
+    "ios": {}
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true,
+    "cloud": true
+  },
+  "h5": {
+    "router": {
+      "mode": "hash",
+      "base": "/"
+    },
+    "title": "CampusHub"
+  },
+  "uniStatistics": {
+    "enable": false
+  },
+  "vueVersion": "3"
+}

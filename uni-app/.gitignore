@@ -1,0 +1,28 @@
+# 依赖
+node_modules/
+
+# 构建产物（uni-app 三端输出）
+dist/
+unpackage/
+
+# HBuilderX 本地配置
+.hbuilderx/
+
+# 环境变量（部署时填真实凭据的文件严禁入库）
+.env
+.env.local
+.env.*.local
+*.local
+
+# 日志与临时产物
+*.log
+*.tmp
+
+# 校验脚本运行输出（可用 scripts/verify_pages.py 重新生成）
+scripts/*.out.txt
+
+# 编辑器与系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

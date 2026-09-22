@@ -1,0 +1,78 @@
+@charset "utf-8";
+
+/* ============================================================
+   墨荧 · Acid Campus 设计令牌（唯一事实源）
+   ------------------------------------------------------------
+   ⚠️ 本文件只放「CSS 自定义属性（变量）」，不放任何 CSS 规则。
+      全局规则请写进 src/styles/global.scss。
+   原因：早期版本把 page{} / .sticker{} 等规则混在这里，并被
+   vite.config.ts 的 scss.additionalData 注入到每一个页面的 <style> 块，
+   导致 20 个页面各输出一份同样的规则（体积冗余 + 作用域混乱）。
+   现在改为「只被 App.vue 全局 @import 一次」，additionalData 已移除。
+
+   铁律：
+   - 深色为默认主题；浅色是「打印版」降级
+   - 全站只许 8 / 28 两档圆角（rpx），不得出现 50% 胶囊
+   - 无软投影：1px 硬边框或 0 4rpx 0 硬投影
+   - 每页只允许一个荧光焦点
+   ============================================================ */
+
+:root {
+  /* 深色主题（默认） */
+  --bg-page: #0d110e;
+  --bg-card: #151a16;
+  --bg-elevated: #1d241f;
+  --bg-deep: #0f1410;
+
+  --accent: #c8f135;
+  --accent-dim: #8fb31f;
+  --danger: #ff6b5e;
+  --warning: #ffc94d;
+  --success: #5fe08a;
+
+  /* ⚠️ --secondary 仅用于「语义状态色」（招领/已解决/通知类型标签），
+     不得作为第二强调色大面积使用 —— 全站强调色只有 --accent 一个。 */
+  --secondary: #35e0c8;
+
+  --text-primary: #f2f5f0;
+  --text-body: #eaf2df;
+  --text-secondary: #9aa39a;
+  --text-tertiary: #5c655c;
+  --border: #2a322c;
+
+  /* 圆角两档（不允许第三档，尤其禁止 50% 胶囊） */
+  --radius-sharp: 8rpx;
+  --radius-pill: 28rpx;
+
+  /* 字重 */
+  --fw-title: 900;
+  --fw-body: 400;
+
+  /* 间距（rpx 基准，4 的倍数） */
+  --sp-1: 8rpx;
+  --sp-2: 16rpx;
+  --sp-3: 24rpx;
+  --sp-4: 32rpx;
+  --sp-5: 48rpx;
+}
+
+/* 浅色主题（打印版降级） */
+[data-theme='light'] {
+  --bg-page: #f4f2ea;
+  --bg-card: #ffffff;
+  --bg-elevated: #fbfaf4;
+  --bg-deep: #fbfaf4;
+
+  --accent: #4e6b00;
+  --accent-dim: #6a8b12;
+  --danger: #c0392b;
+  --warning: #b8860b;
+  --success: #2e7d32;
+  --secondary: #0b7a6b;
+
+  --text-primary: #171b17;
+  --text-body: #171b17;
+  --text-secondary: #5c655c;
+  --text-tertiary: #9aa39a;
+  --border: #d8d4c4;
+}

@@ -157,8 +157,9 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   for (const a of ['list', 'list-all', 'create', 'toggle', 'delete']) {
     assert.ok(anno.includes(`action === '${a}'`) || anno.includes(`'${a}'`), `公告动作 ${a}`)
   }
-  assert.ok(read('miniprogram/pages/index/index.js').includes('loadAnnouncements'), '首页加载公告')
-  assert.ok(read('miniprogram/pages/admin/admin.wxml').includes('公告'), '管理后台公告 tab')
+  // 4b) uni-app 前端接入（旧 miniprogram 断言已随前端替换退役）
+  assert.ok(read('uni-app/src/pages/index/index.vue').includes('loadAnnouncements'), 'uni-app 首页加载公告')
+  assert.ok(read('uni-app/src/adapters/index.ts').includes('adaptNotice'), 'uni-app 通知适配层')
 
   // 5) 管理审计日志：logAdmin 注入 + list-logs
   assert.ok(read('cloudfunctions/admin/index.js').includes('logAdmin'), 'admin 注入 logAdmin')
@@ -172,18 +173,13 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   // 7) 积分消费闭环：points 商城 + 改名卡校验
   assert.ok(read('cloudfunctions/points/index.js').includes('rename-token'), '积分商城含改名卡')
   assert.ok(read('cloudfunctions/user-update/index.js').includes('RENAME_LIMITED'), 'user-update 改名卡校验')
-  assert.ok(read('miniprogram/pages/profile-edit/profile-edit.js').includes('redeemRenameToken'), '前端兑换改名卡')
+  assert.ok(read('uni-app/src/pages/points/points.vue').includes('redeem'), 'uni-app 前端积分兑换')
 
-  // 8) 深分页 cursor：post-list latest 流 + comment-list
+  // 8) 深分页 cursor：post-list latest 流 + comment-list（后端侧；前端 cursor 分页待 uni-app 接入）
   assert.ok(read('cloudfunctions/post-list/index.js').includes('useCursor'), 'post-list 支持 cursor')
   assert.ok(read('cloudfunctions/comment-list/index.js').includes('useCursor'), 'comment-list 支持 cursor')
-  assert.ok(read('miniprogram/pages/post-detail/post-detail.js').includes('commentCursor'), '前端评论 cursor 分页')
 
-  // 9) 帖子海报
-  assert.ok(read('miniprogram/pages/post-detail/post-detail.js').includes('onSharePoster'), '海报生成方法')
-  assert.ok(read('miniprogram/pages/post-detail/post-detail.wxml').includes('posterCanvas'), '海报 canvas')
-
-  // 10) 合规个人化：COMPLIANCE 文档 + 定位词收敛
+  // 9) 合规个人化：COMPLIANCE 文档 + 定位词收敛
   assert.ok(fs.existsSync(path.join(root, 'docs', 'COMPLIANCE.md')), 'COMPLIANCE.md 存在')
   assert.ok(read('docs/COMPLIANCE.md').includes('个体工商户'), '合规文档含个体工商户路径')
   const readme = read('README.md')

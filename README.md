@@ -152,14 +152,12 @@ CampusHub 是一个基于 **微信小程序 + 微信云开发（CloudBase）** �
 
 ```
 CampusHub/
-├── miniprogram/              # 小程序前端
-│   ├── app.js                # 入口（CloudBase 初始化）
-│   ├── app.json              # 全局配置
-│   ├── app.wxss              # 全局样式 + Design Tokens
-│   ├── pages/                # 23 个页面
-│   ├── components/           # 共享组件（如 category-picker）
-│   └── utils/                # 工具（请求、鉴权）
-├── cloudfunctions/           # 34 个云函数
+├── uni-app/                  # ★ 前端（uni-app Vue3 三端：微信小程序 / H5 / 安卓 APK）
+│   ├── src/                  #    20 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
+│   ├── scripts/              #    可复跑校验脚本（纯 Python 标准库）
+│   ├── docs/                 #    安卓打包手册 / 设计系统 / 版本基线
+│   └── README.md             #    前端架构与启动说明
+├── cloudfunctions/           # 37 个云函数（后端唯一事实源）
 │   ├── common/               # ★ 共享内核层（单一数据源）
 │   │   ├── common-bundle.js  # 一行的聚合导出
 │   │   ├── common-context.js # 用户上下文 & 鉴权
@@ -174,6 +172,8 @@ CampusHub/
 │   ├── admin/                # 管理后台
 │   └── ...
 ├── docs/
+│   ├── HANDOVER.md           # ★ 企业交付手册（本仓库交接入口）
+│   ├── ACCEPTANCE.md         # ★ 交付验收报告
 │   ├── DEPLOY.md             # ★ 部署指南（10 步）
 │   ├── USER_GUIDE.md         # 使用说明书
 │   ├── INDEXES.md            # 索引检查清单
@@ -186,12 +186,13 @@ CampusHub/
 ├── scripts/
 │   ├── sync-common.js        # 同步 common/ 到各云函数
 │   └── SYNC.md               # 手动同步指南
-├── .github/workflows/         # CI / CD
-├── project.config.json       # 微信开发者工具配置
+├── .github/workflows/         # CI（云函数语法/单测/契约 + uni-app 结构门禁）
 ├── package.json              # npm 依赖 + sync:common 脚本
 ├── LICENSE                   # Apache-2.0
 └── README.md                 # 本文件
 ```
+
+> ℹ️ 旧版原生小程序客户端 `miniprogram/` 已由 `uni-app/` 全功能取代并移除（v0.9.0 起），git 历史可回溯。
 
 ---
 
@@ -200,19 +201,21 @@ CampusHub/
 > 完整部署指南见 [`docs/DEPLOY.md`](./docs/DEPLOY.md) —— 从 AppID 到上线的 10 步。
 
 ```bash
-# 1. 安装依赖（会自动执行 sync:common 同步公共模块）
-npm install
+# ── 后端（CloudBase）──────────────────────────────
+npm install                # 1. 安装依赖（自动执行 sync:common 同步公共模块）
+                           # 2. 微信开发者工具导入本仓库 → 上传部署 cloudfunctions/ 全部函数
+                           # 3. 控制台开启「HTTP 访问服务」生成 restToken；「身份验证」开启匿名登录
+                           # 4. 调用一次 init-db（建集合 + 种子数据）；索引按 docs/INDEXES.md 核对
+                           # 5. 配置管理员 OpenID（云函数环境变量 ADMIN_OPENIDS）
 
-# 2. 在微信开发者工具中：工具 → 构建 npm
-
-# 3. 填写你的小程序 AppID 到 project.config.json
-# 4. 填写你的云开发环境 ID 到 miniprogram/app.js
-# 5. 右键每个云函数 → 上传并部署：云端安装依赖
-# 6. 配置管理员 OpenID（云函数环境变量 ADMIN_OPENIDS）
-# 7. 调用一次 init-db 云函数（创建集合 + 种子数据 + 索引检查）
-# 8. 在云开发控制台手动创建 32 个索引（或按 docs/INDEXES.md 核对）
-# 9. 预览 & 测试
-# 10. 微信开发者工具：上传 → 提交审核 → 发布
+# ── 前端（uni-app 三端）──────────────────────────
+cd uni-app && npm install  # 6. 依赖已锁版本
+                           # 7. 填 src/config/school.config.js（envId/schoolName/schoolId/restToken）
+                           # 8. 填 src/manifest.json（mp-weixin.appid + 顶层 appid）
+npm run build:h5           # 9. H5 → dist/build/h5（静态托管）
+npm run build:mp-weixin    # 10. 小程序 → dist/build/mp-weixin → 微信开发者工具导入 → 上传审核
+# 安卓 APK：HBuilderX 导入 uni-app/ 云打包 → 见 uni-app/docs/ANDROID_BUILD.md
+# 完整流程（企业交付）：docs/HANDOVER.md ｜ 后端细节：docs/DEPLOY.md
 ```
 
 ---

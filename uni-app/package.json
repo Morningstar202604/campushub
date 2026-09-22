@@ -1,0 +1,43 @@
+{
+  "name": "campushub-uni",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CampusHub uni-app (Vue3 + Vite) 三端：小程序 / H5 / 安卓 APK",
+  "scripts": {
+    "dev:h5": "uni -p h5",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "dev:app": "uni -p app",
+    "build:h5": "uni build -p h5",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "build:app": "uni build -p app",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@cloudbase/js-sdk": "2.32.0",
+    "@dcloudio/uni-app": "3.0.0-4060420250429001",
+    "@dcloudio/uni-components": "3.0.0-4060420250429001",
+    "@dcloudio/uni-h5": "3.0.0-4060420250429001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-4060420250429001",
+    "@dcloudio/uni-app-plus": "3.0.0-4060420250429001",
+    "pinia": "2.2.4",
+    "pinia-plugin-persistedstate": "4.1.3",
+    "vue": "3.5.13",
+    "wot-design-uni": "^1.14.0",
+    "z-paging": "^2.8.8",
+    "dayjs": "^1.11.13"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "3.4.15",
+    "@dcloudio/uni-automator": "3.0.0-4060420250429001",
+    "@dcloudio/uni-cli-shared": "3.0.0-4060420250429001",
+    "@dcloudio/uni-stacktracey": "3.0.0-4060420250429001",
+    "@dcloudio/vite-plugin-uni": "3.0.0-4060420250429001",
+    "sass": "^1.78.0",
+    "typescript": "^5.8.3",
+    "vite": "5.2.8",
+    "vue-tsc": "^2.2.0"
+  },
+  "overrides": {
+    "vue": "3.5.13"
+  }
+}
