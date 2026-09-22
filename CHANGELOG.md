@@ -5,6 +5,36 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.9.2] - 2026-09-22
+
+### Fixed — 第二轮三线交叉复核修复批次（10 项，报告：docs/REVIEW-20260922.md 第六节）
+- **限频原子化**：`rateLimit` 重写为 `rate_limits` 集合「确定性 _id 占位 + 原子自增」，消除 TOCTOU 并发绕过（原实现并发 N 个请求在首条业务记录落库前全部读到 0 → 全部放行）；max=1 场景由主键唯一性保证窗口内恰一次放行；11 个调用点签名不变零改动；新增 `idx_rate_limits_expire`，`task-expire` 定时清理过期占位
+- **查询面收敛**：`product-list` / `category-list` / `guide-list` 客户端查询字段统一过 `sanitizeQuery` 白名单标量断言（与 `post-list` 防注入口径一致）
+- **定时函数守卫**：`backup-db` / `task-expire` 增加 fail-closed 调用方校验——定时触发器（无 OPENID）放行，携带 OPENID 的客户端调用仅限管理员
+- **交付链完整性**：`verify_edit.py` / `style_scope_check.py` / `add_scoped.py` 三脚本转正随仓交付（原 `_` 前缀临时件被汇编排除规则挡住）；报告路径前缀 / 附录清单 / `cd` 指引修正；`verify_contracts.py` 改候选路径自动定位（不再硬编码仓库名）
+- 其余 6 项 L 级：`backup-db` 分片截断显式标记 `truncated`、`comment-delete` 子回复删除回退父楼层 `replyCount`（修楼中楼计数只增不减）、`view_logs` 90 天定时清理（+`idx_view_logs_created`）、死集合 `profile_views` 移除、`my-list` 封禁口径统一（`requireActive`）、`product-detail` 返回 `isLiked`（修复商品详情重载后点赞高亮丢失）
+- 后端契约测试索引总数断言 44 → 45，25/25 通过
+
+### Changed
+- 数据库 21 → **23 集合**（+idempotency / +rate_limits，−profile_views 死集合），索引 41 → **45**
+
+## [0.9.1] - 2026-09-22
+
+### Fixed — 交付前严格审核（19 项：H×2 / M×9 / L×8，报告：docs/REVIEW-20260922.md）
+- **H1**：重建根 `project.config.json`（v0.9.0 移除旧目录时 `cloudfunctionRoot` 被连带删除 → 买方微信开发者工具云函数面板失效、`deploy.js` 定位失效）
+- **H2**：`build:h5/mp/app` 三条构建脚本固化 `node --max-old-space-size=4096`（12 页补 scoped 后默认堆下 H5 构建静默死亡 exit=1）
+- **M×9**：选图器取消后提交按钮永久禁用（×3 页）、my-list 统计真实计数、product-detail 返回后刷新、12 页样式 scoped 隔离、商品枚举后端白名单、编辑侧内容上限对齐、上传报错真实原因、荧光染色残留、撤销误判条目
+- **L×8**：收藏 tab 删除按钮、0 元商品、doctor.js 新布局守卫、死依赖清理、npm audit 定性（41 项全工具链 / 7 运行时依赖零命中）等
+
+## [0.9.0] - 2026-09-22
+
+### Changed — ⚠ BREAKING：前端架构迁移 uni-app 三端
+- 原生微信小程序客户端（`miniprogram/`）由 **uni-app（Vue 3 + Vite + pinia + z-paging + wot-design-uni）** 全功能取代并移除，git 历史可回溯；一套代码三端交付：**微信小程序 / H5 / 安卓 APK**
+- 20 个页面全部按设计系统「墨荧 · Acid Campus」重写；37 个云函数后端零改动复用；小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（HTTP 访问服务 + restToken）
+- 接入 `@cloudbase/js-sdk 2.32.0`（v2 API：`init({ env })` + 匿名登录前置 + `app.uploadFile / getTempFileURL`）
+- 依赖锁版：pinia 2.2.4 + pinia-plugin-persistedstate 4.1.3（4.2.0 起 peer 与 pinia 2.x 冲突，勿升）
+- 交付文档体系落地：HANDOVER（交付手册）/ ACCEPTANCE（验收）/ DEPLOY / INDEXES / COST / COMPLIANCE / OPERATIONS
+
 ## [0.8.0] - 2026-09-01
 
 ### Added — 战略落地（10 项全部实现）

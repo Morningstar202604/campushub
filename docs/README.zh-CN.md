@@ -1,96 +1,106 @@
 # CampusHub
 
-> **面向本校师生的校园内容平台（微信小程序 + 云开发）—— 一校一署，开箱即用。**
-> 多级分类、发帖、二手交易、楼中楼评论、签到、关注、内容安全、管理后台，零成本部署。
+> **一校一署的开源校园内容社区 —— uni-app 一套代码，三端交付（微信小程序 / H5 / 安卓 APK），后端微信云开发零成本起步。**
+> 多级分类、发帖、二手交易、楼中楼评论、签到积分、关注、内容安全、管理后台，开箱即用。
 >
 > 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](../index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
-[![Version](https://img.shields.io/badge/version-0.6.0-green.svg)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.2-green.svg)](../CHANGELOG.md)
+[![uni-app](https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg)](https://uniapp.dcloud.net.cn/)
 [![GitCode](https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue)](https://gitcode.com/badhope/campushub)
 
 > 如果这个项目对你有帮助，欢迎点击右上角 ★ **Star** 支持一下，让更多人能检索到它。也欢迎提 [Issue](https://gitcode.com/badhope/campushub/issues) 与 [PR](https://gitcode.com/badhope/campushub/pulls)。
 >
-> **搜索关键词**：微信小程序开源 / 校园小程序 / 校园服务 / 校园二手 / 云开发开源 / 校园信息发布 / 学习生活助手
+> **搜索关键词**：校园内容平台开源 / uni-app 开源 / 校园小程序 / 校园二手交易 / 云开发开源 / 一校一署 / 校园信息发布 / 学习生活助手
+
+---
+
+## 截图预览
+
+| 首页 | 二手市场 | 失物招领 | 个人中心 |
+|---|---|---|---|
+| ![首页](screenshots/index.png) | ![二手市场](screenshots/market.png) | ![失物招领](screenshots/lost-found.png) | ![个人中心](screenshots/profile.png) |
+
+📁 [24 张单页高清截图](./screenshots/) ｜ 🎬 [37s 演示视频](./screenshots/demo.mp4) ｜ 🖼️ [24 页总览长图](./screenshots/overview.png) ｜ 🛠️ [可交互原型](./preview.html)
 
 ---
 
 ## 概述
 
-CampusHub 是一个基于**微信小程序 + 微信云开发**的校园内容平台，采用**一校一署**模式：
-本校师生在**多级分类目录**下自由发帖、提问、交易、找同好。
+CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBase）** 的开源校园内容社区，采用「**一校一部署**」模式：
 
-- 内容**默认面向本校师生**，每个学校独立部署一个云环境
-- 分类树（分区→分类→板块，三级）**由管理员后台管理**，加学校、开新分类无需改代码
+- **一套代码，三端交付**：微信小程序（`wx.cloud.callFunction`）、H5（REST + restToken）、安卓 APK（HBuilderX 云打包），共用 20 个页面与同一套 37 个云函数
+- 内容**面向本校师生**，每个学校独立部署一个云环境
+- 分类树（分区→版块→子版，三级）**由管理员后台管理**，加学校、开新分类无需改代码
 - 任务类内容支持**自动过期**与**已解决标注**
 
-## 功能特性
+![系统架构](architecture.svg)
 
-- **多级分类目录**：分区→吧→板块三级，`categoryPath` 祖先路径筛选，仅允许发到叶子节点
-- **信息流首页**：帖子+商品瀑布流，推荐/最新/二手 Tab，分类筛选 + 过期归档入口
-- **校园内容发布**：图文帖子、分类、标签、匿名发布、草稿保存、图片预览
-- **任务与过期**：3/7/15/30天有效期，定时函数每 6 小时扫描，过期自动归档；作者/管理员可标"已解决"
-- **二手交易**：商品发布、价格/成色/交易方式、联系方式、标记已售、编辑商品
-- **楼中楼评论**：嵌套回复、评论点赞、回复指定用户
-- **关注系统**：关注/取关、粉丝/关注数、用户主页
-- **每日签到**：连续签到 + 积分奖励（每7天额外加成）
-- **站内通知**：点赞/评论/关注自动生成通知
-- **校园指南**：分类指南文章
-- **搜索**：全站搜索（标题+内容），关键词高亮
-- **内容安全**：所有 UGC 经微信内容安全 API，**fail-closed（审核失败即拒绝）**
-- **管理后台**：举报审核、封禁/解封、置顶/加精、用户列表、反馈管理、分类 CRUD、**公告管理**、**操作审计日志**
-- **公告系统**：管理后台发布，首页顶部公告条（≤3 条置顶优先）
-- **积分商城**：签到积分兑换改名卡（首次改名免费，之后每次消耗 1 张）
-- **自动备份**：`backup-db` 每日 03:00 定时快照核心集合（保留 7 天）
-- **帖子海报**：详情页一键生成分享卡片并保存相册
-- **搜索增强**：服务端限频（每用户 10 秒 3 次）+ 近 7 天真实热词
-- **深分页**：最新流与评论支持游标分页（cursor），大数据量翻页更高效
+## 功能亮点
 
-## 技术栈
+- 🌳 **多级分类**：`categoryPath` 祖先数组，单一索引覆盖任意层级筛选，发帖限定叶子节点
+- 🏠 **信息流首页**：帖子 + 商品双列瀑布流，推荐 / 热门 / 最新 Tab，分类筛选
+- 🛒 **二手市场**：类目 / 成色 / 交易方式枚举白名单，标记已售 / 重新上架 / 编辑
+- 💬 **楼中楼评论**：楼层 + 子回复，replyCount 原子回退，计数不漂移
+- ⏳ **任务过期**：3/7/15/30 天 TTL，6 小时 cron 自动归档
+- 📅 **签到积分**：连续签到 + 积分商城（改名卡），唯一索引防双签
+- 🛡️ **内容安全 fail-closed**：全部 UGC 经微信内容安全接口，任何异常即拒绝发布
+- ⚛️ **原子限频**（v0.9.2）：`rate_limits` 确定性 _id 占位 + 原子自增，杜绝并发绕过
+- 💾 **自动备份 + 日志生命周期**：每日 03:00 快照，90 天浏览日志定时清理
+- ⚙️ **管理后台**：举报审核、封禁、置顶/精华、公告、类目 CRUD、操作审计
 
-- **前端**：原生微信小程序 + TDesign 组件库
-- **后端**：微信云开发（云函数 + 云数据库 + 云存储）
-- **架构**：`cloudfunctions/common/` 共享内核层（9 个模块，同步到全部 37 个云函数）
+![内容模型](data-model.svg)
 
 ## 项目规模
 
-| 维度 | 数量 |
-|------|------|
-| 云函数 | 37 |
-| 前端页面 | 23 |
-| 数据集合 | 21 |
-| 索引定义 | 44 |
+| 指标 | 数量 |
+|---|---|
+| 云函数 | 37（+ 1 共享内核目录） |
+| 前端页面 | 20（三端共用） |
+| 数据库集合 | 23 |
+| 已定义索引 | 45 |
+| 契约测试 | 25 项（CI 强制） |
+
+## 文档导航
+
+| 文档 | 说明 |
+|---|---|
+| [交付手册 HANDOVER](./HANDOVER.md) | ★ 企业交接入口：交付物 / 环境 / 部署 / 验收 |
+| [验收报告 ACCEPTANCE](./ACCEPTANCE.md) | ★ 验收结论 + 买家可复跑命令 |
+| [部署指南 DEPLOY](./DEPLOY.md) | 从 AppID 到上线的 10 步 |
+| [索引清单 INDEXES](./INDEXES.md) | 45 条索引控制台建卡步骤 |
+| [成本方案 COST](./COST.md) | 免费额度 → 生产 19.9 元/月 |
+| [合规要点 COMPLIANCE](./COMPLIANCE.md) | 个人主体 UGC 合规路径 |
+| [使用说明书 USER_GUIDE](./USER_GUIDE.md) | 面向最终用户 |
+| [两轮审核记录 REVIEW](./REVIEW-20260922.md) | 19 + 10 项修复对照与验证矩阵 |
 
 ## 快速开始
 
-> **完整部署指南见 [`DEPLOY.md`](./DEPLOY.md)** — 从填 AppID 到上线共 10 步。
-
 ```bash
-npm install          # 安装依赖 + 自动同步内核层
-# 在微信开发者工具中：工具 → 构建 npm
-# 填入 AppID (project.config.json) 和云环境 ID (miniprogram/app.js)
-# 部署 37 个云函数 → 配置管理员 → 调用 init-db → 建索引 → 测试 → 上线
+# 后端：npm install → 微信开发者工具导入部署 37 函数 → 开 HTTP 访问 + 匿名登录
+#       → init-db 建集合 → 按 INDEXES.md 建 45 条索引 → 配 ADMIN_OPENIDS
+# 前端：cd uni-app && npm install → 填 school.config.js（envId/restToken）→ 三端构建
+npm run build:h5           # H5
+npm run build:mp-weixin    # 微信小程序
+# 安卓 APK：HBuilderX 云打包，见 uni-app/docs/ANDROID_BUILD.md
 ```
 
-## 设计要点
+完整步骤见 [DEPLOY.md](./DEPLOY.md) 与 [HANDOVER.md](./HANDOVER.md)。
 
-- **匿名机制**：帖子/评论可匿名，商品不可匿名（信任隔离）
-- **内容安全 fail-closed**：任何审核异常一律拒绝发布
-- **封禁一致性**：`requireActiveUser()` 统一拦截所有写操作
-- **内容删除单一事实来源**：`removeContent()` 软删除 + 图片回收 + 计数回退
-- **索引自检**：`init-db` 比对定义与线上索引，缺失项回显
-- **软删除**：保留数据可追溯，计数同步回退
-- **安全搜索**：关键字正则转义 + 限长，防 ReDoS
+## 多平台镜像
 
-## 多平台同步
+四平台并列同步（同分支、同标签、同 HEAD），任意选用：
 
-| 平台 | 地址 | 角色 |
-|------|------|------|
-| **GitCode** | gitcode.com/badhope/campushub | 源仓库 |
-| **GitCode** | gitcode.com/badhope/campushub | 主源（当前可用） |
-| GitHub | github.com/Morningstar202604/campushub | ⚠️ 暂不可访问（404） |
-| **Gitee** | gitee.com/badhope/campushub | 镜像（国内访问） |
+| 平台 | 地址 |
+|---|---|
+| GitHub | <https://github.com/x33834/campushub> |
+| GitHub | <https://github.com/Morningstar202604/campushub> |
+| GitCode | <https://gitcode.com/badhope/campushub> |
+| Gitee | <https://gitee.com/badhope/campushub> |
 
-## 开源协议
+同步方式见 [SYNC.md](./SYNC.md)。
+
+## 许可证
 
 [Apache License 2.0](../LICENSE) © 2026 Morningstar202604
