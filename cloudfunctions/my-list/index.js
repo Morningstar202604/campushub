@@ -12,6 +12,17 @@ exports.main = wrap(async (event) => {
   const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
   const size = Math.min(100, Math.max(1, Number(pageSize)))
 
+  // 统计模式：前端「我的内容」顶部计数用，一次返回三类真实总数（跳过列表查询）。
+  // 旧做法用 pageSize=1 + hasMore 猜数，只能显示 0/1/99+，完全失真。
+  if (event.stats) {
+    const [p, pr, c] = await Promise.all([
+      db.collection('posts').where({ userId, status: _.neq('deleted') }).count(),
+      db.collection('products').where({ userId, status: _.neq('deleted') }).count(),
+      db.collection('collects').where({ userId }).count()
+    ])
+    return ok({ counts: { posts: p.total, products: pr.total, collects: c.total } })
+  }
+
   if (type === 'posts' || type === 'products') {
     const collection = type === 'posts' ? 'posts' : 'products'
     const res = await db.collection(collection)

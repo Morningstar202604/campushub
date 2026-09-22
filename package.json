@@ -25,7 +25,7 @@
   ],
   "scripts": {
     "sync:common": "node scripts/sync-common.js",
-    "build:mpm": "node -e \"console.log('miniprogram/miniprogram_npm/ 已出库(.gitignore)。请在微信开发者工具 → 工具 → 构建 npm 生成该目录，再部署/上传。详见 docs/DEPLOY.md 第三步与 docs/NPM_TRIM.md。')\"",
+    "build:mpm": "node -e \"console.log('前端已迁移至 uni-app/：小程序端请在 uni-app/ 下执行 npm run build:mp-weixin，产物 dist/build/mp-weixin 导入微信开发者工具。旧 miniprogram/ 客户端已于 v0.9.0 移除。')\"",
     "deploy": "node scripts/deploy.js --env prod",
     "deploy:dev": "node scripts/deploy.js --env dev",
     "doctor": "node scripts/doctor.js",
@@ -39,9 +39,7 @@
     "test": "node --test tests/common-error.test.js tests/common-db.test.js tests/removeContent.test.js tests/contract.test.js",
     "prepublishOnly": "node scripts/sync-common.js"
   },
-  "dependencies": {
-    "tdesign-miniprogram": "^1.16.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "eslint": "^8.57.1",
     "miniprogram-ci": "^2.1.31",

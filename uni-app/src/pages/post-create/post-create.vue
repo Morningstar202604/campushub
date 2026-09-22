@@ -295,14 +295,24 @@ function onKind(v: string) {
 
 async function chooseImage() {
   if (form.images.length >= 9) return
-  uploading.value = true
+  // 先选图、拿到结果后再置 uploading：用户取消选择框时既不会卡住提交按钮（H5）
+  // 也不会误报「图片上传失败」（小程序端 fail 回调 errMsg 含 cancel）
+  let r: any
   try {
     // uni.chooseImage 三端通用（小程序/H5/App）
-    const r: any = await new Promise((resolve, reject) => {
+    r = await new Promise((resolve, reject) => {
       // @ts-ignore
       uni.chooseImage({ count: 9 - form.images.length, success: resolve, fail: reject })
     })
-    const paths: string[] = r?.tempFilePaths ?? []
+  } catch (e: any) {
+    if (String(e?.errMsg || e?.message || '').toLowerCase().includes('cancel')) return // 用户主动取消
+    uni.showToast({ title: e?.message || '选择图片失败', icon: 'none' })
+    return
+  }
+  const paths: string[] = r?.tempFilePaths ?? []
+  if (!paths.length) return
+  uploading.value = true
+  try {
     for (const p of paths) {
       // 上传到 CloudBase 存储 → 返回 fileID（后端 post-create 的图片安全校验依赖云存储 fileID）
       const fileID = await uploadImage(p)
@@ -405,7 +415,7 @@ async function submit() {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .create-root { padding: 24rpx 32rpx 80rpx; }
 
 .form-block {

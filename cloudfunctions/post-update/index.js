@@ -29,9 +29,10 @@ exports.main = wrap(async (event) => {
     textsToCheck.push(patch.title)
   }
 
-  // 内容
+  // 内容：按帖子类型套上限（创建侧 confession=500/其余=2000，更新侧必须一致，否则可绕过表白墙 500 字限制）
   if (content !== undefined) {
-    if (String(content).length > 2000) throw new AppError('内容不能超过2000字', 'INVALID_PARAM')
+    const maxContent = post.kind === 'confession' ? 500 : 2000
+    if (String(content).length > maxContent) throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
     patch.content = String(content).trim()
     textsToCheck.push(patch.content)
   }

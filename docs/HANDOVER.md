@@ -54,6 +54,8 @@ campushub/
 2. `uni-app/src/manifest.json`：
    - `mp-weixin.appid`：企业小程序 AppID（小程序上传必填）
    - 顶层 `appid`：DCloud AppID（安卓云打包必填，HBuilderX 内「重新获取」）
+   - 同时把仓库根 `project.config.json` 的 `appid` 填为同一企业小程序 AppID ——
+     它承载 `cloudfunctionRoot`（微信开发者工具的云函数面板依赖它），且 `npm run doctor`/一键部署会校验非空
 3. 微信小程序端还需在 CloudBase 控制台把该 AppID 加入「Web 安全域名 / 小程序授权」。
 
 ## 五、三端构建
@@ -82,7 +84,7 @@ npm run type-check         # vue-tsc 全量类型检查（CI 建议保留）
 - [ ] 四个 tab 信息流（首页/市集/表白墙/失物招领）加载与分页、下拉刷新、触底加载
 - [ ] 发帖 / 发商品（含多级分类下钻）、**编辑已发内容**、删除
 - [ ] 商品「标记已售 / 重新上架」状态流转
-- [ ] 帖子/商品详情：评论（含回复）、点赞、收藏、举报
+- [ ] 帖子详情：评论（含回复）、点赞、收藏、举报；商品详情：点赞、收藏、举报（评论暂未开放，与旧版一致）
 - [ ] 搜索三 tab、校园指南列表+富文本详情、关注列表、通知中心（含关注类通知跳转对方主页）
 - [ ] 签到 + 连续天数、积分商城兑换（rename-token 100 分）
 - [ ] 意见反馈提交
@@ -97,7 +99,7 @@ npm run type-check         # vue-tsc 全量类型检查（CI 建议保留）
 | 级别 | 事项 | 建议 |
 |------|------|------|
 | M | H5/App 端 `restToken` 打包进前端产物，可被提取 | 上线后改短时效 token / 企业自建网关代理 |
-| M | `comment-create` 通知的 `targetType` 写死 `'post'`，商品评论的通知会跳到帖子详情 | 需后端一行回填真实 targetType |
+| L | 评论目前仅开放在**帖子**详情（商品详情无评论入口，与旧版小程序一致；后端 `comment-create` 已支持 targetType=product，如需开放直接在商品详情接入 `useComments({ targetType: 'product' })` 即可） | 产品决策 |
 | L | 他人主页粉丝/关注数被后端脱敏，仅展示发帖数 | 产品决策，如需开放改云函数 |
 | L | `build:app` 必须经 HBuilderX 云打包，无本地 CLI 通道 | 交付方备 HBuilderX 账号 |
 | L | 通知/消息无推送通道（仅站内拉取） | 后续可接订阅消息 |

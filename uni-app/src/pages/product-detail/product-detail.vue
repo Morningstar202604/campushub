@@ -99,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { callFunction, fileIDToTempUrl } from '@/utils/api'
 import { useAction } from '@/composables/use-action'
 import { useUserStore } from '@/stores/user'
@@ -252,12 +252,23 @@ onLoad((q) => {
   loadDetail()
 })
 
+// onShow 刷新：从编辑页 navigateBack 返回后详情已变更（标题/价格/状态），必须重拉；
+// 首次进入跳过（onLoad 已加载，避免同 tick 双请求）。
+let firstShow = true
+onShow(() => {
+  if (firstShow) {
+    firstShow = false
+    return
+  }
+  if (!loading.value && product.value) loadDetail()
+})
+
 onUnmounted(() => {
   displayImages.value = []
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .detail-root { padding: 24rpx 32rpx 80rpx; }
 
 .state-block { padding: 140rpx 32rpx; text-align: center; }
@@ -303,7 +314,7 @@ onUnmounted(() => {
 .info-row:last-child { border-bottom: none; }
 .info-label { width: 140rpx; font-size: 24rpx; color: var(--text-tertiary); flex-shrink: 0; }
 .info-value { flex: 1; font-size: 26rpx; color: var(--text-primary); }
-.info-value.tabular-nums { color: var(--accent); }
+/* .tabular-nums 只做等宽数字，不带颜色 —— 遵循「每屏荧光焦点 ≤1」，数字色由 .info-value 决定 */
 
 .contact-row {
   display: flex; align-items: center; gap: 16rpx; margin-top: 20rpx; padding: 20rpx 24rpx;

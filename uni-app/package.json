@@ -7,9 +7,9 @@
     "dev:h5": "uni -p h5",
     "dev:mp-weixin": "uni -p mp-weixin",
     "dev:app": "uni -p app",
-    "build:h5": "uni build -p h5",
-    "build:mp-weixin": "uni build -p mp-weixin",
-    "build:app": "uni build -p app",
+    "build:h5": "node --max-old-space-size=4096 node_modules/@dcloudio/vite-plugin-uni/bin/uni.js build -p h5",
+    "build:mp-weixin": "node --max-old-space-size=4096 node_modules/@dcloudio/vite-plugin-uni/bin/uni.js build -p mp-weixin",
+    "build:app": "node --max-old-space-size=4096 node_modules/@dcloudio/vite-plugin-uni/bin/uni.js build -p app",
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {

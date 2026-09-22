@@ -178,13 +178,24 @@ async function loadProductForEdit() {
 
 async function chooseImage() {
   if (form.images.length >= 9) return
-  uploading.value = true
+  // 先选图、拿到结果后再置 uploading：用户取消选择框时既不会卡住提交按钮（H5）
+  // 也不会误报「图片上传失败」（小程序端 fail 回调 errMsg 含 cancel）
+  let r: any
   try {
-    const r: any = await new Promise((resolve, reject) => {
+    r = await new Promise((resolve, reject) => {
       // @ts-ignore
       uni.chooseImage({ count: 9 - form.images.length, success: resolve, fail: reject })
     })
-    for (const p of r?.tempFilePaths ?? []) {
+  } catch (e: any) {
+    if (String(e?.errMsg || e?.message || '').toLowerCase().includes('cancel')) return // 用户主动取消
+    uni.showToast({ title: e?.message || '选择图片失败', icon: 'none' })
+    return
+  }
+  const paths: string[] = r?.tempFilePaths ?? []
+  if (!paths.length) return
+  uploading.value = true
+  try {
+    for (const p of paths) {
       const fileID = await uploadImage(p)
       form.images.push(fileID)
     }
@@ -208,7 +219,7 @@ async function submit() {
   if (!form.images.length) return uni.showToast({ title: '请至少上传一张图片', icon: 'none' })
   if (form.images.length > 9) return uni.showToast({ title: '图片不能超过9张', icon: 'none' })
   const price = Number(form.price)
-  if (form.price === '' || !Number.isFinite(price) || price < 0) {
+  if (form.price.trim() === '' || !Number.isFinite(price) || price < 0) {
     return uni.showToast({ title: '请输入有效价格', icon: 'none' })
   }
   let originalPrice: number | null = null
@@ -276,7 +287,7 @@ async function submit() {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .create-root { padding: 24rpx 32rpx 80rpx; }
 
 .form-block {

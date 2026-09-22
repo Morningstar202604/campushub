@@ -169,7 +169,8 @@ export function callFunction<T = any>(
 
 // ---------------------------------------------------------------------------
 // CloudBase SDK（H5/App 端的存储能力）：懒加载 + 单例初始化
-// 未安装 @cloudbase/js-sdk 时不抛异常，由调用方降级处理。
+// @cloudbase/js-sdk 2.32.0 已随包依赖；初始化/登录失败由调用方降级处理
+// （fileIDToTempUrl 失败透传，uploadImage 失败抛出可读错误并带排查指引）。
 // ---------------------------------------------------------------------------
 let cbSdkPromise: Promise<any> | null = null
 
@@ -181,6 +182,10 @@ async function ensureCloudbase(): Promise<any> {
     const mod: any = await import('@cloudbase/js-sdk')
     const sdk = mod?.default ?? mod
     const schoolStore = useSchoolStore()
+    if (!schoolStore.envId) {
+      // 明确的配置缺失错误（init({ env: '' }) 会在 SDK 内部抛出难懂的错）
+      throw new Error('未配置 envId，无法初始化 CloudBase 存储。请编辑 src/config/school.config.js 填入')
+    }
     const app = sdk.init({ env: schoolStore.envId })
     // 云存储默认仅「已登录」用户可写（官方文档）：尝试匿名登录；
     // 环境未开启匿名登录时静默降级（读可能仍可用，写会在调用处给出明确报错）
@@ -228,7 +233,7 @@ function extOf(p: string): string {
 /**
  * 文件 ID（cloud:// 开头）→ 临时可访问 URL（跨端通用）
  *  - 小程序端：wx.cloud.getTempFileURL
- *  - H5/App 端：@cloudbase/js-sdk 的 storage.getTempFileURL
+ *  - H5/App 端：@cloudbase/js-sdk 的 app.getTempFileURL（v2 web API）
  * 普通 http(s) 或本地路径直接透传，避免无效调用。
  */
 export async function fileIDToTempUrl(fileID: string): Promise<string> {
@@ -279,7 +284,7 @@ export async function fileIDToTempUrl(fileID: string): Promise<string> {
 /**
  * 本地图片路径 → 上传到 CloudBase 存储 → 返回 fileID（cloud:// 开头）
  *  - 小程序端：wx.cloud.uploadFile（上传前本地压缩，控制流量与存储成本）
- *  - H5/App 端：@cloudbase/js-sdk 的 storage.upload（需先把 blob: 地址取回为 File）
+ *  - H5/App 端：@cloudbase/js-sdk 的 app.uploadFile（v2 web API；blob: 地址需先取回为 File）
  */
 export async function uploadImage(localPath: string, cloudDir = 'campushub'): Promise<string> {
   if (!localPath) throw new Error('缺少图片路径')
@@ -328,7 +333,10 @@ export async function uploadImage(localPath: string, cloudDir = 'campushub'): Pr
     return upRes.fileID as string
   } catch (e: any) {
     console.error('[CampusHub] H5/App 图片上传失败', e?.message || e)
-    throw new Error('图片上传失败：H5/App 端需安装 @cloudbase/js-sdk 并配置 envId')
+    // 带上真实原因：SDK 已随包安装，失败常见于「未填 envId / 未开匿名登录 / 网络异常」
+    throw new Error(
+      `图片上传失败：${e?.message || e}（排查：school.config.js 的 envId 是否已填、CloudBase 是否已开启「匿名登录」）`
+    )
   }
   // #endif
 }

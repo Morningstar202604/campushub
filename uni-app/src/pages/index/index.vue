@@ -144,7 +144,7 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .page-header { display: flex; justify-content: space-between; align-items: center; padding: 32rpx; }
 .page-title { font-size: 40rpx; font-weight: var(--fw-title); color: var(--text-primary); }
 .page-badge { padding: 6rpx 20rpx; font-size: 22rpx; font-weight: var(--fw-title); color: var(--accent); background: var(--bg-card); }

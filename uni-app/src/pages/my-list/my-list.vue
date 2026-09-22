@@ -54,7 +54,7 @@
               @click.stop="onToggleSold(item)"
             >{{ item.status === 'sold' ? '重新上架' : '标记已售' }}</text>
             <text
-              v-if="item.type === 'post' || item.type === 'product'"
+              v-if="tab !== 'collects' && (item.type === 'post' || item.type === 'product')"
               class="my-del"
               @click.stop="onDelete(item)"
             >删除</text>
@@ -102,17 +102,19 @@ function onTab(v: string) {
   reload()
 }
 
+// 统计：走后端 stats 模式（my-list { stats: true } → counts），返回真实计数；
+// 旧实现用 pageSize=1 + hasMore 猜数，只会显示 0/1/99+，完全失真。
 async function loadStats() {
   try {
-    const [p, pr, c] = await Promise.all([
-      callFunction('my-list', { type: 'posts', page: 1, pageSize: 1 }),
-      callFunction('my-list', { type: 'products', page: 1, pageSize: 1 }),
-      callFunction('my-list', { type: 'collects', page: 1, pageSize: 1 })
-    ])
-    const mark = (r: any) => (r?.list?.length ? (r.hasMore ? '99+' : String(r.list.length)) : '0')
-    stats.value = { posts: mark(p), products: mark(pr), collects: mark(c) }
+    const res: any = await callFunction('my-list', { stats: true })
+    const c = res?.counts || {}
+    stats.value = {
+      posts: String(c.posts ?? 0),
+      products: String(c.products ?? 0),
+      collects: String(c.collects ?? 0)
+    }
   } catch {
-    stats.value = { posts: '0', products: '0', collects: '0' }
+    stats.value = { posts: '-', products: '-', collects: '-' }
   }
 }
 
@@ -189,7 +191,7 @@ onShow(() => {
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .my-root { padding: 24rpx 0; }
 
 .stat-row {

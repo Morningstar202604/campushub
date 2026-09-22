@@ -8,7 +8,7 @@
 
 ## 一、验收结论：有条件通过
 
-**判断依据**：仓库内全部可静态验证的质量门均实测通过——类型检查 0 错误、H5 与微信小程序双端构建成功（exit=0）、20 页面结构与致命反模式扫描零命中、前端 29 个云函数调用与后端 38 个函数目录零缺失、编辑功能 5 个落盘文件结构配平且禁用串零命中、双仓库安全扫描零真实凭据。但**功能正确性尚未在真机 + 真实 CloudBase 环境闭环**，且存在 2 项 M 级遗留风险（见第三节）。因此本结论为「有条件通过」：**买方按下文「复跑验证」命令在自有环境复现通过、并按 HANDOVER 第六节验收清单完成真机回归后，即可转为正式签收。**
+**判断依据**：仓库内全部可静态验证的质量门均实测通过——类型检查 0 错误、H5 与微信小程序双端构建成功（exit=0）、20 页面结构与致命反模式扫描零命中、前端 29 个云函数调用与后端 38 个函数目录零缺失、编辑功能 5 个落盘文件结构配平且禁用串零命中、双仓库安全扫描零真实凭据。但**功能正确性尚未在真机 + 真实 CloudBase 环境闭环**，且存在 1 项 M 级遗留风险（restToken 加固方案；原表中 comment-create targetType 一项经交付复审判定有误已撤销，见第三节）。因此本结论为「有条件通过」：**买方按下文「复跑验证」命令在自有环境复现通过、并按 HANDOVER 第六节验收清单完成真机回归后，即可转为正式签收。**
 
 ---
 
@@ -35,9 +35,10 @@
 | 级别 | 风险事项 | 来源 | 建议 |
 |------|----------|------|------|
 | M | H5/App 端 `restToken` 打包进前端产物，可被提取逆向 | HANDOVER 已知限制 | 上线后改短时效 token / 企业自建网关代理 |
-| M | `comment-create` 通知的 `targetType` 写死 `'post'`，商品评论通知会跳错详情页 | HANDOVER 已知限制 | 后端一行回填真实 targetType |
+| ~~M~~ 已撤销 | ~~`comment-create` 通知 `targetType` 写死 `'post'`~~ **复核判定有误**：源码为 `targetType = 'post'` 缺省默认值并完整透传（L18/L49/L77），前端仅帖子侧有评论且显式传 `'post'`，跳转行为正确 | 交付复审推翻原判定 | 无需修复 |
 | M | 静态/构建级验证无法证明运行时功能正确性（分页、图片上传、状态流转等均未真机回归） | 本报告补充 | 买方按第五节复现 + HANDOVER 第六节清单真机回归后再签收 |
 | L | 他人主页粉丝/关注数被后端脱敏，仅展示发帖数 | HANDOVER 已知限制 | 产品决策，如需开放改云函数 |
+| L | 依赖漏洞：`npm audit`（官方源）报 41 项（9 high/23 moderate/9 low），**9 个 high 全部位于构建工具链**（@dcloudio/uni-cli-shared、@intlify/*、vite、adm-zip、jpeg-js）；**7 个运行时依赖（vue/pinia/pinia-plugin-persistedstate/z-paging/wot-design-uni/dayjs/@cloudbase/js-sdk）零命中**，不进入交付产物运行时 | 已接受风险：非强制 `npm audit fix` 无法推进（全部被 uni 工具链精确锁版挡住，audit 建议的「修复」是把 uni-cli-shared 降级到 0.2.994，会直接破坏构建链）；构建工具仅在开发者本机运行 | 买方可在自家受控环境执行 `npm audit fix --force` 自行评估升级，或等待 uni 官方锁版更新 |
 | L | `build:app`（安卓）必须经 HBuilderX 云打包，无本地 CLI 通道，本轮未验证 | HANDOVER 已知限制 + 本报告未覆盖项 | 交付方备 HBuilderX 账号后按 `uni-app/docs/ANDROID_BUILD.md` 执行 |
 | L | 通知/消息无推送通道，仅站内拉取 | HANDOVER 已知限制 | 后续接微信订阅消息 |
 | L | App / tabbar 图标为品牌占位图，正式发布前需替换 | HANDOVER 第五节 | 交付方提供正式 VI 素材 |
@@ -73,6 +74,7 @@ python scripts/_verify_edit.py
 ```
 
 > 注：第 5/6 步脚本输出中的 `STILL BAD` 为已知误报（见检查矩阵 #7、风险表 L 项），以最终 `real_code_hits=0` / `forbidden_real_code_hits=0` / `VERDICT=PASS` 为准。
+> 注：`npm audit` 需走官方源（国内镜像 registry.npmmirror.com 未实现 audit 端点）：`npm audit --registry=https://registry.npmjs.org/`。预期结果见第三节 L 级风险行（运行时依赖零命中）。
 > 后端部署（CloudBase 环境、37 函数、HTTP 访问、匿名登录、索引/TTL、init-db）不在上述复跑范围，按 `docs/DEPLOY.md` 十步走完后再做真机回归。
 
 ---
@@ -103,7 +105,7 @@ python scripts/_verify_edit.py
 - [ ] 按第四节命令在买方环境复跑：type-check / build:h5 / build:mp-weixin / verify_pages / _verify_edit 全部通过
 - [ ] 按 `docs/DEPLOY.md` 完成 CloudBase 部署（37 函数、HTTP 访问、匿名登录、索引/TTL、init-db、task-expire 触发器）
 - [ ] 按 HANDOVER 第六节「验收清单」完成 H5 与小程序双端真机回归
-- [ ] 复核 M 级风险两项（restToken 加固方案、comment-create targetType 修复）的处理计划
+- [ ] 复核 M 级风险一项（restToken 加固方案）的处理计划
 - [ ] 正式发布前替换占位图标、配置企业 AppID
 
 ---

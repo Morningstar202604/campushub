@@ -107,7 +107,7 @@ function openDetail(g: GuideCard) {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .guide-head { display: flex; justify-content: space-between; align-items: center; padding: 32rpx; }
 .head-title { font-size: 40rpx; font-weight: var(--fw-title); color: var(--text-primary); }
 .head-badge { padding: 6rpx 20rpx; font-size: 22rpx; font-weight: var(--fw-title); color: var(--accent); background: var(--bg-card); }

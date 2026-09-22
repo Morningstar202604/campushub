@@ -74,9 +74,22 @@ exports.main = wrap(async (event) => {
     throw new AppError('原价不能低于售价', 'INVALID_PARAM')
   }
 
-  if (category !== undefined) patch.category = category
-  if (condition !== undefined) patch.condition = condition
-  if (tradeType !== undefined) patch.tradeType = tradeType
+  // 枚举白名单（与 product-create 及前端页保持一致；防 API 层写入任意值破坏筛选与标签展示）
+  const VALID_CATEGORIES = ['digital', 'books', 'living', 'sports', 'other']
+  const VALID_CONDITIONS = ['new', 'good', 'fair', 'old']
+  const VALID_TRADES = ['face', 'mail', 'both']
+  if (category !== undefined) {
+    if (!VALID_CATEGORIES.includes(category)) throw new AppError('非法的商品分类', 'INVALID_PARAM')
+    patch.category = category
+  }
+  if (condition !== undefined) {
+    if (!VALID_CONDITIONS.includes(condition)) throw new AppError('非法的成色', 'INVALID_PARAM')
+    patch.condition = condition
+  }
+  if (tradeType !== undefined) {
+    if (!VALID_TRADES.includes(tradeType)) throw new AppError('非法的交易方式', 'INVALID_PARAM')
+    patch.tradeType = tradeType
+  }
   if (location !== undefined) patch.location = String(location || '').slice(0, 200)
   if (contactInfo !== undefined) {
     patch.contactInfo = String(contactInfo || '').slice(0, 100)

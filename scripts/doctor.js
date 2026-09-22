@@ -53,19 +53,43 @@ function checkAppid() {
 }
 
 // ---------- 2. 云环境 ID ----------
+// 前端配置已迁移：uni-app/src/config/school.config.js（单文件换校机制）
+// 旧布局（miniprogram/app.js）存在时仍兼容检查；两者都没有则跳过而非崩溃。
 function checkEnvId() {
-  const appJs = fs.readFileSync(path.join(ROOT, 'miniprogram', 'app.js'), 'utf8')
-  const m = appJs.match(/env:\s*'([^']*)'/)
-  const envId = m ? m[1] : ''
-  if (!envId) {
-    err("miniprogram/app.js 未找到 wx.cloud.init 的 env 配置")
-  } else if (envId.includes('你的') || envId.includes('替换')) {
-    err(`miniprogram/app.js 云环境 ID 仍是占位符：'${envId}'`)
-  } else if (envId === 'campushub') {
-    warn(`miniprogram/app.js env='${envId}'，若这是默认占位值请改为真实环境 ID`)
-  } else {
-    ok(`云环境 ID：${envId}`)
+  const uniCfg = path.join(ROOT, 'uni-app', 'src', 'config', 'school.config.js')
+  const legacyApp = path.join(ROOT, 'miniprogram', 'app.js')
+
+  if (fs.existsSync(uniCfg)) {
+    const src = fs.readFileSync(uniCfg, 'utf8')
+    const m = src.match(/envId:\s*'([^']*)'/)
+    const envId = m ? m[1] : ''
+    if (!envId) {
+      warn('uni-app/src/config/school.config.js envId 为空（部署 H5/小程序前端前必须填写）')
+    } else if (envId === 'campushub') {
+      warn(`uni-app school.config.js envId='${envId}'，若这是默认占位值请改为真实环境 ID`)
+    } else {
+      ok(`uni-app envId：${envId}`)
+    }
+    return
   }
+
+  if (fs.existsSync(legacyApp)) {
+    const appJs = fs.readFileSync(legacyApp, 'utf8')
+    const m = appJs.match(/env:\s*'([^']*)'/)
+    const envId = m ? m[1] : ''
+    if (!envId) {
+      err("miniprogram/app.js 未找到 wx.cloud.init 的 env 配置")
+    } else if (envId.includes('你的') || envId.includes('替换')) {
+      err(`miniprogram/app.js 云环境 ID 仍是占位符：'${envId}'`)
+    } else if (envId === 'campushub') {
+      warn(`miniprogram/app.js env='${envId}'，若这是默认占位值请改为真实环境 ID`)
+    } else {
+      ok(`云环境 ID：${envId}`)
+    }
+    return
+  }
+
+  ok('跳过 envId 检查（未发现前端配置文件）')
 }
 
 // ---------- 3+4. 云函数清单与 common 同步一致性 ----------
@@ -145,16 +169,32 @@ function checkFunctions() {
 }
 
 // ---------- 5. 依赖与构建 ----------
+// 旧客户端（miniprogram/）已被 uni-app 取代：目录不存在时相关检查跳过，不再误报。
 function checkDeps() {
-  if (fs.existsSync(path.join(ROOT, 'node_modules', 'tdesign-miniprogram'))) {
-    ok('tdesign-miniprogram 已安装')
-  } else {
-    warn('tdesign-miniprogram 未安装：请执行 npm install')
+  const hasLegacy = fs.existsSync(path.join(ROOT, 'miniprogram'))
+  if (hasLegacy) {
+    if (fs.existsSync(path.join(ROOT, 'node_modules', 'tdesign-miniprogram'))) {
+      ok('tdesign-miniprogram 已安装')
+    } else {
+      warn('tdesign-miniprogram 未安装：请执行 npm install')
+    }
+    if (fs.existsSync(path.join(ROOT, 'miniprogram', 'miniprogram_npm'))) {
+      ok('miniprogram_npm 已构建')
+    } else {
+      warn('miniprogram_npm 不存在：请在微信开发者工具执行「工具 → 构建 npm」')
+    }
+    return
   }
-  if (fs.existsSync(path.join(ROOT, 'miniprogram', 'miniprogram_npm'))) {
-    ok('miniprogram_npm 已构建')
+  // 新布局：uni-app 前端依赖（用于 H5/小程序/安卓三端构建）
+  if (fs.existsSync(path.join(ROOT, 'uni-app', 'node_modules'))) {
+    ok('uni-app/node_modules 已安装')
   } else {
-    warn('miniprogram_npm 不存在：请在微信开发者工具执行「工具 → 构建 npm」')
+    warn('uni-app/node_modules 不存在：请执行 cd uni-app && npm install')
+  }
+  if (fs.existsSync(path.join(ROOT, 'uni-app', 'package-lock.json'))) {
+    ok('uni-app/package-lock.json 存在（依赖可复现）')
+  } else {
+    warn('uni-app/package-lock.json 缺失：建议提交锁文件以保证可复现安装')
   }
 }
 

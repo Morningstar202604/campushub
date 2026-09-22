@@ -64,6 +64,10 @@ exports.main = wrap(async (event) => {
   if (originalPrice !== undefined && originalPrice !== null && Number(originalPrice) > 0 && Number(originalPrice) < numPrice) {
     throw new AppError('原价不能低于售价', 'INVALID_PARAM')
   }
+  // 枚举白名单（与 product-update 及前端枚举一致，防 API 层写入任意值）
+  if (!['digital', 'books', 'living', 'sports', 'other'].includes(category)) throw new AppError('非法的商品分类', 'INVALID_PARAM')
+  if (!['new', 'good', 'fair', 'old'].includes(condition)) throw new AppError('非法的成色', 'INVALID_PARAM')
+  if (!['face', 'mail', 'both'].includes(tradeType)) throw new AppError('非法的交易方式', 'INVALID_PARAM')
 
   // 文本安全：fail-closed
   await checkContents([title, description, contactInfo], { openid: user.openid, scene: 2 })

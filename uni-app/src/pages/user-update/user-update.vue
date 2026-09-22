@@ -104,7 +104,9 @@ async function chooseAvatar() {
     form.avatar = fileID
     previewAvatar.value = fileID
   } catch (e: any) {
-    uni.showToast({ title: '头像上传失败', icon: 'none' })
+    // 用户取消选择框（errMsg 含 cancel）静默返回，不弹「头像上传失败」误导
+    if (String(e?.errMsg || e?.message || '').toLowerCase().includes('cancel')) return
+    uni.showToast({ title: e?.message || '头像上传失败', icon: 'none' })
   }
 }
 
@@ -159,7 +161,7 @@ async function save() {
 onMounted(hydrate)
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .update-root { padding: 24rpx 32rpx 80rpx; }
 .form-block {
   padding: 24rpx; margin-bottom: 20rpx;

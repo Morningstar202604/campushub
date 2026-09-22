@@ -247,7 +247,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .detail-root { padding: 24rpx 32rpx 80rpx; }
 
 .state-block { padding: 140rpx 32rpx; text-align: center; }
