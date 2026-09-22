@@ -67,26 +67,26 @@ test('P4: 所有 UGC 写入入口对非字符串输入做 String 化（防 .trim
   }
 })
 
-test('P4: 落地页 index.html 统计与链接应保持最新（37/23/21/41/9 + Morningstar202604）', () => {
+test('P4: 落地页 index.html 统计与链接应保持最新（37/23/21/44/9 + Morningstar202604）', () => {
   const src = read('index.html')
   assert.ok(src.includes('Morningstar202604'), '落地页链接应指向当前仓库账号')
   assert.ok(!src.includes('weed33834'), '落地页不应残留旧账号 weed33834')
-  for (const n of ['>37<', '>23<', '>21<', '>41<', '>9<']) {
+  for (const n of ['>37<', '>23<', '>21<', '>44<', '>9<']) {
     assert.ok(src.includes(n), `落地页统计应包含 ${n}`)
   }
   assert.match(src, /version-0.8.0-green/, '落地页版本 badge 应为 0.7.0')
 })
 
-test('P4: 文档统计数字与事实一致（37 云函数 / 23 页面 / 21 集合 / 41 索引 / 9 内核）', () => {
+test('P4: 文档统计数字与事实一致（37 云函数 / 23 页面 / 21 集合 / 44 索引 / 9 内核）', () => {
   const readme = read('README.md')
   const zh = read('docs/README.zh-CN.md')
   assert.ok(!readme.includes('| Cloud Functions | 34 |'), 'README 不应残留 34（旧值）')
   assert.ok(!zh.includes('| 云函数 | 34 |'), 'zh-CN 不应残留 34（旧值）')
-  assert.ok(readme.includes('| Cloud Functions | 37 |'), 'README 云函数=37')
-  assert.ok(readme.includes('Defined Indexes | 41'), 'README 索引=41')
+  assert.ok(readme.includes('| 云函数 | 37 |'), 'README 云函数=37')
+  assert.ok(readme.includes('| 已定义索引 | 44 |'), 'README 索引=44')
   assert.ok(zh.includes('| 云函数 | 37 |'), 'zh-CN 云函数=37')
   assert.ok(zh.includes('| 数据集合 | 21 |'), 'zh-CN 集合=21')
-  assert.ok(zh.includes('| 索引定义 | 41 |'), 'zh-CN 索引=41')
+  assert.ok(zh.includes('| 索引定义 | 44 |'), 'zh-CN 索引=44')
 })
 
 test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与 34 云函数', () => {
@@ -128,8 +128,8 @@ test('DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止漏
   for (const n of depNames) {
     assert.ok(srcNames.has(n), `DEPLOY.md 出现未知索引 ${n}`)
   }
-  assert.strictEqual(srcNames.size, 41, 'common-indexes.js 应为 41 个索引')
-  assert.strictEqual(depNames.size, 41, 'DEPLOY.md 应列出全部 41 个索引')
+  assert.strictEqual(srcNames.size, 44, 'common-indexes.js 应为 44 个索引')
+  assert.strictEqual(depNames.size, 44, 'DEPLOY.md 应列出全部 44 个索引')
 })
 
 test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/积分闭环/深分页/海报）', () => {

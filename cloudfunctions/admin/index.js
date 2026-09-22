@@ -59,15 +59,38 @@ exports.main = wrap(async (event) => {
       db.collection('reports').where({ status: 'pending' }).orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
       db.collection('reports').where({ status: 'pending' }).count()
     ])
-    const items = await Promise.all((listRes.data || []).map(async (r) => ({
+    // N+1 消除：先按集合分组收集 targetId，每个集合一次 _.in 批量查（≤3 次），
+    // 再内存拼装摘要，替代原来逐条 getTargetSummary 的 N 次查询（单页最多 300 次）
+    const reports = listRes.data || []
+    const byCol = { posts: [], products: [], comments: [] }
+    for (const r of reports) {
+      const col = r.targetType === 'post' ? 'posts' : r.targetType === 'product' ? 'products' : 'comments'
+      byCol[col].push(r.targetId)
+    }
+    const summaryMap = {}
+    await Promise.all(Object.entries(byCol).map(async ([col, ids]) => {
+      const uniq = Array.from(new Set(ids.filter(id => id != null)))
+      if (!uniq.length) return
+      const res = await db.collection(col).where({ _id: _.in(uniq) }).get()
+      for (const d of res.data || []) {
+        const raw = d.title || d.content || ''
+        summaryMap[d._id] = {
+          ownerId: d.userId,
+          ownerNickname: d.userNickname || '',
+          snippet: String(raw).slice(0, 80)
+        }
+      }
+    }))
+    const items = reports.map((r) => ({
       reportId: r._id,
       targetType: r.targetType,
       targetId: r.targetId,
       reason: r.reason,
       description: r.description,
       createdAt: r.createdAt,
-      target: await getTargetSummary(db, r.targetType, r.targetId)
-    })))
+      // 缺失项（已删除/不在该集合）给占位，保证不崩
+      target: summaryMap[r.targetId] || { _id: r.targetId, status: 'deleted', snippet: '(已删除)' }
+    }))
     return ok({ list: items, total: totalRes.total, page, pageSize: pSize })
   }
 
@@ -245,15 +268,5 @@ async function logAdmin(db, operatorOpenid, action, detail) {
 }
 
 // 取被举报内容摘要（用于审核台展示）
-async function getTargetSummary(db, type, id) {
-  const col = type === 'post' ? 'posts' : type === 'product' ? 'products' : 'comments'
-  const r = await db.collection(col).doc(id).get().catch(() => ({ data: null }))
-  if (!r || !r.data) return { notFound: true }
-  const d = r.data
-  const raw = d.title || d.content || ''
-  return {
-    ownerId: d.userId,
-    ownerNickname: d.userNickname || '',
-    snippet: String(raw).slice(0, 80)
-  }
-}
+// 注：list-reports 已改为批量 _.in 查询消除 N+1，原逐条 getTargetSummary 已内联删除；
+// 此函数保留字段契约文档（ownerId/ownerNickname/snippet），供未来需要单条查询时参考。

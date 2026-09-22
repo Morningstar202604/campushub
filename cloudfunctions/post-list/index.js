@@ -4,12 +4,15 @@
 // 降本 C3（惰性过期）：normal 流在读侧排除「已过时未解决的任务帖」，
 // 即使 task-expire cron 尚未执行，过期任务也不会出现在信息流；
 // cron 降频为每 6 小时兜底归档（config.json）。
-const { getDB, ok, wrap } = require('./common-bundle')
+const { getDB, ok, wrap, sanitizeQuery } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const db = getDB()
   const _ = db.command
-  const { tab = 'recommend', page = 1, pageSize = 20, categoryId, schoolId, status = 'normal', kind, cursor } = event
+  const { tab = 'recommend', page = 1, pageSize = 20, status = 'normal', kind, cursor } = event
+  // where 字段白名单：客户端可控的 schoolId/categoryId 只做标量断言，
+  // 丢弃对象/RegExp/命令型值，避免拼进 .where() 造成查询报错或异常匹配。
+  const { schoolId, categoryId } = sanitizeQuery(event, ['schoolId', 'categoryId'])
   // 游标分页（深翻页优化）：latest 流支持传上一页最后一条 createdAt，用索引定位而非 skip
   const cursorDate = cursor ? new Date(String(cursor)) : null
   const useCursor = !!(cursorDate && !isNaN(cursorDate.getTime()) && tab === 'latest')

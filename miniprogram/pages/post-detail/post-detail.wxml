@@ -60,39 +60,39 @@
         <text class="action-icon">👁</text>
         <text class="action-text">{{post.viewCount || 0}}</text>
       </view>
-      <view class="action-item {{isLiked ? 'active' : ''}}" data-type="post" bindtap="onLike">
+      <view class="action-item {{isLiked ? 'active' : ''}}" data-type="post" bindtap="onLike" role="button" aria-label="点赞">
         <text class="action-icon">{{isLiked ? '❤️' : '🤍'}}</text>
         <text class="action-text">{{post.likeCount || 0}}</text>
       </view>
-      <view class="action-item" bindtap="scrollToComment">
+      <view class="action-item" bindtap="scrollToComment" role="button" aria-label="查看评论">
         <text class="action-icon">💬</text>
         <text class="action-text">{{post.commentCount || 0}}</text>
       </view>
-      <view class="action-item {{isCollected ? 'active' : ''}}" bindtap="onCollect">
+      <view class="action-item {{isCollected ? 'active' : ''}}" bindtap="onCollect" role="button" aria-label="收藏">
         <text class="action-icon">{{isCollected ? '⭐' : '☆'}}</text>
         <text class="action-text">{{post.collectCount || 0}}</text>
       </view>
-      <button class="action-item share-btn" open-type="share" plain hover-class="none">
+      <button class="action-item share-btn" open-type="share" plain hover-class="none" aria-label="分享">
         <text class="action-icon">↗</text>
         <text class="action-text">分享</text>
       </button>
-      <view class="action-item" bindtap="onSharePoster">
+      <view class="action-item" bindtap="onSharePoster" role="button" aria-label="生成海报">
         <text class="action-icon">🖼️</text>
         <text class="action-text">海报</text>
       </view>
-      <view class="action-item" wx:if="{{canEdit}}" bindtap="onEdit">
+      <view class="action-item" wx:if="{{canEdit}}" bindtap="onEdit" role="button" aria-label="编辑帖子">
         <text class="action-icon">✏️</text>
         <text class="action-text">编辑</text>
       </view>
-      <view class="action-item" wx:if="{{canDelete}}" bindtap="onDeletePost">
+      <view class="action-item" wx:if="{{canDelete}}" bindtap="onDeletePost" role="button" aria-label="删除帖子">
         <text class="action-icon">🗑️</text>
         <text class="action-text">删除</text>
       </view>
-      <view class="action-item resolve" wx:if="{{canResolve}}" bindtap="onResolve">
+      <view class="action-item resolve" wx:if="{{canResolve}}" bindtap="onResolve" role="button" aria-label="标记解决">
         <text class="action-icon">✅</text>
         <text class="action-text">{{isTask ? '解决' : '完成'}}</text>
       </view>
-      <view class="action-item" wx:if="{{!canDelete}}" bindtap="onReport">
+      <view class="action-item" wx:if="{{!canDelete}}" bindtap="onReport" role="button" aria-label="举报该帖子">
         <text class="action-icon">🚩</text>
         <text class="action-text">举报</text>
       </view>

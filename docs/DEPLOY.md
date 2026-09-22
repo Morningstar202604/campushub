@@ -19,7 +19,7 @@ npm test             # 单元 + 契约测试 —— 必须 25/25
 - [ ] `project.config.json` 已填 AppID
 - [ ] `miniprogram/app.js` env 已改为真实环境 ID
 - [ ] 37 个云函数已部署 + 2 个触发器已上传（第四步）
-- [ ] 41 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
+- [ ] 44 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
 - [ ] 真机预览回归通过，重点看 TDesign 组件渲染（第九步）
 - [ ] 主体资质与类目已确认：**UGC 社区类目需个体工商户及以上主体**，个人主体请先读 [`docs/COMPLIANCE.md`](./COMPLIANCE.md)
 - [ ] 成本方案已确认：开发阶段用云开发免费体验版（¥0），上线前评估转个人版（¥19.9/月），详见 [`docs/COST.md`](./COST.md)
@@ -97,8 +97,12 @@ npm install
 
 微信开发者工具 → 菜单栏「工具」→「构建 npm」
 
-> **本仓库的 `miniprogram/miniprogram_npm/` 已提交入库**（标准结构：`miniprogram_npm/tdesign-miniprogram/` + `miniprogram_npm/dayjs/`），正常情况下**无需重新构建**，直接编译即可。
-> 只有在升级 `tdesign-miniprogram` 版本后才有必要重新构建；构建后务必跑 `npm run verify` 校验产物结构（历史上曾因产物平铺缺包名层导致真机组件全部不渲染，verify 会拦住这类问题）。
+> ⚠️ **前置（本版本起）**：`miniprogram/miniprogram_npm/`（tdesign 全量 + dayjs，约 4.3MB）**已出库到 `.gitignore`**，克隆仓库后**没有**该目录。
+> **部署/上传前必须先用微信开发者工具「工具 → 构建 npm」生成 `miniprogram_npm/`**，否则 tdesign 组件（t-button / t-icon 等）不会渲染。
+> 等价命令：`npm run build:mpm`（仅打印指引，实际仍需开发者工具内「构建 npm」，CI 不自动生成）。
+>
+> 产物结构须为标准：`miniprogram_npm/tdesign-miniprogram/<组件>/`（保留包名层）。构建后务必跑 `npm run verify` 校验（历史上曾因产物平铺缺包名层导致真机组件全部不渲染，verify 会拦住这类问题）。
+> 升级 `tdesign-miniprogram` 版本后需重新构建。瘦身待验证清单见 [`docs/NPM_TRIM.md`](./NPM_TRIM.md)。
 
 ---
 
@@ -230,7 +234,7 @@ npm install
 
 云开发控制台 → 数据库 → 选择集合 →「索引管理」→「新建索引」
 
-### 7.2 索引清单（共 41 个）
+### 7.2 索引清单（共 44 个）
 
 > 完整定义见 `cloudfunctions/common/common-indexes.js` 和 `docs/INDEXES.md`
 
@@ -323,9 +327,23 @@ npm install
 | announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) |
 | points_orders | idx_points_orders_user_created | userId(升), createdAt(降) |
 
+**idempotency / profile_views**（3个，幂等占位 + 主页访问限流）
+
+| 集合 | 索引名称 | 字段（方向） |
+|---|---|---|
+| idempotency | idx_idempotency_reqid | clientReqId(升)，唯一 |
+| idempotency | idx_idempotency_expire | expireAt(降) |
+| profile_views | idx_profile_views_openid_created | openid(升), createdAt(降) |
+
 ### 7.3 验证索引齐全
 
 建完后，重新调用一次 `init-db`（带 secret），返回的 `missingIndexes` 应为空数组 `[]`。
+
+> **部署后必做**：每次 `npm run deploy` / 上传云函数后，都要回到「第七步」把控制台索引按上方清单建全
+> （或用 `init-db` 的 `missingIndexes` 自检清单逐个补建）。重点确认两条复合索引在案：
+> - `posts`：`idx_posts_school_status_created`（schoolId, status, createdAt，按学校拉列表/信息流）
+> - `comments`：`idx_comments_target_status_created`（targetId, status, createdAt，按目标拉评论流）
+> 这两条已包含在 `common-indexes.js` 权威清单与上表（**无需重复新增**，历史上曾误判为缺失）。
 
 ---
 

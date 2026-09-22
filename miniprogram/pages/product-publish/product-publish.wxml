@@ -137,7 +137,7 @@
 
   <!-- 提交 -->
   <view class="submit-bar safe-bottom">
-    <t-button theme="primary" size="large" block bindtap="submit" loading="{{submitting}}">
+    <t-button theme="primary" size="large" block bindtap="submit" loading="{{submitting}}" aria-label="{{isEdit ? '保存修改' : '发布商品'}}">
       {{isEdit ? '保存修改' : '发布商品'}}
     </t-button>
   </view>

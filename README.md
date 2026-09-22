@@ -79,7 +79,7 @@ CampusHub 是一个基于 **微信小程序 + 微信云开发（CloudBase）** �
 - **前端**：原生小程序，使用 TDesign 组件库，23 个页面，rpx 自适应，全局登录态
 - **API 层**：34 个云函数，按资源（post / product / comment / user 等）分组
 - **共享内核**：`cloudfunctions/common/` 下 9 个模块（auth / security / rate / db / context / content / indexes / bundle / error），通过 `common-bundle.js` 一行的方式同步到所有云函数，保证单一数据源、零漂移
-- **后端**：CloudBase 云数据库（21 集合 / 41 索引）、云存储、云调用（内容安全、订阅消息）
+- **后端**：CloudBase 云数据库（21 集合 / 44 索引）、云存储、云调用（内容安全、订阅消息）
 
 ---
 
@@ -143,7 +143,7 @@ CampusHub 是一个基于 **微信小程序 + 微信云开发（CloudBase）** �
 | 云函数 | 37 |
 | 小程序页面 | 22 |
 | 数据库集合 | 21 |
-| 已定义索引 | 41 |
+| 已定义索引 | 44 |
 | 公共模块 | 9（同步到 34 个云函数） |
 
 ---

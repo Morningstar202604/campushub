@@ -12,7 +12,7 @@
         <view class="user-school" wx:if="{{user.college}}">{{user.college}}{{user.major ? ' · ' + user.major : ''}}</view>
         <view class="user-grade" wx:if="{{user.grade}}">{{user.grade}}</view>
       </view>
-      <view class="edit-btn" bindtap="goEdit">编辑</view>
+      <view class="edit-btn" bindtap="goEdit" role="button" aria-label="编辑资料">编辑</view>
     </view>
     
     <view class="user-card" wx:else>
@@ -54,7 +54,7 @@
       <view class="checkin-sub" wx:if="{{user.checkinStreak > 0}}">已连续签到 {{user.checkinStreak}} 天</view>
       <view class="checkin-sub" wx:else>坚持签到赚积分</view>
     </view>
-    <view class="checkin-btn {{checkedToday ? 'done' : ''}}" bindtap="{{checkedToday ? '' : 'onCheckin'}}">
+    <view class="checkin-btn {{checkedToday ? 'done' : ''}}" bindtap="{{checkedToday ? '' : 'onCheckin'}}" role="button" aria-label="签到">
       {{checkedToday ? '今日已签' : '签到'}}
     </view>
   </view>

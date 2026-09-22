@@ -3,7 +3,7 @@
   <!-- 图片轮播 -->
   <swiper class="image-swiper" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#fff" circular>
     <swiper-item wx:for="{{product.images}}" wx:key="*this">
-      <image src="{{item}}" mode="aspectFill" class="swiper-image" data-index="{{index}}" bindtap="previewImage" />
+      <image src="{{item}}" mode="aspectFill" class="swiper-image" data-index="{{index}}" bindtap="previewImage" alt="{{product.title}} 商品图第 {{index + 1}} 张" />
     </swiper-item>
   </swiper>
 
@@ -31,7 +31,7 @@
   <!-- 卖家信息 -->
   <view class="seller-section" wx:if="{{product.userNickname}}" bindtap="goSellerProfile">
     <view class="seller-avatar">
-      <image wx:if="{{product.userAvatar}}" src="{{product.userAvatar}}" class="avatar-img" />
+      <image wx:if="{{product.userAvatar}}" src="{{product.userAvatar}}" class="avatar-img" alt="{{product.userNickname}} 的头像" />
       <view wx:else class="avatar-placeholder">{{product.userNicknameFirst || '用'}}</view>
     </view>
     <view class="seller-info">
@@ -67,23 +67,23 @@
 
   <!-- 底部操作栏 -->
   <view class="bottom-bar safe-bottom">
-    <view class="bar-action {{isCollected ? 'active' : ''}}" bindtap="onCollect">
+    <view class="bar-action {{isCollected ? 'active' : ''}}" bindtap="onCollect" role="button" aria-label="收藏商品">
       <text class="bar-icon">{{isCollected ? '⭐' : '☆'}}</text>
       <text class="bar-text">收藏</text>
     </view>
-    <view class="bar-action" wx:if="{{canEdit}}" bindtap="onEdit">
+    <view class="bar-action" wx:if="{{canEdit}}" bindtap="onEdit" role="button" aria-label="编辑商品">
       <text class="bar-icon">✏️</text>
       <text class="bar-text">编辑</text>
     </view>
-    <view class="bar-action" wx:if="{{canEdit}}" bindtap="onMarkSold">
+    <view class="bar-action" wx:if="{{canEdit}}" bindtap="onMarkSold" role="button" aria-label="标记销售状态">
       <text class="bar-icon">{{isSold ? '↩' : '✅'}}</text>
       <text class="bar-text">{{isSold ? '上架' : '已售'}}</text>
     </view>
-    <view class="bar-action" bindtap="onReport" wx:if="{{!canDelete}}">
+    <view class="bar-action" bindtap="onReport" wx:if="{{!canDelete}}" role="button" aria-label="举报该商品">
       <text class="bar-icon">🚩</text>
       <text class="bar-text">举报</text>
     </view>
-    <view class="bar-action" wx:if="{{canDelete}}" bindtap="onDeleteProduct">
+    <view class="bar-action" wx:if="{{canDelete}}" bindtap="onDeleteProduct" role="button" aria-label="删除该商品">
       <text class="bar-icon">🗑️</text>
       <text class="bar-text">下架</text>
     </view>

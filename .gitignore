@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
-# NOTE: miniprogram/miniprogram_npm/ is the built npm output — it IS committed
-# so clones render tdesign components without running "build npm".
-# Unused components are stripped at upload time (ignoreUploadUnusedFiles: true).
+# 小程序 npm 构建产物（tdesign-miniprogram 全量 + dayjs，约 4.3MB / 1208 文件）出库，
+# 克隆后需先用「微信开发者工具 → 工具 → 构建 npm」生成，再部署（见 docs/DEPLOY.md 第三步
+# 与 docs/NPM_TRIM.md）。产物可由 npm 依赖确定性重建，不入库可避免仓库膨胀与无意义 diff。
+miniprogram/miniprogram_npm/
 
 # Build output
 dist/

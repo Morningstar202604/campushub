@@ -13,6 +13,7 @@
  *  4. common 内核是否已同步到全部云函数（md5 一致性）
  *  5. tdesign-miniprogram 已安装、miniprogram_npm 已构建
  *  6. deploy.config.json 是否存在（可选，部署自动化用）
+ *  7. wx-server-sdk 版本基线：各函数声明 === common/package-lock.json 锁定版本
  */
 const fs = require('fs')
 const path = require('path')
@@ -73,6 +74,7 @@ const COMMON_FILES = [
   'common-error.js', 'common-indexes.js', 'common-rate.js', 'common-security.js',
   'common-subscribe.js'
 ]
+const MANIFEST = path.join(ROOT, 'cloudfunctions', 'common', '.sync-manifest.json')
 
 function checkFunctions() {
   if (!fs.existsSync(path.join(ROOT, 'cloudfunctions'))) {
@@ -94,20 +96,41 @@ function checkFunctions() {
     if (!hasIndex || !hasPkg) {
       err(`${name}：缺少 ${[!hasIndex && 'index.js', !hasPkg && 'package.json'].filter(Boolean).join(' 与 ')}`)
       structBad++
-      continue
     }
-    // common 同步漂移检测
-    for (const f of COMMON_FILES) {
-      const src = path.join(ROOT, 'cloudfunctions', 'common', f)
-      const dst = path.join(dir, f)
-      if (!fs.existsSync(src)) continue // 未知内核文件跳过
-      if (!fs.existsSync(dst)) {
-        driftFns.push(name)
-        break
+  }
+
+  // 优先用 manifest 指纹校验；缺失/损坏则回退到逐文件 md5
+  let usedManifest = false
+  if (fs.existsSync(MANIFEST)) {
+    let manifest = null
+    try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) } catch (e) { /* fallback */ }
+    if (manifest && Array.isArray(manifest.files)) {
+      usedManifest = true
+      const shaMap = new Map(manifest.files.map(f => [f.name, f.sha1]))
+      for (const name of dirs) {
+        const dir = path.join(ROOT, 'cloudfunctions', name)
+        for (const f of COMMON_FILES) {
+          const dst = path.join(dir, f)
+          const expected = shaMap.get(f)
+          if (!expected) continue
+          if (!fs.existsSync(dst)) { driftFns.push(name); break }
+          const actual = crypto.createHash('sha1').update(fs.readFileSync(dst)).digest('hex')
+          if (actual !== expected) { driftFns.push(name); break }
+        }
       }
-      if (md5(src) !== md5(dst)) {
-        driftFns.push(name)
-        break
+    }
+  }
+  if (!usedManifest) {
+    for (const name of dirs) {
+      const dir = path.join(ROOT, 'cloudfunctions', name)
+      for (const f of COMMON_FILES) {
+        const src = path.join(ROOT, 'cloudfunctions', 'common', f)
+        const dst = path.join(dir, f)
+        if (!fs.existsSync(src)) continue
+        if (!fs.existsSync(dst) || md5(src) !== md5(dst)) {
+          driftFns.push(name)
+          break
+        }
       }
     }
   }
@@ -117,7 +140,7 @@ function checkFunctions() {
     err(`common 内核未同步或已漂移的函数（${driftFns.length} 个）：${driftFns.slice(0, 10).join(', ')}${driftFns.length > 10 ? ' ...' : ''}`)
     console.log('  → 执行 npm run sync:common 后重新检查')
   } else {
-    ok('common 内核已同步到全部云函数（md5 一致）')
+    ok(`common 内核已同步到全部云函数（${usedManifest ? 'SHA1 指纹' : 'md5'} 一致）`)
   }
 }
 
@@ -174,6 +197,75 @@ function checkDeployConfig() {
   }
 }
 
+// ---------- 6.5 依赖版本基线（wx-server-sdk 锁定一致性，档位2改造③）----------
+// 以 cloudfunctions/common/package-lock.json 锁定的 wx-server-sdk 版本为唯一基准，
+// 检查每个云函数 package.json 声明的 wx-server-sdk 是否与其一致。
+// 不一致 → 告警（云端 remoteNpmInstall 会按各自 range 现装，版本漂移是隐患）。
+function normalizeVer(raw) {
+  if (typeof raw !== 'string') return null
+  // 去掉 ~ ^ = > = 前缀与尾部杂项，取主版本号段
+  const m = raw.replace(/[~^=<>]+/g, ' ').trim().split(/\s+/)[0]
+  return m || null
+}
+
+function checkWxSdkBaseline() {
+  const lockPath = path.join(ROOT, 'cloudfunctions', 'common', 'package-lock.json')
+  if (!fs.existsSync(lockPath)) {
+    warn('cloudfunctions/common/package-lock.json 缺失：依赖版本基线未建立，无法校验 wx-server-sdk 一致性')
+    return
+  }
+  let locked = null
+  try {
+    const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'))
+    const nodeEntry = lock.packages && lock.packages['node_modules/wx-server-sdk']
+    locked = nodeEntry && nodeEntry.version
+  } catch (e) {
+    warn(`common/package-lock.json 解析失败，跳过 wx-server-sdk 基线检查：${e.message}`)
+    return
+  }
+  if (!locked) {
+    warn('common/package-lock.json 未锁定 wx-server-sdk（缺 node_modules/wx-server-sdk 条目），无法做版本基线')
+    return
+  }
+
+  const cfDir = path.join(ROOT, 'cloudfunctions')
+  const dirs = fs.readdirSync(cfDir, { withFileTypes: true })
+    .filter(d => d.isDirectory() && d.name !== 'common')
+    .map(d => d.name)
+    .sort()
+
+  const drifted = []
+  let checked = 0
+  let tildeCount = 0
+  for (const name of dirs) {
+    const pkgPath = path.join(cfDir, name, 'package.json')
+    if (!fs.existsSync(pkgPath)) continue
+    let pkg = null
+    try { pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) } catch (e) { continue }
+    const raw = pkg.dependencies && pkg.dependencies['wx-server-sdk']
+    if (!raw) continue // 不依赖 wx-server-sdk 的函数不在此列
+    checked++
+    if (/^[~^]/.test(raw)) tildeCount++ // 仍用范围符 → 允许 patch/minor 漂移
+    const declared = normalizeVer(raw)
+    if (declared !== locked) {
+      drifted.push(`${name}(${raw})`)
+    }
+  }
+
+  if (checked === 0) {
+    warn('未发现任何声明 wx-server-sdk 的云函数，基线检查无对象')
+    return
+  }
+  if (drifted.length) {
+    warn(`wx-server-sdk 与基线 ${locked} 不一致的函数（${drifted.length} 个）：${drifted.join(', ')} → 统一改回基线版本（见 docs/OPERATIONS.md「依赖版本基线」）`)
+  } else {
+    ok(`全部 ${checked} 个函数的 wx-server-sdk 声明与基线 ${locked} 一致`)
+  }
+  if (tildeCount > 0) {
+    console.log(`ℹ 有 ${tildeCount} 个函数仍用范围符（~/^）声明 wx-server-sdk：基线已锁定，升级时只改 cloudfunctions/common 一处；各函数保持 ~ 会在云端现装时放行 patch/minor 漂移，如需强一致可把各函数改为与基线相同的精确版本`)
+  }
+}
+
 console.log('CampusHub doctor 自检\n=====================')
 checkAppid()
 checkEnvId()
@@ -181,6 +273,7 @@ checkFunctions()
 checkNewFns()
 checkSchoolConfig()
 checkDeps()
+checkWxSdkBaseline()
 checkDeployConfig()
 
 console.log(`\n结果：${errors} 个错误，${warns} 个警告`)

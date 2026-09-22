@@ -1,4 +1,6 @@
 ﻿// app.js
+const { getSchoolConfig } = require('./config/school.js')
+
 App({
   globalData: {
     userInfo: null,
@@ -7,15 +9,16 @@ App({
     navBarHeight: 0,
     screenHeight: 0,
     safeAreaBottom: 0,
-    needRefresh: false,
     loginRedirect: ''
   },
 
   onLaunch() {
     // 初始化云开发
     if (wx.cloud) {
+      // 多校隔离：env 由 config/school.js 的 envId 决定（每校 clone 后只改这一个文件）。
+      // 所有 callFunction 经 utils/request.js 收口，env 在 init 时即定，无需改动分散的调用点。
       wx.cloud.init({
-        env: 'campushub', // 替换为你的云开发环境ID
+        env: getSchoolConfig().envId,
         traceUser: true
       })
     }

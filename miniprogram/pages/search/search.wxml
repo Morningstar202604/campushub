@@ -30,13 +30,13 @@
     <block wx:if="{{!searchError}}">
       <!-- Tab -->
       <view class="result-tabs">
-        <view class="result-tab {{activeResult === 'posts' ? 'active' : ''}}" data-key="posts" bindtap="onResultTab">
+        <view class="result-tab {{activeResult === 'posts' ? 'active' : ''}}" data-key="posts" bindtap="onResultTab" role="tab" aria-label="帖子结果">
           帖子 {{posts.length}}
         </view>
-        <view class="result-tab {{activeResult === 'products' ? 'active' : ''}}" data-key="products" bindtap="onResultTab">
+        <view class="result-tab {{activeResult === 'products' ? 'active' : ''}}" data-key="products" bindtap="onResultTab" role="tab" aria-label="商品结果">
           商品 {{products.length}}
         </view>
-        <view class="result-tab {{activeResult === 'guides' ? 'active' : ''}}" data-key="guides" bindtap="onResultTab">
+        <view class="result-tab {{activeResult === 'guides' ? 'active' : ''}}" data-key="guides" bindtap="onResultTab" role="tab" aria-label="指南结果">
           指南 {{guides.length}}
         </view>
       </view>
@@ -104,12 +104,12 @@
       <text class="history-clear" bindtap="clearHistory">清空</text>
     </view>
     <view class="history-tags" wx:if="{{history.length > 0}}">
-      <view class="history-tag" wx:for="{{history}}" wx:key="*this" data-key="{{item}}" bindtap="onHistoryTap">{{item}}</view>
+      <view class="history-tag" wx:for="{{history}}" wx:key="*this" data-key="{{item}}" bindtap="onHistoryTap" role="button" aria-label="搜索历史词 {{item}}">{{item}}</view>
     </view>
     <view class="hot-search">
       <view class="history-title">热门搜索</view>
       <view class="history-tags">
-        <view class="history-tag" wx:for="{{hotSearch}}" wx:key="*this" data-keyword="{{item}}" bindtap="onHotSearch">{{item}}</view>
+        <view class="history-tag" wx:for="{{hotSearch}}" wx:key="*this" data-keyword="{{item}}" bindtap="onHotSearch" role="button" aria-label="热搜词 {{item}}">{{item}}</view>
       </view>
     </view>
   </view>

@@ -3,6 +3,7 @@ const app = getApp()
 const { callFunction } = require('../../utils/request.js')
 const { formatTime, getUserId, firstChar } = require('../../utils/auth.js')
 const { requestSubscribe } = require('../../utils/subscribe.js')
+const eventBus = require('../../utils/eventBus.js')
 
 Page({
   data: {
@@ -39,13 +40,15 @@ Page({
       this.loadPost(options.id)
       this.loadComments(options.id)
     }
+    // 事件总线：其他页发帖/评论后，本页重新拉取（替代全局 needRefresh 标志被首个消费页清零的竞态）
+    this._onDataChanged = () => {
+      if (this.postId) this.loadPost(this.postId)
+    }
+    eventBus.on('data-changed', this._onDataChanged)
   },
 
-  onShow() {
-    if (this.postId && app.globalData.needRefresh) {
-      app.globalData.needRefresh = false
-      this.loadPost(this.postId)
-    }
+  onUnload() {
+    if (this._onDataChanged) eventBus.off('data-changed', this._onDataChanged)
   },
 
   async loadPost(postId) {

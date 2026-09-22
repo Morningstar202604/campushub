@@ -96,3 +96,24 @@
 ```
 
 回滚：小程序后台版本管理可回退上一审核通过版本；云函数用 git checkout 对应 tag 后 `npm run deploy -- --only 函数名`。
+
+## 7. 依赖版本基线（wx-server-sdk 锁定）
+
+云函数端唯一的外部依赖是 `wx-server-sdk`。为避免各函数在云端 `remoteNpmInstall` 时按各自
+range 现装导致版本漂移，项目把版本**锁定到单一基准**：
+
+- **基准文件**：`cloudfunctions/common/package.json`（精确版本 `2.6.3`，无 `~`/`^`）
+  + `cloudfunctions/common/package-lock.json`（唯一 lock 基准，由
+  `npm install --package-lock-only` 生成）。
+- **约定**：所有云函数的 `wx-server-sdk` 以 common lock 锁定的 `2.6.3` 为基线。
+  **升级时只改 `cloudfunctions/common/package.json` 一处**，再重新生成 lock，
+  然后 `npm run sync:common` 同步 + 各函数对齐声明。
+- **自检**：`npm run doctor` 的第 7 项会核对各函数 `package.json` 的 `wx-server-sdk`
+  与 common lock 基线是否一致，不一致会告警。
+- **不逐函数建 lock 的原因**：38 个函数各建一份 `package-lock.json` 会引入 38 个冗余
+  lock，且云函数目录本不该带 `node_modules` 语义（依赖由云端 `remoteNpmInstall` 现装）。
+  用「common 单 lock 作基准 + doctor 一致性告警」是更轻量的兜底。
+
+> ⚠️ 各函数 `package.json` 仍写 `~2.6.3`（保留 range 以允许 patch/minor 自动升级）。
+> 若要求云端安装**强一致**到精确版本，把各函数的 `~2.6.3` 改成与基线相同的 `2.6.3`
+> 即可（doctor 会按声明匹配校验；range 与基线主版本一致时不告警漂移）。

@@ -3,6 +3,7 @@
 const app = getApp()
 const { callFunction } = require('../../utils/request.js')
 const { ensureLogin, formatTime, firstChar } = require('../../utils/auth.js')
+const eventBus = require('../../utils/eventBus.js')
 
 Page({
   data: {
@@ -25,14 +26,18 @@ Page({
       this.setData({ activeKind: options.kind })
     }
     this.loadList(true)
+    // 事件总线：新失物/招领帖发布后刷新（替代全局 needRefresh 标志）
+    this._onDataChanged = (payload) => {
+      if (payload && payload.type !== 'product') {
+        this.setData({ page: 1, list: [], hasMore: true })
+        this.loadList(true)
+      }
+    }
+    eventBus.on('data-changed', this._onDataChanged)
   },
 
-  onShow() {
-    if (app.globalData.needRefresh) {
-      app.globalData.needRefresh = false
-      this.setData({ page: 1, list: [], hasMore: true })
-      this.loadList(true)
-    }
+  onUnload() {
+    if (this._onDataChanged) eventBus.off('data-changed', this._onDataChanged)
   },
 
   onPullDownRefresh() {

@@ -1,6 +1,7 @@
 // pages/my-list/my-list.js
 const { callFunction } = require('../../utils/request.js')
 const { formatTime } = require('../../utils/auth.js')
+const eventBus = require('../../utils/eventBus.js')
 
 Page({
   data: {
@@ -11,21 +12,22 @@ Page({
     hasMore: true
   },
 
-  onShow() {
-    // 编辑/发布返回后刷新列表（app.globalData.needRefresh 约定）
-    if (getApp().globalData.needRefresh) {
-      getApp().globalData.needRefresh = false
-      this.setData({ page: 1, list: [], hasMore: true })
-      this.loadList(true)
-    }
-  },
-
   onLoad(options) {
     const type = options.type || 'posts'
     const titles = { posts: '我的帖子', products: '我的商品', collects: '我的收藏' }
     wx.setNavigationBarTitle({ title: titles[type] || '我的列表' })
     this.setData({ type })
     this.loadList(true)
+    // 事件总线：编辑/发布返回后重新拉取（替代全局 needRefresh 标志）
+    this._onDataChanged = () => {
+      this.setData({ page: 1, list: [], hasMore: true })
+      this.loadList(true)
+    }
+    eventBus.on('data-changed', this._onDataChanged)
+  },
+
+  onUnload() {
+    if (this._onDataChanged) eventBus.off('data-changed', this._onDataChanged)
   },
 
   async loadList(reset = false) {

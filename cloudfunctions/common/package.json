@@ -1,0 +1,9 @@
+{
+  "name": "campushub-common",
+  "version": "1.0.0",
+  "private": true,
+  "description": "common 共享内核依赖锁定基准：各云函数统一锁定到此处 wx-server-sdk 的精确版本（见 package-lock.json）",
+  "dependencies": {
+    "wx-server-sdk": "2.6.3"
+  }
+}

@@ -30,6 +30,7 @@
             data-side="left"
             data-index="{{index}}"
             binderror="onImgError"
+            alt="{{item.title}} 商品图"
           />
           <view wx:if="{{item.images.length > 0 && item._coverFail}}" class="card-cover card-cover-fallback">📦</view>
           <view class="card-body">
@@ -44,7 +45,7 @@
             </view>
             <view class="card-meta">
               <view class="meta-user">
-                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="left" data-index="{{index}}" binderror="onAvatarError" />
+                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="left" data-index="{{index}}" binderror="onAvatarError" alt="{{item.userNickname}} 的头像" />
                 <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '用'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
                 <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>
@@ -68,6 +69,7 @@
             data-side="right"
             data-index="{{index}}"
             binderror="onImgError"
+            alt="{{item.title}} 商品图"
           />
           <view wx:if="{{item.images.length > 0 && item._coverFail}}" class="card-cover card-cover-fallback">📦</view>
           <view class="card-body">
@@ -82,7 +84,7 @@
             </view>
             <view class="card-meta">
               <view class="meta-user">
-                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="right" data-index="{{index}}" binderror="onAvatarError" />
+                <image wx:if="{{item.userAvatar && !item._avatarFail}}" src="{{item.userAvatar}}" class="meta-avatar" data-side="right" data-index="{{index}}" binderror="onAvatarError" alt="{{item.userNickname}} 的头像" />
                 <view class="meta-avatar-placeholder" wx:else>{{item.userNicknameFirst || '用'}}</view>
                 <text class="meta-name">{{item.userNickname}}</text>
                 <text class="meta-v" wx:if="{{item.authorVerified}}">✓</text>

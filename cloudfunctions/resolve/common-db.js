@@ -45,4 +45,23 @@ async function insertIdempotent(collection, data) {
   }
 }
 
-module.exports = { cloud, initCloud, getCloud, getDB, getCmd, isDuplicateKeyError, insertIdempotent }
+// 客户端输入进 where 的「字段白名单 + 标量类型断言」工具。
+// 背景：部分读函数把客户端字段直接拼进 .where()，攻击者可塞入对象/RegExp/命令对象
+// 导致查询报错或异常匹配。此函数只保留白名单内的 key，且只接受标量值
+// （string/number/boolean/null），把其余一律丢弃——非破坏性地收敛查询面。
+// 用法：const safe = sanitizeQuery(event, ['schoolId', 'categoryId'])
+//       db.collection('x').where(safe)
+function sanitizeQuery(input, allowedKeys) {
+  const out = {}
+  if (!input || typeof input !== 'object' || !Array.isArray(allowedKeys)) return out
+  for (const k of allowedKeys) {
+    const v = input[k]
+    if (v === undefined) continue
+    if (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+      out[k] = v
+    }
+  }
+  return out
+}
+
+module.exports = { cloud, initCloud, getCloud, getDB, getCmd, isDuplicateKeyError, insertIdempotent, sanitizeQuery }

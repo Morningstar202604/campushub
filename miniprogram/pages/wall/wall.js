@@ -4,6 +4,7 @@ const app = getApp()
 const { callFunction } = require('../../utils/request.js')
 const { ensureLogin, formatTime, firstChar } = require('../../utils/auth.js')
 const { getCache, setCache } = require('../../utils/cache.js')
+const eventBus = require('../../utils/eventBus.js')
 
 const FEED_CACHE_KEY = 'wall_feed_v1'
 const FEED_CACHE_TTL = 3 * 60 * 1000
@@ -20,14 +21,18 @@ Page({
 
   onLoad() {
     this.loadList(true)
+    // 事件总线：新帖子（含表白墙）发布后刷新（替代全局 needRefresh 标志）
+    this._onDataChanged = (payload) => {
+      if (payload && payload.type !== 'product') {
+        this.setData({ page: 1, list: [], hasMore: true })
+        this.loadList(true, { force: true })
+      }
+    }
+    eventBus.on('data-changed', this._onDataChanged)
   },
 
-  onShow() {
-    if (app.globalData.needRefresh) {
-      app.globalData.needRefresh = false
-      this.setData({ page: 1, list: [], hasMore: true })
-      this.loadList(true, { force: true })
-    }
+  onUnload() {
+    if (this._onDataChanged) eventBus.off('data-changed', this._onDataChanged)
   },
 
   onPullDownRefresh() {

@@ -2,6 +2,7 @@
 const app = getApp()
 const { callFunction, uploadImage } = require('../../utils/request.js')
 const { requestSubscribe } = require('../../utils/subscribe.js')
+const { emit } = require('../../utils/eventBus.js')
 
 Page({
   data: {
@@ -26,7 +27,10 @@ Page({
     isEdit: false,
     editId: '',
     // 草稿
-    draftKey: 'post_draft'
+    draftKey: 'post_draft',
+    // 幂等：本次发布意图的唯一键（防闪断重试产生双帖）
+    lastReqId: '',
+    lastReqTime: 0
   },
 
   onLoad(options) {
@@ -235,6 +239,14 @@ Page({
 
   async submit() {
     if (this.data.submitting) return // JS 级防重入（不依赖按钮 loading 态）
+    // 幂等键：5s 内的重复提交（含闪断重试）复用同一 clientReqId，由后端幂等兜底；
+    // 超过 5s（如改完内容再提交）则生成新键，允许新建。
+    const now = Date.now()
+    let clientReqId = this.data.lastReqId
+    if (!clientReqId || now - this.data.lastReqTime > 5000) {
+      clientReqId = Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+    }
+    this.setData({ lastReqId: clientReqId, lastReqTime: now })
     const {
       title, content, images, tags, categoryId, categoryPath, kind, expireDays, isAnonymous, location,
       isEdit, editId
@@ -285,7 +297,7 @@ Page({
         })
         wx.hideLoading()
         if (res.success) {
-          app.globalData.needRefresh = true
+          emit('data-changed', { type: 'post' })
           wx.showToast({ title: '修改成功', icon: 'success' })
           // 成功后不复位 submitting：跳转空窗期内按钮保持禁用，防重复保存
           setTimeout(() => wx.navigateBack(), 1500)
@@ -297,14 +309,15 @@ Page({
         // 新建模式
         const res = await callFunction('post-create', {
           title, content, images: uploadedImages, tags,
-          categoryId, categoryPath, kind, expireDays, isAnonymous, location
+          categoryId, categoryPath, kind, expireDays, isAnonymous, location,
+          clientReqId
         })
         wx.hideLoading()
         if (res.success) {
           // 标记已发布：onUnload 不再回写草稿；submitting 保持 true 防空窗期双击重发
           this._published = true
           this.clearDraft()
-          app.globalData.needRefresh = true
+          emit('data-changed', { type: 'post' })
           wx.showToast({ title: '发布成功', icon: 'success' })
           // 请求订阅「评论/回复」提醒（未配置模板时静默）
           requestSubscribe(['comment'])

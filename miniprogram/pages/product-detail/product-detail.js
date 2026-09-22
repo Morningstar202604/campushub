@@ -2,6 +2,7 @@
 const app = getApp()
 const { callFunction } = require('../../utils/request.js')
 const { formatTime, getUserId, firstChar } = require('../../utils/auth.js')
+const eventBus = require('../../utils/eventBus.js')
 
 Page({
   data: {
@@ -21,14 +22,15 @@ Page({
     if (options.id) {
       this.loadProduct(options.id)
     }
+    // 事件总线：编辑/删除/发品后，本页重新拉取（替代全局 needRefresh 标志）
+    this._onDataChanged = () => {
+      if (this.productId) this.loadProduct(this.productId)
+    }
+    eventBus.on('data-changed', this._onDataChanged)
   },
 
-  onShow() {
-    // 编辑后返回刷新
-    if (this.productId && app.globalData.needRefresh) {
-      app.globalData.needRefresh = false
-      this.loadProduct(this.productId)
-    }
+  onUnload() {
+    if (this._onDataChanged) eventBus.off('data-changed', this._onDataChanged)
   },
 
   async loadProduct(productId) {

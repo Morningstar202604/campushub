@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+# 提交前门禁：对暂存 .js 文件跑 ESLint（使用仓库根 eslint.config.js flat 配置）
+# 策略：
+#   - 仅检查本次暂存的 .js（排除 common 同步副本与 miniprogram_npm）
+#   - eslint 未安装则放行（首次 clone 无 lockfile 不阻塞提交），真正门禁在 CI
+#   - 失败则阻断提交（可 git commit --no-verify 绕过，但 CI 会拦截）
+command -v npx >/dev/null 2>&1 || { echo "[husky] npx 不可用，跳过"; exit 0; }
+
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.js$' | grep -vE 'cloudfunctions/.+/common/|miniprogram_npm/|eslint\.config\.js' || true)
+[ -z "$STAGED_JS" ] && { echo "[husky] 无暂存 .js 变更，跳过"; exit 0; }
+
+if ! node -e "require.resolve('eslint')" >/dev/null 2>&1; then
+  echo "[husky] eslint 未安装（npm install 后生效），本次放行；CI 将强制执行"
+  exit 0
+fi
+
+echo "[husky] ESLint 检查暂存 .js："
+# shellcheck disable=SC2086
+npx eslint $STAGED_JS
+STATUS=$?
+if [ "$STATUS" -ne 0 ]; then
+  echo "[husky] ❌ ESLint 未通过，已阻断提交"
+  exit "$STATUS"
+fi
+echo "[husky] ✅ 通过"

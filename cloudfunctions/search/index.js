@@ -9,7 +9,7 @@
 //  - 搜索日志写入 search_queries：提供 action=hot 聚合近 7 天真实热搜
 //  - 正则全表扫描是平台能力限制（微信云开发无全文索引），数据过万后建议关闭搜索
 //    或接入外部检索，见 docs/OPERATIONS.md「搜索性能」
-const { getDB, getCmd, ok, wrap, getOpenid, rateLimit, AppError } = require('./common-bundle')
+const { getDB, getCmd, ok, wrap, getOpenid, rateLimit, AppError, sanitizeQuery } = require('./common-bundle')
 
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -45,7 +45,10 @@ exports.main = wrap(async (event) => {
     return ok({ hot })
   }
 
-  const { keyword, schoolId } = event
+  const keyword = event.keyword
+  // where 字段白名单：schoolId 是客户端可控值直接进 .where()，做标量断言
+  // （丢弃对象/RegExp/命令型值）；keyword 经下方 escapeRegExp+String 化已安全。
+  const { schoolId } = sanitizeQuery(event, ['schoolId'])
 
   if (!keyword || !String(keyword).trim()) {
     return ok({ posts: [], products: [], guides: [] })

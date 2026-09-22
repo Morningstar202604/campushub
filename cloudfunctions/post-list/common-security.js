@@ -86,9 +86,27 @@ async function checkImages(fileIDs = [], { openid = '' } = {}) {
 // 部署后请至少在云函数环境变量中配置管理员 openid。
 // 提取自 admin/resolve 的重复实现，统一为单一事实来源。
 async function checkAdmin(db, openid) {
+  // ① 云函数环境变量 ADMIN_OPENIDS（逗号分隔）—— 命中直接放行
   const envAdmins = (process.env.ADMIN_OPENIDS || '').split(',').map(s => s.trim()).filter(Boolean)
   if (envAdmins.includes(openid)) return true
-  const cfg = await db.collection('config').doc('global').get().catch(() => ({ data: null }))
+  // ② 数据库 config 集合 doc('global').adminOpenids 数组
+  // fail-closed：区分"文档不存在/无该字段"（返回 false）与"DB 调用异常"（抛出，
+  // 由上层统一 fail-closed 处理）。避免 .catch(() => null) 把 DB 故障静默吞成
+  // "无管理员"，在 DB 瞬时不可用时放行本应被拦截的高危操作。
+  let cfg
+  try {
+    cfg = await db.collection('config').doc('global').get()
+  } catch (e) {
+    const msg = String(e && (e.errMsg || e.message || ''))
+    // 云开发"文档不存在"：errCode -1 / "document not exists"。属正常降级（管理员未配置）
+    const notFound = /-1\b|not exists|document.*exist/i.test(msg)
+    if (!notFound) {
+      // 非「不存在」的 DB 异常（超时/权限/网络）→ fail-closed 拒绝，避免故障时静默放行
+      console.error('[checkAdmin] config 读取异常，按 fail-closed 拒绝:', msg)
+      throw new AppError('管理员配置读取失败，操作已拒绝', 'ADMIN_CONFIG_ERROR')
+    }
+    cfg = { data: null }
+  }
   if (cfg && cfg.data && Array.isArray(cfg.data.adminOpenids) && cfg.data.adminOpenids.includes(openid)) return true
   return false
 }

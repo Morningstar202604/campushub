@@ -3,15 +3,57 @@
 // 分类：必须选择到叶子节点（多级目录，避免内容淹没）
 // kind 类型：post 普通帖 / task 任务帖(带过期) / lost 失物 / found 招领 / confession 表白墙
 // 表白墙强制匿名；失物/招领可带地点，支持"已找回"标记（复用 resolved）
-const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit } = require('./common-bundle')
+const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit, isDuplicateKeyError } = require('./common-bundle')
 
 const TASK_EXPIRE_DAYS = [3, 7, 15, 30]
 const VALID_KINDS = ['post', 'task', 'lost', 'found', 'confession']
+
+// 轮询等待同 clientReqId 的首请求落地（处理并发/重试），最多 waitMs 后返回 null
+async function waitIdempotency(db, clientReqId, waitMs) {
+  const start = Date.now()
+  while (Date.now() - start < waitMs) {
+    const rec = await db.collection('idempotency').where({ clientReqId }).get().catch(() => null)
+    if (rec && rec.data && rec.data.length) {
+      const hit = rec.data[0]
+      if (hit.resultId || hit.status === 'done') return hit
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400))
+  }
+  return null
+}
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
   const db = getDB()
   const _ = getCmd()
+
+  // ===== 幂等（防闪断重试产生双帖）=====
+  // 先占位：唯一索引 idx_idempotency_reqid 保证同一 clientReqId 仅首个请求占位成功；
+  // 重试/并发占位失败则轮询等待首请求落地并回查已有结果，避免双写。
+  // 幂等表 idempotency 需建唯一索引（见 common-indexes.js），并设 expireAt + 控制台 TTL（30天）自动清理。
+  const clientReqId = event.clientReqId
+  let idemId = null
+  if (clientReqId) {
+    const TTL = 30 * 24 * 60 * 60 * 1000
+    const build = () => ({
+      clientReqId, type: 'post', resultId: null, status: 'pending',
+      createdAt: new Date(), expireAt: new Date(Date.now() + TTL)
+    })
+    try {
+      const r = await db.collection('idempotency').add({ data: build() })
+      idemId = r._id
+    } catch (e) {
+      if (!isDuplicateKeyError(e)) throw e // 非唯一键冲突：正常抛出
+      const done = await waitIdempotency(db, clientReqId, 8000)
+      if (done && done.resultId) {
+        return ok({ postId: done.resultId, idempotent: true })
+      }
+      // 首请求异常终止（pending 无结果）：清理后按新请求继续（极小概率；TTL 兜底）
+      await db.collection('idempotency').where({ clientReqId }).remove().catch(() => {})
+      const r2 = await db.collection('idempotency').add({ data: build() })
+      idemId = r2._id
+    }
+  }
 
   const {
     title: rawTitle, content: rawContent, images = [], tags = [],
@@ -100,6 +142,11 @@ exports.main = wrap(async (event) => {
 
   const addRes = await db.collection('posts').add({ data: post })
   await db.collection('users').doc(user._id).update({ data: { postCount: _.inc(1) } })
+
+  // 落库后回填幂等键结果，供并发/重试请求回查（失败静默，不影响主流程）
+  if (idemId) {
+    await db.collection('idempotency').doc(idemId).update({ data: { resultId: addRes._id, status: 'done' } }).catch(() => {})
+  }
 
   return ok({ postId: addRes._id })
 })

@@ -36,7 +36,9 @@ exports.main = wrap(async (event = {}) => {
     'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
     'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests',
     // 新功能集合：自动备份 / 搜索热词与限频 / 管理审计日志 / 公告 / 积分商城订单
-    'backups', 'search_queries', 'admin_logs', 'announcements', 'points_orders'
+    'backups', 'search_queries', 'admin_logs', 'announcements', 'points_orders',
+    // 幂等占位（发帖/发品防闪断双写）/ 主页访问限流计数
+    'idempotency', 'profile_views'
   ]
   for (const name of collections) {
     try {

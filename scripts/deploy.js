@@ -16,6 +16,7 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const crypto = require('crypto')
+const { execSync } = require('child_process')
 
 // ---------- CLI 解析 ----------
 function parseArgs(argv) {
@@ -49,6 +50,17 @@ const CF_DIR = path.join(ROOT, 'cloudfunctions')
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const targetEnv = args.env || 'prod'
+
+  // ---------- 前置强制同步（先于一切上传动作）----------
+  // 上传=必然带最新 common 内核：在 npm install（云端 remoteNpmInstall）之后、
+  // uploadFunctions 之前，强制先把 cloudfunctions/common/ 同步进全部函数目录，
+  // 杜绝"漏同步 / 副本漂移"被上传到线上。sync-common.js 本身带 SHA-256 漂移告警。
+  console.log('前置强制同步 common 内核：node scripts/sync-common.js')
+  try {
+    execSync('node scripts/sync-common.js', { stdio: 'inherit', cwd: ROOT })
+  } catch (e) {
+    fail(`前置同步失败，终止部署：${e.message}`)
+  }
 
   // ---------- 配置合并 ----------
   let fileConfig = {}
@@ -119,6 +131,29 @@ async function main() {
     })
   } catch (e) {
     fail(`miniprogram-ci Project 初始化失败：${e.message}`)
+  }
+
+  // ---------- 预部署：common 内核同步一致性校验（指纹）----------
+  // 部署前强制校验各函数副本与 .sync-manifest.json 一致；漂移则自动重同步一次再校验
+  {
+    const check = require('child_process').spawnSync(
+      process.execPath, [path.join(__dirname, 'sync-common.js'), '--check'],
+      { stdio: 'inherit' }
+    )
+    if (check.status !== 0) {
+      console.log('检测到 common 内核漂移，自动重同步后重新校验…')
+      const resync = require('child_process').spawnSync(
+        process.execPath, [path.join(__dirname, 'sync-common.js')],
+        { stdio: 'inherit' }
+      )
+      if (resync.status !== 0) fail('自动重同步失败，请手动执行 npm run sync:common')
+      const recheck = require('child_process').spawnSync(
+        process.execPath, [path.join(__dirname, 'sync-common.js'), '--check'],
+        { stdio: 'inherit' }
+      )
+      if (recheck.status !== 0) fail('重同步后仍漂移，中止部署')
+    }
+    console.log('✓ common 内核同步一致')
   }
 
   // ---------- 并发部署 ----------

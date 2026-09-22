@@ -3,6 +3,8 @@ const app = getApp()
 const { callFunction } = require('../../utils/request.js')
 const { ensureLogin, firstChar } = require('../../utils/auth.js')
 const { getCache, setCache } = require('../../utils/cache.js')
+const { PAGE_SIZE } = require('../../config/constants.js')
+const eventBus = require('../../utils/eventBus.js')
 
 // 首屏缓存：TTL 5 分钟；下拉刷新/发布后强制走网络并回写缓存（降本 C2）
 const FEED_CACHE_KEY = 'index_feed_v1'
@@ -28,12 +30,41 @@ Page({
     showCatPicker: false,
     loadFail: false,
     showBackTop: false,
-    announcements: []
+    announcements: [],
+    schoolId: ''
   },
 
   onLoad() {
-    this.loadList(true)
-    this.loadAnnouncements()
+    // 多校：记录初始校区，避免 onShow 首次误判为"变化"触发回源
+    this.syncSchool()
+    // 首屏：列表 + 公告并行加载，统一 await 后再分别 setData（减少空态闪烁）
+    Promise.all([
+      this.loadList(true),
+      this.loadAnnouncements()
+    ]).catch(() => {})
+    // 事件总线：发布成功后刷新（替代全局 needRefresh 标志被首个消费页清零的竞态）
+    this._onDataChanged = (payload) => {
+      if (payload && (payload.type === 'post' || payload.type === 'all')) {
+        this.setData({ page: 1, leftList: [], rightList: [], hasMore: true })
+        this.loadList(true, { force: true })
+      }
+    }
+    eventBus.on('data-changed', this._onDataChanged)
+  },
+
+  onUnload() {
+    if (this._onDataChanged) eventBus.off('data-changed', this._onDataChanged)
+  },
+
+  // 同步 globalData 的校区过滤；返回是否有变化（抄自 market 的脏检查模式）
+  syncSchool() {
+    const userInfo = app.globalData.userInfo
+    const schoolId = (userInfo && userInfo.schoolId) || ''
+    if (schoolId !== this.data.schoolId) {
+      this.setData({ schoolId })
+      return true
+    }
+    return false
   },
 
   loadAnnouncements() {
@@ -59,8 +90,8 @@ Page({
   },
 
   onShow() {
-    if (app.globalData.needRefresh) {
-      app.globalData.needRefresh = false
+    // 校区变化（切换账号/校区）才回源，避免每次 onShow 无谓刷新
+    if (this.syncSchool()) {
       this.setData({ page: 1, leftList: [], rightList: [], hasMore: true })
       this.loadList(true, { force: true })
     }
@@ -120,7 +151,7 @@ Page({
         this.setData({
           ...lists,
           page: 2,
-          hasMore: cachedItems.length >= 20,
+          hasMore: cachedItems.length >= PAGE_SIZE,
           loading: false,
           loadFail: false
         })
@@ -133,7 +164,7 @@ Page({
       const params = {
         tab: this.data.activeTab,
         page: reset ? 1 : this.data.page,
-        pageSize: 20,
+        pageSize: PAGE_SIZE,
         categoryId: this.data.selectedCategoryId || undefined
       }
 

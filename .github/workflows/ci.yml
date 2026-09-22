@@ -53,3 +53,12 @@ jobs:
           echo "Common layer consistent"
       - name: Run unit tests
         run: npm test
+
+      - name: Run verify-release
+        run: npm run verify
+
+      - name: Run contract check
+        run: npm run contract
+
+      - name: Run ui-lint
+        run: npm run lint

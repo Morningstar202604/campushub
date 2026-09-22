@@ -4,6 +4,7 @@ const app = getApp()
 const { callFunction } = require('../../utils/request.js')
 const { ensureLogin, firstChar } = require('../../utils/auth.js')
 const { getCache, setCache } = require('../../utils/cache.js')
+const eventBus = require('../../utils/eventBus.js')
 
 // 首屏缓存：TTL 3 分钟；下拉刷新强制回源（降本 C2）
 const FEED_CACHE_KEY = 'market_feed_v1'
@@ -35,17 +36,23 @@ Page({
   onLoad() {
     this.syncSchool()
     this.loadList(true)
+    // 事件总线：商品发布/编辑/删除后刷新（替代全局 needRefresh 标志）
+    this._onDataChanged = (payload) => {
+      if (payload && payload.type === 'product') {
+        this.setData({ page: 1, leftList: [], rightList: [], hasMore: true })
+        this.loadList(true, { force: true })
+      }
+    }
+    eventBus.on('data-changed', this._onDataChanged)
+  },
+
+  onUnload() {
+    if (this._onDataChanged) eventBus.off('data-changed', this._onDataChanged)
   },
 
   onShow() {
     // 登录/切换校区后 schoolId 变化：重置并强制回源（tab 页 onLoad 只走一次）
     if (this.syncSchool()) {
-      this.setData({ page: 1, leftList: [], rightList: [], hasMore: true })
-      this.loadList(true, { force: true })
-      return
-    }
-    if (app.globalData.needRefresh) {
-      app.globalData.needRefresh = false
       this.setData({ page: 1, leftList: [], rightList: [], hasMore: true })
       this.loadList(true, { force: true })
     }

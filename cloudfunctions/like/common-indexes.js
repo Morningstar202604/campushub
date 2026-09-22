@@ -88,7 +88,16 @@ const EXPECTED_INDEXES = [
   { collection: 'announcements', name: 'idx_announcements_status_pinned_created', fields: [{ key: 'status', direction: 1 }, { key: 'isPinned', direction: -1 }, { key: 'createdAt', direction: -1 }], unique: false },
 
   // ===== points_orders（积分商城订单，按用户查询）=====
-  { collection: 'points_orders', name: 'idx_points_orders_user_created', fields: [{ key: 'userId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false }
+  { collection: 'points_orders', name: 'idx_points_orders_user_created', fields: [{ key: 'userId', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false },
+
+  // ===== idempotency（发帖/发品幂等占位，防闪断重试产生双帖）=====
+  // unique:true —— 同一 clientReqId 仅首个请求占位成功；重试/并发撞唯一键走轮询回查
+  { collection: 'idempotency', name: 'idx_idempotency_reqid', fields: [{ key: 'clientReqId', direction: 1 }], unique: true },
+  // 清理：where({ expireAt < now })，需 expireAt 索引
+  { collection: 'idempotency', name: 'idx_idempotency_expire', fields: [{ key: 'expireAt', direction: -1 }], unique: false },
+
+  // ===== profile_views（user-profile 主页访问限流计数，按 openid+时间窗）=====
+  { collection: 'profile_views', name: 'idx_profile_views_openid_created', fields: [{ key: 'openid', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false }
 ]
 
 module.exports = { EXPECTED_INDEXES }

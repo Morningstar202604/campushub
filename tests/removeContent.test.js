@@ -48,7 +48,11 @@ function loadRemoveContent({ targetPost, adminOpenidsEnv = '' }) {
         }
       }
       if (name === 'users') {
-        return { doc: () => ({ update: async () => ({ stats: { updated: 1 } }) }) }
+        // 计数回退改为 where({_id, field: gt(0)}).update() 防负值，mock 需同时支持 doc 与 where
+        return {
+          doc: () => ({ update: async () => ({ stats: { updated: 1 } }) }),
+          where: () => ({ update: async () => ({ stats: { updated: 1 } }) })
+        }
       }
       if (name === 'config') {
         return { doc: () => ({ get: async () => ({ data: { adminOpenids: [] } }) }) }
