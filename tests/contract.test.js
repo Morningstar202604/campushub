@@ -77,16 +77,16 @@ test('P4: 落地页 index.html 统计与链接应保持最新（37/23/21/44/9 + 
   assert.match(src, /version-0.8.0-green/, '落地页版本 badge 应为 0.7.0')
 })
 
-test('P4: 文档统计数字与事实一致（37 云函数 / 23 页面 / 21 集合 / 44 索引 / 9 内核）', () => {
+test('P4: 文档统计数字与事实一致（37 云函数 / 20 页面 / 23 集合 / 45 索引 / 9 内核）', () => {
   const readme = read('README.md')
   const zh = read('docs/README.zh-CN.md')
   assert.ok(!readme.includes('| Cloud Functions | 34 |'), 'README 不应残留 34（旧值）')
   assert.ok(!zh.includes('| 云函数 | 34 |'), 'zh-CN 不应残留 34（旧值）')
   assert.ok(readme.includes('| 云函数 | 37 |'), 'README 云函数=37')
-  assert.ok(readme.includes('| 已定义索引 | 44 |'), 'README 索引=44')
-  assert.ok(zh.includes('| 云函数 | 37 |'), 'zh-CN 云函数=37')
-  assert.ok(zh.includes('| 数据集合 | 21 |'), 'zh-CN 集合=21')
-  assert.ok(zh.includes('| 索引定义 | 44 |'), 'zh-CN 索引=44')
+  assert.ok(readme.includes('| 已定义索引 | 45'), 'README 索引=45')
+  assert.ok(zh.includes('| 云函数 | 37'), 'zh-CN 云函数=37')
+  assert.ok(zh.includes('| 数据集合 | 23 |'), 'zh-CN 集合=23')
+  assert.ok(zh.includes('| 索引定义 | 45 |'), 'zh-CN 索引=45')
 })
 
 test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与 34 云函数', () => {
