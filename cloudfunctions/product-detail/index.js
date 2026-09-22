@@ -16,15 +16,19 @@ exports.main = wrap(async (event) => {
   if (viewed) product.viewCount = (product.viewCount || 0) + 1
 
   const openid = cloud.getWXContext().OPENID
+  let isLiked = false
   let isCollected = false
   if (openid) {
     const me = await db.collection('users').where({ openid }).field({ _id: true }).get()
     if (me.data && me.data.length) {
       const uid = me.data[0]._id
+      // 与 post-detail 对齐：返回点赞态（修复前端重载后点赞高亮丢失）
+      const likeRes = await db.collection('likes').where({ userId: uid, targetId: productId, type: 'product' }).count()
+      isLiked = likeRes.total > 0
       const collectRes = await db.collection('collects').where({ userId: uid, targetId: productId, type: 'product' }).count()
       isCollected = collectRes.total > 0
     }
   }
 
-  return ok({ product, isCollected })
+  return ok({ product, isLiked, isCollected })
 })

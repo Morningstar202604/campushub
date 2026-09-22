@@ -96,8 +96,12 @@ const EXPECTED_INDEXES = [
   // 清理：where({ expireAt < now })，需 expireAt 索引
   { collection: 'idempotency', name: 'idx_idempotency_expire', fields: [{ key: 'expireAt', direction: -1 }], unique: false },
 
-  // ===== profile_views（user-profile 主页访问限流计数，按 openid+时间窗）=====
-  { collection: 'profile_views', name: 'idx_profile_views_openid_created', fields: [{ key: 'openid', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false }
+  // ===== rate_limits（统一限频占位，v0.9.2：确定性 _id 主键去重，无额外唯一索引）=====
+  // 清理：task-expire where({ expireAt < now })，需 expireAt 索引
+  { collection: 'rate_limits', name: 'idx_rate_limits_expire', fields: [{ key: 'expireAt', direction: -1 }], unique: false },
+
+  // ===== view_logs（浏览量去重日志：_id 主键去重；task-expire 按 createdAt 清理 90 天前记录）=====
+  { collection: 'view_logs', name: 'idx_view_logs_created', fields: [{ key: 'createdAt', direction: -1 }], unique: false }
 ]
 
 module.exports = { EXPECTED_INDEXES }

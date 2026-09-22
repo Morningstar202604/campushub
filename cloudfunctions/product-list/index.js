@@ -1,5 +1,5 @@
 // cloudfunctions/product-list/index.js
-const { getDB, ok, wrap } = require('./common-bundle')
+const { getDB, ok, wrap, sanitizeQuery } = require('./common-bundle')
 
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -7,7 +7,12 @@ function escapeRegExp(s) {
 
 exports.main = wrap(async (event) => {
   const db = getDB()
-  const { page = 1, pageSize = 20, schoolId, category, keyword } = event
+  const { page = 1, pageSize = 20 } = event
+  // 客户端查询字段统一过白名单标量断言（与 post-list 口径一致），防对象/操作符注入 where
+  const safe = sanitizeQuery(event, ['schoolId', 'category', 'keyword'])
+  const schoolId = safe.schoolId
+  const category = safe.category
+  const keyword = safe.keyword
 
   // 不再强制 schoolId — 全国内容默认不过滤校区
   const where = { status: 'on_sale' }

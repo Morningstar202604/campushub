@@ -64,7 +64,7 @@ npm run build:app      # 编译安卓端（HBuilderX 云打包出 APK）
 
 1. 填 `src/manifest.json` 的 `mp-weixin.appid` + `src/config/school.config.js` 的 `envId` **和 `restToken`**（H5/App REST 鉴权）；
 2. CloudBase 控制台为对应云函数开启「HTTP 访问服务」，鉴权方式设为匿名或自定义 Token（否则 H5/App 端 REST 调用 401）；
-3. CloudBase 控制台建 3 索引 + 1 TTL（`idempotency`/`profile_views`）；
+3. CloudBase 控制台建 4 索引 + 1 TTL（`idempotency`×2 / `rate_limits` / `view_logs`，全清单见 `../docs/INDEXES.md`）；
 4. 安卓打包前把 `src/static/tabbar/` 占位图标换成正式品牌图标。
 
 > ⚠️ **后端源码不在本工程内。** 37 个云函数存放在**同级**的 `../campushub/cloudfunctions/`（原小程序仓库），

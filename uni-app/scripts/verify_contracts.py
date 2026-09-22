@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 import json, os, re
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # campushub-uni
-REAL_CF = os.path.join(os.path.dirname(ROOT), 'campushub', 'cloudfunctions')
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # campushub-uni 或 monorepo/uni-app
+# 后端云函数目录：兼容两种布局 —— monorepo 内 = ROOT 的父目录/cloudfunctions；
+# 独立源仓布局（campushub-uni 与同级 campushub 并列）= 父目录/campushub/cloudfunctions
+_candidates = [
+    os.path.join(os.path.dirname(ROOT), 'cloudfunctions'),
+    os.path.join(os.path.dirname(ROOT), 'campushub', 'cloudfunctions'),
+]
+REAL_CF = next((p for p in _candidates if os.path.isdir(p)), _candidates[0])
 
 m = json.load(open(os.path.join(ROOT, 'src', 'manifest.json'), encoding='utf-8'))
 mw = m.get('mp-weixin', {})

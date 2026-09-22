@@ -1,9 +1,10 @@
 // cloudfunctions/my-list/index.js
 // 我的内容：登录 + 仅本人数据；软删除(status='deleted')不展示
-const { getDB, getCmd, AppError, ok, wrap, getCurrentUser } = require('./common-bundle')
+const { getDB, getCmd, AppError, ok, wrap, getCurrentUser, requireActive } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
-  const user = await getCurrentUser()
+  // 封禁口径统一：与写函数一致经 requireActive 拦截封禁账号（v0.9.2）
+  const user = requireActive(await getCurrentUser())
   const db = getDB()
   const _ = getCmd()
 

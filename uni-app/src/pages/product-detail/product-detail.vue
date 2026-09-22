@@ -202,8 +202,8 @@ async function loadDetail() {
     product.value = vm
     productRaw.value = res?.product ?? null
     initialCollected.value = vm.isCollected
-    // product-detail 不返回 isLiked，仅回填收藏态（点赞由 composable 管理，不再自拼 callFunction）
-    action.hydrate({ isLiked: false, isCollected: vm.isCollected, likeCount: vm.likeCount })
+    // 回填 useAction 已知状态（后端 v0.9.2 起返回 isLiked，重载后点赞高亮不再丢失）
+    action.hydrate({ isLiked: !!res?.isLiked, isCollected: vm.isCollected, likeCount: vm.likeCount })
     // 图片 fileID(cloud://) → 临时可访问 URL，否则小程序/App 端不显示
     displayImages.value = await Promise.all(
       (vm.images || []).map((f) => fileIDToTempUrl(f).catch(() => f))

@@ -128,8 +128,9 @@ test('DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止漏
   for (const n of depNames) {
     assert.ok(srcNames.has(n), `DEPLOY.md 出现未知索引 ${n}`)
   }
-  assert.strictEqual(srcNames.size, 44, 'common-indexes.js 应为 44 个索引')
-  assert.strictEqual(depNames.size, 44, 'DEPLOY.md 应列出全部 44 个索引')
+  // v0.9.2：45 = 44 - profile_views（死索引移除）+ idx_rate_limits_expire + idx_view_logs_created
+  assert.strictEqual(srcNames.size, 45, 'common-indexes.js 应为 45 个索引')
+  assert.strictEqual(depNames.size, 45, 'DEPLOY.md 应列出全部 45 个索引')
 })
 
 test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/积分闭环/深分页/海报）', () => {

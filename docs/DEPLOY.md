@@ -327,13 +327,14 @@ npm install
 | announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) |
 | points_orders | idx_points_orders_user_created | userId(升), createdAt(降) |
 
-**idempotency / profile_views**（3个，幂等占位 + 主页访问限流）
+**idempotency / rate_limits / view_logs**（4个，幂等占位 + 统一限频占位 + 浏览日志清理）
 
 | 集合 | 索引名称 | 字段（方向） |
 |---|---|---|
 | idempotency | idx_idempotency_reqid | clientReqId(升)，唯一 |
 | idempotency | idx_idempotency_expire | expireAt(降) |
-| profile_views | idx_profile_views_openid_created | openid(升), createdAt(降) |
+| rate_limits | idx_rate_limits_expire | expireAt(降) |
+| view_logs | idx_view_logs_created | createdAt(降) |
 
 ### 7.3 验证索引齐全
 

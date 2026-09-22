@@ -110,23 +110,24 @@
 | announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) | 否 |
 | points_orders | idx_points_orders_user_created | userId(升), createdAt(降) | 否 |
 
-### idempotency / profile_views（幂等占位 + 主页访问限流，新增）
+### idempotency / rate_limits / view_logs（幂等占位 + 统一限频占位 + 浏览日志清理）
 | 集合 | 索引名称 | 字段（方向） | 唯一 |
 |---|---|---|---|
 | idempotency | idx_idempotency_reqid | clientReqId(升) | 是 |
 | idempotency | idx_idempotency_expire | expireAt(降) | 否 |
-| profile_views | idx_profile_views_openid_created | openid(升), createdAt(降) | 否 |
+| rate_limits | idx_rate_limits_expire | expireAt(降) | 否 |
+| view_logs | idx_view_logs_created | createdAt(降) | 否 |
 
 ---
 
 ## 备注
 
 - `config` 集合的 `_id` 索引为系统自带，无需手动建。
-- `view_logs`（浏览量去重日志）靠 `_id` 主键天然去重，无需额外索引。
-- 频率限制（`rateLimit`）依赖 `(匹配字段, createdAt)` 的计数查询，已对应到各集合索引（`search_queries` 的 `idx_search_queries_user_created` 即服务端搜索限频所需）。
+- `view_logs`（浏览量去重日志）靠 `_id` 主键天然去重，无需额外唯一索引；`idx_view_logs_created` 供 task-expire 定时清理 90 天前的浏览记录（云开发无自动 TTL）。
+- 频率限制（`rateLimit`）v0.9.2 起改为 `rate_limits` 集合「确定性 _id 占位 + 原子自增」，不再依赖业务集合的 `(匹配字段, createdAt)` 计数查询；`idx_rate_limits_expire` 供 task-expire 清理过期窗口占位。`search_queries` 复合索引保留（热词/审计查询仍用）。
 - `backups` / `admin_logs` / `announcements` / `points_orders` 为新增功能集合（自动备份 / 管理审计日志 / 公告 / 积分订单），索引见上表。
 - `idempotency` 为发帖/发品幂等占位集合：`idx_idempotency_reqid` 唯一索引保证同一 clientReqId 仅首请求占位成功（配合 insertIdempotent / 唯一键冲突轮询回查），`idx_idempotency_expire` 供 TTL/清理 `where({ expireAt < now })`；需控制台配 30 天 TTL。
-- `profile_views` 为 user-profile 主页访问限流计数集合（按 openid + 时间窗），`idx_profile_views_openid_created` 支撑 rateLimit 的 `where({ openid, createdAt > since }).count()`。
+- `rate_limits` 为统一限频占位集合（v0.9.2）：窗口内首请求以确定性 _id 占位、后续请求原子自增；`profile_views` 已废弃移除——user-profile 限流实际计数落在 `view_logs`，原集合为从未写入的死集合/死索引。
 - 软删除内容通过 `status: _.neq('deleted')` 过滤，相关集合已包含对应索引。
 - 若未建索引，云函数内部 `wrap()` 会返回 `{ success:false }` 而非崩溃，但对应列表会**空白**——上线前请务必建全。
 - 新增索引后，下次部署跑一次 `init-db`，返回结果的 `missingIndexes` 应为空数组，即表示齐备。

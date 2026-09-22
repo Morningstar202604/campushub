@@ -37,8 +37,8 @@ exports.main = wrap(async (event = {}) => {
     'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests',
     // 新功能集合：自动备份 / 搜索热词与限频 / 管理审计日志 / 公告 / 积分商城订单
     'backups', 'search_queries', 'admin_logs', 'announcements', 'points_orders',
-    // 幂等占位（发帖/发品防闪断双写）/ 主页访问限流计数
-    'idempotency', 'profile_views'
+    // 幂等占位（发帖/发品防闪断双写）/ 统一限频占位（rateLimit 原子化，v0.9.2 取代死集合 profile_views）
+    'idempotency', 'rate_limits'
   ]
   for (const name of collections) {
     try {

@@ -32,6 +32,13 @@ exports.main = wrap(async (event) => {
       await db.collection(tcol).doc(doc.targetId)
         .update({ data: { commentCount: _.inc(-cascaded) } }).catch(() => {})
     }
+  } else {
+    // 子回复删除：回退父楼层 replyCount（带 >0 守卫防负值）。
+    // 原实现漏掉该回退 → 楼中楼计数只增不减、长期虚高；失败仅告警留痕（对账兜底）。
+    await db.collection('comments')
+      .where({ _id: doc.parentId, replyCount: _.gt(0) })
+      .update({ data: { replyCount: _.inc(-1) } })
+      .catch(e => console.error('[comment-delete] 父楼层 replyCount 回退失败，需对账:', doc.parentId, e && (e.errMsg || e.message)))
   }
 
   return ok({ deleted: true })

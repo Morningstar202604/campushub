@@ -1,10 +1,12 @@
 ﻿// cloudfunctions/guide-list/index.js
 // 校园指南列表：按 categoryId 正确筛选（根本性修复原 category 字段不匹配问题）
-const { getDB, ok, wrap } = require('./common-bundle')
+const { getDB, ok, wrap, sanitizeQuery } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const db = getDB()
-  const { schoolId, categoryId, page = 1, pageSize = 50 } = event
+  const { page = 1, pageSize = 50 } = event
+  // 客户端查询字段过白名单标量断言，防对象/操作符注入 where（v0.9.2 统一口径）
+  const { schoolId, categoryId } = sanitizeQuery(event, ['schoolId', 'categoryId'])
 
   // schoolId 可选 — 不传则返回全部指南（全国模式）
   const catWhere = {}
