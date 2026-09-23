@@ -17,8 +17,10 @@ updates:
       interval: monthly
     open-pull-requests-limit: 5
     groups:
-      npm-group:
+      npm-minor:
         update-types:
         - patch
         - minor
-        - major
+    ignore:
+    - dep: "typescript"
+      update-type: major
