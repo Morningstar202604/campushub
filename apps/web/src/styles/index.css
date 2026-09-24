@@ -1,0 +1,54 @@
+/* 全局基础样式：浅色清爽，Vant 默认质感 */
+:root {
+  --app-bg: #f7f8fa;
+  --app-card: #ffffff;
+  --app-text: #1c2330;
+  --app-text-2: #66707f;
+  --app-text-3: #9aa3b2;
+  --app-primary: #2b7cf6;
+  --app-radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 页面容器：固定头部/底部布局时使用 */
+.page { display: flex; flex-direction: column; min-height: 100vh; }
+.page-body { flex: 1; overflow-y: auto; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+
+/* 卡片 */
+.card {
+  background: var(--app-card);
+  border-radius: var(--app-radius);
+  padding: 14px;
+  margin: 10px 12px;
+  box-shadow: 0 1px 2px rgba(28, 35, 48, 0.04);
+}
+
+/* 文本工具 */
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ellipsis-2 {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.text-2 { color: var(--app-text-2); }
+.text-3 { color: var(--app-text-3); }
+.flex { display: flex; align-items: center; }
+.between { justify-content: space-between; }
+.gap-8 { gap: 8px; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+
+/* 富文本（指南）正文 */
+.rich-text { font-size: 15px; line-height: 1.8; color: var(--app-text); word-break: break-word; }
+.rich-text img { max-width: 100%; border-radius: 8px; }
+.rich-text h2 { font-size: 18px; margin: 18px 0 8px; }
