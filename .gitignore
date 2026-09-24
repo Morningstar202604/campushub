@@ -16,3 +16,6 @@ dist-ssr/
 
 # 临时文件
 *.tmp
+
+# 官网自检临时输出
+site/_shots/
