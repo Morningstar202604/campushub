@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CampusHub · 校园内容社区官网</title>
 <meta name="description" content="CampusHub 校园内容社区：信息流、二手市集、四场景发布、搜索、指南、签到，一套 H5 全搞定。开源、可部署、通用模板。">
+<meta property="og:title" content="CampusHub · 校园内容社区官网">
+<meta property="og:description" content="信息流、二手市集、四场景发布、搜索、指南、签到，一套 H5 全搞定。开源、可部署、通用校园模板。">
+<meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231B2A5E'/%3E%3Cpath d='M16 6 L27 11 L16 16 L5 11 Z' fill='%234F8CFF'/%3E%3Cpath d='M5 13 v5 c0 2 7 4 11 4 s11-2 11-4 v-5 l-11 5 z' fill='%23FF8A3D'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://miaoda.feishu.cn">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@600;700;900&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap">
@@ -28,7 +31,7 @@ body{font-family:var(--sans);color:var(--body);background:var(--white);line-heig
 img{display:block;max-width:100%;}
 a{color:inherit;text-decoration:none;}
 .wrap{max-width:1120px;margin:0 auto;padding:0 24px;}
-section{padding:84px 0;}
+section{padding:84px 0;scroll-margin-top:70px;}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:2px;color:var(--blue);text-transform:none;margin-bottom:18px;}
 .eyebrow::before{content:"";width:22px;height:2px;background:var(--blue);border-radius:1px;}
 h2{font-family:var(--serif);font-size:34px;font-weight:900;color:var(--ink);line-height:1.3;letter-spacing:.5px;}
@@ -54,6 +57,7 @@ h2{font-family:var(--serif);font-size:34px;font-weight:900;color:var(--ink);line
 .hero::before{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(79,140,255,.14),transparent 65%);top:-160px;right:-120px;}
 .hero::after{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,138,61,.10),transparent 65%);bottom:-140px;left:-100px;}
 .hero .wrap{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding-top:76px;padding-bottom:76px;}
+.hero-visual{position:relative;}
 .hero h1{font-family:var(--serif);font-size:52px;font-weight:900;color:var(--ink);line-height:1.25;letter-spacing:1px;}
 .hero h1 .hl{color:var(--blue);position:relative;}
 .hero p{font-size:17.5px;color:#55627A;margin-top:22px;max-width:520px;}
