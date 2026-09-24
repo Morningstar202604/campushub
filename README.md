@@ -2,6 +2,8 @@
 
 > 上一版（uni-app + 微信云开发三端）已废弃。v2 改为**纯 Web（移动端 H5）+ Supabase 开源后端 + 开源管理后台**，不依赖微信生态，通用模板，任何学校/组织可一键部署。
 
+> 🎓 **官网**：https://4m2km3hh7ey1t.doubaoapps.com/app/app_17es2nhx8p8 （站点源码在 `site/` 目录，单 HTML + assets，可自行部署到任意静态托管）
+
 ---
 
 ## 一、这是什么
