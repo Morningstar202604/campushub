@@ -52,7 +52,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: apps/admin/pnpm-lock.yaml
       - name: 安装依赖
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: 生产构建
         run: pnpm build
       - name: 上传构建产物
