@@ -49,8 +49,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: apps/admin/pnpm-lock.yaml
       - name: 安装依赖
         run: pnpm install --no-frozen-lockfile
       - name: 生产构建
