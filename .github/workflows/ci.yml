@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  web:
+    name: 学生端构建 + 类型检查
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: 安装依赖
+        run: npm ci
+      - name: 类型检查 + 生产构建
+        run: npm run build
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+
+  admin:
+    name: 管理后台构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/admin
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: apps/admin/pnpm-lock.yaml
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+      - name: 生产构建
+        run: pnpm build
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist
+          path: apps/admin/dist
+
+  site:
+    name: 官网资源完整性
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 检查官网素材齐全
+        run: |
+          test -f index.html
+          test -f assets/shot-home.png
+          test -f assets/shot-market.png
+          test -f assets/shot-publish.png
+          test -f assets/shot-login.png
+          test -f assets/shot-profile.png
+          test -f assets/promo.mp4
+          echo "官网素材完整"
