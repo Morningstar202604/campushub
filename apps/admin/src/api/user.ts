@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { request } from "./client";
 
 export type UserResult = {
   success: boolean;
@@ -17,7 +17,7 @@ export type UserResult = {
     accessToken: string;
     /** 用于调用刷新`accessToken`的接口时所需的`token` */
     refreshToken: string;
-    /** `accessToken`的过期时间（格式'xxxx/xx/xx xx:xx:xx'） */
+    /** `accessToken`的过期时间 */
     expires: Date;
   };
 };
@@ -29,68 +29,70 @@ export type RefreshTokenResult = {
     accessToken: string;
     /** 用于调用刷新`accessToken`的接口时所需的`token` */
     refreshToken: string;
-    /** `accessToken`的过期时间（格式'xxxx/xx/xx xx:xx:xx'） */
+    /** `accessToken`的过期时间 */
     expires: Date;
   };
 };
 
+/** 服务端 access token 有效期（与后端 jwt.expiresIn=15m 保持一致） */
+const ACCESS_TTL_MS = 15 * 60 * 1000;
+
 /**
- * 登录：Supabase 邮箱密码登录 + 管理员校验
+ * 登录：自家服务端邮箱密码登录 + 管理员校验
  * 账号即 profiles 表中 is_admin=true 的邮箱用户
  */
 export const getLogin = async (data: {
   username: string;
   password: string;
 }): Promise<UserResult> => {
-  const { data: authData, error } = await supabase.auth.signInWithPassword({
-    email: data.username.trim(),
-    password: data.password
-  });
-  if (error) throw new Error(error.message || "邮箱或密码错误");
-  if (!authData.session) throw new Error("登录失败，请重试");
+  let res: any;
+  try {
+    res = await request("post", "/auth/login", undefined, {
+      email: data.username.trim(),
+      password: data.password
+    });
+  } catch (e: any) {
+    throw new Error(e?.message || "邮箱或密码错误");
+  }
 
-  // 管理员校验：profiles.is_admin
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("nickname, avatar, is_admin")
-    .eq("id", authData.user.id)
-    .single();
-  if (profileError) throw new Error("账号信息读取失败");
-  if (!profile?.is_admin) {
-    await supabase.auth.signOut();
+  const { accessToken, refreshToken, user } = res ?? {};
+  if (!user?.isAdmin) {
     throw new Error("该账号不是管理员，无权进入管理后台");
   }
 
   return {
     success: true,
     data: {
-      avatar: profile.avatar ?? "",
+      avatar: user.avatar ?? "",
       username: data.username.trim(),
-      nickname: profile.nickname || data.username.trim(),
+      nickname: user.nickname || data.username.trim(),
       roles: ["admin"],
       permissions: ["*:*:*"],
-      accessToken: authData.session.access_token,
-      refreshToken: authData.session.refresh_token,
-      expires: new Date(authData.session.expires_at * 1000)
+      accessToken,
+      refreshToken,
+      expires: new Date(Date.now() + ACCESS_TTL_MS)
     }
   };
 };
 
-/** 刷新`token` */
+/** 刷新`token`（轮换：旧 refresh 作废，返回新的一对） */
 export const refreshTokenApi = async (data?: {
   refreshToken: string;
 }): Promise<RefreshTokenResult> => {
-  const { data: sessionData, error } = await supabase.auth.refreshSession({
-    refresh_token: data?.refreshToken
-  });
-  if (error) throw new Error(error.message || "登录已过期，请重新登录");
-  if (!sessionData.session) throw new Error("登录已过期，请重新登录");
+  let res: any;
+  try {
+    res = await request("post", "/auth/refresh", undefined, {
+      refreshToken: data?.refreshToken
+    });
+  } catch (e: any) {
+    throw new Error(e?.message || "登录已过期，请重新登录");
+  }
   return {
     success: true,
     data: {
-      accessToken: sessionData.session.access_token,
-      refreshToken: sessionData.session.refresh_token,
-      expires: new Date(sessionData.session.expires_at * 1000)
+      accessToken: res?.accessToken,
+      refreshToken: res?.refreshToken,
+      expires: new Date(Date.now() + ACCESS_TTL_MS)
     }
   };
 };

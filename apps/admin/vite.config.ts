@@ -24,7 +24,17 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
       port: VITE_PORT,
       host: "0.0.0.0",
       // 本地跨域代理 https://cn.vitejs.dev/config/server-options.html#server-proxy
-      proxy: {},
+      // /api → 自家服务端（M1 服务层）；生产由 nginx 反代
+      proxy: {
+        "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true
+        },
+        "/static": {
+          target: "http://localhost:3000",
+          changeOrigin: true
+        }
+      },
       // 预热文件以提前转换和缓存结果，降低启动期间的初始页面加载时长并防止转换瀑布
       warmup: {
         clientFiles: ["./index.html", "./src/{views,components}/*"]
@@ -46,11 +56,26 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
         input: {
           index: pathResolve("./index.html", import.meta.url)
         },
-        // 静态资源分类打包
+        // 静态资源分类打包（用 assets/ 避免与后端 /static 图片前缀冲突）
         output: {
-          chunkFileNames: "static/js/[name]-[hash].js",
-          entryFileNames: "static/js/[name]-[hash].js",
-          assetFileNames: "static/[ext]/[name]-[hash].[ext]"
+          chunkFileNames: "assets/js/[name]-[hash].js",
+          entryFileNames: "assets/js/[name]-[hash].js",
+          assetFileNames: "assets/[ext]/[name]-[hash].[ext]"
+        }
+      }
+    },
+    // 生产构建预览（验证产物时使用，代理与 dev 一致）
+    preview: {
+      port: 8849,
+      host: "0.0.0.0",
+      proxy: {
+        "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true
+        },
+        "/static": {
+          target: "http://localhost:3000",
+          changeOrigin: true
         }
       }
     },

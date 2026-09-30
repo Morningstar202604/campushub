@@ -44,16 +44,12 @@ async function onSend() {
   if (!form.content.trim()) return ElMessage.warning("请输入通知内容");
   try {
     if (form.scope === "all") {
-      // 全站通知：给每个用户写一条（简单实现；量大可后续改通知表全局模式）
-      const res = await listUsers(1, 500);
-      if (res.error) throw new Error(res.error);
-      if (!res.list.length) return ElMessage.warning("暂无用户，无法发送");
-      const rows = res.list.map(u => ({
-        user_id: u.id,
+      // 全站通知：userId 留空，服务端对全站用户 createMany 下发
+      const { error } = await createNotification({
+        user_id: null,
         type: "system",
         content: form.content.trim()
-      }));
-      const { error } = await supabaseInsertMany(rows);
+      });
       if (error) throw new Error(error.message);
     } else {
       if (!form.userId) return ElMessage.warning("请先搜索并选择用户");
@@ -72,14 +68,6 @@ async function onSend() {
   } catch (e: any) {
     ElMessage.error(e?.message || "发送失败");
   }
-}
-
-/** 批量插入（Supabase JS 单次 insert 数组） */
-function supabaseInsertMany(rows: any[]) {
-  // 通过动态 import 避免循环依赖
-  return import("@/api/supabase").then(({ supabase }) =>
-    supabase.from("notifications").insert(rows)
-  );
 }
 
 function openSend() {

@@ -1,147 +1,112 @@
-import { supabase, errMsg } from "./supabase";
+import { request } from "./client";
 
-/** 通用分页查询（RLS 已限定仅管理员） */
-export async function pagedQuery<T = any>(
-  table: string,
-  opts: {
-    select?: string;
-    filters?: Record<string, any>;
-    order?: { column: string; ascending?: boolean };
-    page?: number;
-    pageSize?: number;
-  } = {}
-): Promise<{ list: T[]; total: number }> {
-  const page = opts.page ?? 1;
-  const pageSize = opts.pageSize ?? 20;
-  let q = supabase
-    .from(table)
-    .select(opts.select || "*", { count: "exact" });
-  if (opts.filters) {
-    for (const [k, v] of Object.entries(opts.filters)) {
-      if (v !== undefined && v !== null && v !== "") q = q.eq(k, v);
-    }
-  }
-  if (opts.order) q = q.order(opts.order.column, { ascending: opts.order.ascending ?? false });
-  const offset = (page - 1) * pageSize;
-  const { data, error, count } = await q.range(offset, offset + pageSize - 1);
-  if (error) throw new Error(errMsg(error));
-  return { list: (data ?? []) as T[], total: count ?? 0 };
+/**
+ * 管理后台业务 API —— 全部对接自家服务端 /api/admin/*
+ *
+ * 返回约定（与旧 Supabase 版本兼容，views 无需大改）：
+ * - 列表：{ list, total, error: null | Error }
+ * - 写操作：{ error: null | Error }
+ * 成功时 error 为 null，失败时 error 为 Error（message 可直接展示）。
+ */
+
+type ListResult<T> = { list: T[]; total: number; error: Error | null };
+
+function errOf(e: any): Error {
+  return e instanceof Error
+    ? e
+    : new Error(e?.message || "操作失败，请稍后再试");
 }
 
-/** 记录管理员操作（写操作审计） */
-export async function logAction(
-  action: string,
-  detail: string,
-  adminId?: string
-) {
-  await supabase.from("admin_logs").insert({
-    admin_id: adminId,
-    action,
-    detail
-  });
+/** 通用分页/列表请求（成功返回空列表 + error:null，失败返回 error） */
+async function getList<T>(
+  path: string,
+  params?: Record<string, any>
+): Promise<ListResult<T>> {
+  try {
+    const d = await request<{ list?: T[]; total?: number }>("get", path, params);
+    return { list: d?.list ?? [], total: d?.total ?? 0, error: null };
+  } catch (e: any) {
+    return { list: [], total: 0, error: errOf(e) };
+  }
+}
+
+/** 写操作统一包装（成功 {error:null}，失败 {error}） */
+async function writeOk(fn: () => Promise<any>): Promise<{ error: Error | null }> {
+  try {
+    await fn();
+    return { error: null };
+  } catch (e: any) {
+    return { error: errOf(e) };
+  }
 }
 
 // ---------- 帖子审核 ----------
 export const auditPosts = (page = 1, pageSize = 20) =>
-  pagedQuery("posts", {
-    select: "id, title, content, kind, author_id, status, is_pinned, is_essence, resolved, like_count, comment_count, view_count, created_at",
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
+  getList<any>("/admin/posts", { page, pageSize });
 
 export const setPostStatus = (id: string, status: string) =>
-  supabase.from("posts").update({ status }).eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/posts/${id}/status`, undefined, { status })
+  );
 
 export const setPostPin = (id: string, isPinned: boolean) =>
-  supabase.from("posts").update({ is_pinned: isPinned }).eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/posts/${id}/pin`, undefined, { isPinned })
+  );
 
 export const setPostEssence = (id: string, isEssence: boolean) =>
-  supabase.from("posts").update({ is_essence: isEssence }).eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/posts/${id}/essence`, undefined, { isEssence })
+  );
 
 // ---------- 商品审核 ----------
 export const auditProducts = (page = 1, pageSize = 20) =>
-  pagedQuery("products", {
-    select: "id, title, description, price, seller_id, status, view_count, created_at",
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
+  getList<any>("/admin/products", { page, pageSize });
 
 export const setProductStatus = (id: string, status: string) =>
-  supabase.from("products").update({ status }).eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/products/${id}/status`, undefined, { status })
+  );
 
 // ---------- 评论审核 ----------
 export const auditComments = (page = 1, pageSize = 20) =>
-  pagedQuery("comments", {
-    select: "id, target_type, target_id, user_id, content, status, like_count, created_at",
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
+  getList<any>("/admin/comments", { page, pageSize });
 
 export const setCommentStatus = (id: string, status: string) =>
-  supabase.from("comments").update({ status }).eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/comments/${id}/status`, undefined, { status })
+  );
 
-// ---------- 举报处理 ----------
+// ---------- 举报处理（v2 语义：handled=已处理 / dismissed=驳回） ----------
 export const listReports = (page = 1, pageSize = 20) =>
-  pagedQuery("reports", {
-    select: "id, reporter_id, target_type, target_id, reason, detail, status, created_at, handled_at, handler_id, handler_note",
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
+  getList<any>("/admin/reports", { page, pageSize });
 
-export const handleReport = async (
+export const handleReport = (
   id: string,
-  status: "approved" | "rejected",
+  status: "handled" | "dismissed",
   note: string,
-  adminId?: string
-) => {
-  const { error } = await supabase
-    .from("reports")
-    .update({
-      status,
-      handler_id: adminId,
-      handler_note: note,
-      handled_at: new Date().toISOString()
-    })
-    .eq("id", id);
-  return error ? { error: errMsg(error) } : {};
-};
+  _adminId?: string
+) =>
+  writeOk(() =>
+    request("patch", `/admin/reports/${id}`, undefined, { status, note })
+  );
 
 // ---------- 用户管理 ----------
-export const listUsers = (page = 1, pageSize = 20, keyword = "") => {
-  const q = supabase
-    .from("profiles")
-    .select("id, nickname, avatar, college, major, grade, gender, bio, points, checkin_streak, is_banned, is_admin, created_at", { count: "exact" })
-    .order("created_at", { ascending: false });
-  const query = keyword ? q.ilike("nickname", `%${keyword}%`) : q;
-  return query
-    .range((page - 1) * pageSize, page * pageSize - 1)
-    .then(({ data, error, count }) => ({
-      list: (data ?? []) as any[],
-      total: count ?? 0,
-      error: error ? errMsg(error) : null
-    }));
-};
+export const listUsers = (page = 1, pageSize = 20, keyword = "") =>
+  getList<any>("/admin/users", { page, pageSize, keyword });
 
 export const setUserBan = (id: string, isBanned: boolean) =>
-  supabase.from("profiles").update({ is_banned: isBanned }).eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/users/${id}/ban`, undefined, { isBanned })
+  );
 
 export const setUserAdmin = (id: string, isAdmin: boolean) =>
-  supabase.from("profiles").update({ is_admin: isAdmin }).eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/users/${id}/admin`, undefined, { isAdmin })
+  );
 
 // ---------- 分类管理 ----------
-export const listCategories = () =>
-  supabase
-    .from("categories")
-    .select("id, name, icon, sort, enabled, created_at")
-    .order("sort", { ascending: true })
-    .then(({ data, error }) => ({
-      list: (data ?? []) as any[],
-      error: error ? errMsg(error) : null
-    }));
+export const listCategories = () => getList<any>("/admin/categories");
 
 export const saveCategory = (row: any) => {
   const payload = {
@@ -150,111 +115,88 @@ export const saveCategory = (row: any) => {
     sort: Number(row.sort ?? 0),
     enabled: row.enabled ?? true
   };
-  return row.id
-    ? supabase.from("categories").update(payload).eq("id", row.id)
-    : supabase.from("categories").insert(payload);
+  return writeOk(() =>
+    row.id
+      ? request("patch", `/admin/categories/${row.id}`, undefined, payload)
+      : request("post", "/admin/categories", undefined, payload)
+  );
 };
 
 export const deleteCategory = (id: string) =>
-  supabase.from("categories").delete().eq("id", id);
+  writeOk(() => request("delete", `/admin/categories/${id}`));
 
 // ---------- 公告管理 ----------
-export const listAnnouncements = () =>
-  supabase
-    .from("announcements")
-    .select("id, title, content, is_active, created_at")
-    .order("created_at", { ascending: false })
-    .then(({ data, error }) => ({
-      list: (data ?? []) as any[],
-      error: error ? errMsg(error) : null
-    }));
+export const listAnnouncements = () => getList<any>("/admin/announcements");
 
 export const saveAnnouncement = (row: any) => {
   const payload = {
     title: row.title,
     content: row.content,
-    is_active: row.is_active ?? true
+    isActive: row.is_active ?? true
   };
-  return row.id
-    ? supabase.from("announcements").update(payload).eq("id", row.id)
-    : supabase.from("announcements").insert(payload);
+  return writeOk(() =>
+    row.id
+      ? request("patch", `/admin/announcements/${row.id}`, undefined, payload)
+      : request("post", "/admin/announcements", undefined, payload)
+  );
 };
 
 export const deleteAnnouncement = (id: string) =>
-  supabase.from("announcements").delete().eq("id", id);
+  writeOk(() => request("delete", `/admin/announcements/${id}`));
 
 // ---------- 指南管理 ----------
-export const listGuideCats = () =>
-  supabase
-    .from("guide_categories")
-    .select("id, name, icon, sort, created_at")
-    .order("sort", { ascending: true })
-    .then(({ data, error }) => ({
-      list: (data ?? []) as any[],
-      error: error ? errMsg(error) : null
-    }));
+export const listGuideCats = () => getList<any>("/admin/guide-categories");
 
 export const saveGuideCat = (row: any) => {
-  const payload = { name: row.name, icon: row.icon || "", sort: Number(row.sort ?? 0) };
-  return row.id
-    ? supabase.from("guide_categories").update(payload).eq("id", row.id)
-    : supabase.from("guide_categories").insert(payload);
+  const payload = {
+    name: row.name,
+    icon: row.icon || "",
+    sort: Number(row.sort ?? 0)
+  };
+  return writeOk(() =>
+    row.id
+      ? request("patch", `/admin/guide-categories/${row.id}`, undefined, payload)
+      : request("post", "/admin/guide-categories", undefined, payload)
+  );
 };
 
 export const deleteGuideCat = (id: string) =>
-  supabase.from("guide_categories").delete().eq("id", id);
+  writeOk(() => request("delete", `/admin/guide-categories/${id}`));
 
-export const listGuides = (page = 1, pageSize = 20, catId = "") => {
-  const filters = catId ? { category_id: catId } : {};
-  return pagedQuery("guides", {
-    select: "id, category_id, title, summary, tags, cover_image, view_count, created_at",
-    filters,
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
-};
+export const listGuides = (page = 1, pageSize = 20, catId = "") =>
+  getList<any>("/admin/guides", { page, pageSize, categoryId: catId });
 
 export const saveGuide = (row: any) => {
   const payload = {
-    category_id: row.category_id,
+    categoryId: row.category_id,
     title: row.title,
     summary: row.summary || "",
     content: row.content || "",
     tags: row.tags || [],
-    cover_image: row.cover_image || ""
+    coverImage: row.cover_image || ""
   };
-  return row.id
-    ? supabase.from("guides").update(payload).eq("id", row.id)
-    : supabase.from("guides").insert(payload);
+  return writeOk(() =>
+    row.id
+      ? request("patch", `/admin/guides/${row.id}`, undefined, payload)
+      : request("post", "/admin/guides", undefined, payload)
+  );
 };
 
 export const deleteGuide = (id: string) =>
-  supabase.from("guides").delete().eq("id", id);
+  writeOk(() => request("delete", `/admin/guides/${id}`));
 
 // ---------- 反馈管理 ----------
 export const listFeedbacks = (page = 1, pageSize = 20) =>
-  pagedQuery("feedbacks", {
-    select: "id, user_id, content, contact, status, created_at",
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
+  getList<any>("/admin/feedbacks", { page, pageSize });
 
 export const setFeedbackDone = (id: string, done: boolean) =>
-  supabase
-    .from("feedbacks")
-    .update({ status: done ? "done" : "pending" })
-    .eq("id", id);
+  writeOk(() =>
+    request("patch", `/admin/feedbacks/${id}`, undefined, { done })
+  );
 
 // ---------- 通知下发 ----------
 export const listNotifications = (page = 1, pageSize = 20) =>
-  pagedQuery("notifications", {
-    select: "id, user_id, type, content, target_type, target_id, is_read, created_at",
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
+  getList<any>("/admin/notifications", { page, pageSize });
 
 export const createNotification = (payload: {
   user_id?: string | null;
@@ -262,13 +204,22 @@ export const createNotification = (payload: {
   content: string;
   target_type?: string | null;
   target_id?: string | null;
-}) => supabase.from("notifications").insert(payload);
+}) =>
+  writeOk(() =>
+    request("post", "/admin/notifications", undefined, {
+      userId: payload.user_id ?? undefined,
+      type: payload.type,
+      content: payload.content,
+      targetType: payload.target_type ?? undefined,
+      targetId: payload.target_id ?? undefined
+    })
+  );
 
-// ---------- 操作审计 ----------
+// ---------- 操作审计（服务端已自动记录，保留导出以兼容旧调用） ----------
 export const listAdminLogs = (page = 1, pageSize = 20) =>
-  pagedQuery("admin_logs", {
-    select: "id, admin_id, action, detail, created_at",
-    order: { column: "created_at" },
-    page,
-    pageSize
-  });
+  getList<any>("/admin/logs", { page, pageSize });
+
+/** 旧版前端手动审计 → v2 已由服务端写操作统一落 admin_logs，此处为 no-op 兼容 */
+export async function logAction(_action: string, _detail: string, _adminId?: string) {
+  return;
+}

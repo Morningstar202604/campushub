@@ -1,43 +1,41 @@
-import { supabase, errMsg } from "@/api/supabase";
+import { API_BASE, errMsg } from "@/api/client";
+import { getToken, formatToken } from "@/utils/auth";
 
-/** 上传目录命名：按类型分区 */
-function folderOf(type: string) {
-  const now = new Date();
-  const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-  return `${type}/${ym}`;
-}
-
-/** 确保存储桶存在（首次上传自动创建，Public） */
-export async function ensureBucket() {
-  const { data: buckets } = await supabase.storage.listBuckets();
-  if (!buckets?.some(b => b.name === "images")) {
-    const { error } = await supabase.storage.createBucket("images", {
-      public: true
+/**
+ * 图片上传：自家服务端 /api/upload/images（multipart 字段 files，最多 9 张）
+ * 返回相对路径 /static/xxx.jpg（开发由 Vite 代理，生产由 nginx 反代）
+ */
+export async function uploadImages(
+  files: File[],
+  _type = "general"
+): Promise<string[]> {
+  const fd = new FormData();
+  files.forEach(f => fd.append("files", f));
+  const token = getToken();
+  let res: Response;
+  try {
+    res = await fetch(API_BASE + "/upload/images", {
+      method: "POST",
+      headers: token?.accessToken
+        ? { Authorization: formatToken(token.accessToken) }
+        : {},
+      body: fd
     });
-    if (error && !/already exists/i.test(error.message)) {
-      throw new Error(errMsg(error, "存储桶创建失败"));
+  } catch {
+    throw new Error("图片上传失败，请检查网络");
+  }
+  if (!res.ok) {
+    let msg = "图片上传失败";
+    try {
+      const d = await res.json();
+      msg = d?.message || msg;
+    } catch {
+      /* 忽略解析失败 */
     }
+    throw new Error(msg);
   }
-}
-
-/** 批量上传图片到 Supabase Storage，返回公开 URL 列表 */
-export async function uploadImages(files: File[], type = "general"): Promise<string[]> {
-  await ensureBucket();
-  const urls: string[] = [];
-  for (const file of files) {
-    const ext = file.name.includes(".")
-      ? file.name.split(".").pop()!.toLowerCase()
-      : "jpg";
-    const safeExt = /^(jpg|jpeg|png|gif|webp|bmp)$/.test(ext) ? ext : "jpg";
-    const path = `${folderOf(type)}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
-    const { error } = await supabase.storage.from("images").upload(path, file, {
-      cacheControl: "3600",
-      upsert: false
-    });
-    if (error) throw new Error(errMsg(error, "图片上传失败"));
-    urls.push(supabase.storage.from("images").getPublicUrl(path).data.publicUrl);
-  }
-  return urls;
+  const d = await res.json();
+  return d?.urls ?? [];
 }
 
 /** vditor 图片上传回调：返回 vditor 约定格式 */

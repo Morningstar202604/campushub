@@ -27,16 +27,16 @@ async function load() {
   }
 }
 
-async function onHandle(row: any, status: "approved" | "rejected") {
+async function onHandle(row: any, status: "handled" | "dismissed") {
   const note = await ElMessageBox.prompt(
-    status === "approved" ? "处理方式：同意举报（删除内容）/ 备注处理说明" : "驳回举报，请填写驳回原因",
-    status === "approved" ? "通过举报" : "驳回举报",
+    status === "handled" ? "处理方式：同意举报（删除内容）/ 备注处理说明" : "驳回举报，请填写驳回原因",
+    status === "handled" ? "通过举报" : "驳回举报",
     { confirmButtonText: "确定", cancelButtonText: "取消", inputPlaceholder: "处理备注（选填）" }
   ).catch(() => null);
   if (!note) return;
   const res = await handleReport(row.id, status, note.value || "", useUserStoreHook().username);
   if (res.error) return ElMessage.error(res.error);
-  await logAction("report.handle", `${status === "approved" ? "通过" : "驳回"}举报 ${row.id}`);
+  await logAction("report.handle", `${status === "handled" ? "通过" : "驳回"}举报 ${row.id}`);
   ElMessage.success("已处理");
   load();
 }
@@ -63,8 +63,8 @@ onMounted(load);
         <el-table-column prop="detail" label="详情" min-width="200" show-overflow-tooltip />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.status === 'pending' ? 'warning' : row.status === 'approved' ? 'danger' : 'info'">
-              {{ { pending: "待处理", approved: "已通过", rejected: "已驳回" }[row.status] ?? row.status }}
+            <el-tag size="small" :type="row.status === 'pending' ? 'warning' : row.status === 'handled' ? 'danger' : 'info'">
+              {{ { pending: "待处理", handled: "已通过", dismissed: "已驳回" }[row.status] ?? row.status }}
             </el-tag>
           </template>
         </el-table-column>
@@ -75,8 +75,8 @@ onMounted(load);
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <template v-if="row.status === 'pending'">
-              <el-button type="danger" link @click="onHandle(row, 'approved')">通过</el-button>
-              <el-button type="info" link @click="onHandle(row, 'rejected')">驳回</el-button>
+              <el-button type="danger" link @click="onHandle(row, 'handled')">通过</el-button>
+              <el-button type="info" link @click="onHandle(row, 'dismissed')">驳回</el-button>
             </template>
             <span v-else class="text-slate-400 text-xs">已处理</span>
           </template>

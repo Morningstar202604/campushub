@@ -16,6 +16,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { FeedbacksModule } from './modules/feedbacks/feedbacks.module.js';
 import { SearchModule } from './modules/search/search.module.js';
 import { UploadModule } from './modules/upload/upload.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { AppController } from './app.controller.js';
 
@@ -36,6 +37,7 @@ import { AppController } from './app.controller.js';
     FeedbacksModule,
     SearchModule,
     UploadModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
