@@ -1,0 +1,369 @@
+// CampusHub 数据模型 —— 由 packages/db/schema.sql 翻译（自建后端版）
+// 变更点（相对 Supabase 版）：
+//   1. profiles.id 不再外键 auth.users → 新增 users 表承载邮箱/密码凭据，与 profile 1:1
+//   2. 删除 RLS / 触发器依赖 auth 的部分；计数触发器逻辑迁服务层（表结构保留计数列）
+//   3. 新增 refresh_sessions（refresh token 轮换存储）
+// 约束兜底保留：likes/collects 唯一约束、checkins (user_id,date) 唯一约束
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- 1. 账号凭据（新增，替代 Supabase auth.users） ----------
+model User {
+  id            String            @id @default(uuid()) @db.Uuid
+  email         String            @unique
+  passwordHash  String            @map("password_hash")
+  createdAt     DateTime          @default(now()) @db.Timestamptz(6) @map("created_at")
+  profile       Profile?
+  refreshTokens RefreshSession[]
+
+  @@map("users")
+}
+
+// ---------- 2. 用户资料（原 profiles，id 与 users.id 1:1） ----------
+model Profile {
+  id              String   @id @db.Uuid
+  nickname        String   @default("")
+  avatar          String   @default("")
+  bio             String   @default("")
+  college         String   @default("")
+  major           String   @default("")
+  grade           String   @default("")
+  gender          Int      @default(0) // 0 未知 / 1 男 / 2 女
+  tags            String[] @default([])
+  points          Int      @default(0)
+  checkinStreak   Int      @default(0) @map("checkin_streak")
+  lastCheckinDate DateTime? @db.Date @map("last_checkin_date")
+  isAdmin         Boolean  @default(false) @map("is_admin")
+  isBanned        Boolean  @default(false) @map("is_banned")
+  createdAt       DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user        User?          @relation(fields: [id], references: [id], onDelete: Cascade)
+  posts       Post[]
+  products    Product[]
+  comments    Comment[]
+  likes       Like[]
+  collects    Collect[]
+  followers   Follow[]       @relation("FollowFollower")
+  following   Follow[]       @relation("FollowFollowing")
+  checkins    Checkin[]
+  notifOwned  Notification[] @relation("NotifOwner")
+  notifActed  Notification[] @relation("NotifActor")
+  reportsMade Report[]       @relation("ReportReporter")
+  reportsHandled Report[]    @relation("ReportHandler")
+  feedbacks   Feedback[]
+  announcementsMade Announcement[]
+  pointsOrders PointsOrder[]
+  adminLogs   AdminLog[]
+
+  @@map("profiles")
+}
+
+// ---------- 3. 内容分类 ----------
+model Category {
+  id        String     @id // 固定可读 id（cat_idle 等，见 seed.sql），非 uuid
+  parentId  String?    @map("parent_id")
+  name      String
+  emoji     String     @default("")
+  sort      Int        @default(0)
+  status    String     @default("active") // active / hidden
+  createdAt DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  posts    Post[]
+  products Product[]
+
+  @@map("categories")
+}
+
+// ---------- 4. 帖子 ----------
+model Post {
+  id           String    @id @default(uuid()) @db.Uuid
+  authorId     String    @db.Uuid @map("author_id")
+  categoryId   String    @map("category_id") // text 主键分类（cat_idle 等）
+  kind         String    @default("post") // post/task/lost/found/confession
+  title        String
+  content      String    @default("")
+  images       String[]  @default([])
+  tags         String[]  @default([])
+  location     String    @default("")
+  isAnonymous  Boolean   @default(false) @map("is_anonymous")
+  expireAt     DateTime? @db.Timestamptz(6) @map("expire_at")
+  resolved     Boolean   @default(false)
+  status       String    @default("normal") // normal/expired/deleted
+  isPinned     Boolean   @default(false) @map("is_pinned")
+  isEssence    Boolean   @default(false) @map("is_essence")
+  likeCount    Int       @default(0) @map("like_count")
+  commentCount Int       @default(0) @map("comment_count")
+  collectCount Int       @default(0) @map("collect_count")
+  viewCount    Int       @default(0) @map("view_count")
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  author   Profile  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([status, isPinned(sort: Desc), createdAt(sort: Desc)])
+  @@index([categoryId, createdAt(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("posts")
+}
+
+// ---------- 5. 二手商品 ----------
+model Product {
+  id            String   @id @default(uuid()) @db.Uuid
+  sellerId      String   @db.Uuid @map("seller_id")
+  categoryId    String   @map("category_id") // text 主键分类（cat_idle 等）
+  title         String
+  description   String   @default("")
+  images        String[] @default([])
+  price         Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @db.Decimal(10, 2) @map("original_price")
+  condition     String   @default("good")
+  tradeType     String   @default("face") @map("trade_type") // face/mail/both
+  location      String   @default("")
+  contactInfo   String   @default("") @map("contact_info")
+  status        String   @default("on_sale") // on_sale/sold/off_shelf/deleted
+  likeCount     Int      @default(0) @map("like_count")
+  commentCount  Int      @default(0) @map("comment_count")
+  collectCount  Int      @default(0) @map("collect_count")
+  viewCount     Int      @default(0) @map("view_count")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  seller   Profile  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([categoryId, createdAt(sort: Desc)])
+  @@index([sellerId, createdAt(sort: Desc)])
+  @@map("products")
+}
+
+// ---------- 6. 评论（多态：帖子/商品） ----------
+model Comment {
+  id            String   @id @default(uuid()) @db.Uuid
+  targetType    String   @map("target_type") // post/product
+  targetId      String   @db.Uuid @map("target_id")
+  userId        String   @db.Uuid @map("user_id")
+  parentId      String?  @db.Uuid @map("parent_id")
+  replyToUserId String?  @db.Uuid @map("reply_to_user_id")
+  content       String
+  status        String   @default("normal") // normal/deleted
+  likeCount     Int      @default(0) @map("like_count")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user    Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment? @relation("CommentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Comment[] @relation("CommentTree")
+
+  @@index([targetType, targetId, createdAt])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// ---------- 7. 点赞 / 收藏（多态，唯一约束幂等） ----------
+model Like {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid @map("user_id")
+  targetType String   @map("target_type") // post/product/comment
+  targetId   String   @db.Uuid @map("target_id")
+  createdAt  DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@map("likes")
+}
+
+model Collect {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid @map("user_id")
+  targetType String   @map("target_type") // post/product
+  targetId   String   @db.Uuid @map("target_id")
+  createdAt  DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@map("collects")
+}
+
+// ---------- 8. 关注 ----------
+model Follow {
+  id          String   @id @default(uuid()) @db.Uuid
+  followerId  String   @db.Uuid @map("follower_id")
+  followingId String   @db.Uuid @map("following_id")
+  createdAt   DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  follower Profile @relation("FollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following Profile @relation("FollowFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+// ---------- 9. 签到 ----------
+model Checkin {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  date      DateTime @db.Date
+  streak    Int      @default(1)
+  points    Int      @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("checkins")
+}
+
+// ---------- 10. 通知 ----------
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid @map("user_id")
+  type       String // like/comment/follow/system/report_result
+  targetType String    @default("") @map("target_type")
+  targetId   String?   @db.Uuid @map("target_id")
+  actorId    String?   @db.Uuid @map("actor_id")
+  content    String    @default("")
+  isRead     Boolean   @default(false) @map("is_read")
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user  Profile  @relation("NotifOwner", fields: [userId], references: [id], onDelete: Cascade)
+  actor Profile? @relation("NotifActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// ---------- 11. 举报 / 反馈 ----------
+model Report {
+  id         String    @id @default(uuid()) @db.Uuid
+  reporterId String    @db.Uuid @map("reporter_id")
+  targetType String    @map("target_type") // post/product/comment/user
+  targetId   String    @db.Uuid @map("target_id")
+  reason     String
+  detail     String    @default("")
+  status     String    @default("pending") // pending/handled/dismissed
+  handledBy  String?   @db.Uuid @map("handled_by")
+  handledAt  DateTime? @db.Timestamptz(6) @map("handled_at")
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  reporter Profile @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  handler  Profile? @relation("ReportHandler", fields: [handledBy], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("reports")
+}
+
+model Feedback {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  content   String
+  contact   String   @default("")
+  status    String   @default("pending") // pending/done
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feedbacks")
+}
+
+// ---------- 12. 公告 / 指南 ----------
+model Announcement {
+  id        String    @id @default(uuid()) @db.Uuid
+  title     String
+  content   String    @default("")
+  isPinned  Boolean   @default(false) @map("is_pinned")
+  status    String    @default("active") // active/inactive
+  createdBy String?   @db.Uuid @map("created_by")
+  createdAt DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  creator Profile? @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@map("announcements")
+}
+
+model GuideCategory {
+  id    String @id // text 主键（gid_freshman 等，与 seed 固定 id 一致）
+  name  String
+  icon  String @default("")
+  sort  Int    @default(0)
+
+  guides Guide[]
+
+  @@map("guide_categories")
+}
+
+model Guide {
+  id         String   @id @default(uuid()) @db.Uuid
+  categoryId String?  @map("category_id") // text 主键（gid_freshman 等）
+  title      String
+  summary    String   @default("")
+  content    String   @default("") // HTML 富文本（vditor 写入）
+  coverImage String   @default("") @map("cover_image")
+  tags       String[] @default([])
+  viewCount  Int      @default(0) @map("view_count")
+  status     String   @default("published") // published/draft
+  sort       Int      @default(0)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  category GuideCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([status, sort, createdAt(sort: Desc)])
+  @@map("guides")
+}
+
+// ---------- 13. 积分订单 / 管理日志 ----------
+model PointsOrder {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  item      String
+  cost      Int
+  status    String   @default("done") // done/refunded
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("points_orders")
+}
+
+model AdminLog {
+  id         String    @id @default(uuid()) @db.Uuid
+  adminId    String?   @db.Uuid @map("admin_id")
+  action     String // ban_user/resolve_report/pin_post...
+  targetType String    @default("") @map("target_type")
+  targetId   String?   @db.Uuid @map("target_id")
+  detail     String    @default("")
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  admin Profile? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt(sort: Desc)])
+  @@map("admin_logs")
+}
+
+// ---------- 14. refresh token 会话（新增） ----------
+model RefreshSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @db.Timestamptz(6) @map("expires_at")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_sessions")
+}
