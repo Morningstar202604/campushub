@@ -1,69 +1,137 @@
-# 部署指南
+# 部署指南（v2 · 自建后端）
 
-> 总目标：**不开服务器、不备案后端、零运维**。后端用国内云托管的 Supabase，前端是纯静态文件。
+> v2 起后端为自建 NestJS 服务层 + PostgreSQL，不再依赖 Supabase 云。本文覆盖：本机开发、生产部署、前端 SPA fallback、图片存储。
 
-## 一、开通 Supabase（任选一家，流程相同）
+---
 
-| 厂商 | 入口 | 特点 |
+## 一、本机开发（最快路径）
+
+前置：Node 20+（建议 22）、PostgreSQL 14+（本机 127.0.0.1:5432）。
+
+```bash
+# 1. 服务层
+cd apps/server
+npm install                       # 沙箱/CI 环境请用 npx --yes npm@12 install
+bash scripts/setup-db.sh          # 建库建用户（campushub/campushub@127.0.0.1:5432/campushub）
+node scripts/seed.mjs             # 种子数据
+bash scripts/make-demo.sh         # 演示数据（可选）
+npm run build
+node dist/main.js                 # 监听 :3000，全局前缀 /api
+
+# 验证
+curl http://localhost:3000/api/health          # → {"status":"ok",...}
+curl http://localhost:3000/api-docs            # Swagger UI
+curl http://localhost:3000/api-docs-json       # OpenAPI JSON（前端类型生成源）
+
+# 2. 学生端
+cd ../web
+npm install
+npm run dev                       # :5173，VITE_API_BASE=http://localhost:3000
+```
+
+**演示账号**：`xiaoming@campus.dev` / `xiaohong@campus.dev`，密码 `demo123456`。
+
+> 数据库被清后恢复：依次跑 `setup-db.sh` → `seed.mjs` → `make-demo.sh`（演示脚本幂等，可重复执行）。
+
+---
+
+## 二、生产部署
+
+### 拓扑
+
+```
+静态托管（Nginx / COS / OSS + CDN）→ 学生端静态文件（dist/）
+轻量云服务器（2C4G）→ NestJS（:3000）+ PostgreSQL（同机或同 VPC）
+图片存储 → 服务器磁盘 uploads/（当前），后置 OSS + CDN
+```
+
+### 1. 数据库（服务器或云 RDS）
+
+```sql
+-- 用 setup-db.sh 的 SQL 等价物建库建用户，或直接复用：
+bash apps/server/scripts/setup-db.sh
+node apps/server/scripts/seed.mjs
+```
+
+### 2. 服务层
+
+```bash
+cd apps/server
+cp .env.example .env    # 按需改 DATABASE_URL / JWT_SECRET / UPLOAD_DIR / PORT
+npm run build
+# 进程管理（任选）：systemd / pm2
+pm2 start dist/main.js --name campushub-api
+```
+
+环境变量：
+
+| 变量 | 默认 | 说明 |
 |---|---|---|
-| 阿里云 | 云数据库 RDS → RDS Supabase | 按量计费，中文文档 |
-| 火山引擎 | AI 原生数据库 → Supabase 版 | 100% 兼容 Supabase 开源用法 |
-| 腾讯云 | 云开发 CloudBase for Supabase | 对齐 Supabase 心智，人民币计费 |
-| 自托管（不推荐） | docker-compose | 需要服务器，运维成本高 |
+| DATABASE_URL | postgresql://campushub:campushub@127.0.0.1:5432/campushub | Prisma 连接串 |
+| JWT_SECRET | campushub-dev-secret-2026 | **生产必须更换**为强随机值 |
+| UPLOAD_DIR | ./uploads | 图片落盘目录 |
+| PORT | 3000 | 服务端口 |
+| ACCESS_TTL / REFRESH_TTL | 15m / 7d | token 时效（可选） |
 
-开通后记下两个值（项目 Settings → API）：
-- `Project URL`（形如 `https://xxxx.supabase.co`）
-- `anon public key`
-
-## 二、初始化数据库
-
-1. 打开 Supabase 控制台 → SQL Editor
-2. 依次执行（顺序不可反）：
-   - `packages/db/schema.sql`（建表 + 触发器 + RLS + 全文检索索引）
-   - `packages/db/seed.sql`（示例分类 / 指南 / 公告）
-3. 创建存储桶（可登录后由前端首次上传时自动创建，也可手动建）：
-   - Storage → New bucket → 名称 `images`，勾选 Public
-
-## 三、配置学生端
+### 3. 学生端
 
 ```bash
 cd apps/web
-cp .env.example .env
-# 编辑 .env，填入 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
-
-npm install
-npm run dev        # 本地开发 http://localhost:5173
-npm run build      # 产出 dist/，静态文件
+cp .env.example .env    # VITE_API_BASE 填生产 API 地址，如 https://api.example.com
+npm run build           # 产出 dist/
 ```
 
-## 四、部署前端（静态托管）
+**关键：SPA fallback**。前端是 `createWebHistory`（无 `#` 路由），静态服务器必须把未命中路径回退到 `index.html`：
 
-`npm run build` 后把 `apps/web/dist/` 上传到：
+```nginx
+# Nginx 示例
+location / {
+  try_files $uri $uri/ /index.html;
+}
+```
 
-- **腾讯云 COS / 阿里云 OSS + CDN**（推荐，国内快，需域名备案）
-- 或任意静态托管（GitHub Pages / Nginx / 宝塔）
+> 否则直接刷新 `/market`、`/post/xxx` 等深链会 404。
 
-因为使用了 Hash 路由，静态托管**不需要任何 rewrite 配置**。
+### 4. 反向代理（若 API 与前端同域）
 
-## 五、管理员账号
+```nginx
+location /api/ {
+  proxy_pass http://127.0.0.1:3000;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_read_timeout 30s;
+}
+location /static/ {     # 图片
+  proxy_pass http://127.0.0.1:3000;
+}
+```
 
-1. 先用学生端注册一个邮箱账号
-2. 在 Supabase 控制台 → Table Editor → `profiles` 表，把该用户的 `is_admin` 改为 `true`
-3. 部署管理后台（见 `docs/ADMIN.md`），用同一账号登录
+---
 
-## 六、上线前检查清单
+## 三、图片存储（当前方案与演进）
 
-- [ ] schema.sql / seed.sql 已执行，`posts`/`products`/`comments` 等表有数据读写正常
-- [ ] 存储桶 `images` 已创建且 Public
-- [ ] 邮箱确认策略：Auth → Providers → Email → 开发期可关闭 "Confirm email"，正式开放建议开启
-- [ ] 内容安全：接入第三方审核 API（网易易盾/腾讯云天御）前，起步靠"举报 + 人工审核"闭环（reports 表已支持）
-- [ ] 域名 + HTTPS（登录和存储需要安全上下文）
+- **当前**：`POST /api/upload/images` 落本地磁盘（`UPLOAD_DIR`），`/static/*` 静态访问，返回 `{urls}`。
+- **演进（M4）**：换 OSS / COS + CDN，上传接口改为"拿预签名直传"模式；前端 `lib/upload.ts` 的 `resolveStaticUrl` 已在 URL 组装层预留切换点。
 
-## 成本估算
+---
+
+## 四、成本（客观估算）
 
 | 项 | 费用 |
 |---|---|
-| 阿里云 RDS Supabase（按量） | 约 5 元起 / 活跃月（校园量级通常个位数到几十元） |
-| 前端静态托管（COS/OSS） | 流量费极低，约 0.2~2 元/月 |
-| 域名 | 约 30~60 元/年 |
-| **合计** | **百元以内/年**（远低于原方案 19.9 元/月 × 12 ≈ 240 元 + 云函数复杂度） |
+| 轻量云服务器 2C4G（NestJS + Postgres + Redis 均可跑） | 约 100–200 元/年（活动价） |
+| 域名 + CDN | 约 50–100 元/年 |
+| 机审 API（M2，按量） | 约 100–300 元/月（校园量级） |
+| Sentry（M2） | 免费档 |
+| **合计（不含机审）** | **约 200–300 元/年** |
+
+---
+
+## 五、上线前检查清单（M2 之前勿直接对外）
+
+- [ ] `JWT_SECRET` 更换为强随机值
+- [ ] 接入机审 API（文本 + 图片先审后发）
+- [ ] 接入 Sentry + pino 结构化日志
+- [ ] 图片存储切 OSS（或至少做目录权限 / 大小 / 类型白名单加固）
+- [ ] 全量单测覆盖率 ≥80% + E2E + CI 门禁
+- [ ] 备份策略（pg_dump 定时）
