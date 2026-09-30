@@ -168,7 +168,7 @@ campushub/
 
 ## 八、说明与边界（如实标注）
 
-- **管理后台**：目前仍对接 v1 Supabase 后端；迁移到新服务层（admin 模块）在路线图中（M2 前后）。
+- **管理后台**：已迁移到自建服务层（`apps/server/src/modules/admin`，28 端点 + 真 AdminGuard + 操作审计）；前端 `apps/admin` 全部走 `/api/admin/*`，不再依赖 Supabase。
 - **测试覆盖**：核心服务逻辑已有单测；全量覆盖率 ≥80%、E2E、CI 门禁为 M2 目标，当前未达。
 - **文件存储**：图片暂存本地磁盘（`apps/server/uploads`，静态 `/static/` 提供），后置 OSS / CDN。
 - 本仓库为学习 / 演示项目，上线前请完成 M2（机审 + 可观测性）并做安全加固。

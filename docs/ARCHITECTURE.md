@@ -143,6 +143,6 @@ POST /checkins
 | E2E（Playwright）+ CI 门禁 | 未做 | M2 |
 | 机审 API | 未接（仅举报闭环） | M2 |
 | Sentry / pino 结构化日志 | 前端埋点骨架已建 | M2 |
-| admin 后台对接新服务层 | 仍对接 v1 Supabase | M2 前后 |
+| ~~admin 后台对接新服务层~~ | ✅ 已完成：28 端点 + 真 AdminGuard + 审计，前端走 `/api/admin/*` | 完成 |
 | Redis + BullMQ / FTS / OSS | 未做 | M4 |
 | 埋点数据应用 + 推荐 | 埋点骨架已建 | M5 |

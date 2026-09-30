@@ -159,7 +159,7 @@
 | P1-2.4 Sentry + pino | ⏳ 未做 | 前端自研埋点骨架已建（lib/telemetry.ts）→ M2 接 Sentry |
 | P2-3.1 埋点 | ✅ 骨架 | 前端事件上报 + 全局错误监控已建；事件表落库 → M5 |
 | P2-3.2 推荐 | ⏳ 未做 | → M5 |
-| P2-3.3 后台规范化 | ⏳ 未做 | admin 仍对接 v1 Supabase；对接新服务层 → M2 前后 |
+| P2-3.3 后台规范化 | ✅ 完成 | admin 已迁移到自建服务层（28 端点 + 真 AdminGuard + 审计），不再对接 v1 Supabase |
 
 **方案外新增工程化改造**（修债清单 12 项，均完成）：会话双 token 续期、mock 双轨收拢、图片压缩上传、请求缓存/超时、usePagination、路由 history、骨架屏/暗黑/动效、openapi 类型闭环。
 
@@ -169,6 +169,6 @@
 - 我的帖子/商品：`/users/me/posts` → `/posts/me`、`/products/me`（资源控制器下更 REST）
 - 搜索合并：`/search/posts`、`/search/products` → 统一 `/search?q=`
 - 编辑资料：`PATCH /users/me` → `PATCH /auth/me`
-- **admin 模块（约 20 端点）未实现**——M1 范围为学生端；后台对接在路线图 M2
+- **admin 模块已实现（28 端点）**——M1+ 追加完成：真 AdminGuard（401/403/封禁）、全写操作审计落 `admin_logs`；前端 `apps/admin` 已对接新服务层
 
 **里程碑状态**：M0 ✅ · M1 ✅ · M1+（修债 12 项）✅ · M2–M5 ⏳
