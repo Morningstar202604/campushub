@@ -84,6 +84,10 @@
       </template>
 
       <div style="padding: 16px 12px 40px;">
+        <div v-if="uploadProgress > 0 && uploadProgress < 1" class="upload-progress">
+          <div class="upload-progress-bar" :style="{ width: `${Math.round(uploadProgress * 100)}%` }"></div>
+          <span>{{ Math.round(uploadProgress * 100) }}%</span>
+        </div>
         <van-button type="primary" block round :loading="submitting" :disabled="!auth.isLoggedIn" @click="submit">
           {{ submitting ? '发布中…' : '发布' }}
         </van-button>
@@ -115,7 +119,7 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { createPost } from '@/api/posts'
 import { createProduct } from '@/api/products'
-import { uploadImages, ensureBucket } from '@/lib/upload'
+import { uploadImagesWithProgress } from '@/lib/upload'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -146,6 +150,7 @@ const productForm = ref({
 })
 
 const submitting = ref(false)
+const uploadProgress = ref(0)
 
 const selectedLabel = computed(() => {
   const c = appStore.categories.find(x => x.id === postForm.value.category_id)
@@ -191,7 +196,6 @@ async function submit() {
   if (!auth.isLoggedIn) { showFailToast('请先登录'); return }
   submitting.value = true
   try {
-    await ensureBucket()
     if (scene.value === 'product') {
       await submitProduct()
     } else {
@@ -205,6 +209,7 @@ async function submit() {
     showFailToast(e?.message || '发布失败')
   } finally {
     submitting.value = false
+    uploadProgress.value = 0
   }
 }
 
@@ -213,7 +218,9 @@ async function submitPost() {
   if (!f.category_id) throw new Error('请选择分类')
   if (!f.title.trim() && scene.value !== 'confession') throw new Error('请填写标题')
   if (!f.content.trim() && !postFiles.value.length) throw new Error('请填写内容或上传图片')
-  const images = await uploadImages(postFiles.value.map(x => x.file))
+  const images = await uploadImagesWithProgress(postFiles.value.map(x => x.file), (r) => {
+    uploadProgress.value = r
+  })
   await createPost({
     category_id: f.category_id,
     kind: f.kind,
@@ -232,7 +239,9 @@ async function submitProduct() {
   const price = Number(f.price)
   if (!price || price <= 0) throw new Error('请填写正确的价格')
   if (!f.contact_info.trim()) throw new Error('请填写联系方式')
-  const images = await uploadImages(productFiles.value.map(x => x.file))
+  const images = await uploadImagesWithProgress(productFiles.value.map(x => x.file), (r) => {
+    uploadProgress.value = r
+  })
   await createProduct({
     category_id: 'cat_idle',
     title: f.title.trim(),
@@ -250,7 +259,7 @@ async function submitProduct() {
 
 <style scoped>
 .scene-list { padding: 12px; }
-.scene-card { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(28,35,48,.04); cursor: pointer; }
+.scene-card { display: flex; align-items: center; gap: 12px; background: var(--app-card); border-radius: 12px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(28,35,48,.04); cursor: pointer; }
 .scene-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
 .scene-name { font-size: 16px; font-weight: 600; }
 .scene-desc { font-size: 12px; color: #9aa3b2; margin-top: 2px; }
@@ -264,4 +273,6 @@ async function submitProduct() {
 .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .cat-opt { text-align: center; padding: 14px 0; background: #f7f8fa; border-radius: 10px; font-size: 14px; cursor: pointer; }
 .cat-opt.active { background: #e8f1ff; color: var(--app-primary); font-weight: 600; }
+.upload-progress { display: flex; align-items: center; gap: 8px; background: #f2f4f7; border-radius: 20px; padding: 6px 12px; margin-bottom: 12px; font-size: 12px; color: #667085; }
+.upload-progress-bar { height: 4px; background: var(--app-primary); border-radius: 2px; transition: width .15s ease; flex: 1; max-width: 200px; }
 </style>

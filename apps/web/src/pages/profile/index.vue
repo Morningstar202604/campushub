@@ -127,15 +127,15 @@ async function onLogout() {
 
 <style scoped>
 .login-box { padding: 80px 40px; text-align: center; }
-.avatar-placeholder { width: 80px; height: 80px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.avatar-placeholder { width: 80px; height: 80px; border-radius: 50%; background: var(--app-card); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
 .login-title { font-size: 16px; color: #66707f; margin-bottom: 24px; }
 
-.user-card { display: flex; align-items: center; gap: 14px; background: #fff; margin: 12px; border-radius: 12px; padding: 18px; }
+.user-card { display: flex; align-items: center; gap: 14px; background: var(--app-card); margin: 12px; border-radius: 12px; padding: 18px; }
 .user-info { flex: 1; min-width: 0; }
 .user-name { font-size: 18px; font-weight: 700; }
 .user-meta { font-size: 12px; color: #9aa3b2; margin-top: 4px; }
 
-.stat-row { display: flex; background: #fff; margin: 0 12px 12px; border-radius: 12px; padding: 14px 0; }
+.stat-row { display: flex; background: var(--app-card); margin: 0 12px 12px; border-radius: 12px; padding: 14px 0; }
 .stat { flex: 1; text-align: center; cursor: pointer; }
 .stat-num { font-size: 18px; font-weight: 700; color: #1c2330; }
 .stat-label { font-size: 12px; color: #9aa3b2; margin-top: 2px; }

@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
     "dayjs": "^1.11.13",
     "dompurify": "^3.4.15",
     "marked": "^18.0.14",

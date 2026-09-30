@@ -130,7 +130,6 @@ import { listComments, addComment } from '@/api/posts'
 import { toggleCollect, isCollected, toggleFollow, isFollowing } from '@/api/social'
 import { submitReport } from '@/api/misc'
 import { useAuthStore } from '@/stores/auth'
-import { supabase } from '@/lib/supabase'
 import type { Product, Comment } from '@/types'
 import { fmtTime, fmtPrice, conditionLabel } from '@/utils/format'
 
@@ -157,9 +156,6 @@ async function init() {
   try {
     product.value = await productById(productId.value)
     if (!product.value) { showFailToast('内容不存在'); return }
-    supabase.rpc('incr_view', { t_type: 'product', t_id: productId.value }).then(() => {
-      if (product.value) product.value.view_count += 1
-    }, () => {})
     const [c, cl, f] = await Promise.all([
       listComments('product', productId.value),
       isCollected('product', productId.value),
@@ -300,7 +296,7 @@ async function onReportBeforeClose(action: string) {
 .contact-info { font-size: 16px; font-weight: 600; margin: 6px 0; word-break: break-all; }
 .contact-tip { font-size: 12px; color: #f6a02b; }
 
-.action-bar { position: sticky; top: 46px; z-index: 5; display: flex; align-items: center; background: #fff; margin: 0 12px; border-radius: 12px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(28,35,48,.04); }
+.action-bar { position: sticky; top: 46px; z-index: 5; display: flex; align-items: center; background: var(--app-card); margin: 0 12px; border-radius: 12px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(28,35,48,.04); }
 .action { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #66707f; margin-right: 24px; cursor: pointer; }
 .action.on { color: #f6a02b; }
 
@@ -313,7 +309,7 @@ async function onReportBeforeClose(action: string) {
 .cmt-time { margin-left: auto; color: #c2c9d2; }
 .cmt-content { font-size: 14px; line-height: 1.6; margin-top: 4px; }
 
-.input-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #f2f3f5; }
+.input-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--app-card); border-top: 1px solid #f2f3f5; }
 .input-field { flex: 1; border: 1px solid #e5e8ee; border-radius: 999px; padding: 8px 14px; font-size: 14px; outline: none; }
 .report-body { padding: 12px 16px 20px; }
 </style>

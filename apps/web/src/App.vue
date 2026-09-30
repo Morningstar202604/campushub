@@ -1,5 +1,9 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <transition name="page-fade" mode="out-in">
+      <component :is="Component" :key="$route.fullPath" />
+    </transition>
+  </router-view>
   <!-- 仅一级 tab 页面显示底部导航 -->
   <van-tabbar v-if="$route.meta.tab" route safe-area-inset-bottom>
     <van-tabbar-item replace to="/" icon="home-o">首页</van-tabbar-item>
@@ -18,12 +22,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { isConfigured } from '@/lib/supabase'
 
 onMounted(() => {
-  if (!isConfigured) {
-    console.warn('[CampusHub] Supabase 未配置，请复制 .env.example 为 .env 并填写 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
-  }
   const app = useAppStore()
   app.loadCategories()
   app.loadAnnouncements()
@@ -39,4 +39,9 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(43, 124, 246, 0.35);
   margin-top: -14px;
 }
+
+/* 页面切换过渡（轻量淡入 + 轻微位移，避免廉价缩放） */
+.page-fade-enter-active, .page-fade-leave-active { transition: opacity .18s ease, transform .18s ease; }
+.page-fade-enter-from { opacity: 0; transform: translateY(6px); }
+.page-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 </style>

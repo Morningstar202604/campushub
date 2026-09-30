@@ -22,7 +22,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { guideById } from '@/api/misc'
-import { supabase } from '@/lib/supabase'
 import type { Guide } from '@/types'
 
 const route = useRoute()
@@ -39,9 +38,6 @@ const renderedHtml = computed(() => {
 onMounted(async () => {
   try {
     guide.value = await guideById(guideId.value)
-    supabase.rpc('incr_view', { t_type: 'guide', t_id: guideId.value }).then(() => {
-      if (guide.value) guide.value.view_count += 1
-    }, () => {})
   } catch { /* 忽略 */ }
 })
 </script>

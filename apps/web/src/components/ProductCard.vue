@@ -23,7 +23,7 @@ defineEmits<{ open: [product: Product] }>()
 </script>
 
 <style scoped>
-.product-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(28,35,48,.04); cursor: pointer; }
+.product-card { background: var(--app-card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(28,35,48,.04); cursor: pointer; }
 .pc-img-wrap { position: relative; }
 .pc-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #f0f2f5; }
 .pc-img-empty { display: flex; align-items: center; justify-content: center; }

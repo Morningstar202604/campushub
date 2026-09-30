@@ -33,9 +33,16 @@
     </van-tabs>
 
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-      <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
-        <PostCard v-for="p in list" :key="p.id" :post="p" @open="(post) => router.push(`/post/${post.id}`)" />
-        <van-empty v-if="finished && !list.length" description="还没有内容，去发布第一条吧" />
+      <div v-if="feed.loading && !feed.list.length" class="skeleton-list">
+        <div v-for="i in 4" :key="i" class="skeleton-card">
+          <div class="sk-line w80"></div>
+          <div class="sk-line w100"></div>
+          <div class="sk-line w40"></div>
+        </div>
+      </div>
+      <van-list v-model:loading="feed.loading" :finished="feed.finished" finished-text="没有更多了" @load="feed.loadMore">
+        <PostCard v-for="p in feed.list" :key="p.id" :post="p" @open="(post) => router.push(`/post/${post.id}`)" />
+        <van-empty v-if="feed.finished && !feed.list.length" description="还没有内容，去发布第一条吧" />
       </van-list>
     </van-pull-refresh>
   </div>
@@ -47,6 +54,7 @@ import { useRouter } from 'vue-router'
 import { showConfirmDialog } from 'vant'
 import { useAppStore } from '@/stores/app'
 import { feedPosts } from '@/api/posts'
+import { usePagination } from '@/composables/usePagination'
 import type { Post } from '@/types'
 import PostCard from '@/components/PostCard.vue'
 
@@ -56,63 +64,34 @@ const announcements = computed(() => appStore.announcements)
 
 const categoryId = ref('')
 const tab = ref('recommend')
-const list = ref<Post[]>([])
-const page = ref(0)
-const loading = ref(false)
-const finished = ref(false)
 const refreshing = ref(false)
+
+const feed = usePagination<Post>((p) =>
+  feedPosts({
+    categoryId: categoryId.value || undefined,
+    tab: tab.value as any,
+    page: p,
+  }),
+)
 
 // 首屏主动加载（van-list 的 immediate-check 在某些环境下不触发，不能依赖它出首屏）
 onMounted(() => {
   appStore.loadCategories()
   appStore.loadAnnouncements()
-  onLoad()
+  feed.loadMore()
 })
 
 function pickCategory(id: string) {
   categoryId.value = id
-  reset()
+  feed.reset()
 }
 
 function onTabChange() {
-  reset()
-}
-
-function reset() {
-  list.value = []
-  page.value = 0
-  finished.value = false
-  loading.value = false
-  onLoad()
-}
-
-async function onLoad() {
-  if (loading.value || finished.value) return
-  loading.value = true
-  try {
-    const next = page.value + 1
-    const { list: items, hasMore } = await feedPosts({
-      categoryId: categoryId.value || undefined,
-      tab: tab.value as any,
-      page: next
-    })
-    list.value.push(...items)
-    page.value = next
-    finished.value = !hasMore
-  } catch (e: any) {
-    finished.value = true
-    console.warn('[home] 加载失败', e?.message)
-  } finally {
-    loading.value = false
-  }
+  feed.reset()
 }
 
 async function onRefresh() {
-  list.value = []
-  page.value = 0
-  finished.value = false
-  loading.value = false
-  await onLoad()
+  await feed.reset()
   refreshing.value = false
 }
 
@@ -128,7 +107,7 @@ function onAnnouncement() {
 .cat-scroll::-webkit-scrollbar { display: none; }
 .cat-chip {
   flex-shrink: 0; padding: 6px 14px; font-size: 13px; color: #66707f;
-  background: #fff; border-radius: 999px; border: 1px solid #e5e8ee; cursor: pointer;
+  background: var(--app-card); border-radius: 999px; border: 1px solid #e5e8ee; cursor: pointer;
 }
 .cat-chip.active { color: #fff; background: var(--app-primary); border-color: var(--app-primary); font-weight: 600; }
 </style>

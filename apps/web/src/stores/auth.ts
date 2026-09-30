@@ -1,10 +1,20 @@
 import { defineStore } from 'pinia'
-import { supabase } from '@/lib/supabase'
-import { USE_MOCK } from '@/lib/mock'
-import { mock, persist } from '@/mock/data'
+import { http, setTokens, clearTokens, hasToken, refreshAccess } from '@/lib/http'
+import { resolveStaticUrl } from '@/lib/upload'
 import type { Profile } from '@/types'
 
-const MOCK_LOGIN_KEY = 'campus_mock_login'
+/** 后端 camelCase → 前端 Profile（snake_case） */
+function toProfile(raw: any): Profile {
+  return {
+    ...raw,
+    avatar: resolveStaticUrl(raw.avatar ?? ''),
+    checkin_streak: raw.checkinStreak ?? 0,
+    last_checkin_date: raw.lastCheckinDate ?? null,
+    is_admin: raw.isAdmin ?? false,
+    is_banned: raw.isBanned ?? false,
+    created_at: raw.createdAt,
+  }
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -17,84 +27,60 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     /** 应用启动时恢复会话并拉取最新 profile */
     async restore() {
-      if (USE_MOCK) {
-        // Mock 模式：从 localStorage 恢复演示登录态
-        if (localStorage.getItem(MOCK_LOGIN_KEY)) {
-          this.profile = { ...mock.me } as Profile
-        }
-        return
+      if (!hasToken()) return
+      // access 在内存里可能没有（页面刷新后），用 refresh token 换新会话
+      try {
+        await refreshAccess()
+        await this.fetchProfile()
+      } catch (e: any) {
+        console.warn('[auth] 会话恢复失败', e?.message)
+        this.profile = null
       }
-      const { data } = await supabase.auth.getSession()
-      if (data?.session) await this.fetchProfile()
     },
     async fetchProfile() {
-      if (USE_MOCK) {
-        this.profile = { ...mock.me } as Profile
-        return
+      if (!hasToken()) { this.profile = null; return }
+      try {
+        const data = await http.get<any>('/auth/me')
+        this.profile = toProfile(data)
+      } catch (e: any) {
+        // 401 已自动清 token；其他错误仅警告
+        console.warn('[auth] 拉取 profile 失败', e.message)
+        this.profile = null
       }
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { this.profile = null; return }
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      if (error) { console.warn('[auth] 拉取 profile 失败', error.message); return }
-      this.profile = data as Profile
     },
-    /** 邮箱+密码登录（Supabase 原生；Mock 模式任意账号即演示登录） */
+    /** 邮箱+密码登录（自建服务层） */
     async login(email: string, password: string) {
-      if (USE_MOCK) {
-        localStorage.setItem(MOCK_LOGIN_KEY, '1')
-        this.profile = { ...mock.me } as Profile
-        return
-      }
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw new Error(this.friendly(error.message))
+      const data = await http.post<any>('/auth/login', { email, password })
+      setTokens(data.accessToken, data.refreshToken)
+      this.profile = toProfile(data.user)
       await this.fetchProfile()
     },
     async register(email: string, password: string, nickname: string) {
-      if (USE_MOCK) {
-        localStorage.setItem(MOCK_LOGIN_KEY, '1')
-        this.profile = { ...mock.me, nickname: nickname || mock.me.nickname } as Profile
-        return
-      }
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { nickname } }
-      })
-      if (error) throw new Error(this.friendly(error.message))
-      // 邮箱确认已开启时用户需先验证；未开启则直接登录
+      const data = await http.post<any>('/auth/register', { email, password, nickname })
+      setTokens(data.accessToken, data.refreshToken)
+      this.profile = toProfile(data.user)
       await this.fetchProfile()
     },
     async logout() {
-      if (USE_MOCK) {
-        localStorage.removeItem(MOCK_LOGIN_KEY)
-        this.profile = null
-        return
-      }
-      await supabase.auth.signOut()
+      try { await http.post('/auth/logout') } catch { /* 忽略 */ }
+      clearTokens()
       this.profile = null
     },
     async updateProfile(patch: Partial<Profile>) {
-      if (USE_MOCK) {
-        Object.assign(mock.me, patch)
-        this.profile = { ...mock.me } as Profile
-        persist()
-        return
-      }
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('未登录')
-      const { error } = await supabase.from('profiles').update(patch).eq('id', user.id)
-      if (error) throw new Error(error.message)
+      // snake_case → 后端 camelCase
+      const body: Record<string, unknown> = { ...patch }
+      if ('checkin_streak' in body) { body.checkinStreak = body.checkin_streak; delete body.checkin_streak }
+      if ('last_checkin_date' in body) { body.lastCheckinDate = body.last_checkin_date; delete body.last_checkin_date }
+      if ('is_admin' in body) { body.isAdmin = body.is_admin; delete body.is_admin }
+      if ('is_banned' in body) { body.isBanned = body.is_banned; delete body.is_banned }
+      if ('created_at' in body) delete body.created_at
+      await http.patch('/auth/me', body)
       await this.fetchProfile()
     },
     friendly(msg: string): string {
-      if (/Invalid login credentials/i.test(msg)) return '邮箱或密码错误'
-      if (/User already registered/i.test(msg)) return '该邮箱已注册，请直接登录'
-      if (/Password should be at least/i.test(msg)) return '密码至少 6 位'
-      if (/Email not confirmed/i.test(msg)) return '邮箱尚未验证，请查收验证邮件'
+      if (/邮箱或密码错误|密码错误/.test(msg)) return '邮箱或密码错误'
+      if (/已注册/.test(msg)) return '该邮箱已注册，请直接登录'
+      if (/至少 6 位|密码/.test(msg) && /6/.test(msg)) return '密码至少 6 位'
       return msg
     }
   }

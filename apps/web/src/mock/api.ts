@@ -302,3 +302,234 @@ export const mockAnnouncements = async (): Promise<Announcement[]> =>
 export const mockUploadImages = async (files: File[]): Promise<string[]> => {
   return files.map((_, i) => phImg(i, '上传成功'))
 }
+
+// ============================================================
+// URL 分发器：http 层统一拦截（mock 模式），业务代码零污染
+// 返回结构与真实后端 REST 一致
+// ============================================================
+
+function parsePath(path: string) {
+  const q = path.indexOf('?')
+  const pathname = q >= 0 ? path.slice(0, q) : path
+  const params: Record<string, string> = {}
+  if (q >= 0) {
+    for (const [k, v] of new URLSearchParams(path.slice(q + 1))) params[k] = v
+  }
+  return { pathname, params }
+}
+
+/** camelCase body → mock 内部 snake_case */
+function toSnake(o: any): any {
+  const out: Record<string, any> = {}
+  for (const k of Object.keys(o ?? {})) {
+    const sk = k.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`)
+    out[sk] = o[k]
+  }
+  return out
+}
+
+function idOf(pathname: string, seg = 2): string {
+  return pathname.split('/')[seg]
+}
+
+const delay = () => new Promise((r) => setTimeout(r, 60))
+
+/** mock profile（snake_case）→ 后端风格 camelCase，兼容前端 toProfile */
+function toCamelProfile(p: any) {
+  return {
+    id: p.id, nickname: p.nickname, avatar: p.avatar, bio: p.bio ?? '',
+    college: p.college ?? '', major: p.major ?? '', grade: p.grade ?? '',
+    gender: p.gender ?? 0, tags: p.tags ?? [], points: p.points ?? 0,
+    checkinStreak: p.checkin_streak ?? 0, lastCheckinDate: p.last_checkin_date ?? null,
+    isAdmin: p.is_admin ?? false, isBanned: p.is_banned ?? false,
+    createdAt: p.created_at ?? new Date().toISOString(),
+  }
+}
+
+export async function mockFetch(method: string, path: string, body?: any, formData?: FormData): Promise<any> {
+  await delay()
+  const { pathname, params } = parsePath(path)
+  const m = method.toUpperCase()
+
+  // ---- auth ----
+  if (m === 'POST' && pathname === '/auth/login') {
+    return { accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token', user: { id: 'mock-me', nickname: mock.me.nickname, avatar: mock.me.avatar, isAdmin: mock.me.is_admin } }
+  }
+  if (m === 'POST' && pathname === '/auth/register') {
+    if (body?.nickname) mock.me.nickname = body.nickname
+    return { accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token', user: { id: 'mock-me', nickname: mock.me.nickname, avatar: mock.me.avatar, isAdmin: mock.me.is_admin } }
+  }
+  if (m === 'GET' && pathname === '/auth/me') return toCamelProfile(mock.me)
+  if (m === 'PATCH' && pathname === '/auth/me') {
+    Object.assign(mock.me, toSnake(body ?? {}))
+    persist()
+    return toCamelProfile(mock.me)
+  }
+  if (m === 'POST' && pathname === '/auth/logout') return { ok: true }
+  if (m === 'POST' && pathname === '/auth/refresh') {
+    return { accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token' }
+  }
+
+  // ---- 分类 / 公告 ----
+  if (m === 'GET' && pathname === '/categories') return CATEGORIES
+  if (m === 'GET' && pathname === '/announcements') return ANNOUNCEMENTS.filter((a: any) => a.is_active)
+
+  // ---- 帖子 ----
+  if (m === 'GET' && pathname === '/posts/me') return mockMyPosts()
+  if (m === 'GET' && /^\/posts\/[^/]+\/comments$/.test(pathname)) return mockListComments('post', idOf(pathname))
+  if (m === 'POST' && /^\/posts\/[^/]+\/comments$/.test(pathname)) {
+    await mockAddComment('post', idOf(pathname), body?.content, body?.parentId)
+    return mockListComments('post', idOf(pathname))
+  }
+  if (m === 'GET' && pathname === '/posts') {
+    return mockFeedPosts({
+      categoryId: params.categoryId,
+      kind: params.kind,
+      tab: params.tab,
+      page: Number(params.page || 1),
+      pageSize: Number(params.pageSize || 20),
+    })
+  }
+  if (m === 'GET' && /^\/posts\/[^/]+$/.test(pathname)) return mockPostById(idOf(pathname))
+  if (m === 'POST' && pathname === '/posts') {
+    const r = await mockCreatePost(toSnake(body))
+    return { id: r.id }
+  }
+  if (m === 'DELETE' && /^\/posts\/[^/]+$/.test(pathname)) {
+    await mockSoftDeletePost(idOf(pathname))
+    return { ok: true }
+  }
+  if (m === 'PATCH' && /^\/posts\/[^/]+\/resolved$/.test(pathname)) {
+    await mockMarkResolved(idOf(pathname), body?.resolved)
+    return { ok: true }
+  }
+
+  // ---- 商品 ----
+  if (m === 'GET' && pathname === '/products/me') return mockMyProducts()
+  if (m === 'GET' && /^\/products\/[^/]+\/comments$/.test(pathname)) return mockListComments('product', idOf(pathname))
+  if (m === 'POST' && /^\/products\/[^/]+\/comments$/.test(pathname)) {
+    await mockAddComment('product', idOf(pathname), body?.content, body?.parentId)
+    return mockListComments('product', idOf(pathname))
+  }
+  if (m === 'GET' && pathname === '/products') {
+    return mockMarketProducts({
+      categoryId: params.categoryId,
+      page: Number(params.page || 1),
+      pageSize: Number(params.pageSize || 20),
+    })
+  }
+  if (m === 'GET' && /^\/products\/[^/]+$/.test(pathname)) return mockProductById(idOf(pathname))
+  if (m === 'POST' && pathname === '/products') {
+    const r = await mockCreateProduct(toSnake(body))
+    return { id: r.id }
+  }
+  if (m === 'PATCH' && /^\/products\/[^/]+\/status$/.test(pathname)) {
+    await mockUpdateProductStatus(idOf(pathname), body?.status)
+    return { ok: true }
+  }
+  if (m === 'DELETE' && /^\/products\/[^/]+$/.test(pathname)) {
+    await mockSoftDeleteProduct(idOf(pathname))
+    return { ok: true }
+  }
+  if (m === 'POST' && /^\/products\/[^/]+\/report$/.test(pathname)) {
+    await mockSubmitReport('product', idOf(pathname), body?.reason, body?.detail)
+    return { ok: true }
+  }
+
+  // ---- 点赞 / 收藏 / 关注 ----
+  const likeMatch = pathname.match(/^\/(posts|products|comments)\/([^/]+)\/(like|collect)$/)
+  if (likeMatch) {
+    const [, type, tid, act] = likeMatch
+    const singular = type.replace(/s$/, '')
+    const cur = m === 'DELETE'
+    if (act === 'like') {
+      if (cur) await mockToggleLike(singular, tid, true)
+      else await mockToggleLike(singular, tid, false)
+      return { ok: true }
+    }
+    if (cur) await mockToggleCollect(singular, tid, true)
+    else await mockToggleCollect(singular, tid, false)
+    return { ok: true }
+  }
+  if (m === 'GET' && pathname === '/interactions/status') {
+    const type = params.targetType
+    const tid = params.targetId
+    return {
+      liked: await mockIsLiked(type, tid),
+      collected: await mockIsCollected(type, tid),
+    }
+  }
+  if (m === 'POST' && pathname === '/interactions/follow') {
+    await mockToggleFollow(body?.followingId, false)
+    return { ok: true }
+  }
+  if (m === 'DELETE' && pathname === '/interactions/follow') {
+    await mockToggleFollow(body?.followingId, true)
+    return { ok: true }
+  }
+  if (m === 'GET' && pathname === '/interactions/following') {
+    return { following: await mockIsFollowing(params.userId) }
+  }
+  if (m === 'GET' && /^\/users\/[^/]+\/follower-count$/.test(pathname)) {
+    return { count: 0 }
+  }
+
+  // ---- 我的收藏（混合） ----
+  if (m === 'GET' && pathname === '/me/collects') {
+    const items = await mockMyCollects()
+    return {
+      list: items.map((c: any) => ({
+        targetType: 'kind' in c ? 'post' : 'product',
+        target: c,
+      })),
+      total: items.length,
+      hasMore: false,
+    }
+  }
+
+  // ---- 签到 ----
+  if (m === 'POST' && pathname === '/checkins') {
+    const r = await mockDoCheckin()
+    const last = state.checkins[state.checkins.length - 1]
+    return { date: last?.date ?? '', ...r }
+  }
+  if (m === 'GET' && pathname === '/checkins') return mockMyCheckins()
+
+  // ---- 消息 ----
+  if (m === 'GET' && pathname === '/notifications') return mockMyNotifications()
+  if (m === 'PATCH' && pathname === '/notifications/read-all') {
+    await mockMarkAllRead()
+    return { ok: true }
+  }
+  if (m === 'GET' && pathname === '/notifications/unread-count') return { count: 0 }
+
+  // ---- 指南 ----
+  if (m === 'GET' && pathname === '/guides/categories') return mockGuideCategories()
+  if (m === 'GET' && pathname === '/guides') return mockGuides(params.categoryId)
+  if (m === 'GET' && /^\/guides\/[^/]+$/.test(pathname)) return mockGuideById(idOf(pathname))
+
+  // ---- 举报 / 反馈 ----
+  if (m === 'POST' && /^\/posts\/[^/]+\/report$/.test(pathname)) {
+    await mockSubmitReport('post', idOf(pathname), body?.reason, body?.detail)
+    return { ok: true }
+  }
+  if (m === 'POST' && pathname === '/feedbacks') {
+    await mockSubmitFeedback(body?.content, body?.contact)
+    return { ok: true }
+  }
+
+  // ---- 搜索 ----
+  if (m === 'GET' && pathname === '/search') {
+    const kw = params.keyword || ''
+    if (params.tab === 'product') return { products: await mockSearchProducts(kw) }
+    return { posts: await mockSearchPosts(kw) }
+  }
+
+  // ---- 上传 ----
+  if (m === 'POST' && pathname === '/upload/images') {
+    const files = formData ? (formData.getAll('files') as File[]) : []
+    return { urls: await mockUploadImages(files) }
+  }
+
+  throw new Error(`mock 未实现该请求：${m} ${pathname}`)
+}

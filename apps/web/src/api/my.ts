@@ -1,60 +1,75 @@
-import { supabase } from '@/lib/supabase'
-import { USE_MOCK } from '@/lib/mock'
-import { mockMyPosts, mockMyProducts, mockMyCollects } from '@/mock/api'
+import { http } from '@/lib/http'
+import { resolveStaticUrl } from '@/lib/upload'
 import type { Post, Product } from '@/types'
+
+function toPost(raw: any): Post {
+  return {
+    id: raw.id,
+    author_id: raw.authorId,
+    category_id: raw.categoryId,
+    kind: raw.kind,
+    title: raw.title,
+    content: raw.content,
+    images: (raw.images ?? []).map(resolveStaticUrl),
+    tags: raw.tags ?? [],
+    location: raw.location ?? '',
+    is_anonymous: raw.isAnonymous ?? false,
+    expire_at: raw.expireAt ?? null,
+    resolved: raw.resolved ?? false,
+    status: raw.status ?? 'normal',
+    is_pinned: raw.isPinned ?? false,
+    is_essence: raw.isEssence ?? false,
+    like_count: raw.likeCount ?? 0,
+    comment_count: raw.commentCount ?? 0,
+    collect_count: raw.collectCount ?? 0,
+    view_count: raw.viewCount ?? 0,
+    created_at: raw.createdAt
+  }
+}
+
+function toProduct(raw: any): Product {
+  return {
+    id: raw.id,
+    seller_id: raw.sellerId,
+    category_id: raw.categoryId,
+    title: raw.title,
+    description: raw.description,
+    images: (raw.images ?? []).map(resolveStaticUrl),
+    price: Number(raw.price),
+    original_price: raw.originalPrice == null ? null : Number(raw.originalPrice),
+    condition: raw.condition,
+    trade_type: raw.tradeType ?? '',
+    location: raw.location ?? '',
+    contact_info: raw.contactInfo ?? '',
+    status: raw.status ?? 'on_sale',
+    like_count: raw.likeCount ?? 0,
+    comment_count: raw.commentCount ?? 0,
+    collect_count: raw.collectCount ?? 0,
+    view_count: raw.viewCount ?? 0,
+    created_at: raw.createdAt
+  }
+}
 
 /** 我的帖子 */
 export async function myPosts(): Promise<Post[]> {
-  if (USE_MOCK) return mockMyPosts()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-  const { data, error } = await supabase
-    .from('posts')
-    .select('id, author_id, category_id, kind, title, content, images, tags, location, is_anonymous, expire_at, resolved, status, is_pinned, is_essence, like_count, comment_count, collect_count, view_count, created_at')
-    .eq('author_id', user.id)
-    .neq('status', 'deleted')
-    .order('created_at', { ascending: false })
-  if (error) throw new Error(error.message)
-  return (data ?? []) as Post[]
+  const data = await http.get<any[]>('/posts/me')
+  return (data ?? []).map(toPost)
 }
 
 /** 我的商品 */
 export async function myProducts(): Promise<Product[]> {
-  if (USE_MOCK) return mockMyProducts()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, seller_id, category_id, title, description, images, price, original_price, condition, trade_type, location, contact_info, status, like_count, collect_count, comment_count, view_count, created_at')
-    .eq('seller_id', user.id)
-    .neq('status', 'deleted')
-    .order('created_at', { ascending: false })
-  if (error) throw new Error(error.message)
-  return data ?? []
+  const data = await http.get<any[]>('/products/me')
+  return (data ?? []).map(toProduct)
 }
 
 /** 我的收藏（帖子+商品混合） */
 export async function myCollects(): Promise<(Post | Product)[]> {
-  if (USE_MOCK) return mockMyCollects()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-  const { data: rows, error } = await supabase
-    .from('collects')
-    .select('target_type, target_id')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-  if (error) throw new Error(error.message)
-  const postIds = (rows ?? []).filter(r => r.target_type === 'post').map(r => r.target_id)
-  const productIds = (rows ?? []).filter(r => r.target_type === 'product').map(r => r.target_id)
-  const [postsRes, productsRes] = await Promise.all([
-    postIds.length
-      ? supabase.from('posts').select('*').in('id', postIds)
-      : Promise.resolve({ data: [] as any[], error: null }),
-    productIds.length
-      ? supabase.from('products').select('*').in('id', productIds)
-      : Promise.resolve({ data: [] as any[], error: null })
-  ])
-  if (postsRes.error) throw new Error(postsRes.error.message)
-  if (productsRes.error) throw new Error(productsRes.error.message)
-  return [...(postsRes.data ?? []), ...(productsRes.data ?? [])] as (Post | Product)[]
+  const data = await http.get<any>('/me/collects?pageSize=100')
+  const items = data.list ?? []
+  const merged: (Post | Product)[] = []
+  for (const it of items) {
+    if (it.targetType === 'post') merged.push(toPost(it.target))
+    else if (it.targetType === 'product') merged.push(toProduct(it.target))
+  }
+  return merged
 }

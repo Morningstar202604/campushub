@@ -1,42 +1,52 @@
-import { supabase } from '@/lib/supabase'
-import { USE_MOCK } from '@/lib/mock'
-import {
-  mockMarketProducts, mockProductById, mockCreateProduct, mockUpdateProductStatus, mockSoftDeleteProduct
-} from '@/mock/api'
+import { http } from '@/lib/http'
+import { resolveStaticUrl } from '@/lib/upload'
+import type { components } from '@/types/api'
 import type { Product } from '@/types'
 
-const PRODUCT_FIELDS = `
-  id, seller_id, category_id, title, description, images, price, original_price,
-  condition, trade_type, location, contact_info, status,
-  like_count, comment_count, collect_count, view_count, created_at,
-  seller:profiles!products_seller_id_fkey(id, nickname, avatar)
-`
+type CreateProductApi = components['schemas']['CreateProductDto']
 
-function normalizeProduct(row: any): Product {
-  return { ...row, seller: Array.isArray(row.seller) ? row.seller[0] : row.seller }
+/** 后端 camelCase + Decimal 字符串 → 前端 Product（snake_case, price number） */
+function toProduct(raw: any): Product {
+  return {
+    id: raw.id,
+    seller_id: raw.sellerId,
+    category_id: raw.categoryId,
+    title: raw.title,
+    description: raw.description,
+    images: (raw.images ?? []).map(resolveStaticUrl),
+    price: Number(raw.price),
+    original_price: raw.originalPrice == null ? null : Number(raw.originalPrice),
+    condition: raw.condition,
+    trade_type: raw.tradeType ?? '',
+    location: raw.location ?? '',
+    contact_info: raw.contactInfo ?? '',
+    status: raw.status ?? 'on_sale',
+    like_count: raw.likeCount ?? 0,
+    comment_count: raw.commentCount ?? 0,
+    collect_count: raw.collectCount ?? 0,
+    view_count: raw.viewCount ?? 0,
+    created_at: raw.createdAt,
+    seller: raw.seller ? { id: raw.seller.id, nickname: raw.seller.nickname, avatar: raw.seller.avatar } : undefined
+  }
 }
 
 export async function marketProducts(f: { categoryId?: string; page?: number; pageSize?: number } = {}) {
-  if (USE_MOCK) return mockMarketProducts(f)
-  const page = f.page ?? 1
-  const pageSize = Math.min(30, f.pageSize ?? 20)
-  let q = supabase
-    .from('products')
-    .select(PRODUCT_FIELDS, { count: 'exact' })
-    .eq('status', 'on_sale')
-    .order('created_at', { ascending: false })
-  if (f.categoryId) q = q.eq('category_id', f.categoryId)
-  const offset = (page - 1) * pageSize
-  const { data, error } = await q.range(offset, offset + pageSize - 1)
-  if (error) throw new Error(error.message)
-  return { list: (data ?? []).map(normalizeProduct), hasMore: (data?.length ?? 0) === pageSize }
+  const params = new URLSearchParams()
+  if (f.categoryId) params.set('categoryId', f.categoryId)
+  params.set('page', String(f.page ?? 1))
+  params.set('pageSize', String(Math.min(30, f.pageSize ?? 20)))
+  const qs = params.toString()
+  const data = await http.get<any>(`/products${qs ? `?${qs}` : ''}`, { cache: true })
+  return {
+    list: (data.list ?? []).map(toProduct),
+    total: data.total ?? 0,
+    hasMore: data.hasMore ?? false
+  }
 }
 
 export async function productById(id: string): Promise<Product | null> {
-  if (USE_MOCK) return mockProductById(id)
-  const { data, error } = await supabase.from('products').select(PRODUCT_FIELDS).eq('id', id).single()
-  if (error) throw new Error(error.message)
-  return normalizeProduct(data)
+  const data = await http.get<any>(`/products/${id}`)
+  return toProduct(data)
 }
 
 export interface CreateProductInput {
@@ -53,26 +63,26 @@ export interface CreateProductInput {
 }
 
 export async function createProduct(input: CreateProductInput) {
-  if (USE_MOCK) return mockCreateProduct(input)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-  const { data, error } = await supabase
-    .from('products')
-    .insert({ ...input, seller_id: user.id })
-    .select('id')
-    .single()
-  if (error) throw new Error(error.message)
-  return data
+  const body: CreateProductApi = {
+    categoryId: input.category_id,
+    title: input.title,
+    description: input.description,
+    images: input.images ?? [],
+    price: input.price,
+    originalPrice: input.original_price ?? null,
+    condition: input.condition,
+    tradeType: input.trade_type,
+    location: input.location,
+    contactInfo: input.contact_info
+  }
+  const data = await http.post<any>('/products', body)
+  return { id: data.id }
 }
 
 export async function updateProductStatus(id: string, status: 'sold' | 'off_shelf' | 'on_sale') {
-  if (USE_MOCK) return mockUpdateProductStatus(id, status)
-  const { error } = await supabase.from('products').update({ status }).eq('id', id)
-  if (error) throw new Error(error.message)
+  await http.patch(`/products/${id}/status`, { status })
 }
 
 export async function softDeleteProduct(id: string) {
-  if (USE_MOCK) return mockSoftDeleteProduct(id)
-  const { error } = await supabase.from('products').update({ status: 'deleted' }).eq('id', id)
-  if (error) throw new Error(error.message)
+  await http.del(`/products/${id}`)
 }

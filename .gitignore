@@ -19,3 +19,9 @@ dist-ssr/
 
 # 官网自检临时输出
 site/_shots/
+
+# 服务层上传目录（不入库）
+uploads/
+
+# TypeScript 构建缓存
+*.tsbuildinfo

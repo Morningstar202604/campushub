@@ -1,9 +1,9 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
-// Hash 路由：静态托管（COS/OSS）无需任何 rewrite 配置
+// History 路由（对标大厂）：URL 干净无 #；部署时需静态服务器 SPA fallback 到 index.html
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes: [
     { path: '/', name: 'home', component: () => import('@/pages/home/index.vue'), meta: { tab: 'home' } },
     { path: '/market', name: 'market', component: () => import('@/pages/market/index.vue'), meta: { tab: 'market' } },

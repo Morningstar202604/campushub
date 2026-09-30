@@ -50,7 +50,7 @@ async function load() {
 </script>
 
 <style scoped>
-.guide-card { display: flex; gap: 12px; background: #fff; margin: 0 12px 10px; border-radius: 12px; padding: 14px; cursor: pointer; box-shadow: 0 1px 2px rgba(28,35,48,.04); }
+.guide-card { display: flex; gap: 12px; background: var(--app-card); margin: 0 12px 10px; border-radius: 12px; padding: 14px; cursor: pointer; box-shadow: 0 1px 2px rgba(28,35,48,.04); }
 .guide-main { flex: 1; min-width: 0; }
 .guide-title { font-size: 15px; font-weight: 600; }
 .guide-summary { font-size: 13px; color: #66707f; line-height: 1.6; margin-top: 4px; }

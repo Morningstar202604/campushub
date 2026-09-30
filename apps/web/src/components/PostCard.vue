@@ -41,7 +41,7 @@ function displayName(post: Post) {
 </script>
 
 <style scoped>
-.post-card { background: #fff; border-radius: 12px; padding: 12px 14px; margin: 0 12px 10px; box-shadow: 0 1px 2px rgba(28,35,48,.04); cursor: pointer; }
+.post-card { background: var(--app-card); border-radius: 12px; padding: 12px 14px; margin: 0 12px 10px; box-shadow: 0 1px 2px rgba(28,35,48,.04); cursor: pointer; }
 .pc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .pc-kind { font-size: 12px; font-weight: 600; }
 .pc-pin { font-size: 11px; color: #fff; background: #f64f7c; border-radius: 4px; padding: 1px 6px; }

@@ -1,84 +1,87 @@
-import { supabase } from '@/lib/supabase'
-import { USE_MOCK } from '@/lib/mock'
-import { mockIsLiked, mockToggleLike, mockIsCollected, mockToggleCollect, mockIsFollowing, mockToggleFollow } from '@/mock/api'
+import { http, hasToken } from '@/lib/http'
 
-/** 点赞/取消赞（likes 表唯一约束天然幂等，数据库触发器维护计数） */
+const TARGET_PREFIX: Record<string, string> = {
+  post: 'posts',
+  product: 'products'
+}
+
+// 互动防重：同一目标的请求在途时忽略重复触发（前端节流，后端幂等兜底）
+const pending = new Set<string>()
+function mark(key: string): boolean {
+  if (pending.has(key)) return false
+  pending.add(key)
+  return true
+}
+function release(key: string) {
+  pending.delete(key)
+}
+
+/** 点赞/取消赞（服务端唯一约束幂等，事务维护计数） */
 export async function toggleLike(targetType: 'post' | 'product' | 'comment', targetId: string, liked: boolean) {
-  if (USE_MOCK) return mockToggleLike(targetType, targetId, liked)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-  if (liked) {
-    const { error } = await supabase.from('likes').delete()
-      .match({ user_id: user.id, target_type: targetType, target_id: targetId })
-    if (error) throw new Error(error.message)
-  } else {
-    const { error } = await supabase.from('likes').insert({ user_id: user.id, target_type: targetType, target_id: targetId })
-    if (error) throw new Error(error.message)
+  const key = `like:${targetType}:${targetId}`
+  if (!mark(key)) return
+  try {
+    const prefix = TARGET_PREFIX[targetType] ?? targetType + 's'
+    if (liked) {
+      await http.del(`/${prefix}/${targetId}/like`)
+    } else {
+      await http.post(`/${prefix}/${targetId}/like`)
+    }
+  } finally {
+    release(key)
   }
 }
 
 export async function isLiked(targetType: 'post' | 'product' | 'comment', targetId: string): Promise<boolean> {
-  if (USE_MOCK) return mockIsLiked(targetType, targetId)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('likes').select('id')
-    .match({ user_id: user.id, target_type: targetType, target_id: targetId })
-    .maybeSingle()
-  return !!data
+  if (!hasToken()) return false
+  const data = await http.get<any>(`/interactions/status?targetType=${targetType}&targetId=${targetId}`)
+  return data.liked
 }
 
+/** 收藏/取消收藏 */
 export async function toggleCollect(targetType: 'post' | 'product', targetId: string, collected: boolean) {
-  if (USE_MOCK) return mockToggleCollect(targetType, targetId, collected)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-  if (collected) {
-    const { error } = await supabase.from('collects').delete()
-      .match({ user_id: user.id, target_type: targetType, target_id: targetId })
-    if (error) throw new Error(error.message)
-  } else {
-    const { error } = await supabase.from('collects').insert({ user_id: user.id, target_type: targetType, target_id: targetId })
-    if (error) throw new Error(error.message)
+  const key = `collect:${targetType}:${targetId}`
+  if (!mark(key)) return
+  try {
+    const prefix = TARGET_PREFIX[targetType]
+    if (collected) {
+      await http.del(`/${prefix}/${targetId}/collect`)
+    } else {
+      await http.post(`/${prefix}/${targetId}/collect`)
+    }
+  } finally {
+    release(key)
   }
 }
 
 export async function isCollected(targetType: 'post' | 'product', targetId: string): Promise<boolean> {
-  if (USE_MOCK) return mockIsCollected(targetType, targetId)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('collects').select('id')
-    .match({ user_id: user.id, target_type: targetType, target_id: targetId })
-    .maybeSingle()
-  return !!data
+  if (!hasToken()) return false
+  const data = await http.get<any>(`/interactions/status?targetType=${targetType}&targetId=${targetId}`)
+  return data.collected
 }
 
+/** 关注/取消关注（不能关注自己由后端校验） */
 export async function toggleFollow(followingId: string, following: boolean) {
-  if (USE_MOCK) return mockToggleFollow(followingId, following)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-  if (user.id === followingId) throw new Error('不能关注自己')
-  if (following) {
-    const { error } = await supabase.from('follows').delete()
-      .match({ follower_id: user.id, following_id: followingId })
-    if (error) throw new Error(error.message)
-  } else {
-    const { error } = await supabase.from('follows').insert({ follower_id: user.id, following_id: followingId })
-    if (error) throw new Error(error.message)
+  const key = `follow:${followingId}`
+  if (!mark(key)) return
+  try {
+    if (following) {
+      await http.del('/interactions/follow', { followingId })
+    } else {
+      await http.post('/interactions/follow', { followingId })
+    }
+  } finally {
+    release(key)
   }
 }
 
 export async function isFollowing(followingId: string): Promise<boolean> {
-  if (USE_MOCK) return mockIsFollowing(followingId)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data } = await supabase.from('follows').select('id')
-    .match({ follower_id: user.id, following_id: followingId })
-    .maybeSingle()
-  return !!data
+  if (!hasToken()) return false
+  const data = await http.get<any>(`/interactions/following?userId=${followingId}`)
+  return data.following
 }
 
 export async function followerCount(userId: string): Promise<number> {
-  if (USE_MOCK) return 0
-  const { count } = await supabase.from('follows').select('id', { count: 'exact', head: true })
-    .eq('following_id', userId)
-  return count ?? 0
+  const data = await http.get<any>(`/users/${userId}/follower-count`)
+  return data.count ?? 0
 }

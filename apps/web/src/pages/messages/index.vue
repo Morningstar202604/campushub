@@ -76,7 +76,7 @@ async function onReadAll() {
 </script>
 
 <style scoped>
-.noti-card { display: flex; align-items: flex-start; gap: 12px; background: #fff; margin: 0 12px 10px; border-radius: 12px; padding: 14px; position: relative; cursor: pointer; box-shadow: 0 1px 2px rgba(28,35,48,.04); }
+.noti-card { display: flex; align-items: flex-start; gap: 12px; background: var(--app-card); margin: 0 12px 10px; border-radius: 12px; padding: 14px; position: relative; cursor: pointer; box-shadow: 0 1px 2px rgba(28,35,48,.04); }
 .read-all { font-size: 13px; color: var(--app-primary); cursor: pointer; padding: 4px 0; }
 .noti-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .noti-body { flex: 1; min-width: 0; }

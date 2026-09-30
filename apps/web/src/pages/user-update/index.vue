@@ -37,7 +37,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showSuccessToast, showFailToast } from 'vant'
 import { useAuthStore } from '@/stores/auth'
-import { uploadImages, ensureBucket } from '@/lib/upload'
+import { uploadImages } from '@/lib/upload'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -54,7 +54,6 @@ onMounted(() => {
 
 async function onAvatar(item: any) {
   try {
-    await ensureBucket()
     const urls = await uploadImages([item.file], 'avatar')
     await auth.updateProfile({ avatar: urls[0] })
     showSuccessToast('头像已更新')

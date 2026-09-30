@@ -33,6 +33,7 @@ import { useRouter } from 'vue-router'
 import { showSuccessToast, showFailToast } from 'vant'
 import { useAuthStore } from '@/stores/auth'
 import { doCheckin, myCheckins } from '@/api/misc'
+import { shanghaiDateStr } from '@/utils/format'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -43,7 +44,7 @@ const todayChecked = ref(false)
 onMounted(async () => {
   try {
     history.value = await myCheckins()
-    const today = new Date().toISOString().slice(0, 10)
+    const today = shanghaiDateStr() // 与后端 Asia/Shanghai 口径一致
     todayChecked.value = history.value.some(h => h.date === today)
   } catch { /* 忽略 */ }
 })

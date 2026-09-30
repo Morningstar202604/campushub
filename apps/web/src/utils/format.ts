@@ -1,5 +1,11 @@
 import dayjs from 'dayjs'
 
+/** 上海时区（UTC+8）的 YYYY-MM-DD——与后端 checkins 日期口径一致，避免 toISOString 的 UTC 错位 */
+export function shanghaiDateStr(d: Date = new Date()): string {
+  const t = new Date(d.getTime() + 8 * 3600_000)
+  return t.toISOString().slice(0, 10)
+}
+
 /** 相对时间：刚刚 / x分钟前 / x小时前 / 昨天 / MM-DD / YYYY-MM-DD */
 export function fmtTime(t?: string | null): string {
   if (!t) return ''

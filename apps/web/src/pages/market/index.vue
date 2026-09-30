@@ -17,14 +17,20 @@
     </div>
 
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-      <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
+      <div v-if="feed.loading && !feed.list.length" class="skeleton-list">
+        <div v-for="i in 4" :key="i" class="skeleton-card">
+          <div class="sk-line w100"></div>
+          <div class="sk-line w60"></div>
+        </div>
+      </div>
+      <van-list v-model:loading="feed.loading" :finished="feed.finished" finished-text="没有更多了" @load="feed.loadMore">
         <div class="grid">
           <ProductCard
-            v-for="p in list" :key="p.id" :product="p"
+            v-for="p in feed.list" :key="p.id" :product="p"
             @open="(product) => router.push(`/product/${product.id}`)"
           />
         </div>
-        <van-empty v-if="finished && !list.length" description="这里还没有在售商品" />
+        <van-empty v-if="feed.finished && !feed.list.length" description="这里还没有在售商品" />
       </van-list>
     </van-pull-refresh>
   </div>
@@ -35,6 +41,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { marketProducts } from '@/api/products'
+import { usePagination } from '@/composables/usePagination'
 import type { Product } from '@/types'
 import ProductCard from '@/components/ProductCard.vue'
 
@@ -50,52 +57,27 @@ const topCategories = computed(() => {
 })
 
 const categoryId = ref('')
-const list = ref<Product[]>([])
-const page = ref(0)
-const loading = ref(false)
-const finished = ref(false)
 const refreshing = ref(false)
+
+const feed = usePagination<Product>((p) =>
+  marketProducts({
+    categoryId: categoryId.value || undefined,
+    page: p,
+  }),
+)
 
 onMounted(() => {
   appStore.loadCategories()
-  onLoad()
+  feed.loadMore()
 })
 
 function pick(id: string) {
   categoryId.value = id
-  list.value = []
-  page.value = 0
-  finished.value = false
-  loading.value = false
-  onLoad()
-}
-
-async function onLoad() {
-  if (loading.value || finished.value) return
-  loading.value = true
-  try {
-    const next = page.value + 1
-    const { list: items, hasMore } = await marketProducts({
-      categoryId: categoryId.value || undefined,
-      page: next
-    })
-    list.value.push(...items)
-    page.value = next
-    finished.value = !hasMore
-  } catch (e: any) {
-    finished.value = true
-    console.warn('[market] 加载失败', e?.message)
-  } finally {
-    loading.value = false
-  }
+  feed.reset()
 }
 
 async function onRefresh() {
-  list.value = []
-  page.value = 0
-  finished.value = false
-  loading.value = false
-  await onLoad()
+  await feed.reset()
   refreshing.value = false
 }
 </script>
@@ -103,7 +85,7 @@ async function onRefresh() {
 <style scoped>
 .cat-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 10px 12px 4px; -webkit-overflow-scrolling: touch; }
 .cat-scroll::-webkit-scrollbar { display: none; }
-.cat-chip { flex-shrink: 0; padding: 6px 14px; font-size: 13px; color: #66707f; background: #fff; border-radius: 999px; border: 1px solid #e5e8ee; cursor: pointer; }
+.cat-chip { flex-shrink: 0; padding: 6px 14px; font-size: 13px; color: #66707f; background: var(--app-card); border-radius: 999px; border: 1px solid #e5e8ee; cursor: pointer; }
 .cat-chip.active { color: #fff; background: var(--app-primary); border-color: var(--app-primary); font-weight: 600; }
 
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 12px; }
