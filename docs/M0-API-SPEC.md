@@ -3,7 +3,7 @@
 > 收尾注：本文为 M0 冻结版。落地时 schema 扩展为 19 表（新增 refresh_sessions 等）；接口有部分调整（见 CAMPUSHUB-REFACTOR-PLAN.md 第 8 节对照表）。
 
 > 目标：冻结改造范围，为 M1（NestJS 服务层落地）提供唯一依据。
-> 依据：`apps/web/src/api/*`（学生端全部数据调用）+ `apps/admin/src/api/*`（后台 9 模块）+ `packages/db/schema.sql`（17 表）。
+> 依据：`apps/web/src/api/*`（学生端全部数据调用）+ `apps/admin/src/api/*`（后台 9 模块）+ `apps/server/prisma/schema.prisma`（19 表，唯一事实源）。
 
 ---
 

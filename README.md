@@ -43,11 +43,11 @@ CampusHub is a **self-hosted open-source campus community platform** designed fo
 | ![Home](site/assets/shot-home.png) | ![Market](site/assets/shot-market.png) | ![Publish](site/assets/shot-publish.png) | ![Profile](site/assets/shot-profile.png) |
 
 <details>
-<summary>🗂 More screenshots (admin console & login)</summary>
+<summary>🗂 More screenshots (login & publish)</summary>
 
-| Admin Console | Login |
+| Login | Publish |
 |:---:|:---:|
-| ![Admin](docs/screenshots/01-首页.png) | ![Login](site/assets/shot-login.png) |
+| ![Login](site/assets/shot-login.png) | ![Publish](site/assets/shot-publish.png) |
 
 </details>
 
@@ -133,6 +133,19 @@ npm run dev
 
 **API docs**: open `http://localhost:3000/api-docs` (Swagger UI) after the server starts.
 
+### Option C: One-command Docker deploy ★ recommended for production
+
+No Node/PostgreSQL needed on your machine — just Docker.
+
+```bash
+git clone https://github.com/X33834/campushub.git
+cd campushub
+docker compose up -d --build
+# 学生端 http://localhost:8080 · 管理后台 http://localhost:8081 · API http://localhost:3000/api
+```
+
+DB tables, seed data and demo accounts are created automatically on first boot.
+
 > Full deployment guide (server, env vars, SPA fallback): **[docs/DEPLOY.md](./docs/DEPLOY.md)**
 
 ---
@@ -145,9 +158,9 @@ campushub/
 │   ├── web/            # Student H5 (Vue 3 + Vant)
 │   ├── server/         # Service layer (NestJS + Prisma + PostgreSQL)
 │   └── admin/          # Admin console (vue-pure-admin)
-├── packages/db/        # DB scripts (v1 legacy reference)
 ├── docs/               # DEPLOY / ARCHITECTURE / QA-REPORT / ADMIN / REFACTOR-PLAN / M0-API-SPEC
 ├── site/               # Official site (single HTML, no framework deps)
+├── docker-compose.yml  # One-command deployment (postgres + server + web + admin)
 └── README.md
 ```
 
@@ -236,6 +249,13 @@ cd apps/web && npm install && VITE_USE_MOCK=true npm run dev
 cd apps/server && bash scripts/setup-db.sh && node scripts/seed.mjs && bash scripts/make-demo.sh
 npm run build && node dist/main.js
 cd ../web && npm install && npm run dev
+```
+
+```bash
+# 方式 C：Docker 一键部署（推荐，无需本机 Node/PostgreSQL）
+git clone https://github.com/X33834/campushub.git && cd campushub
+docker compose up -d --build
+# 学生端 http://localhost:8080 · 管理后台 http://localhost:8081 · API http://localhost:3000/api
 ```
 
 演示账号：`xiaoming@campus.dev` / `xiaohong@campus.dev`，密码 `demo123456`。接口文档：`http://localhost:3000/api-docs`。

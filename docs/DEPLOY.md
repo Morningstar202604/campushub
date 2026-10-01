@@ -35,6 +35,33 @@ npm run dev                       # :5173，VITE_API_BASE=http://localhost:3000
 
 ---
 
+## 一·五、Docker Compose 一键部署（推荐）
+
+无需在机器上装 Node / PostgreSQL，只要 Docker 环境（或服务器装 Docker + Compose 插件）。
+
+```bash
+# 1. 拉取代码
+git clone https://github.com/X33834/campushub.git
+cd campushub
+
+# 2. 一键启动（自动：建库 → prisma 建表 → seed 种子 → make-demo 演示数据）
+docker compose up -d --build
+
+# 3. 访问
+#    学生端    http://localhost:8080
+#    管理后台  http://localhost:8081
+#    API       http://localhost:3000/api   （Swagger: http://localhost:3000/api-docs）
+```
+
+**演示账号**：`xiaoming@campus.dev` / `xiaohong@campus.dev`，密码 `demo123456`。
+
+**生产注意**：
+- 修改 `docker-compose.yml` 中 `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`（默认占位仅适合演示）
+- 数据与上传图片分别存在 named volume `pgdata` / `uploads`，`docker compose down` 不丢数据；彻底重置用 `docker compose down -v`
+- 反向代理 / HTTPS 请置于 Compose 之前（或加一层 nginx/caddy 容器）
+
+---
+
 ## 二、生产部署
 
 ### 拓扑

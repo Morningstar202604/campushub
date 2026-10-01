@@ -6,9 +6,50 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  server:
+    name: Server · build & test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: campushub
+          POSTGRES_PASSWORD: campushub
+          POSTGRES_DB: campushub
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U campushub -d campushub"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/server
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/server/package-lock.json
+      - name: 安装依赖
+        run: npm ci --no-audit --no-fund
+      - name: Prisma generate
+        run: npx prisma generate
+      - name: 类型检查 + 生产构建
+        run: npm run build
+      - name: 单元测试
+        env:
+          DATABASE_URL: postgresql://campushub:campushub@localhost:5432/campushub?schema=public
+        run: npm test
+
   web:
-    name: 学生端构建 + 类型检查
+    name: Web · build & typecheck
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -19,11 +60,11 @@ jobs:
       - name: 安装 Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - name: 安装依赖
-        run: npm ci
+        run: npm ci --no-audit --no-fund
       - name: 类型检查 + 生产构建
         run: npm run build
       - name: 上传构建产物
@@ -33,7 +74,7 @@ jobs:
           path: apps/web/dist
 
   admin:
-    name: 管理后台构建
+    name: Admin · build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,6 +89,9 @@ jobs:
       - name: 安装依赖
         run: npm install --ignore-scripts --no-audit --no-fund
       - name: 生产构建
+        env:
+          VITE_ROUTER_HISTORY: hash
+          VITE_API_BASE: /api
         run: npm run build
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
@@ -56,7 +100,7 @@ jobs:
           path: apps/admin/dist
 
   site:
-    name: 官网资源完整性
+    name: Site · asset integrity
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 # ---------- 运行阶段 ----------
 FROM node:22-alpine

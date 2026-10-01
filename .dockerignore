@@ -1,0 +1,35 @@
+# ---- Docker build context exclusions ----
+# 依赖与构建产物
+node_modules
+**/node_modules
+dist
+**/dist
+dist-ssr
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+# Git 与 CI
+.git
+.github
+
+# 本地文件
+.DS_Store
+*.log
+.vscode
+.idea
+*.tsbuildinfo
+uploads
+**/uploads
+
+# 文档与素材（构建不需要）
+docs
+site
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+CODE_OF_CONDUCT.md
+LICENSE

@@ -1,0 +1,65 @@
+# CampusHub · 一键部署（Docker Compose）
+# 用法：docker compose up -d
+# 然后访问：学生端 http://localhost:8080 · 管理后台 http://localhost:8081 · API http://localhost:3000/api
+#
+# 首次启动会自动：建库 → prisma db push 建表 → seed 种子数据 → make-demo 演示数据
+# 演示账号：xiaoming@campus.dev / xiaohong@campus.dev，密码 demo123456
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: campushub-postgres
+    environment:
+      POSTGRES_USER: campushub
+      POSTGRES_PASSWORD: campushub
+      POSTGRES_DB: campushub
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campushub -d campushub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  server:
+    build: ./apps/server
+    container_name: campushub-server
+    environment:
+      DATABASE_URL: postgresql://campushub:campushub@postgres:5432/campushub?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-too}
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma db push --skip-generate &&
+             node dist/main.js"
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  web:
+    build: ./apps/web
+    container_name: campushub-web
+    depends_on:
+      - server
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  admin:
+    build: ./apps/admin
+    container_name: campushub-admin
+    depends_on:
+      - server
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:

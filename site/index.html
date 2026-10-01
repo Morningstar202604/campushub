@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CampusHub · 校园内容社区官网</title>
-<meta name="description" content="CampusHub 校园内容社区：信息流、二手市集、四场景发布、搜索、指南、签到，一套 H5 全搞定。开源、可部署、通用模板。">
+<meta name="description" content="CampusHub 校园内容社区：信息流、二手市集、四场景发布、搜索、指南、签到，一套 H5 全搞定。开源、可部署、通用模板。Vue3 + NestJS + PostgreSQL。">
+<meta name="keywords" content="校园社区,校园论坛,开源项目,二手市集,失物招领,表白墙,校园指南,签到积分,NestJS,Vue3,PostgreSQL,Prisma,CampusHub,campus community,open source">
 <meta property="og:title" content="CampusHub · 校园内容社区官网">
 <meta property="og:description" content="信息流、二手市集、四场景发布、搜索、指南、签到，一套 H5 全搞定。开源、可部署、通用校园模板。">
 <meta property="og:type" content="website">
@@ -265,6 +266,10 @@ h2{font-family:var(--serif);font-size:34px;font-weight:900;color:var(--ink);line
           <p>前端连真实 API 构建部署到静态托管；history 路由需 SPA fallback。</p>
         </div>
       </div>
+    </div>
+    <div class="code-tip">
+      <code>docker compose up -d</code>
+      <span>一条命令启动全部（PostgreSQL + 服务层 + 学生端 + 管理后台），演示数据自动就绪</span>
     </div>
     <div class="code-tip">
       <code>cd apps/web && npm install && VITE_USE_MOCK=true npm run build</code>
