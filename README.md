@@ -1,180 +1,257 @@
-# CampusHub · 校园内容社区（v2）
+<div align="center">
 
-> 面向在校学生的内容社区：二手市集、失物招领、表白墙、兼职拼车、校园指南、签到积分、消息通知、举报闭环——一套 H5 全部搞定，自建后端，任何学校 / 组织可一键部署。
+# 🎓 CampusHub — Open-Source Campus Community Platform
 
-**技术栈**：Vue 3 + Vite + TS + Pinia + Vant 4（学生端） · NestJS + Prisma + PostgreSQL（服务层） · 开源管理后台（vue-pure-admin）
+**A production-grade, self-hosted campus community built with Vue 3 + NestJS + PostgreSQL — marketplace, lost & found, confession wall, guides, check-in gamification, notifications, and admin moderation, all in one deployable codebase.**
 
----
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Vue 3](https://img.shields.io/badge/Frontend-Vue%203-42b883.svg)](https://vuejs.org)
+[![NestJS](https://img.shields.io/badge/Backend-NestJS-ea2845.svg)](https://nestjs.com)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178c6.svg)](https://www.typescriptlang.org)
+[![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL-336791.svg)](https://www.postgresql.org)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-ff69b4.svg)](CONTRIBUTING.md)
 
-## 一、这是什么
+**English** · [简体中文](#简体中文) · [Docs](docs/) · [Report Bug](https://github.com/X33834/campushub/issues) · [Request Feature](https://github.com/X33834/campushub/issues)
 
-一个移动端 H5 应用覆盖学生日常高频场景：**二手闲置、失物招领、表白墙、课程学习、校园活动、兼职实习、拼车拼团、闲聊树洞** 八类内容，加上**市集、校园指南、签到积分、消息通知、举报闭环**。
-
-两个端 + 一套服务层：
-
-| 端 | 给谁用 | 入口 |
-|---|---|---|
-| **学生端 H5** | 学生 | `apps/web`（Vue3 + Vant，手机浏览器 / 微信内打开） |
-| **服务层 API** | 前后端共享 | `apps/server`（NestJS + Prisma，REST + OpenAPI 文档） |
-| **管理后台** | 管理员 | `apps/admin`（vue-pure-admin 开源后台） |
-
-> **v2 说明**：上一版（uni-app + 微信云开发）与 v1（Supabase 开源后端）均已废弃。v2 改为**纯 Web H5 + 自建 NestJS 服务层**，脱离第三方平台绑定，业务逻辑全部落在自己代码里，可测试、可观察、可扩展。
+</div>
 
 ---
 
-## 二、功能清单
+## ✨ What is CampusHub?
 
-**学生端**
-- 首页信息流：推荐 / 最新 / 热榜三种排序，八分类横滑筛选，公告栏，置顶 / 精华标识
-- 市集：二手商品网格、价格 / 成色 / 交易方式展示、防诈骗提示、点赞 / 收藏 / 评论
-- 发布：四场景表单（发帖子 / 卖闲置 / 失物招领 / 匿名表白墙），最多 9 图上传（客户端压缩 + 进度条）
-- 帖子详情：图片预览、点赞、收藏、评论、回复、举报；失物 / 任务可标记解决，任务帖可设过期
-- 搜索：帖子 + 商品统一搜索（Postgres 模糊匹配）
-- 校园指南：分类导航 + Markdown 富文本（DOMPurify 渲染）
-- 签到打卡：每日签到 +1 积分，连续 7 天额外 +5，断签重计（服务端事务防重）
-- 消息中心：点赞 / 评论 / 系统通知，未读红点，一键已读
-- 个人中心：资料展示 / 编辑、我的帖子 / 商品 / 收藏、退出登录
-- 登录注册：邮箱密码 + JWT 双 token（access 内存 + refresh 持久化，自动续期）
+CampusHub is a **self-hosted open-source campus community platform** designed for college students and campus organizations. One mobile-first H5 app covers the daily high-frequency scenarios of student life:
 
-**服务层（自建）**
-- 13 个业务模块：auth / categories / posts / comments / interactions / products / checkins / announcements / guides / notifications / feedbacks / search / upload
-- 统一规范：`/api` 前缀、JWT Bearer 鉴权、统一 `{code, message}` 错误体、分页 `{list, total, hasMore}`、全量软删
-- 互动计数由服务层**同一事务**维护（评论增删、点赞 / 收藏），数据库约束兜底
-- 签到防重：服务端事务 + 数据库唯一约束双保险
-- OpenAPI 文档：启动后 `/api-docs` 可视化 + `/api-docs-json` 供前端类型生成
+- 🛒 **Second-hand marketplace** — sell textbooks, bikes, dorm gear with price/condition/trade-method metadata
+- 🔍 **Lost & found** — post found items or lost requests, mark as resolved
+- 💌 **Confession wall** — anonymous posting
+- 📚 **Course learning, campus events, part-time jobs, carpooling, chat zones** — 8 content categories in total
+- 📖 **Campus guides** — category navigation + Markdown rich text
+- ⭐ **Check-in gamification** — daily +1 points, 7-day streak bonus, server-side anti-duplicate
+- 🔔 **Notifications** — likes, comments, system broadcasts, unread badge
+- 🛡️ **Full admin console** — content moderation, reports, user management, announcements, audit logs
 
-**工程化亮点（对标优秀开源项目）**
-- 前端类型单一来源：`openapi-typescript` 从后端 swagger 生成 `src/types/api.d.ts`，请求体类型自动同步
-- 会话体系：access token 仅存内存（防 XSS 窃取）、refresh 持久化、401 单飞续期 + 原请求重放
-- Mock 双轨：`VITE_USE_MOCK` 一键切换演示数据与真实后端，同一套 `lib/http.ts` 出口
-- 图片客户端压缩（最大边 1600px / JPEG 0.85）+ XHR 上传进度
-- 轻量埋点骨架（`lib/telemetry.ts`）+ 全局错误监控 + 页面浏览事件
-- 路由 history 模式（无 `#`）+ 页面过渡动画 + 骨架屏 + 暗黑模式适配
-- 服务层核心单测（签到防重 / 连续 / 断签 / 积分规则）
+**No third-party BaaS lock-in.** The business logic lives entirely in your own code: a self-built **NestJS service layer** with Prisma + PostgreSQL, a **Vue 3 student H5**, and a **vue-pure-admin based management console**. Any school, club, or organization can deploy it on their own server.
+
+> 🏫 Perfect for: campus IT clubs, student unions, open-source learning, full-stack practice, graduation projects, and production deployments.
 
 ---
 
-## 三、快速开始
+## 📸 Screenshots
 
-### 方式 A：不开后端也能看效果（mock 演示模式）★ 先看这个
+| Home Feed | Marketplace | Publish | Profile |
+|:---:|:---:|:---:|:---:|
+| ![Home](site/assets/shot-home.png) | ![Market](site/assets/shot-market.png) | ![Publish](site/assets/shot-publish.png) | ![Profile](site/assets/shot-profile.png) |
 
-学生端内置 **mock 数据模式**：不需要任何后端 / 密钥，打开即看到完整社区效果，发布 / 评论 / 签到 / 收藏都能真实操作（数据存浏览器 localStorage）。
+<details>
+<summary>🗂 More screenshots (admin console & login)</summary>
+
+| Admin Console | Login |
+|:---:|:---:|
+| ![Admin](docs/screenshots/01-首页.png) | ![Login](site/assets/shot-login.png) |
+
+</details>
+
+---
+
+## 🚀 Feature Highlights
+
+**Student H5 (Vue 3 + Vant 4)**
+- Home feed with **recommended / latest / hot** rankings, 8-category horizontal filter, pinned & essence markers
+- Marketplace grid with price / condition / trade-method display + anti-fraud tips
+- 4-scenario publish forms (post / sell / lost & found / anonymous confession), up to 9 images with **client-side compression + upload progress**
+- Post detail: image preview, like, collect, comment, reply, report; resolve lost/task posts
+- Unified search across posts & products
+- Check-in with server-side transactional anti-duplicate
+- Email + password auth with **JWT dual-token** (in-memory access + persisted refresh, auto-renewal)
+
+**Service Layer (NestJS + Prisma)**
+- 13 business modules: auth · categories · posts · comments · interactions · products · checkins · announcements · guides · notifications · feedbacks · search · upload
+- 41+ REST endpoints, uniform `{code, message}` error body, `{list, total, hasMore}` pagination, **soft-delete everywhere**
+- Interactive counters maintained in the **same transaction** as the mutation (comments, likes, collects)
+- OpenAPI docs at `/api-docs` (Swagger UI) + JSON feed for frontend type generation
+
+**Engineering Practices (aligned with top open-source projects)**
+- Single source of truth for frontend types: `openapi-typescript` generates `api.d.ts` from the backend swagger
+- Session security: access token in memory only (XSS-resistant), refresh token persisted, **401 single-flight renewal + request replay**
+- Mock/real dual-track: `VITE_USE_MOCK` switches demo data vs real backend with the same `lib/http.ts` facade
+- Image client compression (max 1600px / JPEG 0.85) + XHR upload progress
+- Lightweight telemetry skeleton + global error monitoring + page-view events
+- History-mode routing (no `#`), page transitions, skeleton screens, dark mode
+- Unit tests for core service logic (check-in anti-duplicate / streak / break / points)
+
+---
+
+## 🧱 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Student H5 | Vue 3 · Vite · TypeScript · Pinia · Vant 4 |
+| Service Layer | NestJS · Prisma ORM · Swagger/OpenAPI |
+| Admin Console | vue-pure-admin (Vue 3 + Element Plus) |
+| Database | PostgreSQL (19 tables, unique constraints, counter columns) |
+| Auth | JWT dual-token (access in-memory + refresh persisted) |
+
+---
+
+## ⚡ Quick Start
+
+### Option A: Try it instantly with mock data ★
+
+No backend, no keys — the student H5 ships with a built-in **mock data mode**. Open it and browse the full community; publish / comment / check-in / collect all work (data stored in browser localStorage).
 
 ```bash
 cd apps/web
 npm install
-VITE_USE_MOCK=true npm run dev      # 开发模式
-# 或构建后预览
+VITE_USE_MOCK=true npm run dev      # dev mode
+# or build & preview
 VITE_USE_MOCK=true npm run build && npx vite preview --port 4173
 ```
 
-Mock 模式下已内置：8 分类、6 指南分类、指南文章、演示帖子、商品、评论、通知。**任意邮箱 + 任意密码即可登录演示账号**。
+Mock mode ships with 8 categories, guides, demo posts, products, comments, notifications. **Any email + any password logs you in.**
 
-> mock 只是演示 / 测试用，正式跑请用方式 B。
-
-### 方式 B：完整跑真实后端（NestJS + PostgreSQL）
+### Option B: Full stack with real backend (NestJS + PostgreSQL)
 
 ```bash
-# 0. 前置：本机有 Node 20+ 与 PostgreSQL 14+
+# 0. Prereqs: Node 20+ and PostgreSQL 14+ on your machine
 cd apps/server
 
-# 1. 建库 + 建表 + 种子数据 + 演示数据
-bash scripts/setup-db.sh                 # 创建数据库与用户
-node scripts/seed.mjs                    # 种子：8 分类 / 1 公告 / 6 指南分类 / 2 指南
-bash scripts/make-demo.sh                # 演示：双账号 / 4 帖 / 3 商品 / 签到 / 互动
+# 1. Create DB + tables + seed + demo data
+bash scripts/setup-db.sh                 # create database & user
+node scripts/seed.mjs                    # seed: 8 categories / 1 announcement / guides
+bash scripts/make-demo.sh                # demo: two accounts / 4 posts / 3 products / interactions
 
-# 2. 启动服务层（:3000）
+# 2. Start the service layer (:3000)
 npm run build && node dist/main.js
 
-# 3. 启动学生端（:4173，注意用 npm 12+ 安装依赖）
+# 3. Start the student H5 (:4173)
 cd ../web
 npm install
-npm run dev                              # 开发模式连真实后端
+npm run dev
 ```
 
-**演示账号**：`xiaoming@campus.dev` / `xiaohong@campus.dev`，密码 `demo123456`。
+**Demo accounts**: `xiaoming@campus.dev` / `xiaohong@campus.dev` · password `demo123456`
 
-**接口文档**：服务启动后打开 `http://localhost:3000/api-docs`（Swagger UI）。
+**API docs**: open `http://localhost:3000/api-docs` (Swagger UI) after the server starts.
 
-> 详细部署（服务器 / 环境变量 / 前端 SPA fallback）见 **[docs/DEPLOY.md](./docs/DEPLOY.md)**。
+> Full deployment guide (server, env vars, SPA fallback): **[docs/DEPLOY.md](./docs/DEPLOY.md)**
 
 ---
 
-## 四、技术架构
-
-```
-┌────────────────────────────┐
-│  学生端 H5（apps/web）      │  Vue3 + Vant + Pinia
-│  lib/http.ts 统一出口       │  mock 双轨 / 会话续期 / 缓存 / 超时
-└──────────┬─────────────────┘
-           │ REST /api（JWT Bearer）
-┌──────────▼─────────────────┐
-│  服务层（apps/server）       │  NestJS + Prisma
-│  13 模块 · 统一错误体 · 软删 │  @nestjs/swagger 文档
-└──────────┬─────────────────┘
-           │ Prisma ORM
-┌──────────▼─────────────────┐
-│  PostgreSQL（19 表）        │  唯一约束兜底 · 计数冗余列
-└─────────────────────────────┘
-```
-
-- 13 模块：auth · categories · posts · comments · interactions · products · checkins · announcements · guides · notifications · feedbacks · search · upload
-- 41 个 REST 端点（学生端全功能）；权限：`@Auth`（登录）/ 作者 / 管理员
-- 数据库 19 表：profiles（含 is_admin）、posts、products、comments、likes、collects、follows、checkins、categories、announcements、guide_categories、guides、notifications、feedbacks、refresh_sessions、admin_logs 等
-
-完整架构与关键链路说明见 **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**。
-
----
-
-## 五、目录结构
+## 📁 Project Structure
 
 ```
 campushub/
 ├── apps/
-│   ├── web/            # 学生端 H5（Vue3 + Vant）
-│   ├── server/         # 服务层（NestJS + Prisma + PostgreSQL）
-│   └── admin/          # 管理后台（vue-pure-admin 开源模板）
-├── packages/db/        # 数据库脚本（schema.sql / seed.sql，v1 遗留参考）
-├── docs/               # 文档：DEPLOY / ARCHITECTURE / QA-REPORT / ADMIN
-├── site/               # 官网（单 HTML + assets，无框架依赖）
+│   ├── web/            # Student H5 (Vue 3 + Vant)
+│   ├── server/         # Service layer (NestJS + Prisma + PostgreSQL)
+│   └── admin/          # Admin console (vue-pure-admin)
+├── packages/db/        # DB scripts (v1 legacy reference)
+├── docs/               # DEPLOY / ARCHITECTURE / QA-REPORT / ADMIN / REFACTOR-PLAN / M0-API-SPEC
+├── site/               # Official site (single HTML, no framework deps)
 └── README.md
 ```
 
----
-
-## 六、全流程测试报告
-
-- **服务层**：`apps/server` 核心单测（签到防重 / 连续 / 断签 / 积分规则）`npm test` 全绿；全 API 冒烟（注册 → 登录 → 发帖 → 评论 → 点赞 → 签到 → 市集 → 搜索）实测通过
-- **学生端**：真实后端 + 浏览器自动化端到端验证（首页 / 市集 / 详情 / 会话续期 / history 路由刷新）
-- 报告详见 **[docs/QA-REPORT.md](./docs/QA-REPORT.md)**
+Architecture & key flows: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
 ---
 
-## 七、路线图（M0–M5 状态）
+## 🗺 Roadmap
 
-| 里程碑 | 内容 | 状态 |
+| Milestone | Scope | Status |
 |---|---|---|
-| M0 | 接口清单 + Schema 评审 + 测试策略 | ✅ 完成（冻结 41 端点，见 docs/） |
-| M1 | NestJS 服务层 + 学生端全功能对接 | ✅ 完成（13 模块 / 19 表 / 全 API 冒烟） |
-| M1+ | 工程化修债（会话 / 类型生成 / mock 双轨 / 埋点 / 暗黑等 12 项） | ✅ 完成 |
-| M2 | 机审 API + Sentry + 结构化日志（上线底线） | ⏳ 待做 |
-| M3 | 小程序端（uni-app，复用现有服务层） | ⏳ 待做 |
-| M4 | Redis 缓存 + BullMQ 异步 + 搜索升级 | ⏳ 待做 |
-| M5 | 埋点数据应用 + 个性化推荐基线 | ⏳ 待做 |
-
-> 改造方案全文（选型理由 / 成本 / 别做清单）见 **[docs/CAMPUSHUB-REFACTOR-PLAN.md](./docs/CAMPUSHUB-REFACTOR-PLAN.md)**。
-
----
-
-## 八、说明与边界（如实标注）
-
-- **管理后台**：已迁移到自建服务层（`apps/server/src/modules/admin`，28 端点 + 真 AdminGuard + 操作审计）；前端 `apps/admin` 全部走 `/api/admin/*`，不再依赖 Supabase。
-- **测试覆盖**：核心服务逻辑已有单测；全量覆盖率 ≥80%、E2E、CI 门禁为 M2 目标，当前未达。
-- **文件存储**：图片暂存本地磁盘（`apps/server/uploads`，静态 `/static/` 提供），后置 OSS / CDN。
-- 本仓库为学习 / 演示项目，上线前请完成 M2（机审 + 可观测性）并做安全加固。
+| M0 | API contract + schema review + test strategy | ✅ Done (41 endpoints frozen) |
+| M1 | NestJS service layer + full student app integration | ✅ Done (13 modules / 19 tables / API smoke passed) |
+| M1+ | Engineering debt: sessions, type generation, mock dual-track, telemetry, dark mode (12 items) | ✅ Done |
+| M1+ admin | Admin console migrated to self-built service layer (28 endpoints, real AdminGuard, audit logs) | ✅ Done |
+| M2 | Machine review API + Sentry + structured logging (production baseline) | ⏳ Planned |
+| M3 | Mini-program client (uni-app, reusing the service layer) | ⏳ Planned |
+| M4 | Redis cache + BullMQ async + search upgrade | ⏳ Planned |
+| M5 | Telemetry analytics + personalized recommendation baseline | ⏳ Planned |
 
 ---
 
-## 九、许可证
+## 📚 Documentation
 
-MIT © 2026 CampusHub 项目组。完全开源，欢迎任何学校 / 组织使用与二次开发。
+| Doc | Description |
+|---|---|
+| [DEPLOY.md](docs/DEPLOY.md) | Server deployment, env vars, SPA fallback |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, key flows, data model |
+| [ADMIN.md](docs/ADMIN.md) | Admin console setup & API reference |
+| [QA-REPORT.md](docs/QA-REPORT.md) | Smoke tests, regressions, known limits |
+| [CAMPUSHUB-REFACTOR-PLAN.md](docs/CAMPUSHUB-REFACTOR-PLAN.md) | Refactor rationale, cost, trade-offs |
+| [M0-API-SPEC.md](docs/M0-API-SPEC.md) | API contract (41 endpoints) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guide |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [SECURITY.md](SECURITY.md) | Security policy & reporting |
+
+---
+
+## 🤝 Contributing
+
+Contributions of all kinds are welcome — features, bug reports, docs, translations, and design. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+1. Fork the repo
+2. Create your feature branch (`git checkout -b feat/amazing`)
+3. Commit your changes (`git commit -m 'feat: add amazing thing'`)
+4. Push to the branch (`git push origin feat/amazing`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 CampusHub Contributors. Free for any school or organization to use, modify, and deploy — including commercial use.
+
+---
+
+<a id="简体中文"></a>
+
+# 简体中文
+
+## 🎓 CampusHub · 校园内容社区（开源）
+
+面向在校学生的**自托管开源校园社区平台**：二手市集、失物招领、表白墙、课程学习、校园活动、兼职拼车、校园指南、签到积分、消息通知、举报闭环——一套 H5 全部搞定。**自建 NestJS 服务层**，不依赖任何第三方 BaaS，任何学校 / 组织可一键部署。
+
+**技术栈**：Vue 3 + Vite + TS + Pinia + Vant 4（学生端）· NestJS + Prisma + PostgreSQL（服务层）· vue-pure-admin（管理后台）
+
+### 功能清单
+
+- 首页信息流：推荐 / 最新 / 热榜三种排序，八分类横滑筛选，公告栏，置顶 / 精华标识
+- 市集：二手商品网格、价格 / 成色 / 交易方式展示、防诈骗提示、点赞 / 收藏 / 评论
+- 发布：四场景表单（发帖子 / 卖闲置 / 失物招领 / 匿名表白墙），最多 9 图上传（客户端压缩 + 进度条）
+- 帖子详情：图片预览、点赞、收藏、评论、回复、举报；失物 / 任务可标记解决
+- 搜索：帖子 + 商品统一搜索
+- 校园指南：分类导航 + Markdown 富文本（DOMPurify 渲染）
+- 签到打卡：每日 +1 积分，连续 7 天额外 +5，断签重计（服务端事务防重）
+- 消息中心：点赞 / 评论 / 系统通知，未读红点
+- 管理后台：内容审核（帖子 / 商品 / 评论）、举报处理、用户管理、分类 / 公告 / 指南管理、反馈、通知下发、**操作审计**（全部走自建服务层 28 端点 + 真 AdminGuard）
+
+### 快速开始
+
+```bash
+# 方式 A：学生端 mock 演示（无需后端）
+cd apps/web && npm install && VITE_USE_MOCK=true npm run dev
+
+# 方式 B：完整跑真实后端
+cd apps/server && bash scripts/setup-db.sh && node scripts/seed.mjs && bash scripts/make-demo.sh
+npm run build && node dist/main.js
+cd ../web && npm install && npm run dev
+```
+
+演示账号：`xiaoming@campus.dev` / `xiaohong@campus.dev`，密码 `demo123456`。接口文档：`http://localhost:3000/api-docs`。
+
+### 测试与边界（如实标注）
+
+- 服务层核心单测全绿；全 API 冒烟实测通过（注册 → 登录 → 发帖 → 评论 → 点赞 → 签到 → 市集 → 搜索）；管理后台 12 页浏览器端到端验证，写操作（置顶 / 封禁 / 举报闭环）闭环通过
+- 图片暂存本地磁盘（`apps/server/uploads`，`/static/` 提供），后置 OSS / CDN
+- 机审 API、Sentry、Redis、小程序端为路线图 M2–M5，当前未实现（如实标注，不夸大）
+
+### 许可证
+
+MIT © 2026 CampusHub Contributors。完全开源，欢迎任何学校 / 组织使用与二次开发（含商业使用）。
+
+---
+
+<div align="center">
+<sub>Built with ❤️ for campus communities · ⭐ Star us if you find it useful!</sub>
+</div>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560" font-family="system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#eef2f7"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="980" height="560" fill="url(#bg)" rx="14"/>
+  <text x="30" y="42" font-size="24" font-weight="700" fill="#0f172a">CampusHub · 交付总览</text>
+  <text x="30" y="66" font-size="13" fill="#64748b">gitcode.com/badhope/campushub · main @ 4ec6af3 · 2026-10-01</text>
+
+  <!-- 里程碑 -->
+  <text x="30" y="104" font-size="15" font-weight="700" fill="#1e293b">路线图里程碑</text>
+  <g font-size="12">
+    <rect x="30" y="118" width="176" height="52" rx="8" fill="#ecfdf5" stroke="#10b981"/>
+    <text x="44" y="140" fill="#047857" font-weight="700">M0 接口冻结 ✅</text>
+    <text x="44" y="158" fill="#059669">M0-API-SPEC 定稿</text>
+    <rect x="214" y="118" width="176" height="52" rx="8" fill="#ecfdf5" stroke="#10b981"/>
+    <text x="228" y="140" fill="#047857" font-weight="700">M1 服务层 ✅</text>
+    <text x="228" y="158" fill="#059669">NestJS 13 模块 / 19 表</text>
+    <rect x="398" y="118" width="176" height="52" rx="8" fill="#ecfdf5" stroke="#10b981"/>
+    <text x="412" y="140" fill="#047857" font-weight="700">M1+ 修债 12 项 ✅</text>
+    <text x="412" y="158" fill="#059669">双token/缓存/分页/埋点</text>
+    <rect x="582" y="118" width="176" height="52" rx="8" fill="#dbeafe" stroke="#3b82f6"/>
+    <text x="596" y="140" fill="#1d4ed8" font-weight="700">admin 迁移 ✅ 新增</text>
+    <text x="596" y="158" fill="#2563eb">28 端点 + 真守卫 + 审计</text>
+    <rect x="766" y="118" width="176" height="52" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+    <text x="780" y="140" fill="#64748b" font-weight="700">M2–M5 ⏳ 待做</text>
+    <text x="780" y="158" fill="#94a3b8">机审/Sentry/Redis</text>
+  </g>
+
+  <!-- 三层架构 -->
+  <text x="30" y="204" font-size="15" font-weight="700" fill="#1e293b">三层架构（自建，脱离第三方平台）</text>
+  <g>
+    <rect x="30" y="218" width="280" height="76" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="46" y="244" font-size="13" font-weight="700" fill="#0f172a">学生端 web（Vue3+Vant4）</text>
+    <text x="46" y="264" font-size="11" fill="#64748b">apps/web · 首页/市集/发布/消息/我的</text>
+    <text x="46" y="280" font-size="11" fill="#64748b">:4173 preview 已验证</text>
+    <rect x="350" y="218" width="280" height="76" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="366" y="244" font-size="13" font-weight="700" fill="#0f172a">管理端 admin（vue-pure-admin）</text>
+    <text x="366" y="264" font-size="11" fill="#64748b">apps/admin · 12 管理页 · 走 /api/admin/*</text>
+    <text x="366" y="280" font-size="11" fill="#64748b">:8849 preview 已验证</text>
+    <rect x="670" y="218" width="272" height="76" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="686" y="244" font-size="13" font-weight="700" fill="#0f172a">NestJS 服务层（:3000）</text>
+    <text x="686" y="264" font-size="11" fill="#64748b">13 业务模块 + admin 模块</text>
+    <text x="686" y="280" font-size="11" fill="#64748b">AuthGuard/AdminGuard/审计</text>
+    <rect x="30" y="306" width="912" height="44" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="46" y="332" font-size="12" fill="#475569">PostgreSQL（Prisma 19 表）：profiles/posts/products/comments/likes/collects/follows/checkins/categories/announcements/guides/notifications/feedbacks/admin_logs …</text>
+    <text x="46" y="348" font-size="11" fill="#94a3b8">已清理冒烟数据 · 演示基线：8 分类 / 1 公告 / 2 指南 / 4 帖 / 3 商品 / 2 用户（小明管理员）</text>
+  </g>
+
+  <!-- 交付物 -->
+  <text x="30" y="388" font-size="15" font-weight="700" fill="#1e293b">交付文档（docs/ 全部更新为 v2）</text>
+  <g font-size="11.5">
+    <rect x="30" y="402" width="294" height="34" rx="6" fill="#fff" stroke="#e2e8f0"/><text x="42" y="424" fill="#334155">README.md · 项目门面与边界说明</text>
+    <rect x="334" y="402" width="294" height="34" rx="6" fill="#fff" stroke="#e2e8f0"/><text x="346" y="424" fill="#334155">ARCHITECTURE.md · 架构/链路/尚待建设</text>
+    <rect x="638" y="402" width="294" height="34" rx="6" fill="#fff" stroke="#e2e8f0"/><text x="650" y="424" fill="#334155">REFACTOR-PLAN.md · 改造方案/修债</text>
+    <rect x="30" y="444" width="294" height="34" rx="6" fill="#fff" stroke="#e2e8f0"/><text x="42" y="466" fill="#334155">QA-REPORT.md · 冒烟/回归/已知边界</text>
+    <rect x="334" y="444" width="294" height="34" rx="6" fill="#fff" stroke="#e2e8f0"/><text x="346" y="466" fill="#334155">ADMIN.md · 管理后台对接说明（新）</text>
+    <rect x="638" y="444" width="294" height="34" rx="6" fill="#fff" stroke="#e2e8f0"/><text x="650" y="466" fill="#334155">M0-API-SPEC.md · 接口契约</text>
+  </g>
+
+  <text x="30" y="520" font-size="13" fill="#475569">提交链：</text>
+  <text x="30" y="540" font-size="11.5" fill="#64748b">4e05737 feat(server) → 8c279bd feat(web)+修债 → 6c2245f docs → 35c3eaa feat(admin) → 4ec6af3 docs · 工作区干净（0 未提交）</text>
+</svg>

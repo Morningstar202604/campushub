@@ -1,0 +1,33 @@
+---
+name: 🐛 Bug report / Bug 反馈
+about: Create a report to help us improve / 反馈问题帮助我们改进
+title: "[Bug] "
+labels: bug
+assignees: ''
+---
+
+**描述 / Describe the bug**
+清晰简洁地描述这个 bug（A clear and concise description of what the bug is）。
+
+**复现步骤 / To Reproduce**
+1. Go to '...'
+2. Click on '...'
+3. See error
+
+**期望行为 / Expected behavior**
+清晰简洁地描述你期望发生什么（What you expected to happen）。
+
+**截图 / Screenshots**
+如有请附上（If applicable, add screenshots）。
+
+**环境 / Environment（请填写以下信息）**
+- OS: [e.g. macOS 14 / Ubuntu 22.04]
+- Browser: [e.g. Chrome 126, mobile Safari]
+- Node version: [e.g. 20.15]
+- PostgreSQL version: [e.g. 16]
+
+**日志 / Logs**
+如有相关报错日志请粘贴（Any relevant error logs）。
+
+**补充 / Additional context**
+其他你认为有用的信息（Anything else that might help）。
