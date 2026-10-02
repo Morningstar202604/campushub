@@ -35,4 +35,4 @@
 - 当前图片存储为本地磁盘（`apps/server/uploads`），生产环境请挂载 OSS / CDN 并配置防盗链
 - JWT access token 仅存内存（防 XSS 窃取），refresh token 持久化并支持轮换
 - 管理后台由后端 `AdminGuard` 强制鉴权（401 / 403 / 封禁），前端菜单只是体验层
-- 生产上线前请完成路线图 M2（机审 API + Sentry + 结构化日志）并做安全加固
+- 生产上线前请做安全加固（JWT 密钥强随机、HTTPS、限流）；机审 API / Sentry 为可选扩展，按需接入

@@ -2,6 +2,22 @@
 
 All notable changes to **CampusHub** are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/lang/zh-CN/).
 
+## [1.2.0] — 2026-10-02
+
+### Added
+
+- **pino 结构化日志**（Structured logging）
+  - 应用日志 + HTTP 访问日志统一 JSON 输出（`nestjs-pino` + `pino-http`）
+  - `LOG_LEVEL` 环境变量控制级别；本地 pino-pretty 美化，生产（`NODE_ENV=production`）纯 JSON
+  - `/api/health` 与 `/static/*` 自动忽略，避免刷屏
+- **路线图收敛（M2–M5 评审）**
+  - 判定为可选扩展（非承诺）：机审 API（举报 + 人工审核闭环已内置）、Sentry、Redis/BullMQ、FTS 搜索、小程序端（H5 已覆盖手机浏览器 / 微信内打开）、推荐引擎
+  - 全量文档同步：README / ARCHITECTURE / REFACTOR-PLAN / QA-REPORT / DEPLOY / SECURITY / ADMIN / M0-API-SPEC，无未完成承诺项残留
+- Docker Compose / `.env.example` 修正：`JWT_SECRET`（与代码一致）+ `LOG_LEVEL`
+
+### Changed
+
+- 服务端 `.env.example` 数据源说明改为 prisma schema（唯一事实源），移除 packages/db 遗留引用
 ## [1.1.0] — 2026-10-01
 
 ### Added

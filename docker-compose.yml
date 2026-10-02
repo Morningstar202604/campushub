@@ -27,8 +27,8 @@ services:
     container_name: campushub-server
     environment:
       DATABASE_URL: postgresql://campushub:campushub@postgres:5432/campushub?schema=public
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-in-production}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-too}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      LOG_LEVEL: info
       PORT: 3000
     depends_on:
       postgres:

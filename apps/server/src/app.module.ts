@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
+import { LoggerModule } from 'nestjs-pino';
 import configuration from './config/configuration.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -23,6 +24,22 @@ import { AppController } from './app.controller.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    // 结构化日志（pino）：应用日志 + HTTP 访问日志统一 JSON 输出，生产可采集（LOG_LEVEL 控制级别）
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.LOG_LEVEL ?? 'info',
+        autoLogging: {
+          ignore: (req) => {
+            const url = req.url ?? '';
+            return url === '/api/health' || url.startsWith('/static/');
+          },
+        },
+        transport:
+          process.env.NODE_ENV === 'production'
+            ? undefined
+            : { target: 'pino-pretty', options: { colorize: true, translateTime: 'HH:MM:ss' } },
+      },
+    }),
     PrismaModule,
     AuthModule,
     CategoriesModule,

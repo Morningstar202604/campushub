@@ -87,6 +87,7 @@ CampusHub is a **self-hosted open-source campus community platform** designed fo
 |---|---|
 | Student H5 | Vue 3 · Vite · TypeScript · Pinia · Vant 4 |
 | Service Layer | NestJS · Prisma ORM · Swagger/OpenAPI |
+| Observability | pino structured logging (JSON + HTTP access logs) |
 | Admin Console | vue-pure-admin (Vue 3 + Element Plus) |
 | Database | PostgreSQL (19 tables, unique constraints, counter columns) |
 | Auth | JWT dual-token (access in-memory + refresh persisted) |
@@ -176,10 +177,10 @@ Architecture & key flows: **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 | M1 | NestJS service layer + full student app integration | ✅ Done (13 modules / 19 tables / API smoke passed) |
 | M1+ | Engineering debt: sessions, type generation, mock dual-track, telemetry, dark mode (12 items) | ✅ Done |
 | M1+ admin | Admin console migrated to self-built service layer (28 endpoints, real AdminGuard, audit logs) | ✅ Done |
-| M2 | Machine review API + Sentry + structured logging (production baseline) | ⏳ Planned |
-| M3 | Mini-program client (uni-app, reusing the service layer) | ⏳ Planned |
-| M4 | Redis cache + BullMQ async + search upgrade | ⏳ Planned |
-| M5 | Telemetry analytics + personalized recommendation baseline | ⏳ Planned |
+| M2 | Structured logging (pino: JSON + HTTP access logs) | ✅ Done |
+| M2 | CI gate (build + unit tests on real Postgres + asset checks) | ✅ Done |
+
+**Optional extensions (on-demand, NOT core commitments)**: machine review API (report + human moderation is built in; hook up NetEase/Tencent Cloud or a self-hosted filter when needed) · Sentry error tracking · Redis/BullMQ for high concurrency · PostgreSQL FTS search · mini-program client (the H5 already covers mobile browsers & WeChat in-app) · recommendation engine (telemetry skeleton is in place).
 
 ---
 
@@ -264,7 +265,7 @@ docker compose up -d --build
 
 - 服务层核心单测全绿；全 API 冒烟实测通过（注册 → 登录 → 发帖 → 评论 → 点赞 → 签到 → 市集 → 搜索）；管理后台 12 页浏览器端到端验证，写操作（置顶 / 封禁 / 举报闭环）闭环通过
 - 图片暂存本地磁盘（`apps/server/uploads`，`/static/` 提供），后置 OSS / CDN
-- 机审 API、Sentry、Redis、小程序端为路线图 M2–M5，当前未实现（如实标注，不夸大）
+- 可选扩展（非承诺）：机审 API（举报 + 人工审核闭环已内置）、Sentry、Redis/BullMQ、FTS 搜索、小程序端（H5 已覆盖手机浏览器 / 微信内打开）、推荐引擎；当前均未实现，按需接入
 
 ### 许可证
 

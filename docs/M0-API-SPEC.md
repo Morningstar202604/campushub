@@ -97,7 +97,7 @@
 | POST | /notifications/read-all | @Auth | 一键已读 |
 | GET | /notifications/unread-count | @Auth | 未读数 |
 
-通知产生点（服务层埋）：点赞/评论/关注/系统/举报结果 → 异步写（M1 同步写，M4 换 BullMQ）。
+通知产生点（服务层埋）：点赞/评论/关注/系统/举报结果 → 同步写（可选扩展：高并发换 BullMQ 异步）。
 
 ### 10. 指南 Guides（公开读）
 | 方法 | 路径 | 说明 |

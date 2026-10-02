@@ -18,6 +18,7 @@
 │  服务层（apps/server）· NestJS + Prisma              │
 │  13 业务模块 · 全局 ValidationPipe(whitelist)         │
 │  统一异常过滤器 {code,message} · 软删约定             │
+│  pino 结构化日志（JSON + HTTP 访问日志）              │
 │  Swagger（/api-docs · /api-docs-json）               │
 └──────────────────────┬──────────────────────────────┘
                        │ Prisma ORM · 交互式事务
@@ -44,9 +45,9 @@
 | checkins | 每日签到 | 上海时区（UTC+8）口径；事务防重 + 唯一约束双保险 |
 | announcements | 公告 | 仅 active |
 | guides | 指南分类 / 指南 | Markdown HTML 由后台写入，前端 DOMPurify 渲染 |
-| notifications | 通知 / 未读 / 一键已读 | 产生点由服务层同步埋（M4 换队列） |
+| notifications | 通知 / 未读 / 一键已读 | 产生点由服务层同步埋（可选扩展：高并发换队列） |
 | feedbacks | 意见反馈 | 简单写入 |
-| search | 帖子 + 商品统一搜索 | 模糊匹配起步（M4 换 tsvector + zhparser） |
+| search | 帖子 + 商品统一搜索 | 模糊匹配起步（可选扩展：FTS tsvector + zhparser） |
 | upload | 图片上传 | 本地磁盘 + 静态 /static/ 提供（后置 OSS） |
 
 ---
@@ -135,14 +136,23 @@ POST /checkins
 
 ---
 
-## 六、尚待建设（如实标注）
+## 六、完成与可选扩展（如实标注）
 
-| 项 | 现状 | 目标 |
-|---|---|---|
-| 全量单测覆盖率 ≥80% | 仅核心逻辑有测 | M2 |
-| E2E（Playwright）+ CI 门禁 | 未做 | M2 |
-| 机审 API | 未接（仅举报闭环） | M2 |
-| Sentry / pino 结构化日志 | 前端埋点骨架已建 | M2 |
-| ~~admin 后台对接新服务层~~ | ✅ 已完成：28 端点 + 真 AdminGuard + 审计，前端走 `/api/admin/*` | 完成 |
-| Redis + BullMQ / FTS / OSS | 未做 | M4 |
-| 埋点数据应用 + 推荐 | 埋点骨架已建 | M5 |
+**已完成**：
+
+| 项 | 现状 |
+|---|---|
+| admin 后台对接新服务层 | ✅ 28 端点 + 真 AdminGuard + 审计，前端走 `/api/admin/*` |
+| pino 结构化日志 | ✅ 应用日志 + HTTP 访问日志统一 JSON（`LOG_LEVEL` 可调，health/static 自动忽略） |
+| CI 门禁 | ✅ GitHub Actions：三端构建 + 服务层单测（跑在真 Postgres）+ 官网素材检查 |
+| 核心单测 | ✅ 签到防重 / 连续 / 断签 / 积分规则全绿 |
+
+**可选扩展（按需接入，非本项目承诺）**：
+
+| 项 | 说明 |
+|---|---|
+| 机审 API | 举报 + 人工审核闭环已内置；需要时接网易易盾 / 腾讯云天御或自建敏感词过滤 |
+| Sentry | 前端埋点骨架已建；需要时配 DSN 接入 |
+| Redis + BullMQ / FTS / OSS | 高并发 / 高级搜索 / 对象存储场景按需引入 |
+| 小程序端 | H5 已覆盖手机浏览器 / 微信内打开 |
+| 埋点应用 + 推荐 | 埋点骨架已建；推荐引擎按需 |
