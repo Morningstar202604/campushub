@@ -6,9 +6,11 @@
     </view>
 
     <!-- 失败 / 已下架 / 无此商品 -->
-    <view v-else-if="!product" class="state-block">
-      <text class="state-text state-err">{{ loadError || '商品不存在或已下架' }}</text>
-      <view v-if="productId" class="state-retry" @click="loadDetail">重试</view>
+    <view v-else-if="!product" class="empty-state">
+      <view class="empty-shape"></view>
+      <text class="empty-kicker">PRODUCT</text>
+      <text class="empty-title">{{ loadError || '商品不存在或已下架' }}</text>
+      <view v-if="productId" class="state-retry press" @click="loadDetail">重试</view>
     </view>
 
     <template v-else>
@@ -28,7 +30,7 @@
       <!-- 标题 + 价格 + 状态 -->
       <view class="product-head sticker">
         <view class="head-top">
-          <text class="product-title">{{ product.title }}</text>
+          <text class="product-title title-900">{{ product.title }}</text>
           <text class="product-status" :class="statusClass">{{ statusLabel }}</text>
         </view>
         <view class="product-price-row">
@@ -66,7 +68,7 @@
           <text class="contact-value">{{ product.contactInfo }}</text>
         </view>
         <text
-          class="contact-btn clip-tag"
+          class="contact-btn clip-tag press"
           :class="{ disabled: !canTrade }"
           @click="onContact"
         >{{ contactBtnLabel }}</text>
@@ -77,19 +79,19 @@
 
       <!-- 操作行 -->
       <view class="action-bar sticker">
-        <view class="action-item" :class="{ active: action.liked.value }" @click="action.toggleLike()">
+        <view class="action-item press" :class="{ active: action.liked.value }" @click="action.toggleLike()">
           <text class="action-label">点赞</text>
           <text class="action-count tabular-nums">{{ action.likeCount.value }}</text>
         </view>
-        <view class="action-item" :class="{ active: action.collected.value }" @click="action.toggleCollect()">
+        <view class="action-item press" :class="{ active: action.collected.value }" @click="action.toggleCollect()">
           <text class="action-label">收藏</text>
           <text class="action-count tabular-nums">{{ collectCount }}</text>
         </view>
         <!-- 作者本人视角：编辑 / 标记已售（二态） -->
-        <view v-if="isMine" class="action-item mine" @click="onEdit">
+        <view v-if="isMine" class="action-item mine press" @click="onEdit">
           <text class="action-label">编辑</text>
         </view>
-        <view v-if="isMine" class="action-item mine" :class="{ done: product.status === 'sold' }" @click="onToggleSold">
+        <view v-if="isMine" class="action-item mine press" :class="{ done: product.status === 'sold' }" @click="onToggleSold">
           <text class="action-label">{{ product.status === 'sold' ? '重新上架' : '标记已售' }}</text>
         </view>
       </view>
@@ -273,30 +275,29 @@ onUnmounted(() => {
 
 .state-block { padding: 140rpx 32rpx; text-align: center; }
 .state-text { display: block; font-size: 24rpx; color: var(--text-secondary); letter-spacing: 2rpx; }
-.state-err { color: var(--danger); }
 .state-retry {
   display: inline-block; margin-top: 28rpx; padding: 12rpx 36rpx;
-  font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent);
-  border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  font-size: 24rpx; font-weight: var(--fw-title); color: var(--secondary);
+  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
 }
 
 .product-gallery {
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 8rpx;
   padding: 12rpx; background: var(--bg-card);
-  border: 1rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx;
+  border: 2rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx;
   .product-img { width: 100%; height: 300rpx; border-radius: var(--radius-sharp); background: var(--bg-elevated); }
 }
 
 .product-head {
   padding: 24rpx; background: var(--bg-card);
-  border: 1rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx;
+  border: 2rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx;
 }
 .head-top { display: flex; align-items: flex-start; gap: 16rpx; }
-.product-title { flex: 1; font-size: 34rpx; font-weight: var(--fw-title); color: var(--text-primary); }
+.product-title { flex: 1; font-size: 34rpx; color: var(--text-primary); }
 .product-status {
   flex-shrink: 0; padding: 4rpx 14rpx; font-size: 20rpx; font-weight: var(--fw-title);
-  border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
-  &.is-on { color: var(--accent); border-color: var(--accent); }
+  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
+  &.is-on { color: var(--secondary); border-color: var(--secondary); }
   &.is-sold { color: var(--warning); border-color: var(--warning); }
   &.is-off { color: var(--text-tertiary); }
 }
@@ -306,37 +307,36 @@ onUnmounted(() => {
 .price-orig { font-size: 24rpx; color: var(--text-tertiary); text-decoration: line-through; }
 .product-cat { margin-left: auto; font-size: 22rpx; color: var(--text-secondary); }
 
-.product-desc { padding: 24rpx; background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx; }
+.product-desc { padding: 24rpx; background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx; }
 .desc-text { font-size: 26rpx; color: var(--text-primary); line-height: 1.75; }
 
-.product-info { padding: 8rpx 24rpx; background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp); }
-.info-row { display: flex; padding: 16rpx 0; border-bottom: 1rpx solid var(--border); }
+.product-info { padding: 8rpx 24rpx; background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp); }
+.info-row { display: flex; padding: 16rpx 0; border-bottom: 2rpx solid var(--border); }
 .info-row:last-child { border-bottom: none; }
 .info-label { width: 140rpx; font-size: 24rpx; color: var(--text-tertiary); flex-shrink: 0; }
 .info-value { flex: 1; font-size: 26rpx; color: var(--text-primary); }
-/* .tabular-nums 只做等宽数字，不带颜色 —— 遵循「每屏荧光焦点 ≤1」，数字色由 .info-value 决定 */
 
 .contact-row {
   display: flex; align-items: center; gap: 16rpx; margin-top: 20rpx; padding: 20rpx 24rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
 }
 .contact-body { flex: 1; min-width: 0; }
 .contact-label { display: block; font-size: 20rpx; color: var(--text-tertiary); }
 .contact-value { display: block; font-size: 28rpx; font-weight: var(--fw-title); color: var(--text-primary); margin-top: 4rpx; }
 .contact-btn {
   flex-shrink: 0; padding: 12rpx 32rpx; font-size: 24rpx; font-weight: var(--fw-title);
-  color: var(--bg-page); background: var(--accent);
+  color: var(--bg-page); background: var(--secondary);
   &.disabled { color: var(--text-tertiary); background: var(--bg-elevated); }
 }
 .info-hint { margin-top: 12rpx; font-size: 22rpx; color: var(--text-tertiary); }
 
 .action-bar {
   display: flex; gap: 48rpx; margin-top: 24rpx; padding: 20rpx 32rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
   .action-item { display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
   .action-label { font-size: 22rpx; color: var(--text-secondary); }
   .action-count { font-size: 24rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .action-item.active .action-label { color: var(--accent); }
+  .action-item.active .action-label { color: var(--secondary); }
   .action-item.mine .action-label { color: var(--secondary); }
   .action-item.mine.done .action-label { color: var(--text-tertiary); }
 }

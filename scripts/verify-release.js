@@ -25,7 +25,8 @@ const path = require('path')
 const { execSync } = require('child_process')
 
 const ROOT = path.resolve(__dirname, '..')
-const MP = path.join(ROOT, 'miniprogram')
+// 前端已迁移至 uni-app/（v0.9.0 起旧 miniprogram/ 移除）
+const MP = path.join(ROOT, 'uni-app', 'src')
 const CF = path.join(ROOT, 'cloudfunctions')
 
 const jsonOut = (() => {
@@ -50,14 +51,14 @@ const walk = (dir, exts, acc = []) => {
 const rel = (p) => path.relative(ROOT, p)
 const exists = (p) => fs.existsSync(p)
 
-// ============ 1. app.json ============
-const appJsonPath = path.join(MP, 'app.json')
+// ============ 1. pages.json (uni-app 页面注册) ============
+const appJsonPath = path.join(MP, 'pages.json')
 let appJson = null
 try {
   appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'))
-  report('ok', 'app.json', 'app.json 解析成功')
+  report('ok', 'pages.json', 'pages.json 解析成功')
 } catch (e) {
-  report('error', 'app.json', 'app.json 解析失败：' + e.message)
+  report('error', 'pages.json', 'pages.json 解析失败：' + e.message)
 }
 
 // ============ 2. 页面四件套 ============
@@ -247,7 +248,7 @@ if (!wxmlBad && !compBad) report('ok', 'wxml', `${wxmlFiles.length} 个 WXML 标
 if (!imgBad) report('ok', 'assets', 'WXML 引用的 assets 图片全部存在')
 
 // ============ 7. WXSS 变量 + 图片 ============
-let varBad = 0, cssImgBad = 0
+let varBad = 0, _cssImgBad = 0
 for (const f of wxssFiles) {
   const css = fs.readFileSync(f, 'utf8')
   for (const m of css.matchAll(/var\(\s*(--[\w-]+)/g)) {
@@ -257,7 +258,7 @@ for (const f of wxssFiles) {
     let u = m[1].trim()
     if (/^(https?:|data:)/.test(u)) continue
     const abs = u.startsWith('/') ? path.join(MP, u) : path.resolve(path.dirname(f), u)
-    if (!exists(abs)) { report('error', 'assets', `${rel(f)}: 样式图片不存在 ${u}`); cssImgBad++ }
+    if (!exists(abs)) { report('error', 'assets', `${rel(f)}: 样式图片不存在 ${u}`); _cssImgBad++ }
   }
 }
 if (!varBad) report('ok', 'wxss', `${wxssFiles.length} 个 WXSS 的 CSS 变量引用全部有定义`)

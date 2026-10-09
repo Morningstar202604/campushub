@@ -58,7 +58,7 @@ exports.main = wrap(async (event) => {
           }
         })
       }
-    } catch (e) {}
+    } catch {}
 
     return ok({ liked: true })
   } else {

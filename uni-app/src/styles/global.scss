@@ -8,13 +8,15 @@
    变量定义在 src/styles/tokens.scss。
    ============================================================ */
 
-/* 全局基础重置 */
+/* ===== 全局基础重置 ===== */
 page {
   background-color: var(--bg-page);
   color: var(--text-primary);
   font-family: 'HarmonyOS Sans', 'MiSans', 'PingFang SC', system-ui, sans-serif;
   font-size: 28rpx;
   line-height: 1.65;
+  font-weight: var(--fw-body);
+  -webkit-font-smoothing: antialiased;
 }
 
 view,
@@ -22,13 +24,13 @@ text {
   box-sizing: border-box;
 }
 
-/* 标题字重（替代 700/800 硬编码） */
+/* ===== 标题系统（只有 weight 900 + 400 两档，无中庸字重） ===== */
 .title-900 {
   font-weight: var(--fw-title);
   letter-spacing: -0.5rpx;
 }
 
-/* 数字等宽（价格 / 积分 / 计数 / 时间戳）
+/* ===== 数字等宽（价格 / 积分 / 计数 / 时间戳） =====
    ⚠️ 这里**只**做等宽，不带颜色。
    早期版本顺带写了 color: var(--accent)，导致凡是用了本类的时间戳也一并变荧光色，
    直接破坏「每页只允许一个荧光焦点」的设计铁律。需要荧光数字的少量场景，
@@ -37,12 +39,133 @@ text {
   font-variant-numeric: tabular-nums;
 }
 
-/* 硬投影（贴纸感） */
+/* ===== 硬投影（贴纸感） ===== */
 .sticker {
   box-shadow: 0 4rpx 0 rgba(0, 0, 0, 0.6);
 }
 
-/* 斜切角标签（品牌签名动作） */
+/* ===== 斜切角标签（品牌签名动作） ===== */
 .clip-tag {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx));
+  clip-path: var(--clip-tag);
+}
+.clip-tag-r {
+  clip-path: var(--clip-tag-r);
+}
+
+/* ===== 按压反馈（全站按钮统一 tactile 触感） ===== */
+.press {
+  transition: transform var(--t-fast) var(--ease-out),
+              opacity var(--t-fast) var(--ease-out);
+}
+.press:active {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+.press-shadow:active {
+  box-shadow: 0 2rpx 0 rgba(0, 0, 0, 0.6);
+  transform: translateY(2rpx);
+}
+
+/* ===== 荧光翻转（签到打卡 / 积分兑换成功闪色） ===== */
+@keyframes accent-flash {
+  0% { background-color: var(--accent); }
+  100% { background-color: transparent; }
+}
+.accent-flash {
+  animation: accent-flash 200ms var(--ease-out);
+}
+
+/* ===== 主按钮 ===== */
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg-page);
+  font-weight: var(--fw-title);
+  border-radius: var(--radius-sharp);
+  border: none;
+}
+.btn-primary:active {
+  background: var(--accent-dim);
+  transform: translateY(2rpx);
+}
+
+/* ===== 次按钮 ===== */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  font-weight: var(--fw-body);
+}
+.btn-ghost:active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== 文字海报空态系统 =====
+   每页的空态由此统一渲染，禁止 emoji。
+   结构：.kicker → .empty-kicker → .empty-title → .empty-sub */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5) var(--sp-4);
+  gap: var(--sp-3);
+}
+.empty-shape {
+  width: 64rpx;
+  height: 64rpx;
+  background: var(--accent);
+  opacity: 0.15;
+  clip-path: var(--clip-diamond);
+  transform: rotate(0deg);
+  margin-bottom: var(--sp-2);
+  border-radius: 0;
+}
+.empty-shape--hex {
+  clip-path: var(--clip-hexagon);
+}
+.empty-kicker {
+  font-size: 22rpx;
+  letter-spacing: 6rpx;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  font-weight: var(--fw-title);
+}
+.empty-title {
+  font-size: 32rpx;
+  font-weight: var(--fw-title);
+  letter-spacing: -0.5rpx;
+  text-align: center;
+  line-height: 1.3;
+}
+.empty-sub {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ===== 品牌焦点数字（荧光 + 等宽） ===== */
+.accent-num {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-title);
+}
+
+/* ===== 边框硬边（禁止软投影） ===== */
+.hard-border {
+  border: 2rpx solid var(--border);
+}
+
+/* ===== 价格显示（accent + tabular-nums + ¥小一号） ===== */
+.price {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-title);
+}
+.price .currency {
+  font-size: 0.7em;
+  margin-right: 2rpx;
+  opacity: 0.8;
 }

@@ -45,13 +45,15 @@ export function useAction(opts: UseActionOptions) {
       const res: any = await callFunction('like', { targetId: id, type, action })
       // 后端：like 成功 → { liked: true }；unlike 成功 → { liked: false, removed: n }
       liked.value = action === 'like'
-      likeCount.value += action === 'like' ? 1 : -1
+      const next = likeCount.value + (action === 'like' ? 1 : -1)
+      likeCount.value = Math.max(0, next)
       if (res?.already && action === 'like') {
         // 已点过则计数不动
         likeCount.value = Math.max(0, likeCount.value - 1)
       }
     } catch (e: any) {
-      console.error('[useAction.like]', e?.message || e)
+      uni.showToast({ title: '操作失败，请重试', icon: 'none', duration: 2000 })
+      console.error('[use-action]', e?.message || e)
       // 失败不更新本地态
     } finally {
       loading.value = false
@@ -69,7 +71,8 @@ export function useAction(opts: UseActionOptions) {
       await callFunction('collect', { targetId: id, type, action })
       collected.value = action === 'collect'
     } catch (e: any) {
-      console.error('[useAction.collect]', e?.message || e)
+      uni.showToast({ title: '操作失败，请重试', icon: 'none', duration: 2000 })
+      console.error('[use-action]', e?.message || e)
     } finally {
       loading.value = false
     }
@@ -83,7 +86,8 @@ export function useAction(opts: UseActionOptions) {
       const res: any = await callFunction('resolve', { postId: getId() })
       return Boolean(res?.resolved)
     } catch (e: any) {
-      console.error('[useAction.resolve]', e?.message || e)
+      uni.showToast({ title: '操作失败，请重试', icon: 'none', duration: 2000 })
+      console.error('[use-action]', e?.message || e)
       return false
     } finally {
       loading.value = false

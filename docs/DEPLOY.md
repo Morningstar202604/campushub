@@ -19,7 +19,7 @@ npm test             # 单元 + 契约测试 —— 必须 25/25
 - [ ] `project.config.json` 已填 AppID
 - [ ] `miniprogram/app.js` env 已改为真实环境 ID
 - [ ] 37 个云函数已部署 + 2 个触发器已上传（第四步）
-- [ ] 44 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
+- [ ] 46 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
 - [ ] 真机预览回归通过，重点看 TDesign 组件渲染（第九步）
 - [ ] 主体资质与类目已确认：**UGC 社区类目需个体工商户及以上主体**，个人主体请先读 [`docs/COMPLIANCE.md`](./COMPLIANCE.md)
 - [ ] 成本方案已确认：开发阶段用云开发免费体验版（¥0），上线前评估转个人版（¥19.9/月），详见 [`docs/COST.md`](./COST.md)
@@ -218,7 +218,7 @@ npm install
 ### 6.3 自动创建的内容
 
 `init-db` 会自动：
-- 创建 15 个集合（users, posts, products, comments, likes, collects, guides, guide_categories, categories, reports, feedbacks, follows, checkins, notifications, view_logs）
+- 创建 23 个集合（users, posts, products, comments, likes, collects, guides, guide_categories, categories, reports, feedbacks, follows, checkins, notifications, view_logs, verify_requests, backups, search_queries, admin_logs, announcements, points_orders, idempotency, rate_limits）
 - 导入 6 个指南分类 + 18 个内容分类（分区→吧→板块三级目录）+ 6 篇示例指南
 
 > 种子数据中韩山师范学院相关内容仅为示例，上线后可通过管理后台「分类管理」增删改。
@@ -234,7 +234,7 @@ npm install
 
 云开发控制台 → 数据库 → 选择集合 →「索引管理」→「新建索引」
 
-### 7.2 索引清单（共 44 个）
+### 7.2 索引清单（共 46 个）
 
 > 完整定义见 `cloudfunctions/common/common-indexes.js` 和 `docs/INDEXES.md`
 
@@ -327,6 +327,12 @@ npm install
 | announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) |
 | points_orders | idx_points_orders_user_created | userId(升), createdAt(降) |
 
+**verify_requests**（1个，管理员审核队列按状态+时间排序）
+
+| 集合 | 索引名称 | 字段（方向） |
+|---|---|---|
+| verify_requests | idx_verify_requests_status_created | status(升)，createdAt(降) |
+
 **idempotency / rate_limits / view_logs**（4个，幂等占位 + 统一限频占位 + 浏览日志清理）
 
 | 集合 | 索引名称 | 字段（方向） |
@@ -412,7 +418,7 @@ npm run verify
 
 ### 10.1 上传代码
 
-微信开发者工具 → 上传 → 填写版本号（当前为 `0.8.1`）和备注 → 上传
+微信开发者工具 → 上传 → 填写版本号（当前为 `0.9.2`）和备注 → 上传
 
 ### 10.2 提交审核
 
@@ -454,7 +460,7 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 
 ```
 CampusHub/
-├── miniprogram/           # 小程序前端（23 个页面，TDesign 组件库）
+├── uni-app/               # 前端（uni-app Vue 3 三端：微信小程序 / H5 / 安卓 APK，20 个页面）
 │   └── miniprogram_npm/   # npm 构建产物（已入库，标准结构，勿手动改动）
 ├── cloudfunctions/        # 云函数（37 个）
 │   └── common/            # 共享内核层（单一事实来源）

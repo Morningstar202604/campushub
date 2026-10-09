@@ -10,8 +10,8 @@
       <view
         v-for="t in TYPES"
         :key="t.value"
-        class="fb-type"
-        :class="{ 'fb-type-on': form.type === t.value }"
+      class="fb-type"
+      :class="{ 'fb-type-on': form.type === t.value, 'press': true }"
         @click="form.type = t.value"
       >
         <text class="fb-type-label">{{ t.label }}</text>
@@ -41,7 +41,7 @@
 
     <!-- 提交 -->
     <button
-      class="fb-submit"
+      class="fb-submit press"
       :class="{ 'fb-submit-off': !canSubmit }"
       :disabled="!canSubmit"
       @click="submit"

@@ -8,24 +8,26 @@
     <!-- 失败 / 查无此人 -->
     <view v-else-if="!profile" class="state-block">
       <text class="state-text state-err">{{ loadError || '用户不存在' }}</text>
-      <view v-if="queryUserId" class="state-retry" @click="reload">重试</view>
+      <view v-if="queryUserId" class="state-retry press" @click="reload">重试</view>
     </view>
 
     <template v-else>
       <!-- 头像 + 昵称 -->
       <view class="profile-head sticker">
         <image v-if="profile.avatar" class="avatar" :src="profile.avatar" mode="aspectFill" />
-        <view v-else class="avatar avatar--ph"></view>
+        <view v-else class="avatar avatar--ph">
+          <text class="avatar--ph-text">{{ (profile.nickname || '?').slice(0, 1) }}</text>
+        </view>
         <view class="head-body">
           <view class="head-top">
-            <text class="nickname">{{ profile.nickname }}</text>
+            <text class="nickname title-900">{{ profile.nickname }}</text>
             <!-- isSelf 后端不返回，由前端用当前登录用户 _id 与 profile._id 比对得出 -->
-            <view v-if="profile.isSelf" class="head-btn clip-tag" @click="editProfile">
+            <view v-if="profile.isSelf" class="head-btn clip-tag press" @click="editProfile">
               <text>编辑资料</text>
             </view>
             <view
               v-else
-              class="head-btn clip-tag"
+              class="head-btn clip-tag press"
               :class="{ following: profile.isFollowing, busy: followLoading }"
               @click="onFollow"
             >
@@ -50,14 +52,15 @@
 
       <!-- 最近帖子（后端 posts 是精简 field：无 content） -->
       <view class="section">
-        <text class="section-title">最近内容</text>
+        <text class="section-title title-900">最近内容</text>
         <view
           v-for="p in profile.posts"
           :key="p._id"
-          class="mini-card sticker"
+          class="mini-card sticker press"
           @click="openPost(p)"
         >
           <image v-if="thumbs[p._id]" class="mini-thumb" :src="thumbs[p._id]" mode="aspectFill" />
+          <view v-else class="mini-thumb mini-thumb--ph"></view>
           <view class="mini-body">
             <text class="mini-title">{{ p.title || '（无标题）' }}</text>
             <view class="mini-meta">
@@ -68,10 +71,13 @@
             </view>
           </view>
         </view>
-        <view v-if="!profile.posts.length" class="empty-mini">
-          <text>还没有内容</text>
+        <view v-if="!profile.posts.length" class="empty-state">
+          <view class="empty-shape"></view>
+          <text class="empty-kicker">Activity</text>
+          <text class="empty-title">还是一片空白</text>
+          <text class="empty-sub">还没有发布过内容</text>
         </view>
-        <view v-if="hasMore" class="load-more" @click="loadMore">
+        <view v-if="hasMore" class="load-more press" @click="loadMore">
           <text>{{ loadingMore ? '加载中…' : '加载更多' }}</text>
         </view>
       </view>
@@ -276,16 +282,20 @@ onLoad((q) => {
 }
 .avatar {
   width: 120rpx; height: 120rpx; border-radius: var(--radius-sharp); flex-shrink: 0;
-  &--ph { background: var(--bg-elevated); }
+  &--ph {
+    background: var(--accent-dim); clip-path: var(--clip-diamond); opacity: 0.3;
+    display: flex; align-items: center; justify-content: center;
+  }
+  &--ph-text { font-size: 40rpx; font-weight: var(--fw-title); color: var(--text-primary); }
 }
 .head-body { flex: 1; min-width: 0; }
 .head-top { display: flex; align-items: center; gap: 16rpx; }
-.nickname { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
+.nickname { font-size: 32rpx; color: var(--text-primary); }
 .head-btn {
   padding: 6rpx 20rpx; font-size: 22rpx; font-weight: var(--fw-title);
   color: var(--accent); background: var(--bg-elevated);
   margin-left: auto;
-  &.following { color: var(--text-tertiary); }
+  &.following { color: var(--text-tertiary); background: var(--bg-card); border-width: 3rpx; }
   &.busy { opacity: 0.6; }
 }
 .bio { display: block; font-size: 24rpx; color: var(--text-secondary); margin-top: 12rpx; }
@@ -302,13 +312,21 @@ onLoad((q) => {
 .stat-label { font-size: 22rpx; color: var(--text-tertiary); }
 
 .section { margin-top: 8rpx; }
-.section-title { display: block; font-size: 30rpx; font-weight: var(--fw-title); color: var(--text-primary); margin: 20rpx 0; }
+.section-title { display: block; font-size: 30rpx; color: var(--text-primary); margin: 20rpx 0; }
 .mini-card {
   display: flex; align-items: center; gap: 16rpx;
   padding: 20rpx; margin-bottom: 16rpx;
   background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
 }
-.mini-thumb { width: 96rpx; height: 96rpx; flex-shrink: 0; border-radius: var(--radius-sharp); background: var(--bg-elevated); }
+.mini-thumb {
+  width: 96rpx; height: 96rpx; flex-shrink: 0; border-radius: var(--radius-sharp); background: var(--bg-elevated);
+  &--ph {
+    background: var(--bg-elevated);
+    border: 2rpx solid var(--border);
+    clip-path: var(--clip-diamond);
+    opacity: 0.5;
+  }
+}
 .mini-body { flex: 1; min-width: 0; }
 .mini-title {
   display: block; font-size: 26rpx; color: var(--text-primary);
@@ -319,7 +337,6 @@ onLoad((q) => {
 .mini-resolved { font-size: 20rpx; color: var(--secondary); }
 .mini-stat { font-size: 20rpx; color: var(--text-tertiary); }
 .mini-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
-.empty-mini { padding: 40rpx; text-align: center; color: var(--text-tertiary); font-size: 24rpx; }
 .load-more {
   margin-top: 8rpx; padding: 20rpx; text-align: center; font-size: 24rpx;
   color: var(--text-secondary); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);

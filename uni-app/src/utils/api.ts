@@ -22,6 +22,9 @@ type Platform = 'miniprogram' | 'app' | 'h5'
 /** REST 单次请求超时（毫秒）。云函数冷启动偶发较慢，给足 15s，避免无限挂起。 */
 const REST_TIMEOUT_MS = 15000
 
+/** 小程序端云函数调用超时（毫秒），与 REST 端对齐。 */
+const WX_CLOUD_TIMEOUT_MS = 15000
+
 function getPlatform(): Platform {
   // #ifdef MP
   return 'miniprogram'
@@ -56,9 +59,29 @@ export class CloudFunctionError extends Error {
   }
 }
 
+/**
+ * 将 Promise 包装为带超时的竞争 Promise。
+ * 超时后主动 reject，避免 wx.cloud.callFunction 无超时机制导致永久挂起。
+ */
+function raceWithTimeout<T>(promise: Promise<T>, ms = 15000, label = ''): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new CloudFunctionError(`${label} 请求超时`, 'TIMEOUT')), ms)
+    promise.then(v => { clearTimeout(t); resolve(v) }, e => { clearTimeout(t); reject(e) })
+  })
+}
+
+/**
+ * 错误信息脱敏：前端 Toast 展示时，若包含实现细节片段则替换为通用文案。
+ * CloudFunctionError 本身保持原样（由后端负责友好 message），仅用于用户可见的提示。
+ */
+export function sanitizeForUser(raw: string): string {
+  if (/cloud function|errCode|errno|internal server/i.test(raw)) return '网络异常，请稍候重试'
+  return raw
+}
+
 /** 小程序端：wx.cloud.callFunction（已鉴权） */
 function callViaWxCloud(name: string, data: Record<string, any>): Promise<any> {
-  return new Promise((resolve, reject) => {
+  const corePromise = new Promise((resolve, reject) => {
     // @ts-ignore  wx 在小程序端由运行时注入
     wx.cloud.callFunction({
       name,
@@ -76,10 +99,18 @@ function callViaWxCloud(name: string, data: Record<string, any>): Promise<any> {
       },
       fail: (err: any) => {
         console.error(`[云函数:${name}] 调用失败`, err)
-        reject(new CloudFunctionError(name, err.errMsg || '网络异常', 'NETWORK'))
+        // 网络错误友好提示：区分超时与一般网络失败
+        const errMsg: string = (err?.errMsg || '').toLowerCase()
+        if (/timeout|time\s*out/i.test(errMsg)) {
+          reject(new CloudFunctionError('请求超时，请检查网络', 'TIMEOUT'))
+        } else {
+          reject(new CloudFunctionError('网络连接失败，请稍候重试', 'NETWORK_ERROR'))
+        }
       }
     })
   })
+  // 包装超时控制，与 REST 端对齐
+  return raceWithTimeout(corePromise, WX_CLOUD_TIMEOUT_MS, `[云函数:${name}]`)
 }
 
 /**
@@ -129,11 +160,12 @@ async function callViaRest(name: string, data: Record<string, any>): Promise<any
   }
 
   const text = await resp.text()
-  let parsed: any
+  // JSON.parse 失败时 parsed 设为 null，避免后续当作对象使用
+  let parsed: any = null
   try {
-    parsed = text ? JSON.parse(text) : null
+    parsed = JSON.parse(text)
   } catch {
-    parsed = text
+    /* parsed 保持 null */
   }
 
   // 成功：{ result, requestId, timestamp }，result 即云函数 exports.main 返回值
@@ -160,6 +192,8 @@ export function callFunction<T = any>(
   name: string,
   data: Record<string, any> = {}
 ): Promise<T> {
+  // fnName 注入防护：防止非法函数名导致 REST URL 注入或后端异常
+  if (!/^[a-zA-Z0-9_-]{1,40}$/.test(name)) throw new Error('Invalid function name')
   const platform = getPlatform()
   if (platform === 'miniprogram') {
     return callViaWxCloud(name, data) as Promise<T>
@@ -285,6 +319,8 @@ export async function fileIDToTempUrl(fileID: string): Promise<string> {
  * 本地图片路径 → 上传到 CloudBase 存储 → 返回 fileID（cloud:// 开头）
  *  - 小程序端：wx.cloud.uploadFile（上传前本地压缩，控制流量与存储成本）
  *  - H5/App 端：@cloudbase/js-sdk 的 app.uploadFile（v2 web API；blob: 地址需先取回为 File）
+ *
+ * 上传前校验：文件大小不超过 10MB，仅允许 JPG/PNG/WEBP/GIF 格式。
  */
 export async function uploadImage(localPath: string, cloudDir = 'campushub'): Promise<string> {
   if (!localPath) throw new Error('缺少图片路径')
@@ -292,26 +328,60 @@ export async function uploadImage(localPath: string, cloudDir = 'campushub'): Pr
 
   // #ifdef MP
   return new Promise((resolve, reject) => {
-    const upload = (path: string) =>
+    // 上传前校验：检查文件大小与扩展名
+    const fileInfo: any = {}
+    // 小程序端通过 getFileInfo 获取文件大小（try/catch 兜底，兼容不支持的环境）
+    try {
       // @ts-ignore
-      wx.cloud.uploadFile({
-        cloudPath: fileName,
-        filePath: path,
-        success: (r: any) => resolve(r.fileID),
-        fail: (e: any) => reject(new Error(e.errMsg || '图片上传失败'))
-      })
-    // 先本地压缩，失败则直接传原图
-    // @ts-ignore
-    if (typeof wx.compressImage === 'function') {
+      if (typeof wx.getFileInfo === 'function') {
+        // @ts-ignore
+        wx.getFileInfo({
+          filePath: localPath,
+          success: (info: any) => {
+            fileInfo.size = info.size
+            validateAndUpload()
+          },
+          fail: () => validateAndUpload()
+        })
+      } else {
+        validateAndUpload()
+      }
+    } catch {
+      validateAndUpload()
+    }
+
+    function validateAndUpload() {
+      // 大小校验（仅当能获取到 size 时执行）
+      if (fileInfo.size && fileInfo.size > 10 * 1024 * 1024) {
+        reject(new Error('图片不能超过 10MB'))
+        return
+      }
+      // 扩展名校验
+      if (!/\.(jpe?g|png|webp|gif)$/i.test(localPath || '')) {
+        reject(new Error('仅支持 JPG/PNG/WEBP/GIF 图片'))
+        return
+      }
+      const upload = (path: string) =>
+        // @ts-ignore
+        wx.cloud.uploadFile({
+          cloudPath: fileName,
+          filePath: path,
+          success: (r: any) => resolve(r.fileID),
+          fail: (e: any) => reject(new Error(e.errMsg || '图片上传失败'))
+        })
+      // 先本地压缩，失败则直接传原图
       // @ts-ignore
-      wx.compressImage({
-        src: localPath,
-        quality: 60,
-        success: (c: any) => upload(c.tempFilePath),
-        fail: () => upload(localPath)
-      })
-    } else {
-      upload(localPath)
+      if (typeof wx.compressImage === 'function') {
+        // @ts-ignore
+        wx.compressImage({
+          src: localPath,
+          quality: 60,
+          success: (c: any) => upload(c.tempFilePath),
+          fail: () => upload(localPath)
+        })
+      } else {
+        upload(localPath)
+      }
     }
   })
   // #endif
@@ -327,6 +397,13 @@ export async function uploadImage(localPath: string, cloudDir = 'campushub'): Pr
             type: blob.type || 'image/jpeg'
           })
         : blob
+    // 上传前校验：文件大小与扩展名
+    if ((file as File).size && (file as File).size > 10 * 1024 * 1024) {
+      throw new Error('图片不能超过 10MB')
+    }
+    if (!/\.(jpe?g|png|webp|gif)$/i.test((file as File).name || '')) {
+      throw new Error('仅支持 JPG/PNG/WEBP/GIF 图片')
+    }
     // v2 web SDK：app.uploadFile（官方形态）。以返回的 fileID 为准，勿手工拼接 cloud:// 地址
     const upRes: any = await cb.uploadFile({ cloudPath: fileName, filePath: file })
     if (!upRes?.fileID) throw new Error('上传完成但未返回 fileID')

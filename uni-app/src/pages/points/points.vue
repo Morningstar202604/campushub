@@ -1,23 +1,21 @@
 <template>
   <view class="pt-page">
     <view class="pt-head">
-      <text class="pt-kicker">POINTS SHOP</text>
+      <text class="empty-kicker">POINTS SHOP</text>
       <text class="pt-sub">签到攒积分 · 兑换权益</text>
     </view>
 
     <!-- 余额卡 -->
     <view class="pt-balance">
       <view class="pt-balance-label">当前积分</view>
-      <view class="pt-balance-num">{{ creditScore }}</view>
+      <view class="pt-balance-num accent-num">{{ creditScore }}</view>
       <view v-if="renameTokens" class="pt-balance-sub">持有改名卡 × {{ renameTokens }}</view>
     </view>
 
     <!-- 道具列表 -->
     <view class="pt-list">
-      <view v-for="p in products" :key="p.id" class="pt-item">
-        <view class="pt-item-icon">
-          <text>◆</text>
-        </view>
+      <view v-for="p in products" :key="p.id" class="pt-item sticker">
+        <view class="pt-item-icon"></view>
         <view class="pt-item-body">
           <view class="pt-item-name">{{ p.name }}</view>
           <view class="pt-item-desc">{{ p.desc }}</view>
@@ -28,7 +26,7 @@
             <text class="pt-item-price-unit"> 分</text>
           </view>
           <button
-            class="pt-item-btn"
+            class="pt-item-btn press hard-border"
             :class="{ 'pt-item-btn-off': creditScore < p.price }"
             :disabled="creditScore < p.price || redeeming"
             @click="redeem(p)"
@@ -38,15 +36,18 @@
         </view>
       </view>
 
-      <view v-if="!products.length && !loading" class="pt-empty">
-        <text class="pt-empty-text">暂无可兑换道具</text>
+      <view v-if="!products.length && !loading" class="empty-state">
+        <view class="empty-shape"></view>
+        <text class="empty-kicker">POINTS SHOP</text>
+        <text class="empty-title">暂无可兑换道具</text>
+        <text class="empty-sub">签到攒积分，兑换权益</text>
       </view>
     </view>
 
     <!-- 签到提示 -->
     <view class="pt-tip">
       <text class="pt-tip-text">积分不足？</text>
-      <text class="pt-tip-link" @click="gotoCheckin">去签到 →</text>
+      <text class="pt-tip-link press" @click="gotoCheckin">去签到 →</text>
     </view>
   </view>
 </template>
@@ -144,12 +145,6 @@ onMounted(load)
   flex-direction: column;
   gap: 8rpx;
 }
-.pt-kicker {
-  font-size: 22rpx;
-  letter-spacing: 4rpx;
-  color: var(--text-secondary);
-  font-weight: var(--fw-title);
-}
 .pt-sub {
   font-size: 24rpx;
   color: var(--text-tertiary);
@@ -172,10 +167,7 @@ onMounted(load)
 }
 .pt-balance-num {
   font-size: 72rpx;
-  color: var(--accent);
-  font-weight: var(--fw-title);
   line-height: 1;
-  font-variant-numeric: tabular-nums;
 }
 .pt-balance-sub {
   font-size: 22rpx;
@@ -188,21 +180,16 @@ onMounted(load)
 .pt-item {
   display: flex;
   align-items: center;
-  border: 3rpx solid var(--border);
   background: var(--bg-deep);
   padding: 28rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 0 rgba(0, 0, 0, 0.6);
 }
 .pt-item-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border: 3rpx solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
-  color: var(--text-secondary);
+  width: 56rpx;
+  height: 56rpx;
+  clip-path: var(--clip-diamond);
+  background: var(--bg-elevated);
+  border: 2rpx solid var(--border);
   flex-shrink: 0;
 }
 .pt-item-body {
@@ -244,26 +231,15 @@ onMounted(load)
   color: var(--text-body);
   font-size: 24rpx;
   font-weight: var(--fw-title);
-  border: 3rpx solid var(--border);
   padding: 0 28rpx;
   height: 56rpx;
   line-height: 56rpx;
 }
 .pt-item-btn-off {
-  background: var(--bg-elevated);
   color: var(--text-tertiary);
 }
 .pt-item-btn[disabled] {
   opacity: 0.6;
-}
-
-.pt-empty {
-  padding: 80rpx 32rpx;
-  text-align: center;
-}
-.pt-empty-text {
-  font-size: 26rpx;
-  color: var(--text-tertiary);
 }
 
 .pt-tip {

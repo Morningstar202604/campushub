@@ -1,4 +1,7 @@
 <template>
+  <view v-if="initializing" class="init-mask">
+    <text>加载中…</text>
+  </view>
   <view class="create-root">
     <!-- 帖子类型（编辑模式下 kind 不可修改，仅展示） -->
     <view class="form-block sticker">
@@ -98,8 +101,11 @@
           <image class="img-thumb" :src="imagePreviews[i] || img" mode="aspectFill" />
           <view class="img-del" @click="removeImage(i)"><text>×</text></view>
         </view>
-        <view v-if="form.images.length < 9" class="img-add" @click="chooseImage">
-          <text class="img-plus">+</text>
+        <view v-if="form.images.length < 9" class="img-add press" @click="chooseImage">
+          <view class="img-add-icon">
+            <text class="img-add-h"></text>
+            <text class="img-add-v"></text>
+          </view>
         </view>
       </view>
       <text v-if="uploading" class="hint">正在上传图片…</text>
@@ -114,7 +120,7 @@
     <!-- 提交 -->
     <view class="submit-wrap">
       <button
-        class="submit-btn sticker"
+        class="submit-btn sticker press"
         :disabled="submitting || uploading"
         @click="submit"
       >
@@ -217,7 +223,42 @@ onLoad((q: any) => {
   }
 })
 
+// ---- 初始化 loading 遮罩 ----
+const initializing = ref(true)
+
+// ---- 脏数据检测 ----
+function isDirty(): boolean {
+  return !!(form.title || form.content || form.images.length || form.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean).length)
+}
+
 onMounted(async () => {
+  initializing.value = true
+  try {
+    await Promise.all([loadCategories(), isEdit.value ? loadPostForEdit() : Promise.resolve()])
+  } finally {
+    initializing.value = false
+  }
+
+  // 脏数据确认返回拦截（仅微信小程序和 H5 某些场景生效，不生效的平台自动跳过）
+  // @ts-ignore
+  uni.onBeforeBackPress?.(() => {
+    if (isDirty()) {
+      // @ts-ignore
+      uni.showModal({
+        title: '放弃编辑？',
+        content: '已填写的内容将不会被保存',
+        confirmText: '放弃',
+        cancelText: '继续编辑',
+        success: (r: any) => { if (r.confirm) (uni as any).navigateBack() }
+      })
+      return true // 阻止默认返回
+    }
+    return false
+  })
+})
+
+// 加载分类（拆出独立函数供 Promise.all 调用）
+async function loadCategories() {
   try {
     const res: any = await callFunction('category-list', {})
     allCategories.value = res?.list ?? []
@@ -226,9 +267,7 @@ onMounted(async () => {
     console.error('[post-create] category-list 拉取失败', e?.message || e)
     uni.showToast({ title: e?.message || '分类加载失败', icon: 'none' })
   }
-  // 分类就绪后再回填（回填需要用分类树还原面包屑下钻链）
-  if (isEdit.value) await loadPostForEdit()
-})
+}
 
 // 拉取帖子详情并预填表单（编辑模式）
 async function loadPostForEdit() {
@@ -418,6 +457,13 @@ async function submit() {
 <style lang="scss" scoped>
 .create-root { padding: 24rpx 32rpx 80rpx; }
 
+.init-mask {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-page);
+  font-size: 24rpx; color: var(--text-secondary);
+}
+
 .form-block {
   padding: 24rpx; margin-bottom: 20rpx;
   background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
@@ -464,9 +510,32 @@ async function submit() {
   display: flex; align-items: center; justify-content: center; font-size: 24rpx; font-weight: var(--fw-title);
 }
 .img-add {
-  width: 160rpx; height: 160rpx; border: 2rpx dashed var(--border); border-radius: var(--radius-sharp);
+  width: 160rpx; height: 160rpx;
+  border: 2rpx solid var(--border);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sharp);
   display: flex; align-items: center; justify-content: center;
-  .img-plus { font-size: 48rpx; color: var(--text-tertiary); }
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 12rpx 100%, 0 calc(100% - 12rpx));
+  position: relative;
+}
+.img-add-icon {
+  position: relative;
+  width: 48rpx;
+  height: 48rpx;
+}
+.img-add-h {
+  position: absolute;
+  top: 50%; left: 0;
+  width: 100%; height: 4rpx;
+  background: var(--accent);
+  transform: translateY(-50%);
+}
+.img-add-v {
+  position: absolute;
+  left: 50%; top: 0;
+  height: 100%; width: 4rpx;
+  background: var(--accent);
+  transform: translateX(-50%);
 }
 
 .submit-wrap { margin-top: 40rpx; }

@@ -26,7 +26,7 @@
         <view
           v-for="t in tabs"
           :key="t.value"
-          class="feed-tab clip-tag"
+          class="feed-tab clip-tag press"
           :class="{ active: t.value === activeTab }"
           @click="onTab(t.value)"
         >
@@ -37,10 +37,10 @@
 
     <view v-if="error" class="error-banner sticker">
       <text class="error-text">{{ error }}</text>
-      <text class="error-retry" @click="reload">重试</text>
+      <text class="error-retry press" @click="reload">重试</text>
     </view>
 
-    <view v-for="item in list" :key="item.id" class="feed-card sticker" @click="openDetail(item)">
+    <view v-for="item in list" :key="item.id" class="feed-card sticker press" @click="openDetail(item)">
       <view class="feed-kind clip-tag"><text>{{ kindLabel(item.kind) }}</text></view>
       <text class="feed-content">{{ item.content }}</text>
       <view class="feed-foot">
@@ -51,6 +51,7 @@
 
     <template #empty>
       <view class="empty-state">
+        <text class="empty-kicker">CAMPUS</text>
         <view class="empty-shape"></view>
         <text class="empty-title">这里还黑着灯</text>
         <text class="empty-sub">校园内容还没点亮</text>
@@ -60,10 +61,10 @@
 
   <!-- 悬浮发布入口（帖子 + 好物 两个） -->
   <view class="fab-stack">
-    <view class="fab sticker" @click="openCreate('product')">
+    <view class="fab sticker press" @click="openCreate('product')">
       <text class="fab-label">好物</text>
     </view>
-    <view class="fab fab--primary sticker" @click="openCreate('post')">
+    <view class="fab fab--primary sticker press" @click="openCreate('post')">
       <text class="fab-label">发布</text>
     </view>
   </view>
@@ -178,7 +179,7 @@ onMounted(async () => {
   margin: 16rpx 32rpx 0; padding: 16rpx 24rpx;
   background: var(--bg-card); border: 1rpx solid var(--danger); border-radius: var(--radius-sharp);
   .error-text { font-size: 24rpx; color: var(--danger); }
-  .error-retry { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); }
+  .error-retry { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); display: inline-block; padding: 4rpx 12rpx; }
 }
 
 /* 悬浮发布入口（右下角，两枚硬投影方块，非圆球——反 AI 味） */

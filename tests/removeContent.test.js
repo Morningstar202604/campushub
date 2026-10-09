@@ -21,7 +21,8 @@ function makeTargetPost(overrides = {}) {
 }
 
 // 构造一个 mock 云环境 + mock db，真实加载 common-content.js
-function loadRemoveContent({ targetPost, adminOpenidsEnv = '' }) {
+// claimUpdate: posts.where().update 返回的 updated 行数（模拟原子占位结果）
+function loadRemoveContent({ targetPost, adminOpenidsEnv: _adminOpenidsEnv = '', claimUpdate = 1 }) {
   const db = {
     command: {
       neq: (v) => ({ $neq: v }),
@@ -37,12 +38,12 @@ function loadRemoveContent({ targetPost, adminOpenidsEnv = '' }) {
     collection(name) {
       if (name === 'posts') {
         return {
-          doc: (id) => ({
+          doc: (_id) => ({
             get: async () => ({ data: targetPost }),
             update: async () => ({ stats: { updated: 1 } })
           }),
           where: () => ({
-            update: async () => ({ stats: { updated: 1 } }),
+            update: async () => ({ stats: { updated: claimUpdate } }),
             get: async () => ({ data: [targetPost] })
           })
         }
@@ -71,7 +72,7 @@ function loadRemoveContent({ targetPost, adminOpenidsEnv = '' }) {
     deleteFile: async () => ({ fileList: [] })
   }
   // 拦截 wx-server-sdk 的解析
-  Module._load = function (request, parent, isMain) {
+  Module._load = function (request, _parent, _isMain) {
     if (request === 'wx-server-sdk') return fakeSdk
     return originalLoad.apply(this, arguments)
   }
@@ -139,19 +140,18 @@ test('管理员 actor 缺少 openid 时仍应拒绝（防止旧式 { _id, role }
   )
 })
 
-test('重复删除（status 已为 deleted）按已删除幂等返回', async () => {
+test('重复删除（原子占位已被占）按已删除幂等返回 alreadyDeleted:true', async () => {
+  // claimUpdate: 0 模拟 where({ status: neq('deleted') }).update 匹配行数为 0（已被先占位）
   const removeContent = loadRemoveContent({
     targetPost: makeTargetPost({ status: 'deleted' }),
-    // 让 where 更新返回 0，模拟原子占位已被占
+    claimUpdate: 0
   })
-  // 直接替换 mock：让 where().update 返回 updated:0
   const r = await removeContent({
     collection: 'posts',
     docId: 'post_1',
     actor: { _id: 'user_author', openid: 'openid_author' },
     opts: { userCountField: 'postCount' }
   })
-  // 注：此用例默认 mock 的 where().update 恒返回 updated:1，因此这里仅验证主流程不抛错；
-  // 已删除幂等分支由 common-content 的 claim 判断覆盖，见第 3 个用例的权限校验。
-  assert.ok(r && typeof r === 'object')
+  // 已删除/已被占位的内容再次删除应幂等返回 alreadyDeleted:true
+  assert.equal(r.alreadyDeleted, true)
 })

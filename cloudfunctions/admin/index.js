@@ -264,7 +264,7 @@ async function logAdmin(db, operatorOpenid, action, detail) {
     await db.collection('admin_logs').add({
       data: { action, operator: operatorOpenid, detail: detail || {}, createdAt: new Date() }
     })
-  } catch (e) { /* 静默 */ }
+  } catch { /* 静默 */ }
 }
 
 // 取被举报内容摘要（用于审核台展示）

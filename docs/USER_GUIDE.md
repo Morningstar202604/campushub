@@ -59,7 +59,7 @@ CampusHub 是一个基于 **微信小程序 + 微信云开发** 的全国性校�
 | 全站搜索 | 帖子 / 商品 / 指南三合一，关键词高亮、历史记录、热门搜索 |
 | 体验增强 | 全站内容页可转发分享（自定义标题 / 封面）；列表页加载失败可点击重试、长列表一键回到顶部；发布成功自动跳详情页 |
 
-**技术栈**：原生微信小程序 + TDesign 组件库 + 微信云开发（37 个云函数 + 21 个数据集合 + 云存储）。
+**技术栈**：原生微信小程序 + TDesign 组件库 + 微信云开发（37 个云函数 + 23 个数据集合 + 云存储）。
 
 ---
 
@@ -646,11 +646,11 @@ CampusHub 是一个基于 **微信小程序 + 微信云开发** 的全国性校�
 | 运维 | `task-expire` | 定时归档过期任务（每 6 小时） |
 | 运维 | `backup-db` | 自动备份（每日 03:00 定时，写入 backups 集合） |
 
-### 7.2 数据集合（21 个）
+### 7.2 数据集合（23 个）
 
-`users`、`posts`、`products`、`comments`、`likes`、`collects`、`follows`、`checkins`、`notifications`、`reports`、`feedbacks`、`categories`、`guide_categories`、`guides`、`view_logs`、`verify_requests`、`backups`（自动备份）、`search_queries`（搜索热词/限频）、`admin_logs`（管理审计日志）、`announcements`（公告）、`points_orders`（积分订单）。
+`users`、`posts`、`products`、`comments`、`likes`、`collects`、`follows`、`checkins`、`notifications`、`reports`、`feedbacks`、`categories`、`guide_categories`、`guides`、`view_logs`、`verify_requests`、`backups`（自动备份）、`search_queries`（搜索热词/限频）、`admin_logs`（管理审计日志）、`announcements`（公告）、`points_orders`（积分订单）、`idempotency`（幂等占位）、`rate_limits`（限频占位）。
 
-> 索引：共 **41 个**（`cloudfunctions/common/common-indexes.js` 为单一事实来源，`docs/INDEXES.md` 为部署清单），含多个唯一索引（likes / collects / checkins / follows）保证幂等。
+> 索引：共 **46 个**（`cloudfunctions/common/common-indexes.js` 为单一事实来源，`docs/INDEXES.md` 为部署清单），含多个唯一索引（likes / collects / checkins / follows）保证幂等。
 
 ---
 

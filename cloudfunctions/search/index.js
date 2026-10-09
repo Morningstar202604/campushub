@@ -9,7 +9,7 @@
 //  - 搜索日志写入 search_queries：提供 action=hot 聚合近 7 天真实热搜
 //  - 正则全表扫描是平台能力限制（微信云开发无全文索引），数据过万后建议关闭搜索
 //    或接入外部检索，见 docs/OPERATIONS.md「搜索性能」
-const { getDB, getCmd, ok, wrap, getOpenid, rateLimit, AppError, sanitizeQuery } = require('./common-bundle')
+const { getDB, getCmd, ok, wrap, getOpenid, rateLimit, sanitizeQuery } = require('./common-bundle')
 
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -96,7 +96,7 @@ exports.main = wrap(async (event) => {
     await db.collection('search_queries').add({
       data: { userId: openid || 'anon', keyword: kw, createdAt: new Date() }
     })
-  } catch (e) { /* 静默 */ }
+  } catch { /* 静默 */ }
 
   return ok({ posts: postsRes.data, products: productsRes.data, guides: guidesRes.data })
 })

@@ -15,7 +15,6 @@
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const crypto = require('crypto')
 const { execSync } = require('child_process')
 
 // ---------- CLI 解析 ----------
@@ -116,7 +115,7 @@ async function main() {
   let ci
   try {
     ci = require('miniprogram-ci')
-  } catch (e) {
+  } catch {
     fail('未安装 miniprogram-ci，请先执行：npm install（或 npm i -D miniprogram-ci）')
   }
 
@@ -185,7 +184,7 @@ async function main() {
   await Promise.all(Array.from({ length: Math.min(concurrency, functions.length) }, worker))
 
   if (tmpKeyFile) {
-    try { fs.unlinkSync(tmpKeyFile) } catch (e) { /* ignore */ }
+    try { fs.unlinkSync(tmpKeyFile) } catch { /* ignore */ }
   }
 
   const failed = results.filter(r => !r.ok)

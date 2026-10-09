@@ -100,7 +100,7 @@ exports.main = async () => {
       await backupCol.doc(doc._id).remove()
       removed++
     }
-  } catch (e) {
+  } catch {
     // 清理失败不阻断备份本身
   }
 

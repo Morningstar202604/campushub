@@ -25,7 +25,7 @@ function loadCommonDb({ addImpl } = {}) {
     database() { return db },
     getWXContext() { return { OPENID: 'test' } }
   }
-  Module._load = function (request, parent, isMain) {
+  Module._load = function (request, _parent, _isMain) {
     if (request === 'wx-server-sdk') return fakeSdk
     return originalLoad.apply(this, arguments)
   }

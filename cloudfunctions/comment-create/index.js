@@ -77,7 +77,7 @@ exports.main = wrap(async (event) => {
         data: { userId: targetRes.data.userId, type: 'comment', targetType, content: `${user.nickname} 评论了你的内容`, targetId, isRead: false, createdAt: new Date() }
       })
     }
-  } catch (e) {}
+  } catch {}
 
   // 订阅消息推送（best-effort：未配置模板/用户未订阅均静默）
   try {
@@ -86,7 +86,7 @@ exports.main = wrap(async (event) => {
       thing1: { value: (user.nickname + ' 评论了你的内容').slice(0, 20) },
       time2: { value: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) }
     })
-  } catch (e) {}
+  } catch {}
 
   return ok({ commentId: addRes._id, comment })
 })

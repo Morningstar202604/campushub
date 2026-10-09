@@ -62,7 +62,7 @@ exports.main = wrap(async (event) => {
         likedSet = new Set((likedRes.data || []).map(l => l.targetId))
       }
     }
-  } catch (e) {
+  } catch {
     // 未登录等场景静默降级：全部视为未赞
     likedSet = null
   }

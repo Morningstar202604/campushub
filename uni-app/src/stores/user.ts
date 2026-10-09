@@ -87,6 +87,9 @@ export const useUserStore = defineStore('user', {
   },
   persist: {
     key: 'campushub.user',
+    // 持久化时剔除服务端权威字段：creditScore / role 在 restore() 时经 login 云函数刷新，
+    // 本地仅作乐观缓存（不含这些字段避免离线数据被提取时泄露用户状态）。
+    omit: ['userInfo.creditScore', 'userInfo.role'],
     storage: {
       getItem: (k) => uni.getStorageSync(k) || null,
       setItem: (k, v) => uni.setStorageSync(k, v)

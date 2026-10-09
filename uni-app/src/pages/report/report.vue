@@ -17,7 +17,7 @@
         v-for="r in REASONS"
         :key="r"
         class="rp-reason"
-        :class="{ 'rp-reason-on': form.reason === r }"
+        :class="{ 'rp-reason-on': form.reason === r, 'press': true }"
         @click="form.reason = r"
       >
         <text class="rp-reason-label">{{ r }}</text>
@@ -37,7 +37,7 @@
     </view>
 
     <button
-      class="rp-submit"
+      class="rp-submit press"
       :class="{ 'rp-submit-off': !canSubmit }"
       :disabled="!canSubmit"
       @click="submit"

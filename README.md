@@ -80,7 +80,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 - **前端**：uni-app（Vue 3 + Vite），20 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 37 个云函数复用
 - **API 层**：37 个云函数，按资源（post / product / comment / 社交 / 管理 / 系统任务）分组
 - **共享内核**：`cloudfunctions/common/` 下 9 个模块（context / security / rate / db / content / indexes / error / bundle / subscribe），经 `sync:common` 一行同步到全部 37 个云函数，保证单一数据源、零漂移
-- **后端**：CloudBase 云数据库（23 集合 / 45 索引）、云存储、云调用（内容安全）、定时触发器（03:00 自动备份 · 6h 任务归档 + 日志清理）
+- **后端**：CloudBase 云数据库（23 集合 / 46 索引）、云存储、云调用（内容安全）、定时触发器（03:00 自动备份 · 6h 任务归档 + 日志清理）
 - **v0.9.2 加固**：限频原子化（`rate_limits` 确定性 _id 占位 + 原子自增，杜绝并发绕过）、读侧查询白名单（`sanitizeQuery`）、定时函数管理员守卫（fail-closed）
 
 ---
@@ -133,7 +133,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 列表/组件 | z-paging 2.8.8（分页）· wot-design-uni 1.14.0（组件库） |
 | H5/App 云端接入 | @cloudbase/js-sdk 2.32.0（v2 API：匿名登录 + uploadFile/getTempFileURL）+ REST（restToken） |
 | 后端服务 | 微信云开发 Cloud Functions × 37 |
-| 数据存储 | 微信云数据库（23 集合 / 45 索引）+ 云存储 |
+| 数据存储 | 微信云数据库（23 集合 / 46 索引）+ 云存储 |
 | 开放能力 | 微信登录、内容安全 `msgSecCheck` / `imgSecCheck`、Canvas 海报 |
 | 质量工具链 | vue-tsc 类型检查 · 25 项契约测试 · 4 个可复跑 Python 校验脚本 · GitHub Actions CI |
 | 同步脚本 | `scripts/sync-common.js`（9 个公共模块自动同步到 37 个云函数） |
@@ -147,7 +147,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 云函数 | 37 |
 | 前端页面 | 20（uni-app，三端共用） |
 | 数据集合 | 23 |
-| 已定义索引 | 45（`init-db` 自动比对缺失清单） |
+| 已定义索引 | 46（`init-db` 自动比对缺失清单） |
 | 契约测试 | 25 项（CI 强制） |
 
 ---
@@ -169,7 +169,7 @@ CampusHub/
 │   │   ├── common-rate.js    # 原子限频（rate_limits 窗口占位，v0.9.2）
 │   │   ├── common-db.js      # 数据库单例 + sanitizeQuery
 │   │   ├── common-content.js # 内容删除（软删 + 图片回收 + 计数回滚 + 对账）
-│   │   ├── common-indexes.js # 45 条索引权威定义
+│   │   ├── common-indexes.js # 46 条索引权威定义
 │   │   └── common-error.js   # 统一错误模型
 │   ├── post-create/          # 发帖
 │   ├── product-create/       # 发布商品
@@ -181,7 +181,7 @@ CampusHub/
 │   ├── REVIEW-20260922.md    # ★ 两轮审核全记录（19 + 10 项修复对照）
 │   ├── DEPLOY.md             # ★ 部署指南（10 步）
 │   ├── USER_GUIDE.md         # 使用说明书
-│   ├── INDEXES.md            # 45 条索引检查清单
+│   ├── INDEXES.md            # 46 条索引检查清单
 │   ├── COST.md / COMPLIANCE.md / OPERATIONS.md
 │   ├── screenshots/          # ★ 截图 / 视频 / 展示索引
 │   ├── preview.html          # 可交互 HTML 原型
@@ -210,7 +210,7 @@ CampusHub/
 npm install                # 1. 安装依赖（自动执行 sync:common 同步公共模块）
                            # 2. 微信开发者工具导入本仓库 → 上传部署 cloudfunctions/ 全部函数
                            # 3. 控制台开启「HTTP 访问服务」生成 restToken；「身份验证」开启匿名登录
-                           # 4. 调用一次 init-db（建集合 + 种子数据）；索引按 docs/INDEXES.md（45 条）核对
+                           # 4. 调用一次 init-db（建集合 + 种子数据）；索引按 docs/INDEXES.md（46 条）核对
                            # 5. 配置管理员 OpenID（云函数环境变量 ADMIN_OPENIDS）
 
 # ── 前端（uni-app 三端）──────────────────────────
@@ -239,7 +239,7 @@ npm test                                     # 25 项契约一致性测试
 - **单一删除入口**：`removeContent()` 统一处理软删除 + 云存储图片回收 + 计数回滚 + 管理员覆盖
 - **定时任务守卫**：`backup-db` / `task-expire` fail-closed——定时触发放行，手动调用仅限管理员
 - **分类索引复用**：`categoryPath` 祖先数组让一个索引覆盖任意层级筛选
-- **索引自检**：`init-db` 对比 `common-indexes.js`（45 条）与线上索引，输出 `missingIndexes`
+- **索引自检**：`init-db` 对比 `common-indexes.js`（46 条）与线上索引，输出 `missingIndexes`
 - **软删除优先**：删除只改 `status='deleted'`，保留数据可追踪性
 - **搜索安全**：关键词正则转义 + 20 字符限制，避免 ReDoS / 注入
 - **成本可控**：开发期使用云开发免费环境，生产环境 19.9 元/月起

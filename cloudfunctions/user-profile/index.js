@@ -28,7 +28,7 @@ exports.main = wrap(async (event) => {
     await db.collection('view_logs').add({
       data: { _id: `pl_${me.openid}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, openid: me.openid, scene: 'profile', createdAt: new Date() }
     })
-  } catch (e) { /* 静默 */ }
+  } catch { /* 静默 */ }
 
   const pSize = Math.min(50, Math.max(1, Number(pageSize)))
   const skip = Math.max(0, (Number(page) - 1) * pSize)

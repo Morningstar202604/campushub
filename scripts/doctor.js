@@ -127,7 +127,7 @@ function checkFunctions() {
   let usedManifest = false
   if (fs.existsSync(MANIFEST)) {
     let manifest = null
-    try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) } catch (e) { /* fallback */ }
+    try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) } catch { /* fallback */ }
     if (manifest && Array.isArray(manifest.files)) {
       usedManifest = true
       const shaMap = new Map(manifest.files.map(f => [f.name, f.sha1]))
@@ -281,7 +281,7 @@ function checkWxSdkBaseline() {
     const pkgPath = path.join(cfDir, name, 'package.json')
     if (!fs.existsSync(pkgPath)) continue
     let pkg = null
-    try { pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) } catch (e) { continue }
+    try { pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) } catch { continue }
     const raw = pkg.dependencies && pkg.dependencies['wx-server-sdk']
     if (!raw) continue // 不依赖 wx-server-sdk 的函数不在此列
     checked++

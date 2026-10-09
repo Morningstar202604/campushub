@@ -3,22 +3,22 @@
     <!-- 顶部统计 -->
     <view class="stat-row sticker">
       <view class="stat-item">
-        <text class="stat-num tabular-nums">{{ stats.posts }}</text>
+        <text class="stat-num accent-num">{{ stats.posts }}</text>
         <text class="stat-label">帖子</text>
       </view>
       <view class="stat-item">
-        <text class="stat-num tabular-nums">{{ stats.products }}</text>
+        <text class="stat-num accent-num">{{ stats.products }}</text>
         <text class="stat-label">好物</text>
       </view>
       <view class="stat-item">
-        <text class="stat-num tabular-nums">{{ stats.collects }}</text>
+        <text class="stat-num accent-num">{{ stats.collects }}</text>
         <text class="stat-label">收藏</text>
       </view>
     </view>
 
     <!-- Tab：帖子 / 好物 / 收藏 -->
     <view class="tab-row">
-      <view v-for="t in tabs" :key="t.value" class="tab" :class="{ active: t.value === tab }" @click="onTab(t.value)">
+      <view v-for="t in tabs" :key="t.value" class="my-tab clip-tag press" :class="{ active: t.value === tab }" @click="onTab(t.value)">
         <text>{{ t.label }}</text>
       </view>
     </view>
@@ -27,7 +27,7 @@
       <view
         v-for="item in list"
         :key="item.id"
-        class="my-card sticker"
+        class="my-card sticker press"
         :class="{ collect: tab === 'collects' }"
         @click="openDetail(item)"
       >
@@ -41,23 +41,29 @@
             </view>
             <text class="my-time tabular-nums">{{ item.time }}</text>
             <!-- 编辑：仅自己的帖子/商品（收藏 tab 是他人内容，不显示） -->
-            <text
+            <view
               v-if="tab !== 'collects'"
-              class="my-edit"
+              class="my-edit btn-ghost press"
               @click.stop="onEdit(item)"
-            >编辑</text>
+            >
+              <text>编辑</text>
+            </view>
             <!-- 标记已售 / 重新上架：仅自己的商品，按状态二态切换 -->
-            <text
+            <view
               v-if="tab === 'products' && item.type === 'product'"
-              class="my-sold"
+              class="my-sold btn-ghost press"
               :class="{ sold: item.status === 'sold' }"
               @click.stop="onToggleSold(item)"
-            >{{ item.status === 'sold' ? '重新上架' : '标记已售' }}</text>
-            <text
+            >
+              <text>{{ item.status === 'sold' ? '重新上架' : '标记已售' }}</text>
+            </view>
+            <view
               v-if="tab !== 'collects' && (item.type === 'post' || item.type === 'product')"
-              class="my-del"
+              class="my-del btn-ghost press"
               @click.stop="onDelete(item)"
-            >删除</text>
+            >
+              <text>删除</text>
+            </view>
           </view>
         </view>
       </view>
@@ -65,6 +71,7 @@
       <template #empty>
         <view class="empty-state">
           <view class="empty-shape"></view>
+          <text class="empty-kicker">My List</text>
           <text class="empty-title">这里还黑着灯</text>
           <text class="empty-sub">还没有内容</text>
         </view>
@@ -199,13 +206,13 @@ onShow(() => {
   background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
 }
 .stat-item { display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
-.stat-num { font-size: 40rpx; font-weight: var(--fw-title); color: var(--accent); }
+.stat-num { font-size: 40rpx; font-weight: var(--fw-title); }
 .stat-label { font-size: 22rpx; color: var(--text-tertiary); }
 
-.tab-row { display: flex; padding: 0 32rpx 16rpx; }
-.tab {
+.tab-row { display: flex; padding: 0 32rpx 16rpx; gap: 16rpx; }
+.my-tab {
   padding: 10rpx 32rpx; font-size: 26rpx; color: var(--text-secondary);
-  background: var(--bg-card); border: 1rpx solid var(--border); clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx));
+  background: var(--bg-card); border: 1rpx solid var(--border);
   &.active { color: #0D110E; background: var(--accent); font-weight: var(--fw-title); }
 }
 
@@ -219,17 +226,25 @@ onShow(() => {
   .my-foot { margin-top: auto; display: flex; align-items: center; gap: 12rpx; padding-top: 12rpx; }
   .my-kind { padding: 2rpx 12rpx; font-size: 20rpx; color: var(--text-secondary); background: var(--bg-elevated); font-weight: var(--fw-title); }
   .my-time { font-size: 22rpx; color: var(--text-tertiary); }
-  .my-edit { margin-left: auto; font-size: 22rpx; color: var(--accent); font-weight: var(--fw-title); }
-  .my-sold { font-size: 22rpx; color: var(--secondary); font-weight: var(--fw-title); }
+  .my-edit {
+    margin-left: auto; padding: 4rpx 16rpx; font-size: 22rpx; font-weight: var(--fw-body);
+    color: var(--accent); border-radius: var(--radius-sharp);
+  }
+  .my-sold {
+    padding: 4rpx 16rpx; font-size: 22rpx; font-weight: var(--fw-body);
+    color: var(--secondary); border-radius: var(--radius-sharp);
+  }
   .my-sold.sold { color: var(--text-tertiary); }
-  .my-del { margin-left: auto; font-size: 22rpx; color: var(--danger); font-weight: var(--fw-title); }
-  /* 同时有 编辑+删除 时，删除不再独占 margin-left:auto，由编辑占位 */
-  .my-edit ~ .my-del { margin-left: 0; }
+  .my-del {
+    padding: 4rpx 16rpx; font-size: 22rpx; font-weight: var(--fw-body);
+    color: var(--danger); border-radius: var(--radius-sharp);
+  }
+  .my-del .btn-ghost:active { border-color: var(--danger); }
 }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0;
-  .empty-shape { width: 48rpx; height: 48rpx; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx)); margin-bottom: 24rpx; }
+  .empty-shape { width: 64rpx; height: 64rpx; background: var(--accent); opacity: 0.15; clip-path: var(--clip-diamond); margin-bottom: 24rpx; }
   .empty-title { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .empty-sub { margin-top: 8rpx; font-size: 22rpx; color: var(--text-tertiary); }
+  .empty-sub { margin-top: 8rpx; font-size: 24rpx; color: var(--text-secondary); }
 }
 </style>

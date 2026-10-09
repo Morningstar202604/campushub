@@ -80,8 +80,8 @@
 |---|------|------|------|
 | T1 | 限流每次写操作都多一次 `count()` 读 | common-rate.js:13-15 | DB 读次数≈写操作数翻倍，最大隐性成本项之一；索引缺失时退化为全表扫 |
 | T2 | 搜索用正则匹配 title+content | search/index.js | 正则不走索引=全表扫描；数据过万后延迟与费用失控 |
-| T3 | 34 个云函数逐个手动上传 | docs/DEPLOY.md 第四步 | 新人部署最大摩擦点；改一行公共代码要重新传 34 个函数 |
-| T4 | 32 个数据库索引仅能控制台手动建 | docs/DEPLOY.md 第七步 | 平台硬约束，但应提供可导入 JSON 与校验脚本（init-db 已有 missingIndexes 自检，好） |
+| T3 | 37 个云函数逐个手动上传 | docs/DEPLOY.md 第四步 | 新人部署最大摩擦点；改一行公共代码要重新传 37 个函数 |
+| T4 | 46 个数据库索引仅能控制台手动建 | docs/DEPLOY.md 第七步 | 平台硬约束，但应提供可导入 JSON 与校验脚本（init-db 已有 missingIndexes 自检，好） |
 | T5 | 零测试覆盖 | ci.yml 仅校验 package.json | 公共层改动无回归保护；v0.6.0 曾因此出现 P0 回归（见 CHANGELOG） |
 | T6 | 无数据备份策略 | — | 学校运营数据丢失即事故；免费版无自动备份 |
 | T7 | task-expire 每小时 cron 扫描 | task-expire | 可改"惰性过期"（查询时顺带标记）+ 低频兜底 cron，省调用次数 |

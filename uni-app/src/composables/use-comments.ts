@@ -10,7 +10,9 @@
 //   空串或 Ref 对象——前者永远查不到评论，后者会被原样塞进请求体（后端报「缺少目标ID」）。
 //   现在统一支持 string | Ref<string> | (() => string)，与 useAction 的入参风格一致。
 import { ref, isRef, type Ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { callFunction } from '@/utils/api'
+import { useUserStore } from '../stores/user'
 
 export interface CommentNode {
   _id: string
@@ -23,6 +25,7 @@ export interface CommentNode {
   parentId?: string | null
   replyToNickname?: string
   replies?: CommentNode[]
+  userId?: string
 }
 
 /** 惰性取值：字符串 / ref / getter 皆可 */
@@ -44,6 +47,10 @@ export function useComments(opts: UseCommentsOptions) {
   const loading = ref(false)
   const error = ref('')
   const draft = ref('')
+
+  // 获取当前用户（用于乐观插入）
+  const userStore = useUserStore()
+  const { userInfo: currentUser } = storeToRefs(userStore)
 
   async function loadAll() {
     const targetId = resolveSource(opts.targetId, '')
@@ -88,7 +95,7 @@ export function useComments(opts: UseCommentsOptions) {
     loading.value = true
     error.value = ''
     try {
-      await callFunction('comment-create', {
+      const res: any = await callFunction('comment-create', {
         targetId,
         targetType,
         content,
@@ -97,9 +104,24 @@ export function useComments(opts: UseCommentsOptions) {
         replyToNickname: replyTo?.nickname
       })
       draft.value = ''
-      await loadAll()
+      // 乐观插入：将新评论 push 到列表头部
+      floors.value.unshift({
+        _id: res?._id || `temp-${Date.now()}`,
+        userNickname: currentUser.value?.nickname || '我',
+        userAvatar: currentUser.value?.avatar || '',
+        content,
+        createdAt: Date.now(),
+        liked: false,
+        likeCount: 0,
+        userId: currentUser.value?._id || '',
+        parentId: parentId || null,
+        replyToNickname: replyTo?.nickname,
+        replies: []
+      })
+      uni.showToast({ title: '评论成功', icon: 'none', duration: 2000 })
     } catch (e: any) {
       error.value = e?.message || String(e)
+      uni.showToast({ title: '评论失败', icon: 'none', duration: 2000 })
       console.error('[useComments.submit]', error.value)
     } finally {
       loading.value = false
@@ -109,20 +131,32 @@ export function useComments(opts: UseCommentsOptions) {
   async function remove(commentId: string) {
     try {
       await callFunction('comment-delete', { commentId })
-      await loadAll()
+      // 局部删除：从 list 中找到并 splice 移除
+      const index = floors.value.findIndex(f => f._id === commentId)
+      if (index !== -1) {
+        floors.value.splice(index, 1)
+      }
+      uni.showToast({ title: '已删除', icon: 'none', duration: 2000 })
     } catch (e: any) {
       error.value = e?.message || String(e)
+      uni.showToast({ title: '删除失败', icon: 'none', duration: 2000 })
       console.error('[useComments.remove]', error.value)
     }
   }
 
   async function toggleLikeComment(node: CommentNode) {
+    const originalLiked = node.liked
+    const originalLikeCount = node.likeCount
     try {
       const action = node.liked ? 'unlike' : 'like'
       await callFunction('like', { targetId: node._id, type: 'comment', action })
       node.liked = action === 'like'
       node.likeCount = (node.likeCount ?? 0) + (action === 'like' ? 1 : -1)
     } catch (e: any) {
+      // 失败时 revert 本地状态
+      node.liked = originalLiked
+      node.likeCount = originalLikeCount
+      uni.showToast({ title: '操作失败，请重试', icon: 'none', duration: 2000 })
       console.error('[useComments.toggleLike]', e?.message || e)
     }
   }

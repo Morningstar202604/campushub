@@ -2,10 +2,10 @@
   <view class="nf-page">
     <view class="nf-top">
       <view class="nf-title">
-        <text class="nf-kicker">NOTIFICATIONS</text>
-        <text class="nf-count" v-if="unreadCount">{{ unreadCount }} 未读</text>
+        <text class="nf-kicker clip-tag">NOTIFICATIONS</text>
+        <text class="nf-count accent-num" v-if="unreadCount">{{ unreadCount }} 未读</text>
       </view>
-      <button v-if="unreadCount" class="nf-markall" @click="markAllRead">全部已读</button>
+      <button v-if="unreadCount" class="nf-markall btn-ghost" @click="markAllRead">全部已读</button>
     </view>
 
     <!-- z-paging：列表经 v-model 由 z-paging 维护（v2 真实 API：completeByNoMore / completeByError） -->
@@ -19,7 +19,11 @@
     >
       <!-- 错误 -->
       <view v-if="error" class="nf-state">
-        <text class="nf-state-err">{{ error }}</text>
+        <view class="empty-state">
+          <view class="empty-shape"></view>
+          <text class="empty-kicker">ERROR</text>
+          <text class="empty-title">{{ error }}</text>
+        </view>
         <button class="nf-retry" @click="reload">重试</button>
       </view>
 
@@ -27,7 +31,7 @@
         <view
           v-for="n in list"
           :key="n.id"
-          class="nf-item"
+          class="nf-item press"
           :class="{ 'nf-item-unread': !n.isRead }"
           @click="onOpen(n)"
         >
@@ -39,8 +43,11 @@
       </view>
 
       <template #empty>
-        <view class="nf-empty">
-          <text class="nf-empty-text">暂无通知</text>
+        <view class="empty-state">
+          <view class="empty-shape"></view>
+          <text class="empty-kicker">NOTIFICATIONS</text>
+          <text class="empty-title">暂无通知</text>
+          <text class="empty-sub">有新消息会第一时间告诉你</text>
         </view>
       </template>
     </z-paging>
@@ -152,24 +159,19 @@ async function onOpen(n: NoticeCard) {
 .nf-kicker {
   font-size: 20rpx;
   letter-spacing: 4rpx;
-  color: var(--accent);
+  color: var(--text-secondary);
   font-weight: var(--fw-title);
 }
 .nf-count {
   font-size: 24rpx;
-  color: var(--accent);
   font-weight: var(--fw-title);
 }
 .nf-markall {
-  background: transparent;
-  color: var(--accent);
   font-size: 22rpx;
-  font-weight: 400;
-  border: 2rpx solid var(--accent);
+  font-weight: var(--fw-body);
   padding: 0 24rpx;
   height: 56rpx;
   line-height: 56rpx;
-  border-radius: var(--radius-pill);
 }
 
 /* 列表 */
@@ -178,7 +180,7 @@ async function onOpen(n: NoticeCard) {
 }
 .nf-item {
   position: relative;
-  border: 3rpx solid var(--border);
+  border: 2rpx solid var(--border);
   background: var(--bg-deep);
   padding: 24rpx 28rpx 24rpx 40rpx;
   margin-bottom: 20rpx;
@@ -195,7 +197,7 @@ async function onOpen(n: NoticeCard) {
   top: 28rpx;
   width: 12rpx;
   height: 12rpx;
-  background: var(--accent);
+  background: var(--text-tertiary);
 }
 .nf-type {
   font-size: 18rpx;
@@ -206,7 +208,7 @@ async function onOpen(n: NoticeCard) {
   padding: 2rpx 10rpx;
 }
 .nf-type-comment {
-  color: var(--accent);
+  color: var(--text-secondary);
   background: var(--bg-elevated);
 }
 .nf-type-like {
@@ -240,34 +242,20 @@ async function onOpen(n: NoticeCard) {
   color: var(--text-tertiary);
 }
 
-/* 空态 / 状态 */
-.nf-empty {
-  padding: 120rpx 32rpx;
-  text-align: center;
-}
-.nf-empty-text {
-  font-size: 24rpx;
-  color: var(--text-tertiary);
-  letter-spacing: 2rpx;
-}
+/* 状态 */
 .nf-state {
   padding: 60rpx 32rpx;
   text-align: center;
-}
-.nf-state-err {
-  display: block;
-  font-size: 24rpx;
-  color: var(--danger);
-  margin-bottom: 20rpx;
 }
 .nf-retry {
   background: var(--bg-elevated);
   color: var(--text-body);
   font-size: 24rpx;
   font-weight: var(--fw-title);
-  border: 3rpx solid var(--border);
+  border: 2rpx solid var(--border);
   padding: 0 40rpx;
   height: 64rpx;
   line-height: 64rpx;
+  border-radius: var(--radius-sharp);
 }
 </style>

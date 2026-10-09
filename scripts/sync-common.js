@@ -82,7 +82,7 @@ function main() {
     // 漂移校验：读 manifest，对比各函数副本 sha1
     let manifest = null
     if (fs.existsSync(MANIFEST)) {
-      try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) } catch (e) { /* ignore */ }
+      try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) } catch { /* ignore */ }
     }
     if (!manifest || !Array.isArray(manifest.files)) {
       console.error('✗ 未找到 .sync-manifest.json（未执行过 sync），无法校验')

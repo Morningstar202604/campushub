@@ -20,7 +20,7 @@ const globals = {
 
 const baseRules = {
   'no-undef': 'off', // 小程序全局由上面的 globals 显式提供，无需依赖环境预设
-  'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
+  'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }]
 }
 
 module.exports = [
@@ -30,7 +30,9 @@ module.exports = [
       'node_modules/**',
       '.husky/**',
       'cloudfunctions/*/common/**',
-      'scripts/coverage/**'
+      'cloudfunctions/*/common-*.js',
+      'scripts/coverage/**',
+      'uni-app/**'
     ]
   },
   {

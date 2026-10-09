@@ -106,7 +106,7 @@ python scripts/verify_edit.py
 ## 六、验收清单（转正式签收前置条件）
 
 - [ ] 按第四节命令在买方环境复跑：type-check / build:h5 / build:mp-weixin / verify_pages / verify_edit 全部通过
-- [ ] 按 `docs/DEPLOY.md` 完成 CloudBase 部署（37 函数、HTTP 访问、匿名登录、索引/TTL、init-db、task-expire 触发器；索引清单以 `docs/INDEXES.md` 45 条为准，含 v0.9.2 新增 `idx_rate_limits_expire` / `idx_view_logs_created`）
+- [ ] 按 `docs/DEPLOY.md` 完成 CloudBase 部署（37 函数、HTTP 访问、匿名登录、索引/TTL、init-db、task-expire 触发器；索引清单以 `docs/INDEXES.md` 46 条为准，含 v0.9.2 新增 `idx_rate_limits_expire` / `idx_view_logs_created`）
 - [ ] 按 HANDOVER 第六节「验收清单」完成 H5 与小程序双端真机回归
 - [ ] 复核 M 级风险一项（restToken 加固方案）的处理计划
 - [ ] 正式发布前替换占位图标、配置企业 AppID

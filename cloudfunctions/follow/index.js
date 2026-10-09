@@ -39,7 +39,7 @@ exports.main = wrap(async (event) => {
         await db.collection('notifications').add({
           data: { userId: targetUserId, type: 'follow', targetType: 'user', content: `${user.nickname} 关注了你`, targetId: user._id, isRead: false, createdAt: new Date() }
         })
-      } catch (e) {}
+      } catch {}
 
       return ok({ following: true })
     } else {

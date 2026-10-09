@@ -14,7 +14,7 @@ function getBeijingDateStr(offsetDays = 0) {
     String(d.getUTCDate()).padStart(2, '0')
 }
 
-exports.main = wrap(async (event) => {
+exports.main = wrap(async (_event) => {
   const user = await requireActiveUser()
   const db = getDB()
   const _ = getCmd()

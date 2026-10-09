@@ -6,15 +6,17 @@
     </view>
 
     <!-- 失败 / 已删除 / 无此帖 -->
-    <view v-else-if="!post" class="state-block">
-      <text class="state-text state-err">{{ loadError || '帖子不存在或已删除' }}</text>
-      <view v-if="postId" class="state-retry" @click="loadDetail">重试</view>
+    <view v-else-if="!post" class="empty-state">
+      <view class="empty-shape--hex empty-shape"></view>
+      <text class="empty-kicker">POST</text>
+      <text class="empty-title">{{ loadError || '帖子不存在或已删除' }}</text>
+      <view v-if="postId" class="state-retry press" @click="loadDetail">重试</view>
     </view>
 
     <template v-else>
       <!-- 标题区（若帖无标题则只显示 kind 标签 + 内容） -->
       <view v-if="post.title" class="detail-title sticker">
-        <text class="title-text">{{ post.title }}</text>
+        <text class="title-text title-900">{{ post.title }}</text>
       </view>
 
       <!-- 帖子正文 + 图片 -->
@@ -45,11 +47,11 @@
 
       <!-- 操作行：点赞 / 收藏 / 浏览 -->
       <view class="action-bar sticker">
-        <view class="action-item" :class="{ active: action.liked.value }" @click="action.toggleLike()">
+        <view class="action-item press" :class="{ active: action.liked.value }" @click="action.toggleLike()">
           <text class="action-label">点赞</text>
           <text class="action-count tabular-nums">{{ action.likeCount.value }}</text>
         </view>
-        <view class="action-item" :class="{ active: action.collected.value }" @click="action.toggleCollect()">
+        <view class="action-item press" :class="{ active: action.collected.value }" @click="action.toggleCollect()">
           <text class="action-label">收藏</text>
           <text class="action-count tabular-nums">{{ collectCount }}</text>
         </view>
@@ -59,7 +61,7 @@
         </view>
         <view
           v-if="canResolve"
-          class="action-item resolve"
+          class="action-item resolve press"
           :class="{ done: post.resolved }"
           @click="onResolve"
         >
@@ -70,22 +72,22 @@
       <!-- 评论楼层 + 楼中楼 -->
       <view class="comment-section">
         <view class="section-head">
-          <text class="section-title">回应（{{ totalComments }}）</text>
+          <text class="section-title title-900">回应（{{ totalComments }}）</text>
         </view>
 
         <view v-if="comments.error.value" class="error-banner sticker">
           <text class="error-text">{{ comments.error.value }}</text>
         </view>
 
-        <view v-for="f in comments.floors.value" :key="f._id" class="comment-floor sticker">
+        <view v-for="f in comments.floors.value" :key="f._id" class="comment-floor sticker press">
           <view class="floor-head">
-            <text class="floor-author">{{ f.userNickname }}</text>
+            <text class="floor-author clip-tag">{{ f.userNickname }}</text>
             <text v-if="f.replyToNickname" class="floor-reply">回复 {{ f.replyToNickname }}</text>
             <text class="floor-time tabular-nums">{{ fmtTime(f.createdAt) }}</text>
           </view>
           <text class="floor-content">{{ f.content }}</text>
           <view class="floor-actions">
-            <text class="floor-like" @click="comments.toggleLikeComment(f)">
+            <text class="floor-like press" @click="comments.toggleLikeComment(f)">
               {{ f.liked ? '已点灯' : '点灯' }}{{ f.likeCount ? ` · ${f.likeCount}` : '' }}
             </text>
           </view>
@@ -103,8 +105,11 @@
           </view>
         </view>
 
-        <view v-if="!comments.floors.value.length && !comments.loading.value" class="comment-empty">
-          <text>还没有回应，来点第一盏灯</text>
+        <view v-if="!comments.floors.value.length && !comments.loading.value" class="empty-state">
+          <view class="empty-shape--hex empty-shape"></view>
+          <text class="empty-kicker">REPLIES</text>
+          <text class="empty-title">还没有回应</text>
+          <text class="empty-sub">来点第一盏灯</text>
         </view>
 
         <!-- 发布输入 -->
@@ -116,7 +121,7 @@
             maxlength="500"
             @confirm="onSend"
           />
-          <text class="comment-send" :class="{ disabled: !comments.draft.value.trim() || comments.loading.value }" @click="onSend">
+          <text class="comment-send press" :class="{ disabled: !comments.draft.value.trim() || comments.loading.value }" @click="onSend">
             发送
           </text>
         </view>
@@ -252,32 +257,31 @@ onUnmounted(() => {
 
 .state-block { padding: 140rpx 32rpx; text-align: center; }
 .state-text { display: block; font-size: 24rpx; color: var(--text-secondary); letter-spacing: 2rpx; }
-.state-err { color: var(--danger); }
 .state-retry {
   display: inline-block; margin-top: 28rpx; padding: 12rpx 36rpx;
-  font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent);
-  border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  font-size: 24rpx; font-weight: var(--fw-title); color: var(--secondary);
+  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
 }
 
 .detail-title {
   padding: 24rpx;
   margin-bottom: 20rpx;
   background: var(--bg-card);
-  border: 1rpx solid var(--border);
+  border: 2rpx solid var(--border);
   border-radius: var(--radius-sharp);
-  .title-text { font-size: 36rpx; font-weight: var(--fw-title); color: var(--text-primary); display: block; }
+  .title-text { font-size: 36rpx; color: var(--text-primary); display: block; }
 }
 
 .detail-card {
   padding: 28rpx;
   background: var(--bg-card);
-  border: 1rpx solid var(--border);
+  border: 2rpx solid var(--border);
   border-radius: var(--radius-sharp);
 }
 
 .detail-meta {
   display: flex; align-items: center; gap: 16rpx; margin-bottom: 16rpx;
-  .meta-author { padding: 4rpx 16rpx; font-size: 22rpx; color: var(--accent); background: var(--bg-elevated); font-weight: var(--fw-title); }
+  .meta-author { padding: 4rpx 16rpx; font-size: 22rpx; color: var(--text-secondary); background: var(--bg-elevated); }
   .meta-kind { font-size: 22rpx; color: var(--text-secondary); }
   .meta-resolved { font-size: 20rpx; color: var(--secondary); font-weight: var(--fw-title); }
   .meta-time { margin-left: auto; font-size: 22rpx; color: var(--text-tertiary); }
@@ -290,25 +294,25 @@ onUnmounted(() => {
 
 .action-bar {
   display: flex; gap: 40rpx; margin-top: 24rpx; padding: 20rpx 32rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
   .action-item { display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
   .action-label { font-size: 22rpx; color: var(--text-secondary); }
   .action-count { font-size: 24rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .action-item.active .action-label { color: var(--accent); }
+  .action-item.active .action-label { color: var(--secondary); }
   .action-item.resolve .action-label { color: var(--secondary); }
   .action-item.done .action-label { color: var(--text-tertiary); }
 }
 
 .comment-section { margin-top: 32rpx; }
 .section-head { padding: 16rpx 0; }
-.section-title { font-size: 30rpx; font-weight: var(--fw-title); color: var(--text-primary); }
+.section-title { font-size: 30rpx; color: var(--text-primary); }
 
 .comment-floor {
   margin-top: 16rpx; padding: 20rpx; background: var(--bg-card);
-  border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
 }
 .floor-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 8rpx; }
-.floor-author { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); }
+.floor-author { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); padding: 2rpx 12rpx; background: var(--bg-elevated); }
 .floor-reply { font-size: 22rpx; color: var(--text-tertiary); }
 .floor-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
 .floor-content { display: block; font-size: 26rpx; color: var(--text-primary); line-height: 1.6; }
@@ -322,20 +326,18 @@ onUnmounted(() => {
 .reply-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
 .reply-content { display: block; font-size: 24rpx; color: var(--text-secondary); line-height: 1.5; margin-top: 4rpx; }
 
-.comment-empty { padding: 40rpx; text-align: center; font-size: 24rpx; color: var(--text-tertiary); }
-
 .comment-input {
   display: flex; gap: 16rpx; margin-top: 24rpx; padding: 16rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
 }
 .comment-input-box { flex: 1; font-size: 26rpx; color: var(--text-primary); background: var(--bg-elevated); padding: 12rpx 16rpx; border-radius: var(--radius-sharp); }
-.comment-send { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); padding: 12rpx 24rpx; }
+.comment-send { font-size: 24rpx; font-weight: var(--fw-title); color: var(--secondary); padding: 12rpx 24rpx; }
 .comment-send.disabled { color: var(--text-tertiary); opacity: 0.6; }
 
 .error-banner {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16rpx 24rpx; background: var(--bg-card);
-  border: 1rpx solid var(--danger); border-radius: var(--radius-sharp);
+  border: 2rpx solid var(--danger); border-radius: var(--radius-sharp);
   .error-text { font-size: 24rpx; color: var(--danger); }
 }
 </style>

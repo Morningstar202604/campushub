@@ -8,12 +8,15 @@
     <!-- 错误 -->
     <view v-else-if="error" class="gd-state">
       <text class="gd-state-text gd-state-err">{{ error }}</text>
-      <button class="gd-retry" @click="load">RETRY</button>
+      <button class="gd-retry press" @click="load">RETRY</button>
     </view>
 
     <!-- 空态：无 id 或后端查无此指南 -->
-    <view v-else-if="!guide.id" class="gd-state">
-      <text class="gd-state-text">指南不存在或暂未发布</text>
+    <view v-else-if="!guide.id" class="empty-state">
+      <view class="empty-shape--hex empty-shape"></view>
+      <text class="empty-kicker">GUIDE</text>
+      <text class="empty-title">指南不存在或暂未发布</text>
+      <text class="empty-sub">换个关键词搜一搜</text>
     </view>
 
     <template v-else>
@@ -23,7 +26,7 @@
         <view v-if="guide.title" class="gd-title">{{ guide.title }}</view>
         <view v-if="guide.summary" class="gd-summary">{{ guide.summary }}</view>
         <view class="gd-meta-row">
-          <view v-if="guide.category" class="gd-chip">
+          <view v-if="guide.category" class="gd-chip clip-tag">
             <text class="gd-chip-acid">{{ guide.category }}</text>
           </view>
           <view v-if="guide.viewCount > 0" class="gd-view">
@@ -33,13 +36,13 @@
           <text v-if="guide.time" class="gd-time tabular-nums">{{ guide.time }}</text>
         </view>
         <view v-if="guide.tags && guide.tags.length" class="gd-tags">
-          <text v-for="(t, i) in guide.tags" :key="i" class="gd-tag">{{ t }}</text>
+          <text v-for="(t, i) in guide.tags" :key="i" class="gd-tag clip-tag">{{ t }}</text>
         </view>
       </view>
 
       <!-- 正文 -->
       <view class="gd-body">
-        <view class="gd-block">
+        <view class="gd-block sticker">
           <view class="gd-block-label">STEP 01</view>
           <rich-text :nodes="contentNodes" class="gd-rich" space="all-line-breaks" />
         </view>
@@ -229,13 +232,13 @@ onLoad((opts) => {
   gap: 20rpx;
 }
 .gd-chip {
-  border: 3rpx solid var(--border);
   padding: 4rpx 14rpx;
   font-size: 20rpx;
   font-weight: var(--fw-title);
+  background: var(--accent);
 }
 .gd-chip-acid {
-  color: var(--text-secondary);
+  color: var(--bg-page);
 }
 .gd-view {
   font-size: 22rpx;
@@ -257,9 +260,11 @@ onLoad((opts) => {
 }
 .gd-tag {
   font-size: 20rpx;
-  color: var(--text-secondary);
-  border: 2rpx solid var(--border);
-  padding: 4rpx 12rpx;
+  color: var(--accent);
+  padding: 4rpx 14rpx;
+  letter-spacing: 1rpx;
+  font-weight: var(--fw-title);
+  background: var(--bg-elevated);
 }
 
 /* 正文 */
@@ -267,8 +272,6 @@ onLoad((opts) => {
   margin: 8rpx 32rpx 0;
 }
 .gd-block {
-  border: 3rpx solid var(--border);
-  box-shadow: 0 4rpx 0 rgba(0, 0, 0, 0.6);
   padding: 28rpx 24rpx;
   background: var(--bg-deep);
 }

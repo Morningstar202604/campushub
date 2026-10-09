@@ -3,7 +3,7 @@
     <template #top>
       <!-- 页头：标题 + 斜切角品牌标签 -->
       <view class="wall-header">
-        <text class="title-900 wall-title">表白墙</text>
+        <text class="wall-title title-900">表白墙</text>
         <view class="clip-tag sticker">
           <text class="wall-badge">校园夜场</text>
         </view>
@@ -13,14 +13,14 @@
     <!-- 网络/业务错误横幅（可重试） -->
     <view v-if="error" class="error-banner sticker">
       <text class="error-text">{{ error }}</text>
-      <text class="error-retry" @click="reload">重试</text>
+      <text class="error-retry press" @click="reload">重试</text>
     </view>
 
     <!-- 帖子卡片：深底 + 硬边框 + 匿名帖斜切角 -->
     <view
       v-for="item in list"
       :key="item.id"
-      class="wall-card sticker"
+      class="wall-card sticker press"
       :class="{ anonymous: item.isAnonymous }"
       @click="openDetail(item)"
     >
@@ -38,6 +38,7 @@
     <template #empty>
       <view class="empty-state">
         <view class="empty-shape"></view>
+        <text class="empty-kicker">LOVE LETTERS</text>
         <text class="empty-title">这里还黑着灯</text>
         <text class="empty-sub">第一盏灯由你点亮</text>
       </view>
@@ -73,7 +74,6 @@ function openDetail(item: any) {
 
   .wall-title {
     font-size: 40rpx;
-    font-weight: var(--fw-title);
     color: var(--text-primary);
   }
 }
@@ -125,33 +125,6 @@ function openDetail(item: any) {
 
     .wall-like { color: var(--accent); }
   }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 80rpx 0;
-
-  .empty-shape {
-    width: 48rpx;
-    height: 48rpx;
-    background: var(--accent);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx));
-    margin-bottom: 24rpx;
-  }
-
-  .empty-title {
-    font-size: 32rpx;
-    font-weight: var(--fw-title);
-    color: var(--text-primary);
-  }
-
-.empty-sub {
-  margin-top: 8rpx;
-  font-size: 22rpx;
-  color: var(--text-tertiary);
-}
 }
 
 .error-banner {

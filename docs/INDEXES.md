@@ -110,6 +110,11 @@
 | announcements | idx_announcements_status_pinned_created | status(升), isPinned(降), createdAt(降) | 否 |
 | points_orders | idx_points_orders_user_created | userId(升), createdAt(降) | 否 |
 
+### verify_requests（校园身份认证审核队列）
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| verify_requests | idx_verify_requests_status_created | status(升), createdAt(降) | 否 |
+
 ### idempotency / rate_limits / view_logs（幂等占位 + 统一限频占位 + 浏览日志清理）
 | 集合 | 索引名称 | 字段（方向） | 唯一 |
 |---|---|---|---|

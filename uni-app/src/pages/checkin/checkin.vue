@@ -17,7 +17,7 @@
         <view v-if="done" class="ck-done-ring">
           <text class="ck-done-check">✓</text>
         </view>
-        <view v-else class="ck-pulse">
+        <view v-else class="ck-pulse press">
           <text class="ck-pulse-text">{{ busy ? '...' : 'TAP' }}</text>
         </view>
         <text class="ck-cta" v-if="done">今日已签到</text>
@@ -54,7 +54,7 @@
     </view>
 
     <!-- 底部：去赚积分 -->
-    <button class="ck-earn" @click="gotoPoints">
+    <button class="ck-earn press" @click="gotoPoints">
       <text>去积分商城兑换</text>
       <text class="ck-earn-arrow">→</text>
     </button>
@@ -285,6 +285,11 @@ onMounted(() => {
   font-size: 56rpx;
   color: var(--accent);
   font-weight: var(--fw-title);
+  transition: transform var(--t-fast) var(--ease-out);
+  display: inline-block;
+}
+.ck-points-num.press:active {
+  transform: scale(0.95);
 }
 
 .ck-week {

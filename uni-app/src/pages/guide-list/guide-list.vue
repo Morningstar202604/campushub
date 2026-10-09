@@ -11,8 +11,8 @@
         <view
           v-for="c in categories"
           :key="c.categoryId"
-          class="cat-chip clip-tag sticker"
-          :class="{ active: c.categoryId === activeCat }"
+      class="cat-chip clip-tag sticker press"
+      :class="{ active: c.categoryId === activeCat }"
           @click="onCat(c)"
         >
           <text>{{ c.name }}</text>
@@ -22,7 +22,7 @@
 
     <view v-if="error" class="error-banner sticker">
       <text class="error-text">{{ error }}</text>
-      <text class="error-retry" @click="reload">重试</text>
+      <text class="error-retry press" @click="reload">重试</text>
     </view>
 
     <view
@@ -122,6 +122,10 @@ function openDetail(g: GuideCard) {
 .guide-card {
   display: flex; gap: 20rpx; margin: 20rpx 32rpx; padding: 20rpx;
   background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  transition: transform var(--t-fast) var(--ease-out);
+
+  &:active { transform: scale(0.97); }
+
   .guide-cover { width: 160rpx; height: 160rpx; border-radius: var(--radius-sharp); flex-shrink: 0; background: var(--bg-elevated); }
   .guide-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .guide-title { font-size: 28rpx; font-weight: var(--fw-title); color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

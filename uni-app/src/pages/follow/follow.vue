@@ -2,11 +2,11 @@
   <view class="fw-page">
     <!-- Tab 切换：双 tab 各自独立分页，切换时 reload 复位 -->
     <view class="fw-tabs">
-      <view class="fw-tab" :class="{ 'fw-tab-on': tab === 'following' }" @click="switchTab('following')">
+      <view class="fw-tab clip-tag" :class="{ 'fw-tab-on': tab === 'following' }" @click="switchTab('following')">
         <text class="fw-tab-label">关注</text>
         <text class="fw-tab-count" v-if="tab === 'following' && total">{{ total }}</text>
       </view>
-      <view class="fw-tab" :class="{ 'fw-tab-on': tab === 'followers' }" @click="switchTab('followers')">
+      <view class="fw-tab clip-tag" :class="{ 'fw-tab-on': tab === 'followers' }" @click="switchTab('followers')">
         <text class="fw-tab-label">粉丝</text>
         <text class="fw-tab-count" v-if="tab === 'followers' && total">{{ total }}</text>
       </view>
@@ -22,11 +22,11 @@
     >
       <view v-if="error" class="fw-state">
         <text class="fw-state-err">{{ error }}</text>
-        <button class="fw-retry" @click="retry">重试</button>
+        <button class="fw-retry press" @click="retry">重试</button>
       </view>
 
       <view class="fw-list">
-        <view v-for="u in list" :key="u.id" class="fw-item">
+        <view v-for="u in list" :key="u.id" class="fw-item press">
           <view class="fw-avatar" @click="openProfile(u.id)">
             <image v-if="u.avatar" :src="u.avatar" class="fw-avatar-img" mode="aspectFill" />
             <text v-else class="fw-avatar-ph">{{ (u.nickname || '?').slice(0, 1) }}</text>
@@ -42,8 +42,11 @@
       </view>
 
       <template #empty>
-        <view class="fw-empty">
-          <text class="fw-empty-text">{{ tab === 'following' ? '还没有关注任何人' : '还没有粉丝' }}</text>
+        <view class="empty-state">
+          <view class="empty-shape empty-shape--hex"></view>
+          <text class="empty-kicker">Connections</text>
+          <text class="empty-title">{{ tab === 'following' ? '还没有关注任何人' : '还没有粉丝' }}</text>
+          <text class="empty-sub">去发现志趣相投的同学</text>
         </view>
       </template>
     </z-paging>
@@ -178,10 +181,12 @@ function openProfile(id: string) {
   padding: 28rpx 0;
   color: var(--text-tertiary);
   border-bottom: 4rpx solid transparent;
-}
-.fw-tab-on {
-  color: var(--text-body);
-  border-bottom-color: var(--accent);
+  &.fw-tab-on {
+    color: #0D110E;
+    background: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: var(--fw-title);
+  }
 }
 .fw-tab-label {
   font-size: 30rpx;
@@ -259,14 +264,6 @@ function openProfile(id: string) {
   line-height: 64rpx;
 }
 
-.fw-empty {
-  padding: 120rpx 32rpx;
-  text-align: center;
-}
-.fw-empty-text {
-  font-size: 26rpx;
-  color: var(--text-tertiary);
-}
 .fw-state {
   padding: 60rpx 32rpx;
   text-align: center;

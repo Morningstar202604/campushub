@@ -71,7 +71,7 @@
 
     <!-- 提交 -->
     <view class="submit-wrap">
-      <button class="submit-btn sticker" :disabled="submitting || uploading" @click="submit">
+      <button class="submit-btn sticker press" :disabled="submitting || uploading" @click="submit">
         <text>{{ submitting ? (isEdit ? '保存中…' : '发布中…') : (isEdit ? '保存修改' : '发布好物') }}</text>
       </button>
     </view>

@@ -190,7 +190,7 @@ async function ensureIndexes(db) {
       const r = await db.collection(idx.collection).getIndexes()
       const list = (r && r.indexes) || []
       existingNames = list.map(i => i.IndexName || i.name || i.indexName).filter(Boolean)
-    } catch (e) {
+    } catch {
       // 接口受限或集合尚未就绪：无法检测，仍提示该索引需在控制台确认
       missing.push({ ...idx, note: '无法读取现有索引（接口受限或集合尚未就绪）' })
       continue

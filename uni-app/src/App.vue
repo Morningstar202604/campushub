@@ -1,13 +1,39 @@
 <template>
-  <view class="app-root">
+  <view v-if="!appReady" class="app-boot">
+    <text class="app-boot-title">CAMPUSHUB</text>
+    <view class="app-boot-bar"><view class="app-boot-bar-fill"></view></view>
+  </view>
+  <view v-else class="app-root">
     <!-- 应用级内容通过 pages 渲染；App.vue 只做全局初始化 -->
   </view>
 </template>
 
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { onErrorCaptured, ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useSchoolStore } from '@/stores/school'
+
+// 全局错误捕获 — 避免白屏
+onErrorCaptured((err, instance, info) => {
+  console.error('[App] 未捕获异常:', err, info)
+  uni.showToast({ title: '页面异常，请重试', icon: 'none' })
+  return false // 阻止错误继续向上传播
+})
+
+const appReady = ref(false)
+const appError = ref('')
+
+onMounted(async () => {
+  try {
+    const userStore = useUserStore()
+    await userStore.restore?.().catch(() => {})
+  } catch (e) {
+    console.warn('[App] 启动失败:', e)
+  } finally {
+    appReady.value = true
+  }
+})
 
 onLaunch(() => {
   const userStore = useUserStore()
@@ -33,4 +59,30 @@ onHide(() => {})
    页面组件不要再各自引入 —— 变量经 :root 继承即可全局使用。 */
 @import '@/styles/tokens.scss';
 @import '@/styles/global.scss';
+
+.app-boot {
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg-page);
+  gap: var(--sp-4);
+}
+.app-boot-title {
+  font-size: 48rpx; font-weight: var(--fw-title);
+  letter-spacing: 8rpx; color: var(--accent);
+}
+.app-boot-bar {
+  width: 200rpx; height: 4rpx;
+  background: var(--bg-elevated); border-radius: 2rpx;
+  overflow: hidden;
+}
+.app-boot-bar-fill {
+  height: 100%; background: var(--accent);
+  animation: boot-progress 1.5s var(--ease-snap) infinite;
+}
+@keyframes boot-progress {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
 </style>

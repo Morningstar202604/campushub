@@ -2,9 +2,10 @@
   <view class="sr-page">
     <!-- 搜索框 -->
     <view class="sr-bar">
-      <view class="sr-input-wrap">
-        <text class="sr-input-icon">⌕</text>
+      <view class="sr-input-wrap hard-border">
+        <view class="sr-input-icon"></view>
         <input
+          ref="inputEl"
           class="sr-input"
           v-model="keyword"
           :focus="focusSearch"
@@ -13,9 +14,9 @@
           placeholder-class="sr-ph"
           @confirm="doSearch"
         />
-        <text v-if="keyword" class="sr-clear" @click="keyword = ''">✕</text>
+        <view v-if="keyword" class="sr-clear" @click="clearSearch"></view>
       </view>
-      <button class="sr-go" @click="doSearch">搜索</button>
+      <button class="sr-go press hard-border" @click="doSearch">搜索</button>
     </view>
 
     <!-- 热搜（未搜索时展示） -->
@@ -24,11 +25,11 @@
         <text class="sr-hot-kicker">TRENDING</text>
         <text class="sr-hot-sub">近 7 天真实热搜</text>
       </view>
-      <view class="sr-hot-list">
+      <view class="sr-hot-list sticker">
         <view
           v-for="(k, i) in hotList"
           :key="i"
-          class="sr-hot-item"
+          class="sr-hot-item press"
           @click="onHot(k)"
         >
           <text class="sr-hot-rank" :class="{ 'sr-hot-rank-top': i < 3 }">{{ i + 1 }}</text>
@@ -46,12 +47,14 @@
 
       <view v-else-if="searchError" class="sr-state">
         <text class="sr-state-err">{{ searchError }}</text>
-        <button class="sr-retry" @click="doSearch">重试</button>
+        <button class="sr-retry press hard-border" @click="doSearch">重试</button>
       </view>
 
-      <view v-else-if="total === 0" class="sr-empty">
-        <text class="sr-empty-text">「{{ lastKeyword }}」没有结果</text>
-        <text class="sr-empty-sub">换个关键词试试</text>
+      <view v-else-if="total === 0" class="empty-state">
+        <view class="empty-shape"></view>
+        <text class="empty-kicker">SEARCH</text>
+        <text class="empty-title">「{{ lastKeyword }}」没有结果</text>
+        <text class="empty-sub">换个关键词试试</text>
       </view>
 
       <view v-else>
@@ -64,14 +67,14 @@
           <view
             v-for="h in postHits"
             :key="'p' + h.id"
-            class="sr-card"
+            class="sr-card sticker press"
             @click="openDetail('post', h.id)"
           >
             <view class="sr-card-body">
               <view class="sr-card-title">{{ h.title || h.content }}</view>
               <view class="sr-card-sub">{{ h.time }}</view>
             </view>
-            <view class="sr-card-tag sr-tag-post">POST</view>
+            <view class="sr-card-tag clip-tag">POST</view>
           </view>
         </view>
 
@@ -84,14 +87,14 @@
           <view
             v-for="h in productHits"
             :key="'d' + h.id"
-            class="sr-card"
+            class="sr-card sticker press"
             @click="openDetail('product', h.id)"
           >
             <view class="sr-card-body">
               <view class="sr-card-title">{{ h.title || h.content }}</view>
               <view class="sr-card-sub">{{ h.time }}</view>
             </view>
-            <view class="sr-card-tag sr-tag-product">DEAL</view>
+            <view class="sr-card-tag clip-tag">DEAL</view>
           </view>
         </view>
 
@@ -104,14 +107,14 @@
           <view
             v-for="h in guideHits"
             :key="'g' + h.id"
-            class="sr-card"
+            class="sr-card sticker press"
             @click="openGuide(h.id)"
           >
             <view class="sr-card-body">
               <view class="sr-card-title">{{ h.title }}</view>
               <view class="sr-card-sub">{{ h.summary || ('浏览 ' + h.viewCount) }}</view>
             </view>
-            <view class="sr-card-tag sr-tag-guide">GUIDE</view>
+            <view class="sr-card-tag clip-tag">GUIDE</view>
           </view>
         </view>
       </view>
@@ -120,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { callFunction } from '@/utils/api'
 import { adaptSearchHit, type SearchHit } from '@/adapters'
 
@@ -131,12 +134,18 @@ interface GuideHit {
   viewCount: number
 }
 
+// 并发请求竞态防护：递增计数器，每次发请求前 +1
+let requestSeq = 0
+
 const keyword = ref('')
 const focusSearch = ref(true)
 const hasSearched = ref(false)
 const lastKeyword = ref('')
 const searching = ref(false)
 const searchError = ref('')
+
+// 搜索输入框 ref（用于清除后重聚焦）
+const inputEl = ref<HTMLInputElement | null>(null)
 
 // 热搜
 const hotList = ref<string[]>([])
@@ -164,10 +173,11 @@ async function loadHot() {
   hotLoading.value = true
   try {
     const res: any = await callFunction('search', { action: 'hot' })
-    hotList.value = res?.hot ?? []
+    hotList.value = res?.hot || []
   } catch {
-    // 热搜加载失败不阻塞
-    hotList.value = []
+    // 热搜加载失败不阻塞，使用 fallback 热词
+    console.warn('[search] loadHot failed, using fallback hot words')
+    hotList.value = ['二手教材', '失物招领', '食堂测评', '社团招新']
   } finally {
     hotLoading.value = false
   }
@@ -175,8 +185,16 @@ async function loadHot() {
 
 async function doSearch() {
   const kw = keyword.value.trim()
-  if (!kw) return                       // 空关键词不发请求
+  if (!kw) return
+  if (kw.length < 2) {
+    uni.showToast({ title: '请输入至少 2 个字符', icon: 'none', duration: 2000 })
+    return
+  }
   if (searching.value) return
+
+  // 记录本次请求序号
+  const seq = ++requestSeq
+
   lastKeyword.value = kw
   hasSearched.value = true
   searching.value = true
@@ -186,13 +204,17 @@ async function doSearch() {
   guideHits.value = []
   try {
     const res: any = await callFunction('search', { keyword: kw, page: 1, pageSize: 30 })
+    // 已有更新的请求，丢弃本次结果
+    if (seq !== requestSeq) return
     postHits.value = (res?.posts ?? []).map((r: any) => adaptSearchHit(r, 'post'))
     productHits.value = (res?.products ?? []).map((r: any) => adaptSearchHit(r, 'product'))
     guideHits.value = (res?.guides ?? []).map(adaptGuideHit)
   } catch (e: any) {
+    // 已有更新的请求，不处理本次错误
+    if (seq !== requestSeq) return
     searchError.value = e?.message || String(e)
   } finally {
-    searching.value = false
+    if (seq === requestSeq) searching.value = false
   }
 }
 
@@ -213,6 +235,11 @@ watch(keyword, (v) => {
 function onHot(k: string) {
   keyword.value = k
   doSearch()
+}
+
+function clearSearch() {
+  keyword.value = ''
+  nextTick(() => inputEl.value?.focus?.())
 }
 
 function openDetail(type: 'post' | 'product', id: string) {
@@ -251,15 +278,18 @@ onMounted(loadHot)
   flex: 1;
   display: flex;
   align-items: center;
-  border: 3rpx solid var(--border);
   background: var(--bg-deep);
   padding: 0 20rpx;
   height: 80rpx;
 }
 .sr-input-icon {
-  font-size: 32rpx;
-  color: var(--text-secondary);
+  width: 28rpx;
+  height: 28rpx;
   margin-right: 12rpx;
+  clip-path: var(--clip-diamond);
+  background: var(--accent);
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 .sr-input {
   flex: 1;
@@ -273,16 +303,34 @@ onMounted(loadHot)
   font-size: 26rpx;
 }
 .sr-clear {
-  font-size: 28rpx;
-  color: var(--text-tertiary);
+  width: 28rpx;
+  height: 28rpx;
   padding: 0 8rpx;
+  position: relative;
+  flex-shrink: 0;
+}
+.sr-clear::before,
+.sr-clear::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20rpx;
+  height: 3rpx;
+  background: var(--text-tertiary);
+  border-radius: 2rpx;
+}
+.sr-clear::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.sr-clear::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 .sr-go {
-  background: var(--bg-elevated);
-  color: var(--text-body);
+  background: var(--accent);
+  color: var(--bg-page);
   font-weight: var(--fw-title);
   font-size: 26rpx;
-  border: 3rpx solid var(--border);
   padding: 0 32rpx;
   height: 80rpx;
   line-height: 80rpx;
@@ -309,9 +357,7 @@ onMounted(loadHot)
   color: var(--text-tertiary);
 }
 .sr-hot-list {
-  border: 3rpx solid var(--border);
   background: var(--bg-deep);
-  box-shadow: 0 4rpx 0 rgba(0, 0, 0, 0.6);
 }
 .sr-hot-item {
   display: flex;
@@ -367,26 +413,9 @@ onMounted(loadHot)
   color: var(--text-body);
   font-weight: var(--fw-title);
   font-size: 24rpx;
-  border: 3rpx solid var(--border);
   padding: 0 40rpx;
   height: 72rpx;
   line-height: 72rpx;
-}
-.sr-empty {
-  padding: 120rpx 0;
-  text-align: center;
-}
-.sr-empty-text {
-  display: block;
-  font-size: 28rpx;
-  color: var(--text-body);
-  font-weight: 400;
-}
-.sr-empty-sub {
-  display: block;
-  margin-top: 12rpx;
-  font-size: 24rpx;
-  color: var(--text-tertiary);
 }
 
 /* 分节 */
@@ -416,11 +445,9 @@ onMounted(loadHot)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 3rpx solid var(--border);
   background: var(--bg-deep);
   padding: 24rpx;
   margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 0 rgba(0, 0, 0, 0.6);
 }
 .sr-card-body {
   flex: 1;
@@ -447,20 +474,9 @@ onMounted(loadHot)
   font-weight: var(--fw-title);
   letter-spacing: 1rpx;
   padding: 4rpx 12rpx;
-  border: 2rpx solid;
   margin-left: 16rpx;
   flex-shrink: 0;
-}
-.sr-tag-post {
-  color: var(--text-secondary);
-  border-color: var(--text-secondary);
-}
-.sr-tag-product {
-  color: var(--secondary);
-  border-color: var(--secondary);
-}
-.sr-tag-guide {
-  color: var(--warning);
-  border-color: var(--warning);
+  color: var(--bg-page);
+  background: var(--accent);
 }
 </style>

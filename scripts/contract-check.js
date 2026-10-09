@@ -14,7 +14,7 @@ const fs = require('fs')
 const path = require('path')
 
 const ROOT = path.resolve(__dirname, '..')
-const MP = path.join(ROOT, 'miniprogram')
+const MP = path.join(ROOT, 'uni-app')
 const CF = path.join(ROOT, 'cloudfunctions')
 
 const jsonOut = (() => { const i = process.argv.indexOf('--json'); return i > -1 ? process.argv[i + 1] : null })()
@@ -27,7 +27,7 @@ const walk = (dir, acc = []) => {
     if (name === 'node_modules' || name === 'miniprogram_npm') continue
     const p = path.join(dir, name)
     if (fs.statSync(p).isDirectory()) walk(p, acc)
-    else if (name.endsWith('.js')) acc.push(p)
+    else if (/\.(js|ts|vue)$/.test(name)) acc.push(p)
   }
   return acc
 }
@@ -72,10 +72,10 @@ for (const n of cfNames) {
 }
 
 // ---------- 3. 交叉比对 ----------
-let errors = 0
+let _errors = 0
 for (const [fn, info] of called) {
   if (!provided.has(fn)) {
-    report('error', `前端调用不存在的云函数「${fn}」← ${[...info.where].join(', ')}`); errors++; continue
+    report('error', `前端调用不存在的云函数「${fn}」← ${[...info.where].join(', ')}`); _errors++; continue
   }
   const p = provided.get(fn)
   for (const a of info.actions) {
@@ -84,7 +84,7 @@ for (const [fn, info] of called) {
       if (p.hasElse) report('info', `云函数「${fn}」无显式 action '${a}'，走 else 兜底分支 ← ${[...info.where].join(', ')}`)
       else {
         report('error', `云函数「${fn}」不支持 action '${a}'（支持: ${[...p.actions].join(', ') || '无'}）← ${[...info.where].join(', ')}`)
-        errors++
+        _errors++
       }
     }
   }

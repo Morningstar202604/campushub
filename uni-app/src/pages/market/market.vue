@@ -11,7 +11,7 @@
         <view
           v-for="c in categories"
           :key="c.value"
-          class="cat-chip clip-tag sticker"
+          class="cat-chip clip-tag sticker press"
           :class="{ active: c.value === activeCategory }"
           @click="onCategory(c.value)"
         >
@@ -22,11 +22,11 @@
 
     <view v-if="error" class="error-banner sticker">
       <text class="error-text">{{ error }}</text>
-      <text class="error-retry" @click="reload">重试</text>
+      <text class="error-retry press" @click="reload">重试</text>
     </view>
 
-    <!-- 商品卡：封面 + 价格 + 硬边框 -->
-    <view v-for="item in list" :key="item.id" class="market-card sticker" @click="openDetail(item)">
+    <!-- 商品卡：封面 + 价格 + 硬边框（价格保持白色让详情页做荧光焦点） -->
+    <view v-for="item in list" :key="item.id" class="market-card sticker press" @click="openDetail(item)">
       <image
         v-if="item.image"
         class="market-cover"
@@ -51,6 +51,7 @@
     <template #empty>
       <view class="empty-state">
         <view class="empty-shape"></view>
+        <text class="empty-kicker">Market</text>
         <text class="empty-title">市集还没开张</text>
         <text class="empty-sub">第一件好物等你上架</text>
       </view>
@@ -101,7 +102,7 @@ function openDetail(item: any) {
 
 <style lang="scss" scoped>
 .page-header { display: flex; justify-content: space-between; align-items: center; padding: 32rpx; }
-.page-title { font-size: 40rpx; font-weight: var(--fw-title); color: var(--text-primary); }
+.page-title { font-size: 40rpx; color: var(--text-primary); }
 .page-badge { padding: 6rpx 20rpx; font-size: 22rpx; font-weight: var(--fw-title); color: var(--accent); background: var(--bg-card); }
 
 .cat-scroll {
@@ -139,7 +140,12 @@ function openDetail(item: any) {
     height: 160rpx;
     border-radius: var(--radius-sharp);
     flex-shrink: 0;
-    &--ph { background: var(--bg-elevated); }
+    &--ph {
+      background: var(--bg-elevated);
+      border: 2rpx solid var(--border);
+      clip-path: var(--clip-diamond);
+      opacity: 0.5;
+    }
   }
 
   .market-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -172,9 +178,9 @@ function openDetail(item: any) {
 }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0;
-  .empty-shape { width: 48rpx; height: 48rpx; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx)); margin-bottom: 24rpx; }
+  .empty-shape { width: 64rpx; height: 64rpx; background: var(--accent); opacity: 0.15; clip-path: var(--clip-diamond); margin-bottom: 24rpx; }
   .empty-title { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .empty-sub { margin-top: 8rpx; font-size: 22rpx; color: var(--text-tertiary); }
+  .empty-sub { margin-top: 8rpx; font-size: 24rpx; color: var(--text-secondary); }
 }
 
 .error-banner {

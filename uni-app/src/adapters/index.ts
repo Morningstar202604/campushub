@@ -34,9 +34,21 @@ export interface WallCard {
   kind: string
 }
 
+/**
+ * 从后端记录提取安全的渲染 id。
+ * 后端记录缺失 _id 时返回空字符串（调用方应跳过渲染），
+ * 不再用 Math.random() 兜底（会产生重复 key / 错误导航，M10 修复）。
+ */
+function safeId(raw: any): string {
+  if (raw._id) return String(raw._id)
+  if (raw.id) return String(raw.id)
+  console.warn('[adapters] 后端记录缺少 _id/id，跳过渲染', Object.keys(raw || {}))
+  return ''
+}
+
 export function adaptWall(raw: any): WallCard {
   return {
-    id: raw._id || raw.id || String(Math.random()),
+    id: safeId(raw),
     // ⚠️ 后端字段以 post-create/index.js 的落库对象为准：userNickname / isAnonymous
     //    （旧代码写的 authorNickname / anonymous 后端从不写入 → 作者名恒为「匿名同学」）
     author: raw.userNickname || raw.nickname || raw.author || '匿名同学',
@@ -64,7 +76,7 @@ export interface MarketCard {
 
 export function adaptMarket(raw: any): MarketCard {
   return {
-    id: raw._id || raw.id || String(Math.random()),
+    id: safeId(raw),
     title: raw.title || raw.name || '',
     price: raw.price != null ? String(raw.price) : '',
     originalPrice: raw.originalPrice != null ? String(raw.originalPrice) : undefined,
@@ -88,7 +100,7 @@ export interface AnnouncementCard {
 
 export function adaptAnnouncement(raw: any): AnnouncementCard {
   return {
-    id: raw._id || raw.id || String(Math.random()),
+    id: safeId(raw),
     title: raw.title || '',
     content: raw.content || '',
     pinned: Boolean(raw.isPinned),
@@ -109,7 +121,7 @@ export interface LostFoundCard {
 
 export function adaptLostFound(raw: any): LostFoundCard {
   return {
-    id: raw._id || raw.id || String(Math.random()),
+    id: safeId(raw),
     kind: raw.kind === 'found' ? 'found' : 'lost',
     title: raw.title || '（无标题）',
     content: raw.content || '',
@@ -247,7 +259,7 @@ export function adaptMyItem(raw: any, type: 'posts' | 'products' | 'collects' = 
       ? 'product'
       : 'post'
   return {
-    id: raw._id || raw.id || String(Math.random()),
+    id: safeId(raw),
     type: resolvedType,
     title: raw.title || (raw.content ? raw.content.slice(0, 20) : ''),
     content: raw.content || raw.description || '',
@@ -321,7 +333,7 @@ export interface GuideCard {
 
 export function adaptGuide(raw: any): GuideCard {
   return {
-    id: raw._id || raw.id || String(Math.random()),
+    id: safeId(raw),
     title: raw.title || '',
     summary: raw.summary || '',
     coverImage: raw.coverImage || '',
@@ -346,7 +358,7 @@ export interface NoticeCard {
 
 export function adaptNotice(raw: any): NoticeCard {
   return {
-    id: raw._id || raw.id || String(Math.random()),
+    id: safeId(raw),
     type: raw.type || '',
     targetType: raw.targetType || '',
     content: raw.content || '',

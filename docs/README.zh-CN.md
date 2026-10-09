@@ -59,7 +59,7 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 | 云函数 | 37（+ 1 共享内核目录） |
 | 前端页面 | 20（三端共用） |
 | 数据集合 | 23 |
-| 索引定义 | 45 |
+| 索引定义 | 46 |
 | 契约测试 | 25 项（CI 强制） |
 
 ## 文档导航
@@ -69,7 +69,7 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 | [交付手册 HANDOVER](./HANDOVER.md) | ★ 企业交接入口：交付物 / 环境 / 部署 / 验收 |
 | [验收报告 ACCEPTANCE](./ACCEPTANCE.md) | ★ 验收结论 + 买家可复跑命令 |
 | [部署指南 DEPLOY](./DEPLOY.md) | 从 AppID 到上线的 10 步 |
-| [索引清单 INDEXES](./INDEXES.md) | 45 条索引控制台建卡步骤 |
+| [索引清单 INDEXES](./INDEXES.md) | 46 条索引控制台建卡步骤 |
 | [成本方案 COST](./COST.md) | 免费额度 → 生产 19.9 元/月 |
 | [合规要点 COMPLIANCE](./COMPLIANCE.md) | 个人主体 UGC 合规路径 |
 | [使用说明书 USER_GUIDE](./USER_GUIDE.md) | 面向最终用户 |
@@ -79,7 +79,7 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 
 ```bash
 # 后端：npm install → 微信开发者工具导入部署 37 函数 → 开 HTTP 访问 + 匿名登录
-#       → init-db 建集合 → 按 INDEXES.md 建 45 条索引 → 配 ADMIN_OPENIDS
+#       → init-db 建集合 → 按 INDEXES.md 建 46 条索引 → 配 ADMIN_OPENIDS
 # 前端：cd uni-app && npm install → 填 school.config.js（envId/restToken）→ 三端构建
 npm run build:h5           # H5
 npm run build:mp-weixin    # 微信小程序

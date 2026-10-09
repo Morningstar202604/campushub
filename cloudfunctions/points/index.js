@@ -55,7 +55,7 @@ exports.main = wrap(async (event) => {
           createdAt: new Date()
         }
       })
-    } catch (e) { /* 静默 */ }
+    } catch { /* 静默 */ }
 
     return ok({ redeemed: true, productId: product.id, creditScore: credit - product.price })
   }

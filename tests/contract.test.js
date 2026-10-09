@@ -67,26 +67,26 @@ test('P4: 所有 UGC 写入入口对非字符串输入做 String 化（防 .trim
   }
 })
 
-test('P4: 落地页 index.html 统计与链接应保持最新（37/23/21/44/9 + Morningstar202604）', () => {
+test('P4: 落地页 index.html 统计与链接应保持最新（37/20/23/46/9 + Morningstar202604）', () => {
   const src = read('index.html')
   assert.ok(src.includes('Morningstar202604'), '落地页链接应指向当前仓库账号')
   assert.ok(!src.includes('weed33834'), '落地页不应残留旧账号 weed33834')
-  for (const n of ['>37<', '>23<', '>21<', '>44<', '>9<']) {
+  for (const n of ['>37<', '>20<', '>23<', '>46<', '>9<']) {
     assert.ok(src.includes(n), `落地页统计应包含 ${n}`)
   }
-  assert.match(src, /version-0.8.0-green/, '落地页版本 badge 应为 0.7.0')
+  assert.match(src, /version-0\.9\.2-green/, '落地页版本 badge 应为 0.9.2')
 })
 
-test('P4: 文档统计数字与事实一致（37 云函数 / 20 页面 / 23 集合 / 45 索引 / 9 内核）', () => {
+test('P4: 文档统计数字与事实一致（37 云函数 / 20 页面 / 23 集合 / 46 索引 / 9 内核）', () => {
   const readme = read('README.md')
   const zh = read('docs/README.zh-CN.md')
   assert.ok(!readme.includes('| Cloud Functions | 34 |'), 'README 不应残留 34（旧值）')
   assert.ok(!zh.includes('| 云函数 | 34 |'), 'zh-CN 不应残留 34（旧值）')
   assert.ok(readme.includes('| 云函数 | 37 |'), 'README 云函数=37')
-  assert.ok(readme.includes('| 已定义索引 | 45'), 'README 索引=45')
+  assert.ok(readme.includes('| 已定义索引 | 46'), 'README 索引=46')
   assert.ok(zh.includes('| 云函数 | 37'), 'zh-CN 云函数=37')
   assert.ok(zh.includes('| 数据集合 | 23 |'), 'zh-CN 集合=23')
-  assert.ok(zh.includes('| 索引定义 | 45 |'), 'zh-CN 索引=45')
+  assert.ok(zh.includes('| 索引定义 | 46 |'), 'zh-CN 索引=46')
 })
 
 test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与 34 云函数', () => {
@@ -128,9 +128,9 @@ test('DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止漏
   for (const n of depNames) {
     assert.ok(srcNames.has(n), `DEPLOY.md 出现未知索引 ${n}`)
   }
-  // v0.9.2：45 = 44 - profile_views（死索引移除）+ idx_rate_limits_expire + idx_view_logs_created
-  assert.strictEqual(srcNames.size, 45, 'common-indexes.js 应为 45 个索引')
-  assert.strictEqual(depNames.size, 45, 'DEPLOY.md 应列出全部 45 个索引')
+  // v0.9.3 审计加固：46 = 45 + idx_verify_requests_status_created（M8: verify_requests 集合补索引）
+  assert.strictEqual(srcNames.size, 46, 'common-indexes.js 应为 46 个索引')
+  assert.strictEqual(depNames.size, 46, 'DEPLOY.md 应列出全部 46 个索引')
 })
 
 test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/积分闭环/深分页/海报）', () => {

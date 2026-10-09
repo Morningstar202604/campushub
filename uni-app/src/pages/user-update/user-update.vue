@@ -10,8 +10,8 @@
       <text class="block-label">头像</text>
       <view class="avatar-row">
         <image v-if="previewAvatar" class="avatar" :src="previewAvatar" mode="aspectFill" />
-        <view v-else class="avatar avatar--ph"></view>
-        <text class="avatar-change" @click="chooseAvatar">更换</text>
+        <view v-else class="avatar avatar--ph"><text class="avatar--ph-plus">+</text></view>
+        <text class="avatar-change press" @click="chooseAvatar">更换</text>
       </view>
     </view>
 
@@ -42,7 +42,7 @@
     </view>
 
     <view class="submit-wrap">
-      <button class="submit-btn sticker" :disabled="saving" @click="save">
+      <button class="submit-btn sticker press" :disabled="saving" @click="save">
         <text>{{ saving ? '保存中…' : '保存资料' }}</text>
       </button>
     </view>
@@ -178,9 +178,20 @@ onMounted(hydrate)
 .avatar-row { display: flex; align-items: center; gap: 24rpx; }
 .avatar {
   width: 120rpx; height: 120rpx; border-radius: var(--radius-sharp); background: var(--bg-elevated);
-  &--ph { background: var(--bg-elevated); }
+  &--ph {
+    background: rgba(200, 241, 53, 0.18);
+    border: 2rpx solid var(--accent-dim);
+    clip-path: var(--clip-diamond);
+    transform: rotate(0deg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  &--ph-plus {
+    font-size: 40rpx;
+    color: var(--accent-dim);
+    font-weight: var(--fw-title);
+  }
 }
-.avatar-change { font-size: 24rpx; color: var(--accent); font-weight: var(--fw-title); }
+.avatar-change { font-size: 24rpx; color: var(--accent); font-weight: var(--fw-title); display: inline-block; padding: 6rpx 16rpx; }
 
 .gender-row { display: flex; gap: 16rpx; }
 .gender-chip {
@@ -188,6 +199,8 @@ onMounted(hydrate)
   background: var(--bg-elevated); border: 1rpx solid var(--border);
   &.active { color: #0D110E; background: var(--accent); font-weight: var(--fw-title); }
 }
+.gender-chip.press { transition: transform var(--t-fast) var(--ease-out); }
+.gender-chip.press:active { transform: scale(0.95); }
 
 .submit-wrap { margin-top: 40rpx; }
 .submit-btn {

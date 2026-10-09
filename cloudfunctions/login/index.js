@@ -11,7 +11,7 @@ function stripOpenid(u) {
   return safe
 }
 
-exports.main = wrap(async (event, context) => {
+exports.main = wrap(async (_event, _context) => {
   const openid = await getOpenid()
   const db = getDB()
 

@@ -60,6 +60,8 @@ export function usePagedList<T = any>(opts: UsePagedListOptions<T>) {
   }
 
   async function queryList(page: number, size: number) {
+    // 防并发：若已有请求在进行，跳过
+    if (loading.value) return
     const paging = pagingRef.value
     if (!paging) return
     loading.value = true
@@ -81,7 +83,8 @@ export function usePagedList<T = any>(opts: UsePagedListOptions<T>) {
       // 只传「当前这一页」的数组，z-paging 内部自行拼接
       paging.completeByNoMore(pageData, hasMore)
     } catch (e: any) {
-      error.value = e?.message || String(e)
+      error.value = String(e?.message || e)
+      uni.showToast({ title: '加载失败', icon: 'none', duration: 2000 })
       console.error(`[usePagedList:${opts.fnName}]`, error.value)
       // 优先用 completeByError 把失败原因透传给 z-paging；老版本降级为 complete(false)
       if (typeof paging.completeByError === 'function') paging.completeByError(error.value)
@@ -94,6 +97,7 @@ export function usePagedList<T = any>(opts: UsePagedListOptions<T>) {
   /** 重置并重新加载（首屏手动刷新、筛选切换） */
   function reload() {
     error.value = ''
+    loading.value = true
     pagingRef.value?.reload?.()
   }
 

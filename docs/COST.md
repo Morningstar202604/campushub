@@ -17,12 +17,12 @@
 
 ### 1.2 就算绕过备案，改造也劝退
 
-CampusHub 全部后端长在 wx.cloud 上：**37 个云函数 / 21 个集合 / 41 个索引 / 2 个定时触发器**。迁移到 CF（Workers + D1 + R2）意味着：
+CampusHub 全部后端长在 wx.cloud 上：**37 个云函数 / 23 个集合 / 46 个索引 / 2 个定时触发器**。迁移到 CF（Workers + D1 + R2）意味着：
 
 | 现状（wx.cloud，零成本享有） | 迁 CF 要做的 |
 |---|---|
 | 37 个云函数 | 全部重写为 Workers 路由 |
-| 21 个集合（文档型） | 迁 D1（SQL），字段模型重设计 |
+| 23 个集合（文档型） | 迁 D1（SQL），字段模型重设计 |
 | 云存储图片 | 迁 R2，自己写上传签名 |
 | `getWXContext()` 免费拿 openid | 自己实现 code2Session + session 管理 |
 | msgSecCheck/imgSecCheck 免鉴权 | 自己维护 access_token 轮换 |
