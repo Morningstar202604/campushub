@@ -106,8 +106,12 @@ async function markAllRead() {
     await callFunction('notification', { action: 'markAllRead' })
     unreadCount.value = 0
     list.value = list.value.map((n) => ({ ...n, isRead: true }))
+    // 同步清除 Tab 角标
+    // #ifdef MP-WEIXIN
+    uni.removeTabBarBadge({ index: 3 }).catch(() => {})
+    // #endif
   } catch (e: any) {
-    uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
+    uni.showToast({ title: '操作失败', icon: 'none' })
   }
 }
 

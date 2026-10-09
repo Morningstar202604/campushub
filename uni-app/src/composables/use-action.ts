@@ -10,7 +10,7 @@
 //   comment-delete: callFunction('comment-delete', { commentId })
 //   resolve     : callFunction('resolve',      { postId })（仅 task/lost/found + 作者/管理员）
 import { ref, type Ref } from 'vue'
-import { callFunction } from '@/utils/api'
+import { callFunction, isNetworkConnected, sanitizeForUser, CloudFunctionError } from '@/utils/api'
 
 export type TargetType = 'post' | 'product' | 'comment'
 
@@ -37,6 +37,12 @@ export function useAction(opts: UseActionOptions) {
   /** 点赞 / 取消点赞（后端幂等，重复 like 不会重复计数） */
   async function toggleLike() {
     if (loading.value) return
+    // #ifdef MP-WEIXIN
+    if (!isNetworkConnected()) {
+      uni.showToast({ title: '网络已断开', icon: 'none' })
+      return
+    }
+    // #endif
     loading.value = true
     const id = getId()
     const type: TargetType = getType()
@@ -52,7 +58,12 @@ export function useAction(opts: UseActionOptions) {
         likeCount.value = Math.max(0, likeCount.value - 1)
       }
     } catch (e: any) {
-      uni.showToast({ title: '操作失败，请重试', icon: 'none', duration: 2000 })
+      // 后端 CloudFunctionError 自带友好 message（如「积分不足」「已标记过」），直接透传；
+      // 网络/系统类错误经 sanitizeForUser 脱敏后再 Toast
+      const msg = e instanceof CloudFunctionError
+        ? e.message
+        : sanitizeForUser(e?.message || String(e))
+      uni.showToast({ title: msg, icon: 'none', duration: 2000 })
       console.error('[use-action]', e?.message || e)
       // 失败不更新本地态
     } finally {
@@ -63,6 +74,12 @@ export function useAction(opts: UseActionOptions) {
   /** 收藏 / 取消收藏 */
   async function toggleCollect() {
     if (loading.value) return
+    // #ifdef MP-WEIXIN
+    if (!isNetworkConnected()) {
+      uni.showToast({ title: '网络已断开', icon: 'none' })
+      return
+    }
+    // #endif
     loading.value = true
     const id = getId()
     const type = getType()
@@ -71,7 +88,10 @@ export function useAction(opts: UseActionOptions) {
       await callFunction('collect', { targetId: id, type, action })
       collected.value = action === 'collect'
     } catch (e: any) {
-      uni.showToast({ title: '操作失败，请重试', icon: 'none', duration: 2000 })
+      const msg = e instanceof CloudFunctionError
+        ? e.message
+        : sanitizeForUser(e?.message || String(e))
+      uni.showToast({ title: msg, icon: 'none', duration: 2000 })
       console.error('[use-action]', e?.message || e)
     } finally {
       loading.value = false
@@ -81,12 +101,21 @@ export function useAction(opts: UseActionOptions) {
   /** 标记已解决（任务/失物/招领） */
   async function resolvePost() {
     if (loading.value) return
+    // #ifdef MP-WEIXIN
+    if (!isNetworkConnected()) {
+      uni.showToast({ title: '网络已断开', icon: 'none' })
+      return
+    }
+    // #endif
     loading.value = true
     try {
       const res: any = await callFunction('resolve', { postId: getId() })
       return Boolean(res?.resolved)
     } catch (e: any) {
-      uni.showToast({ title: '操作失败，请重试', icon: 'none', duration: 2000 })
+      const msg = e instanceof CloudFunctionError
+        ? e.message
+        : sanitizeForUser(e?.message || String(e))
+      uni.showToast({ title: msg, icon: 'none', duration: 2000 })
       console.error('[use-action]', e?.message || e)
       return false
     } finally {

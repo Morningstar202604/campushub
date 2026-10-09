@@ -28,13 +28,16 @@
     <!-- 商品卡：封面 + 价格 + 硬边框（价格保持白色让详情页做荧光焦点） -->
     <view v-for="item in list" :key="item.id" class="market-card sticker press" @click="openDetail(item)">
       <image
-        v-if="item.image"
+        v-if="item.image && !brokenImages[item.id]"
         class="market-cover"
         :src="item.image"
         mode="aspectFill"
         lazy-load
+        @error="brokenImages[item.id] = true"
       />
-      <view v-else class="market-cover market-cover--ph"></view>
+      <view v-else class="market-cover market-cover--ph">
+        <text class="market-cover--ph-text">No Image</text>
+      </view>
       <view class="market-body">
         <text class="market-title">{{ item.title }}</text>
         <view class="market-row">
@@ -77,6 +80,8 @@ const categories = [
 
 // 响应式 query：activeCategory 变化时自动带进下一次 callFunction
 const activeCategory = ref('all')
+/** 加载失败的商品封面索引（按 item.id），失败后显示占位图 */
+const brokenImages = ref<Record<string, boolean>>({})
 
 // 响应式 query：把 activeCategory 包成 computed，usePagedList 每次取 .value 即最新
 const liveQuery = computed(() => ({ category: activeCategory.value }))
@@ -141,11 +146,13 @@ function openDetail(item: any) {
     border-radius: var(--radius-sharp);
     flex-shrink: 0;
     &--ph {
+      display: flex; align-items: center; justify-content: center;
       background: var(--bg-elevated);
       border: 2rpx solid var(--border);
       clip-path: var(--clip-diamond);
       opacity: 0.5;
     }
+    &--ph-text { font-size: 20rpx; color: var(--text-tertiary); letter-spacing: 2rpx; }
   }
 
   .market-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }

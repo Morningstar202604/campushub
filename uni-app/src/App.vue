@@ -13,6 +13,7 @@ import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { onErrorCaptured, ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useSchoolStore } from '@/stores/school'
+import { initCloudSdk } from '@/utils/api'
 
 // 全局错误捕获 — 避免白屏
 onErrorCaptured((err, instance, info) => {
@@ -22,7 +23,6 @@ onErrorCaptured((err, instance, info) => {
 })
 
 const appReady = ref(false)
-const appError = ref('')
 
 onMounted(async () => {
   try {
@@ -39,18 +39,25 @@ onLaunch(() => {
   const userStore = useUserStore()
   const schoolStore = useSchoolStore()
   // 同步加载多校配置（envId/restToken）—— 必须早于 restore()，login 云函数依赖 envId。
-  // 原实现写 `await schoolStore.load()`，但 load 当时是动态 import 且不返回 Promise，
-  // await 一个 undefined 不会真等待，envId 仍为空串 → 首启 login 必失败。现 load 已改为同步。
   schoolStore.load()
   // 恢复登录态：内部 catch 全部异常并静默降级，不阻塞首屏渲染（无需 await）
   userStore.restore()
+  // 预热 H5/App 端 CloudBase SDK（图片/存储能力，失败静默）
+  initCloudSdk()
   console.log('[CampusHub] 墨荧 · Acid Campus launched', {
     envId: schoolStore.envId || '(未配置)',
     logged: userStore.isLoggedIn
   })
 })
 
-onShow(() => {})
+onShow(() => {
+  // 每次回到前台：刷新未读通知数 → 同步 Tab 角标（小程序端）
+  const userStore = useUserStore()
+  if (userStore.isLoggedIn) {
+    userStore.refreshUnreadCount()
+  }
+})
+
 onHide(() => {})
 </script>
 

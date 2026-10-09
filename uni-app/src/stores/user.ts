@@ -25,7 +25,9 @@ export const useUserStore = defineStore('user', {
     isLoggedIn: false,
     userInfo: null as UserInfo | null,
     loginRedirect: '',
-    loginError: ''
+    loginError: '',
+    /** 未读通知数（用于 Tab 角标） */
+    unreadCount: 0
   }),
   actions: {
     setUserInfo(user: UserInfo) {
@@ -38,6 +40,7 @@ export const useUserStore = defineStore('user', {
       this.isLoggedIn = false
       this.loginRedirect = ''
       this.loginError = ''
+      this.unreadCount = 0
     },
     /**
      * 恢复登录态：
@@ -82,6 +85,26 @@ export const useUserStore = defineStore('user', {
       } catch (e: any) {
         this.loginError = e?.message || String(e)
         this.clear()
+      }
+    },
+    /**
+     * 拉取未读通知数并同步到 Tab 角标（仅小程序端）
+     * 后端契约：callFunction('notification', { action: 'unreadCount' }) → { unread: number }
+     */
+    async refreshUnreadCount() {
+      try {
+        const res: any = await callFunction('notification', { action: 'unreadCount' })
+        this.unreadCount = res?.unread || 0
+        // #ifdef MP-WEIXIN
+        const tabIndex = 3 // 通知 Tab 在 tabBar.list 中的索引
+        if (this.unreadCount > 0) {
+          uni.setTabBarBadge({ index: tabIndex, text: String(this.unreadCount) }).catch(() => {})
+        } else {
+          uni.removeTabBarBadge({ index: tabIndex }).catch(() => {})
+        }
+        // #endif
+      } catch {
+        // 静默降级：不影响主流程，角标仅展示用
       }
     }
   },

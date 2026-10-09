@@ -32,15 +32,16 @@
 
         <text v-if="post.content" class="detail-content">{{ post.content }}</text>
 
-        <view v-if="displayImages.length" class="detail-images">
+        <view v-if="visibleImages.length" class="detail-images">
           <image
-            v-for="(img, i) in displayImages"
+            v-for="(img, i) in visibleImages"
             :key="i"
             class="detail-img"
             :src="img"
             mode="aspectFill"
             lazy-load
-            @click="previewImage(i)"
+            @click="onPreview(img)"
+            @error="onImgError(img)"
           />
         </view>
       </view>
@@ -144,6 +145,7 @@ const post = ref<PostDetail | null>(null)
 // 后端原始 post：仅用于取作者展示名（userNickname / isAnonymous 是后端落库真值）
 const postRaw = ref<any>(null)
 const displayImages = ref<string[]>([])
+const brokenImages = ref<Record<number, boolean>>({})
 const loading = ref(true)
 const loadError = ref('')
 
@@ -230,14 +232,22 @@ async function onResolve() {
   }
 }
 
-function previewImage(idx: number) {
-  if (!displayImages.value.length) return
+// 可见图片（加载失败的自动隐藏）
+const visibleImages = computed(() =>
+  displayImages.value.filter((_, i) => !brokenImages.value[i])
+)
+
+function onImgError(img: string) {
+  const idx = displayImages.value.indexOf(img)
+  if (idx >= 0) brokenImages.value[idx] = true
+}
+
+function onPreview(img: string) {
+  const urls = displayImages.value.filter(Boolean)
+  if (!urls.length) return
   // uni.previewImage：原生全屏预览，三端通用（小程序/H5/App）
   // @ts-ignore
-  uni.previewImage({
-    urls: displayImages.value,
-    current: displayImages.value[idx]
-  })
+  uni.previewImage({ urls, current: img })
 }
 
 // onLoad（uni-app 页面生命周期）取 query
