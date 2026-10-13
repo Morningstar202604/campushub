@@ -2,14 +2,19 @@
 // 编辑帖子：仅作者本人可编辑 + fail-closed 内容安全 + 分类校验
 // 可编辑字段：title, content, images, tags, categoryId, categoryPath
 // 不可编辑：kind（普通/任务）, isAnonymous, status, 计数字段
-const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImages } = require('./common-bundle')
+const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit, resolveCategoryPath } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
   const db = getDB()
 
-  const { postId, title, content, images, tags, categoryId, categoryPath } = event
+  const { postId, title, content, images, tags, categoryId } = event
   if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
+
+  // 频率限制：60 秒内最多 6 次编辑。必须排在所有权查询与内容审核之前 ——
+  // 编辑一次就是一次 msgSecCheck / imgSecCheck 调用，无限编辑可耗尽审核配额，
+  // 而审核是 fail-closed 的，配额耗尽即等于全站无法发布。
+  await rateLimit({ collection: 'post-update', match: { userId: user._id }, windowMs: 60000, max: 6 })
 
   // 获取帖子并验证所有权
   const postRes = await db.collection('posts').doc(postId).get().catch(() => ({ data: null }))
@@ -56,14 +61,12 @@ exports.main = wrap(async (event) => {
 
   // 分类
   if (categoryId !== undefined) {
-    const catRes = await db.collection('categories').doc(categoryId).get().catch(() => ({ data: null }))
-    if (!catRes || !catRes.data) throw new AppError('分类不存在', 'INVALID_PARAM')
-    const cat = catRes.data
-    if (cat.status !== 'active') throw new AppError('分类不可用', 'INVALID_PARAM')
+    // 祖先链一律服务端推导（含全链 active 校验），不接受客户端 categoryPath
+    const { chain: categoryPath, leaf: cat } = await resolveCategoryPath({ db, categoryId })
     const childCount = await db.collection('categories').where({ parentId: categoryId, status: 'active' }).count()
     if (childCount.total > 0) throw new AppError('请选择更具体的分类', 'INVALID_PARAM')
     patch.categoryId = categoryId
-    patch.categoryPath = Array.isArray(categoryPath) ? categoryPath : []
+    patch.categoryPath = categoryPath
     patch.category = cat.name
     patch.schoolId = cat.schoolId || post.schoolId || null
   }

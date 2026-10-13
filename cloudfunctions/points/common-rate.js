@@ -14,7 +14,7 @@ const { AppError } = require('./common-error')
 // collection: 业务集合名（兼作限频 scene 标识）；match: 主体匹配条件（如 { userId }，值须为服务端身份标量）；
 // windowMs: 时间窗；max: 窗口内允许的最大次数。
 async function rateLimit({ collection, match = {}, windowMs = 30000, max = 1, now = Date.now() } = {}) {
-  if (!collection) return
+  if (!collection) throw new AppError('rateLimit 缺少 collection 参数', 'CONFIG_ERROR')
   const db = getDB()
   const _ = db.command
   const windowStart = Math.floor(now / windowMs) * windowMs

@@ -3,7 +3,7 @@
 // 分类：必须选择到叶子节点（多级目录，避免内容淹没）
 // kind 类型：post 普通帖 / task 任务帖(带过期) / lost 失物 / found 招领 / confession 表白墙
 // 表白墙强制匿名；失物/招领可带地点，支持"已找回"标记（复用 resolved）
-const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit, isDuplicateKeyError } = require('./common-bundle')
+const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit, isDuplicateKeyError, resolveCategoryPath } = require('./common-bundle')
 
 const TASK_EXPIRE_DAYS = [3, 7, 15, 30]
 const VALID_KINDS = ['post', 'task', 'lost', 'found', 'confession']
@@ -57,7 +57,7 @@ exports.main = wrap(async (event) => {
 
   const {
     title: rawTitle, content: rawContent, images = [], tags = [],
-    categoryId, categoryPath = [], kind = 'post', expireDays = 7, isAnonymous = false,
+    categoryId, kind = 'post', expireDays = 7, isAnonymous = false,
     location = ''
   } = event
   // 统一 String 化：客户端可传非字符串，避免 .trim()/.length 抛 TypeError
@@ -80,23 +80,23 @@ exports.main = wrap(async (event) => {
   const isAnon = safeKind === 'confession' ? true : !!isAnonymous
   const safeLocation = ['lost', 'found'].includes(safeKind) ? String(location || '').trim().slice(0, 50) : ''
 
-  // 分类校验：必须存在且为叶子（无子分类）
+  // 频率限制：30秒内最多发1条
+  // 顺序要求：限频必须在内容安全之前。审核接口配额有限（文本 4000 次/分、图片 2000 次/分），
+  // 先审后限等于让脚本用无效请求把配额烧光；而本项目的审核是 fail-closed，
+  // 配额一旦耗尽，全站都会"发不出去"——限频前置就是给审核链路兜底。
+  await rateLimit({ collection: 'posts', match: { userId: user._id }, windowMs: 30000, max: 1 })
+
+  // 分类校验：必须存在、全链 active、且为叶子（无子分类）
   if (!categoryId) throw new AppError('请选择分类', 'INVALID_PARAM')
-  const catRes = await db.collection('categories').doc(categoryId).get().catch(() => ({ data: null }))
-  if (!catRes || !catRes.data) throw new AppError('分类不存在', 'INVALID_PARAM')
-  const cat = catRes.data
-  if (cat.status !== 'active') throw new AppError('分类不可用', 'INVALID_PARAM')
+  const { chain: categoryPath, leaf: cat } = await resolveCategoryPath({ db, categoryId })
   const childCount = await db.collection('categories').where({ parentId: categoryId, status: 'active' }).count()
   if (childCount.total > 0) throw new AppError('请选择更具体的分类', 'INVALID_PARAM')
 
   // 文本安全：任何异常一律拒绝发布（fail-closed）
   await checkContents([title, content, safeTags.join(' ')], { openid: user.openid, scene: 2 })
 
-  // 图片安全：对每张云存储图片做 imgSecCheck（fail-closed）
-  if (images.length) await checkImages(images, { openid: user.openid })
-
-  // 频率限制：30秒内最多发1条
-  await rateLimit({ collection: 'posts', match: { userId: user._id }, windowMs: 30000, max: 1 })
+  // 图片安全：同步 imgSecCheck + Buffer（fail-closed，并发受限）
+  if (images.length) await checkImages(images)
 
   // 任务类：计算过期时间
   const isTask = safeKind === 'task'
@@ -115,7 +115,7 @@ exports.main = wrap(async (event) => {
     userAvatar: isAnon ? '' : user.avatar,
     schoolId,
     categoryId,
-    categoryPath: Array.isArray(categoryPath) ? categoryPath : [],
+    categoryPath, // 服务端由 categoryId 回溯推导，绝不采信客户端传值
     category: cat.name,
     kind: safeKind,
     location: safeLocation,

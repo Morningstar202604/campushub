@@ -22,8 +22,8 @@ exports.main = wrap(async (event) => {
     .count()
   if (dupCheck.total > 0) throw new AppError('您已举报过该内容，请等待处理', 'ALREADY')
 
-  await checkContents([reason, safeDescription], { openid: user.openid, scene: 2 })
   await rateLimit({ collection: 'reports', match: { reporterId: user._id }, windowMs: 60000, max: 5 })
+  await checkContents([reason, safeDescription], { openid: user.openid, scene: 2 })
 
   await db.collection('reports').add({
     data: {

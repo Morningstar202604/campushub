@@ -1,6 +1,7 @@
 // common-security.js — 内容安全（fail-closed 设计）
 // 根本性解决"审核失败被静默跳过、违规内容照发"的问题：
 // 任何异常（接口未开通/超限/网络/命中违规）一律拒绝发布，宁可拦错也不漏放。
+const fs = require('fs')
 const { cloud } = require('./common-db')
 const { AppError } = require('./common-error')
 
@@ -37,32 +38,75 @@ async function checkContents(texts = [], { openid = '', scene = 2 } = {}) {
   return checkContent({ content: joined, openid, scene })
 }
 
-// 图片内容安全（fail-closed）：对云存储图片做 imgSecCheck。
-// 微信 imgSecCheck v2 需要可访问的 https 链接，故先把 cloud:// fileID 换成临时链接再校验。
-// 任意异常（未开通/超限/命中违规/网络）一律拒绝发布，与文本安全策略一致。
-async function checkImage({ fileID, openid = '' } = {}) {
+// 图片内容安全（fail-closed）：同步 imgSecCheck 的正确形态是传图片二进制 ——
+// `media: { contentType, value: Buffer }`，且微信侧限制单图 ≤1MB、尺寸 ≤750×1334。
+// 带 media_url 的是**异步**接口 mediaCheckAsync（其 media_type 图片=2、音频=1），
+// 需要配置消息推送回调才能拿到结果，与"发布前必须拦下"的 fail-closed 诉求不匹配，
+// 因此这里坚持同步链路：先把 cloud:// 文件下载到本地临时路径，再以 Buffer 送检。
+// 任意环节异常（下载失败/超限/命中违规/接口不可用）一律拒绝发布。
+const IMAGE_MAX_BYTES = 1024 * 1024 // 微信同步图片审核硬上限 1MB
+const IMAGE_CONTENT_TYPES = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  bmp: 'image/bmp'
+}
+// 审核接口配额为 2000 次/分钟；并发不设上限时，一次 9 图发布就会瞬时打出 9 路请求，
+// 多人同时发帖即可耗尽配额 —— 而配额耗尽在本设计里等于全站发不出图（fail-closed）。
+const IMAGE_CHECK_CONCURRENCY = 4
+
+function imageContentTypeOf(fileID) {
+  const ext = String(fileID).split('?')[0].split('.').pop().toLowerCase()
+  return IMAGE_CONTENT_TYPES[ext] || null
+}
+
+async function checkImage({ fileID } = {}) {
   // fail-closed：只接受本云存储的图片。外链/垃圾值一律拒绝，
   // 堵住"非 cloud:// 静默放行"的审核后门（客户端可完全控制该字段）。
   if (!fileID || typeof fileID !== 'string' || !fileID.startsWith('cloud://')) {
     throw new AppError('仅支持上传到云存储的图片', 'INVALID_PARAM')
   }
-  let url
+  const contentType = imageContentTypeOf(fileID)
+  if (!contentType) {
+    throw new AppError('仅支持 jpg / jpeg / png / gif / bmp 图片', 'IMAGE_TYPE_UNSUPPORTED')
+  }
+
+  let downloaded
   try {
-    const tmp = await cloud.getTempFileURL({ fileList: [fileID] })
-    url = tmp && tmp.fileList && tmp.fileList[0] && tmp.fileList[0].tempFileURL
+    downloaded = await cloud.downloadFile({ fileID })
   } catch (e) {
-    console.error('[图片安全] 获取临时链接失败，按最严策略拒绝:', e && (e.errMsg || e.message))
+    console.error('[图片安全] 下载失败，按最严策略拒绝:', e && (e.errMsg || e.message))
     throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
   }
-  // 拿不到可审核的临时链接同样拒绝，不放行
-  if (!url) {
+  const tempFilePath = downloaded && downloaded.tempFilePath
+  if (!tempFilePath) {
     throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
   }
+
+  let buffer
+  try {
+    buffer = fs.readFileSync(tempFilePath)
+  } catch (e) {
+    console.error('[图片安全] 读取临时文件失败，按最严策略拒绝:', e && (e.message))
+    throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
+  } finally {
+    // 临时文件用完即删，避免实例复用时无限堆积占用磁盘
+    try { fs.unlinkSync(tempFilePath) } catch (e) { /* 删不掉不影响审核结论 */ }
+  }
+
+  if (!buffer || !buffer.length) {
+    throw new AppError('图片内容为空，请重新上传', 'IMAGE_EMPTY')
+  }
+  // 明确区分"图太大"与"审核服务不可用"：前者是用户可通过压缩自行解决的问题，
+  // 后端只能提示，真正的压缩应发生在前端（见 uni-app 上传前的 compressToUnder1MB）。
+  if (buffer.length > IMAGE_MAX_BYTES) {
+    throw new AppError('图片过大（超过 1MB），请在发布前压缩后重试', 'IMAGE_TOO_LARGE')
+  }
+
   try {
     await cloud.openapi.security.imgSecCheck({
-      version: '2',
-      openid,
-      media: { type: 1, media_url: url }
+      media: { contentType, value: buffer }
     })
   } catch (e) {
     const errCode = e && (e.errCode || e.errcode)
@@ -74,9 +118,24 @@ async function checkImage({ fileID, openid = '' } = {}) {
   }
 }
 
-// 批量校验图片数组（并发校验缩短尾延迟，任一张违规即整体拒绝）
-async function checkImages(fileIDs = [], { openid = '' } = {}) {
-  await Promise.all((fileIDs || []).map(f => checkImage({ fileID: f, openid })))
+// 批量校验图片：并发受限（默认 4），任一张违规/异常即整体拒绝
+async function checkImages(fileIDs = [], { concurrency = IMAGE_CHECK_CONCURRENCY } = {}) {
+  const list = (fileIDs || []).filter(Boolean)
+  if (!list.length) return
+  let cursor = 0
+  let failed = null
+  const workers = Array.from({ length: Math.min(concurrency, list.length) }, async () => {
+    while (cursor < list.length && !failed) {
+      const i = cursor++
+      try {
+        await checkImage({ fileID: list[i] })
+      } catch (e) {
+        if (!failed) failed = e
+      }
+    }
+  })
+  await Promise.all(workers)
+  if (failed) throw failed
 }
 
 // 管理员身份识别（云端可信，不依赖前端）

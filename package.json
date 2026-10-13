@@ -36,11 +36,11 @@
     "lint:js:fix": "eslint . --fix",
     "format": "prettier --check \"cloudfunctions/**/*.js\" \"scripts/**/*.js\"",
     "format:fix": "prettier --write \"cloudfunctions/**/*.js\" \"scripts/**/*.js\"",
-    "test": "node --test tests/common-error.test.js tests/common-db.test.js tests/common-security.test.js tests/common-rate.test.js tests/common-context.test.js tests/removeContent.test.js tests/contract.test.js",
+    "test": "node --test tests/*.test.js",
     "prepublishOnly": "node scripts/sync-common.js"
   },
-  "dependencies": {},
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "eslint": "^10.11.0",
     "miniprogram-ci": "^2.1.31",
     "prettier": "^3.6.2"

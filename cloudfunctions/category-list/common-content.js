@@ -156,4 +156,48 @@ async function reconcileUserCounts(dbOverride) {
   return { corrected, scanned, skipped }
 }
 
-module.exports = { removeContent, countViewOnce, reconcileUserCounts }
+/**
+ * 由叶子分类沿 parentId 回溯，在服务端推导完整祖先链（Zone > Category > Board）。
+ * 为什么必须由服务端推导：post-list 用 `where.categoryPath = categoryId` 做版块筛选，
+ * 而读侧并不校验目标分类是否 active。若接受客户端传来的 categoryPath，
+ * 调用者就能把内容投进「管理员已停用的版块」「他人校区的版块」，
+ * 或反向让自己帖子在真实版块里隐身 —— 归属与可见性都会失真。
+ * @param {object} params
+ * @param {object} params.db        云数据库引用
+ * @param {string} params.categoryId 叶子分类 id（发帖必须选叶子）
+ * @returns {Promise<{chain: string[], leaf: object}>} chain 为「根在前」的分类 id 数组
+ */
+const CATEGORY_MAX_DEPTH = 3
+
+async function resolveCategoryPath({ db, categoryId } = {}) {
+  if (!categoryId) throw new AppError('请选择分类', 'INVALID_PARAM')
+  const chain = []
+  const seen = new Set()
+  let currentId = String(categoryId)
+  let leaf = null
+
+  while (currentId) {
+    if (seen.has(currentId)) {
+      throw new AppError('分类层级存在环，请联系管理员', 'CATEGORY_CYCLE')
+    }
+    seen.add(currentId)
+    const res = await db
+      .collection('categories')
+      .doc(currentId)
+      .get()
+      .catch(() => ({ data: null }))
+    const node = res && res.data
+    if (!node) throw new AppError('分类不存在', 'CATEGORY_NOT_FOUND')
+    if (node.status !== 'active') throw new AppError('分类不可用', 'CATEGORY_INACTIVE')
+    if (!leaf) leaf = node
+    chain.unshift(String(currentId))
+    currentId = node.parentId ? String(node.parentId) : ''
+  }
+
+  if (chain.length > CATEGORY_MAX_DEPTH) {
+    throw new AppError('分类层级超过 3 级（校区/圈 > 版块 > 子版）', 'CATEGORY_TOO_DEEP')
+  }
+  return { chain, leaf }
+}
+
+module.exports = { removeContent, countViewOnce, reconcileUserCounts, resolveCategoryPath }

@@ -2,13 +2,17 @@
 const { test, afterEach } = require('node:test')
 const assert = require('node:assert')
 const Module = require('module')
+const fs = require('fs')
+const os = require('os')
 const path = require('path')
 
 const COMMON_DIR = path.resolve(__dirname, '..', 'cloudfunctions', 'common')
 const originalLoad = Module._load
 
 // 构造 mock 云环境
-function makeMockCloud({ msgSecResult = null, msgSecError = null, imgSecResult = null, imgSecError = null } = {}) {
+// 图片审核走「downloadFile → 本地 Buffer → 同步 imgSecCheck」链路，
+// 因此 mock 必须提供 downloadFile 并返回一个真实存在的临时文件。
+function makeMockCloud({ msgSecResult = null, msgSecError = null, imgSecResult = null, imgSecError = null, imgBytes = 1024, downloadFail = null } = {}) {
   return {
     DYNAMIC_CURRENT_ENV: 'test',
     init() {},
@@ -20,6 +24,12 @@ function makeMockCloud({ msgSecResult = null, msgSecError = null, imgSecResult =
       }
     },
     getTempFileURL: async () => ({ fileList: [{ tempFileURL: 'https://tmp.example.com/img.jpg' }] }),
+    downloadFile: async () => {
+      if (downloadFail) throw downloadFail
+      const p = path.join(os.tmpdir(), `campushub-sec-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`)
+      fs.writeFileSync(p, Buffer.alloc(imgBytes, 0x41))
+      return { tempFilePath: p, statusCode: 200 }
+    },
     database() {
       return {
         collection: () => ({ doc: () => ({ get: async () => ({ data: { adminOpenids: [] } }) }) }),

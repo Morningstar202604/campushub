@@ -1,13 +1,17 @@
 // cloudfunctions/user-update/index.js
 // 更新个人资料：仅允许本人修改 + 资料内容安全 + 头像图片安全审核
 // 写操作统一经 requireActiveUser，封禁用户不可修改资料
-const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImage } = require('./common-bundle')
+const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImage, rateLimit } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
   const db = getDB()
 
   const { nickname, avatar, bio, college, major, grade, gender, tags } = event
+
+  // 频率限制：60 秒内最多 5 次资料修改。资料字段（昵称/个性签名/头像）全部要过内容安全，
+  // 无限修改既能烧穿审核配额，也能把个人资料刷成广告位。
+  await rateLimit({ collection: 'user-update', match: { userId: user._id }, windowMs: 60000, max: 5 })
 
   // 改名额度校验需要完整用户文档（hasRenamed / renameTokens 不在公共字段子集内）
   const fullRes = await db.collection('users').doc(user._id).get().catch(() => ({ data: null }))

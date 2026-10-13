@@ -101,7 +101,10 @@ const EXPECTED_INDEXES = [
   { collection: 'rate_limits', name: 'idx_rate_limits_expire', fields: [{ key: 'expireAt', direction: -1 }], unique: false },
 
   // ===== view_logs（浏览量去重日志：_id 主键去重；task-expire 按 createdAt 清理 90 天前记录）=====
-  { collection: 'view_logs', name: 'idx_view_logs_created', fields: [{ key: 'createdAt', direction: -1 }], unique: false }
+  { collection: 'view_logs', name: 'idx_view_logs_created', fields: [{ key: 'createdAt', direction: -1 }], unique: false },
+
+  // ===== verify_requests（校园身份认证：管理员按 status 列出待审核申请）=====
+  { collection: 'verify_requests', name: 'idx_verify_requests_status_created', fields: [{ key: 'status', direction: 1 }, { key: 'createdAt', direction: -1 }], unique: false }
 ]
 
 module.exports = { EXPECTED_INDEXES }

@@ -39,10 +39,10 @@ exports.main = wrap(async (event) => {
     validParentId = parentId
   }
 
+  // 频率限制：10秒内最多3条（先限频再审核，避免用刷屏评论烧穿 msgSecCheck 配额）
+  await rateLimit({ collection: 'comments', match: { userId: user._id }, windowMs: 10000, max: 3 })
   // 内容安全：fail-closed
   await checkContents([content], { openid: user.openid, scene: 2 })
-  // 频率限制：10秒内最多3条
-  await rateLimit({ collection: 'comments', match: { userId: user._id }, windowMs: 10000, max: 3 })
 
   const comment = {
     targetId,

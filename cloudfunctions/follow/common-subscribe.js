@@ -52,7 +52,7 @@ async function getOpenidByUserId(db, userId) {
   try {
     const r = await db.collection('users').doc(userId).field({ openid: true }).get()
     return (r && r.data && r.data.openid) || null
-  } catch (e) {
+  } catch {
     return null
   }
 }

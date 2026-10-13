@@ -17,8 +17,8 @@ exports.main = wrap(async (event) => {
   const safeType = VALID_TYPES.includes(type) ? type : 'suggest'
   const safeContact = String(contact || '').trim().slice(0, 50)
 
-  await checkContents([content, safeContact], { openid: user.openid, scene: 2 })
   await rateLimit({ collection: 'feedbacks', match: { userId: user._id }, windowMs: 60000, max: 3 })
+  await checkContents([content, safeContact], { openid: user.openid, scene: 2 })
 
   await db.collection('feedbacks').add({
     data: {

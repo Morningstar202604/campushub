@@ -69,14 +69,14 @@ exports.main = wrap(async (event) => {
   if (!['new', 'good', 'fair', 'old'].includes(condition)) throw new AppError('非法的成色', 'INVALID_PARAM')
   if (!['face', 'mail', 'both'].includes(tradeType)) throw new AppError('非法的交易方式', 'INVALID_PARAM')
 
+  // 频率限制：30秒内最多1条（必须在审核之前，防止用无效请求烧穿审核配额）
+  await rateLimit({ collection: 'products', match: { userId: user._id }, windowMs: 30000, max: 1 })
+
   // 文本安全：fail-closed
   await checkContents([title, description, contactInfo], { openid: user.openid, scene: 2 })
 
-  // 图片安全：对每张云存储图片做 imgSecCheck（fail-closed）
-  if (images.length) await checkImages(images, { openid: user.openid })
-
-  // 频率限制：30秒内最多1条
-  await rateLimit({ collection: 'products', match: { userId: user._id }, windowMs: 30000, max: 1 })
+  // 图片安全：同步 imgSecCheck + Buffer（fail-closed，并发受限）
+  if (images.length) await checkImages(images)
 
   const product = {
     userId: user._id,

@@ -2,7 +2,7 @@
 // 编辑商品：仅作者本人可编辑 + fail-closed 内容安全 + 图片安全
 // 可编辑字段：title, description, images, price, originalPrice, category, condition, tradeType, location, contactInfo
 // 特殊操作：markSold=true 标记已售, markSold=false 重新上架
-const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImages } = require('./common-bundle')
+const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -11,6 +11,9 @@ exports.main = wrap(async (event) => {
   const { productId, title, description, images, price, originalPrice,
     category, condition, tradeType, location, contactInfo, markSold } = event
   if (!productId) throw new AppError('缺少商品ID', 'INVALID_PARAM')
+
+  // 频率限制：60 秒内最多 6 次编辑（同 post-update，防止用编辑刷审核配额）
+  await rateLimit({ collection: 'product-update', match: { userId: user._id }, windowMs: 60000, max: 6 })
 
   // 获取商品并验证所有权
   const prodRes = await db.collection('products').doc(productId).get().catch(() => ({ data: null }))

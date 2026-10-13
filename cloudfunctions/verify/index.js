@@ -50,13 +50,15 @@ exports.main = wrap(async (event) => {
       .where({ userId: user._id, status: 'pending' }).count()
     if (pending.total > 0) throw new AppError('已有待审核的申请，请耐心等待', 'ALREADY')
 
+    // 频率限制：24 小时内最多提交 3 次（含被拒后的重提）
+    // 必须早于文本/图片审核：证件照送检一次就是一张 imgSecCheck 配额，
+    // 而本接口 fail-closed，配额被脚本耗尽后所有人都无法提交认证。
+    await rateLimit({ collection: 'verify_requests', match: { userId: user._id }, windowMs: 86400000, max: 3 })
+
     // 文本安全：学校名（fail-closed）
     await checkContents([safeSchool], { openid: user.openid, scene: 1 })
     // 证件照必须过图片安全审核（fail-closed）
-    await checkImage({ fileID: imageFileID, openid: user.openid })
-
-    // 频率限制：24 小时内最多提交 3 次（含被拒后的重提）
-    await rateLimit({ collection: 'verify_requests', match: { userId: user._id }, windowMs: 86400000, max: 3 })
+    await checkImage({ fileID: imageFileID })
 
     const addRes = await db.collection('verify_requests').add({
       data: {

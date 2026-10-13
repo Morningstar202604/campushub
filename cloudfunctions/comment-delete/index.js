@@ -2,7 +2,7 @@
 // 删除评论：统一经 removeContent（软删除 + 归属校验/管理员 + 目标评论数回退）
 // 级联：删除主楼层时一并软删其全部子回复，并按实际条数补回退目标 commentCount，
 // 避免"楼层删了、楼中楼变隐形孤儿但计数还在"的漂移。
-const { getDB, getCmd, AppError, ok, wrap, getCurrentUser, requireActive, removeContent } = require('./common-bundle')
+const { getDB, getCmd, AppError, ok, wrap, getCurrentUser, requireActive, removeContent, rateLimit } = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await getCurrentUser()
@@ -11,6 +11,9 @@ exports.main = wrap(async (event) => {
   const _ = getCmd()
   const { commentId } = event
   if (!commentId) throw new AppError('缺少评论ID', 'INVALID_PARAM')
+
+  // 频率限制：60 秒内最多 20 次删除（级联删子回复时一次调用即可删多条，写放大需封顶）
+  await rateLimit({ collection: 'comment-delete', match: { userId: user._id }, windowMs: 60000, max: 20 })
 
   // 先取文档判断是否主楼层（removeContent 成功后原文档状态已变更）
   const docRes = await db.collection('comments').doc(commentId).get().catch(() => ({ data: null }))
