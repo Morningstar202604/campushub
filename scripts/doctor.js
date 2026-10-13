@@ -17,7 +17,6 @@
  */
 const fs = require('fs')
 const path = require('path')
-const crypto = require('crypto')
 
 const ROOT = path.resolve(__dirname, '..')
 const strict = process.argv.includes('--strict')
@@ -25,12 +24,16 @@ const strict = process.argv.includes('--strict')
 let errors = 0
 let warns = 0
 
-function ok(msg) { console.log(`✓ ${msg}`) }
-function warn(msg) { warns++; console.log(`⚠ ${msg}`) }
-function err(msg) { errors++; console.log(`✗ ${msg}`) }
-
-function md5(file) {
-  return crypto.createHash('md5').update(fs.readFileSync(file)).digest('hex')
+function ok(msg) {
+  console.log(`✓ ${msg}`)
+}
+function warn(msg) {
+  warns++
+  console.log(`⚠ ${msg}`)
+}
+function err(msg) {
+  errors++
+  console.log(`✗ ${msg}`)
 }
 
 // ---------- 1. AppID ----------
@@ -78,7 +81,7 @@ function checkEnvId() {
     const m = appJs.match(/env:\s*'([^']*)'/)
     const envId = m ? m[1] : ''
     if (!envId) {
-      err("miniprogram/app.js 未找到 wx.cloud.init 的 env 配置")
+      err('miniprogram/app.js 未找到 wx.cloud.init 的 env 配置')
     } else if (envId.includes('你的') || envId.includes('替换')) {
       err(`miniprogram/app.js 云环境 ID 仍是占位符：'${envId}'`)
     } else if (envId === 'campushub') {
@@ -92,79 +95,103 @@ function checkEnvId() {
   ok('跳过 envId 检查（未发现前端配置文件）')
 }
 
-// ---------- 3+4. 云函数清单与 common 同步一致性 ----------
-const COMMON_FILES = [
-  'common-bundle.js', 'common-content.js', 'common-context.js', 'common-db.js',
-  'common-error.js', 'common-indexes.js', 'common-rate.js', 'common-security.js',
-  'common-subscribe.js'
-]
-const MANIFEST = path.join(ROOT, 'cloudfunctions', 'common', '.sync-manifest.json')
+// ---------- 3+4. 云函数清单与内核交付方式 ----------
+// v0.9.3 及以前：内核靠 sync:common 复制进每个函数目录（333 份副本）——
+//   改完 cloudfunctions/common/ 漏跑一次同步，线上就跑旧内核（本轮实际发生过）。
+// 现在：源码目录不放副本，部署物由 scripts/build-functions.js 构建期内联生成到 dist/。
+//   于是 doctor 管三件事：目录结构、有没有人又把副本塞回源码目录、产物是否与当前源码一致。
+const KERNEL_COPY_RE = /^common-[a-z]+\.js$/
 
 function checkFunctions() {
   if (!fs.existsSync(path.join(ROOT, 'cloudfunctions'))) {
     err('cloudfunctions/ 目录不存在')
     return
   }
-  const dirs = fs.readdirSync(path.join(ROOT, 'cloudfunctions'), { withFileTypes: true })
-    .filter(d => d.isDirectory() && d.name !== 'common')
-    .map(d => d.name)
+  const dirs = fs
+    .readdirSync(path.join(ROOT, 'cloudfunctions'), { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name !== 'common')
+    .map((d) => d.name)
     .sort()
 
   let structBad = 0
-  let driftFns = []
+  const leftovers = []
 
   for (const name of dirs) {
     const dir = path.join(ROOT, 'cloudfunctions', name)
     const hasIndex = fs.existsSync(path.join(dir, 'index.js'))
     const hasPkg = fs.existsSync(path.join(dir, 'package.json'))
     if (!hasIndex || !hasPkg) {
-      err(`${name}：缺少 ${[!hasIndex && 'index.js', !hasPkg && 'package.json'].filter(Boolean).join(' 与 ')}`)
+      err(
+        `${name}：缺少 ${[!hasIndex && 'index.js', !hasPkg && 'package.json'].filter(Boolean).join(' 与 ')}`
+      )
       structBad++
     }
-  }
-
-  // 优先用 manifest 指纹校验；缺失/损坏则回退到逐文件 md5
-  let usedManifest = false
-  if (fs.existsSync(MANIFEST)) {
-    let manifest = null
-    try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) } catch { /* fallback */ }
-    if (manifest && Array.isArray(manifest.files)) {
-      usedManifest = true
-      const shaMap = new Map(manifest.files.map(f => [f.name, f.sha1]))
-      for (const name of dirs) {
-        const dir = path.join(ROOT, 'cloudfunctions', name)
-        for (const f of COMMON_FILES) {
-          const dst = path.join(dir, f)
-          const expected = shaMap.get(f)
-          if (!expected) continue
-          if (!fs.existsSync(dst)) { driftFns.push(name); break }
-          const actual = crypto.createHash('sha1').update(fs.readFileSync(dst)).digest('hex')
-          if (actual !== expected) { driftFns.push(name); break }
-        }
-      }
-    }
-  }
-  if (!usedManifest) {
-    for (const name of dirs) {
-      const dir = path.join(ROOT, 'cloudfunctions', name)
-      for (const f of COMMON_FILES) {
-        const src = path.join(ROOT, 'cloudfunctions', 'common', f)
-        const dst = path.join(dir, f)
-        if (!fs.existsSync(src)) continue
-        if (!fs.existsSync(dst) || md5(src) !== md5(dst)) {
-          driftFns.push(name)
-          break
-        }
-      }
+    for (const f of fs.readdirSync(dir)) {
+      if (KERNEL_COPY_RE.test(f)) leftovers.push(`${name}/${f}`)
     }
   }
 
   if (structBad === 0) ok(`${dirs.length} 个云函数目录结构完整`)
-  if (driftFns.length) {
-    err(`common 内核未同步或已漂移的函数（${driftFns.length} 个）：${driftFns.slice(0, 10).join(', ')}${driftFns.length > 10 ? ' ...' : ''}`)
-    console.log('  → 执行 npm run sync:common 后重新检查')
+
+  if (leftovers.length) {
+    err(
+      `源码目录存在内核副本（${leftovers.length} 份，副本必然漂移）：${leftovers.slice(0, 6).join(', ')}${leftovers.length > 6 ? ' ...' : ''}`
+    )
+    console.log('  → 删除副本，改用 npm run build:functions 产出 dist/cloudfunctions/ 部署物')
   } else {
-    ok(`common 内核已同步到全部云函数（${usedManifest ? 'SHA1 指纹' : 'md5'} 一致）`)
+    ok('源码目录零内核副本（单一事实来源，结构上不可能漂移）')
+  }
+
+  // 产物新鲜度交给构建脚本自己判定，避免 doctor 另立一套指纹口径
+  const res = require('child_process').spawnSync(
+    process.execPath,
+    [path.join(__dirname, 'build-functions.js'), '--check'],
+    { cwd: ROOT, encoding: 'utf8' }
+  )
+  if (res.status === 0) {
+    const tail = (res.stdout || '').trim().split('\n').pop()
+    ok((tail || 'dist 产物与源码一致').replace(/^✓\s*/, ''))
+  } else {
+    const out = `${res.stdout || ''}${res.stderr || ''}`
+    if (/产物过期或缺失|没有可部署/.test(out)) {
+      warn('dist/ 产物缺失或已过期：部署前执行 npm run build:functions')
+    } else {
+      err(`产物校验失败：${out.trim().split('\n').slice(-2).join(' / ')}`)
+    }
+  }
+}
+
+// 云调用权限：漏声明会让 msgSecCheck/imgSecCheck 返回 api unauthorized。
+// 本项目的审核是 fail-closed，所以症状不是"跳过审核"，而是上线后所有人发布都被拒。
+function checkOpenapiPermissions() {
+  const base = path.join(ROOT, 'cloudfunctions')
+  if (!fs.existsSync(base)) return
+  const offenders = []
+  for (const name of fs.readdirSync(base)) {
+    if (name === 'common') continue
+    const idx = path.join(base, name, 'index.js')
+    if (!fs.existsSync(idx)) continue
+    const code = fs.readFileSync(idx, 'utf8')
+    const need = new Set()
+    for (const m of code.matchAll(/cloud\.openapi\.([a-zA-Z]+\.[a-zA-Z]+)/g)) need.add(m[1])
+    if (/await\s+checkContents?\(/.test(code)) need.add('security.msgSecCheck')
+    if (/await\s+checkImages?\(/.test(code)) need.add('security.imgSecCheck')
+    if (/sendSubscribe\(/.test(code)) need.add('subscribeMessage.send')
+    if (!need.size) continue
+    let declared = []
+    try {
+      const cfg = JSON.parse(fs.readFileSync(path.join(base, name, 'config.json'), 'utf8'))
+      declared = (cfg.permissions && cfg.permissions.openapi) || []
+    } catch {
+      /* 无 config.json 即未声明 */
+    }
+    const gap = [...need].filter((a) => !declared.includes(a))
+    if (gap.length) offenders.push(`${name}(未声明 ${gap.join('/')})`)
+  }
+  if (offenders.length) {
+    err(`云调用权限缺失，上线即表现为发布全被拒：${offenders.join(', ')}`)
+  } else {
+    ok('全部云调用的 openapi 权限已在 config.json 声明')
   }
 }
 
@@ -204,7 +231,10 @@ function checkNewFns() {
   let missing = 0
   for (const fn of REQUIRED_NEW_FNS) {
     const dir = path.join(ROOT, 'cloudfunctions', fn)
-    if (!fs.existsSync(path.join(dir, 'index.js')) || !fs.existsSync(path.join(dir, 'package.json'))) {
+    if (
+      !fs.existsSync(path.join(dir, 'index.js')) ||
+      !fs.existsSync(path.join(dir, 'package.json'))
+    ) {
       err(`功能函数 ${fn} 目录不完整`)
       missing++
     }
@@ -221,7 +251,9 @@ function checkSchoolConfig() {
   if (fs.existsSync(p)) {
     ok('config/school.json 存在（换校配置就绪）')
   } else if (fs.existsSync(path.join(ROOT, 'config', 'school.default.json'))) {
-    console.log('ℹ config/school.json 不存在：部署新学校时 cp config/school.default.json config/school.json 填写（见 docs/SCHOOL_SETUP.md）')
+    console.log(
+      'ℹ config/school.json 不存在：部署新学校时 cp config/school.default.json config/school.json 填写（见 docs/SCHOOL_SETUP.md）'
+    )
   } else {
     warn('config/ 目录缺少学校配置模板')
   }
@@ -233,7 +265,9 @@ function checkDeployConfig() {
   if (fs.existsSync(p)) {
     ok('scripts/deploy.config.json 存在（npm run deploy 可用）')
   } else {
-    console.log('ℹ scripts/deploy.config.json 不存在（可选）：配置后可用 npm run deploy 一键部署云函数')
+    console.log(
+      'ℹ scripts/deploy.config.json 不存在（可选）：配置后可用 npm run deploy 一键部署云函数'
+    )
   }
 }
 
@@ -244,14 +278,19 @@ function checkDeployConfig() {
 function normalizeVer(raw) {
   if (typeof raw !== 'string') return null
   // 去掉 ~ ^ = > = 前缀与尾部杂项，取主版本号段
-  const m = raw.replace(/[~^=<>]+/g, ' ').trim().split(/\s+/)[0]
+  const m = raw
+    .replace(/[~^=<>]+/g, ' ')
+    .trim()
+    .split(/\s+/)[0]
   return m || null
 }
 
 function checkWxSdkBaseline() {
   const lockPath = path.join(ROOT, 'cloudfunctions', 'common', 'package-lock.json')
   if (!fs.existsSync(lockPath)) {
-    warn('cloudfunctions/common/package-lock.json 缺失：依赖版本基线未建立，无法校验 wx-server-sdk 一致性')
+    warn(
+      'cloudfunctions/common/package-lock.json 缺失：依赖版本基线未建立，无法校验 wx-server-sdk 一致性'
+    )
     return
   }
   let locked = null
@@ -264,14 +303,17 @@ function checkWxSdkBaseline() {
     return
   }
   if (!locked) {
-    warn('common/package-lock.json 未锁定 wx-server-sdk（缺 node_modules/wx-server-sdk 条目），无法做版本基线')
+    warn(
+      'common/package-lock.json 未锁定 wx-server-sdk（缺 node_modules/wx-server-sdk 条目），无法做版本基线'
+    )
     return
   }
 
   const cfDir = path.join(ROOT, 'cloudfunctions')
-  const dirs = fs.readdirSync(cfDir, { withFileTypes: true })
-    .filter(d => d.isDirectory() && d.name !== 'common')
-    .map(d => d.name)
+  const dirs = fs
+    .readdirSync(cfDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name !== 'common')
+    .map((d) => d.name)
     .sort()
 
   const drifted = []
@@ -281,7 +323,11 @@ function checkWxSdkBaseline() {
     const pkgPath = path.join(cfDir, name, 'package.json')
     if (!fs.existsSync(pkgPath)) continue
     let pkg = null
-    try { pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) } catch { continue }
+    try {
+      pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
+    } catch {
+      continue
+    }
     const raw = pkg.dependencies && pkg.dependencies['wx-server-sdk']
     if (!raw) continue // 不依赖 wx-server-sdk 的函数不在此列
     checked++
@@ -297,12 +343,16 @@ function checkWxSdkBaseline() {
     return
   }
   if (drifted.length) {
-    warn(`wx-server-sdk 与基线 ${locked} 不一致的函数（${drifted.length} 个）：${drifted.join(', ')} → 统一改回基线版本（见 docs/OPERATIONS.md「依赖版本基线」）`)
+    warn(
+      `wx-server-sdk 与基线 ${locked} 不一致的函数（${drifted.length} 个）：${drifted.join(', ')} → 统一改回基线版本（见 docs/OPERATIONS.md「依赖版本基线」）`
+    )
   } else {
     ok(`全部 ${checked} 个函数的 wx-server-sdk 声明与基线 ${locked} 一致`)
   }
   if (tildeCount > 0) {
-    console.log(`ℹ 有 ${tildeCount} 个函数仍用范围符（~/^）声明 wx-server-sdk：基线已锁定，升级时只改 cloudfunctions/common 一处；各函数保持 ~ 会在云端现装时放行 patch/minor 漂移，如需强一致可把各函数改为与基线相同的精确版本`)
+    console.log(
+      `ℹ 有 ${tildeCount} 个函数仍用范围符（~/^）声明 wx-server-sdk：基线已锁定，升级时只改 cloudfunctions/common 一处；各函数保持 ~ 会在云端现装时放行 patch/minor 漂移，如需强一致可把各函数改为与基线相同的精确版本`
+    )
   }
 }
 
@@ -310,6 +360,7 @@ console.log('CampusHub doctor 自检\n=====================')
 checkAppid()
 checkEnvId()
 checkFunctions()
+checkOpenapiPermissions()
 checkNewFns()
 checkSchoolConfig()
 checkDeps()

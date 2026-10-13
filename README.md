@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"/></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.9.2-green.svg" alt="Version"/></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.9.4-green.svg" alt="Version"/></a>
   <a href="https://uniapp.dcloud.net.cn/"><img src="https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg" alt="uni-app"/></a>
   <a href="https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html"><img src="https://img.shields.io/badge/WeChat-CloudBase-orange.svg" alt="CloudBase"/></a>
   <a href="https://gitcode.com/badhope/campushub"><img src="https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue" alt="GitCode"/></a>
@@ -75,11 +75,11 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 ## 🏗️ Architecture / 系统架构
 
-系统由 **uni-app 三端前端 → 云函数 API 层 → 微信云开发后端** 三层构成（v0.9.2 口径）：
+系统由 **uni-app 三端前端 → 云函数 API 层 → 微信云开发后端** 三层构成（v0.9.4 口径）：
 
 - **前端**：uni-app（Vue 3 + Vite），20 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 37 个云函数复用
 - **API 层**：37 个云函数，按资源（post / product / comment / 社交 / 管理 / 系统任务）分组
-- **共享内核**：`cloudfunctions/common/` 下 9 个模块（context / security / rate / db / content / indexes / error / bundle / subscribe），经 `sync:common` 一行同步到全部 37 个云函数，保证单一数据源、零漂移
+- **共享内核**：`cloudfunctions/common/` 下 9 个模块（context / security / rate / db / content / indexes / error / bundle / subscribe）只保留一份源码，由 `build:functions`（esbuild）在构建期内联进每个函数产物 —— 部署物永远等于当前源码，副本漂移在结构上不可能（详见 [docs/SYNC.md](docs/SYNC.md)）
 - **后端**：CloudBase 云数据库（23 集合 / 46 索引）、云存储、云调用（内容安全）、定时触发器（03:00 自动备份 · 6h 任务归档 + 日志清理）
 - **v0.9.2 加固**：限频原子化（`rate_limits` 确定性 _id 占位 + 原子自增，杜绝并发绕过）、读侧查询白名单（`sanitizeQuery`）、定时函数管理员守卫（fail-closed）
 
@@ -207,7 +207,8 @@ CampusHub/
 
 ```bash
 # ── 后端（CloudBase）──────────────────────────────
-npm install                # 1. 安装依赖（自动执行 sync:common 同步公共模块）
+npm install                # 1. 安装依赖
+npm run build:functions    # 2. 把内核内联进各云函数，产出 dist/cloudfunctions/
                            # 2. 微信开发者工具导入本仓库 → 上传部署 cloudfunctions/ 全部函数
                            # 3. 控制台开启「HTTP 访问服务」生成 restToken；「身份验证」开启匿名登录
                            # 4. 调用一次 init-db（建集合 + 种子数据）；索引按 docs/INDEXES.md（46 条）核对

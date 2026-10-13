@@ -138,10 +138,18 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   const path = require('path')
   const root = path.join(__dirname, '..')
 
-  // 1) 新云函数目录完整
+  // 1) 新云函数目录完整；内核不再以副本形式躺在函数目录里，
+  //    改由 scripts/build-functions.js 构建期内联 —— 校验产物里确实带上了内核。
   for (const fn of ['backup-db', 'announcement', 'points']) {
     assert.ok(fs.existsSync(path.join(root, 'cloudfunctions', fn, 'index.js')), `${fn}/index.js 存在`)
-    assert.ok(fs.existsSync(path.join(root, 'cloudfunctions', fn, 'common-bundle.js')), `${fn} 已同步 common 内核`)
+    const built = path.join(root, 'dist', 'cloudfunctions', fn, 'index.js')
+    assert.ok(fs.existsSync(built), `${fn} 缺少构建产物（请先 npm run build:functions）`)
+    const code = fs.readFileSync(built, 'utf8')
+    assert.ok(code.includes('wx-server-sdk'), `${fn} 产物应保留外部 wx-server-sdk 引用`)
+    assert.ok(
+      /function (initCloud|getDB)\b|getDB2?\b/.test(code),
+      `${fn} 产物未内联 common 内核（构建期内联失效）`
+    )
   }
   // 2) backup-db 定时触发器 + 备份集合逻辑
   assert.ok(fs.existsSync(path.join(root, 'cloudfunctions', 'backup-db', 'config.json')), 'backup-db 触发器配置存在')

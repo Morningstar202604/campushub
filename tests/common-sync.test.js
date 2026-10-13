@@ -1,57 +1,53 @@
-// common-sync.test.js — 内核单一事实来源（D1 回归防护）
-// 背景：v0.9.3 改了 cloudfunctions/common/ 源码却没有重新同步 37 份部署副本，
-// 导致部署态的 rateLimit 退化为 `if (!collection) return`（fail-open）。
-// 本测试锁死两件事：① 副本必须与源码逐字节一致；② 部署态限频必须是 fail-closed。
+// common-sync.test.js — 部署产物必须内联"当前内核"（D1 回归防护）
+// v0.9.3 改了 cloudfunctions/common/ 却没重新同步 37 份副本，结果线上跑的是
+// `if (!collection) return` 的 fail-open 限频器。现在副本机制已被构建期内联取代
+// （见 tests/build-pipeline.test.js），所以本文件直接校验**真正上传到云端的那个文件**：
+// 产物里只允许存在当前内核的行为，任何 fail-open 残留都视为回归。
 const { test } = require('node:test')
 const assert = require('node:assert')
 const fs = require('fs')
 const path = require('path')
-const crypto = require('crypto')
 
-const ROOT = path.resolve(__dirname, '..', 'cloudfunctions')
-const COMMON_DIR = path.join(ROOT, 'common')
+const SRC = path.resolve(__dirname, '..', 'cloudfunctions')
+const DIST = path.resolve(__dirname, '..', 'dist', 'cloudfunctions')
 
-const COMMON_FILES = fs
-  .readdirSync(COMMON_DIR)
-  .filter((f) => f.startsWith('common-') && f.endsWith('.js'))
-
-function funcDirs() {
-  return fs
-    .readdirSync(ROOT, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && d.name !== 'common' && d.name !== 'node_modules')
-    .map((d) => d.name)
-}
-
-function sha1(file) {
-  return crypto.createHash('sha1').update(fs.readFileSync(file)).digest('hex')
-}
-
-test('每个云函数目录的内核副本必须与 common 源码逐字节一致', () => {
-  const drifted = []
-  for (const name of funcDirs()) {
-    for (const f of COMMON_FILES) {
-      const src = path.join(COMMON_DIR, f)
-      const dst = path.join(ROOT, name, f)
-      if (!fs.existsSync(dst)) continue // 构建期内联后副本可以不存在，见下一条用例
-      if (sha1(src) !== sha1(dst)) drifted.push(`${name}/${f}`)
-    }
+function builtFunctions() {
+  if (!fs.existsSync(DIST)) {
+    throw new Error('缺少 dist/cloudfunctions：先执行 npm run build:functions（gate 会自动跑）')
   }
-  assert.deepEqual(drifted, [], `内核副本漂移（部署态会跑旧内核）：${drifted.join(', ')}`)
+  return fs.readdirSync(DIST).filter((d) => fs.existsSync(path.join(DIST, d, 'index.js')))
+}
+
+test('每个云函数产物里的限频器都必须是 fail-closed', () => {
+  const failOpen = []
+  for (const fn of builtFunctions()) {
+    const code = fs.readFileSync(path.join(DIST, fn, 'index.js'), 'utf8')
+    // 旧缺陷形态：缺 collection 参数时静默放行
+    if (/if\s*\(!collection\)\s*return/.test(code)) failOpen.push(fn)
+  }
+  assert.deepEqual(failOpen, [], `产物中仍存在 fail-open 限频器：${failOpen.join(', ')}`)
 })
 
-test('部署态限频器必须 fail-closed：缺 collection 参数要抛错，不得静默放行', () => {
-  const bad = []
-  for (const name of funcDirs()) {
-    const dst = path.join(ROOT, name, 'common-rate.js')
-    if (!fs.existsSync(dst)) continue
-    const code = fs.readFileSync(dst, 'utf8')
-    if (/if \(!collection\) return/.test(code)) bad.push(name)
-    if (!/throw new AppError\('rateLimit 缺少 collection 参数'/.test(code)) bad.push(name)
+test('产物必须带上当前的限频与分类内核（内联未失效）', () => {
+  const missing = []
+  for (const fn of builtFunctions()) {
+    const code = fs.readFileSync(path.join(DIST, fn, 'index.js'), 'utf8')
+    if (!/rateLimit 缺少 collection 参数/.test(code)) missing.push(`${fn}(限频文案缺失)`)
   }
-  assert.deepEqual([...new Set(bad)], [], `以下函数的限频器是 fail-open：${[...new Set(bad)].join(', ')}`)
+  assert.deepEqual(missing, [], `产物内联内容过期：${missing.slice(0, 6).join(', ')}`)
 })
 
 test('内核源码本身不得重新引入 fail-open 分支', () => {
-  const code = fs.readFileSync(path.join(COMMON_DIR, 'common-rate.js'), 'utf8')
+  const code = fs.readFileSync(path.join(SRC, 'common', 'common-rate.js'), 'utf8')
   assert.equal(/if \(!collection\) return/.test(code), false)
+})
+
+test('函数源码目录不得再出现内核副本（副本=漂移的载体）', () => {
+  const copies = []
+  for (const fn of fs.readdirSync(SRC)) {
+    const dir = path.join(SRC, fn)
+    if (fn === 'common' || !fs.statSync(dir).isDirectory()) continue
+    for (const f of fs.readdirSync(dir)) if (/^common-[a-z]+\.js$/.test(f)) copies.push(`${fn}/${f}`)
+  }
+  assert.deepEqual(copies, [], `仍有 ${copies.length} 份副本：${copies.slice(0, 5).join(', ')}`)
 })

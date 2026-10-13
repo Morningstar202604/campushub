@@ -5,6 +5,22 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.9.4] - 2026-10-13
+
+安全与部署一致性（全部先写失败测试再修复，TDD）：
+
+- **修复部署态内核漂移**：37 个函数目录的 `common-rate.js` / `common-indexes.js` / `common-subscribe.js` 与源码不一致，而 `common-bundle.js` 运行时 `require` 的正是这些副本 —— 线上限频器实际是 `if (!collection) return`（fail-open），与内核宣称的 fail-closed 相反；`common-indexes.js` 副本还缺 `idx_verify_requests_status_created`。
+- **废弃 `sync:common` 复制机制，改为构建期内联**：`npm run build:functions`（esbuild）把 9 个内核模块打进 `dist/cloudfunctions/<fn>/index.js`，`wx-server-sdk` 保持 external，源码目录零副本；`deploy.js` 上传前强制重建并做 `--check` 源码指纹校验。漂移从"靠纪律"变为"结构上不可能"。
+- **`categoryPath` 改服务端推导**：新增内核 `resolveCategoryPath()`，沿 `parentId` 回溯并校验全链 active、深度 ≤3、环检测；`post-create` / `post-update` 不再采信客户端传入的祖先链（原可实现把内容投进已停用版块）。
+- **变异路径补限频并把限频提到审核之前**：`post-update` / `product-update` / `user-update` / `post-delete` / `product-delete` / `comment-delete` 新增窗口限频；`post-create`、`product-create`、`comment-create`、`report`、`feedback-create`、`verify` 的 `rateLimit` 统一移到 `checkContents` / `checkImages` 之前 —— 审核配额有限且审核是 fail-closed，先审后限等于允许脚本耗尽配额使全站无法发布。
+- **图片审核改为正确的同步形态**：原 `imgSecCheck({version:'2', media:{type:1, media_url}})` 混用了异步 `mediaCheckAsync` 的参数（同步接口要求 `media:{contentType,value:Buffer}` 且 ≤1MB），在 fail-closed 下的表现是所有带图发布被拒。现为 `downloadFile → Buffer → imgSecCheck`，含格式白名单、1MB 守卫、并发上限 4、临时文件用后即删；前端上传同步收紧到 1MB（质量阶梯 80/60/40/20 逐档复检）。
+- **补齐云调用 openapi 权限声明**：全仓此前只有 2 个 `config.json` 且无任何 `permissions.openapi`，10 个调用审核/订阅接口的函数按最小权限补齐声明（漏声明即 `api unauthorized` → 发布全拒）。
+- **门禁真正可用**：新增 `npm run gate`（构建 + 契约 + ESLint + Prettier + 测试）；`npm test` 改为 glob 自动发现；`doctor` 改为校验"零副本 + 产物新鲜度 + 权限声明"；全量 Prettier 落库（此前 264 个文件不合规且从未进 CI）；`husky pre-commit` 拒绝提交内核副本。
+- **回归防护**：新增 5 个测试文件共 35 条用例（副本/产物、分类链、限频与顺序、图片审核、上传约束、openapi 权限），测试数 48 → 83，全绿。
+- 文档：`docs/SYNC.md` 重写为构建期内联说明；README / CONTRIBUTING / DEPLOY / OPERATIONS 同步更新；`AUDIT_REPORT.md` 加时效横幅；版本号统一为 0.9.4（上一提交自称 v0.9.3 但未落 package.json / CHANGELOG / tag）。
+
+已知边界（需真实云环境验证，本仓无法证伪）：`imgSecCheck` 实返回、`rate_limits` 集合与索引是否已在目标环境创建、H5 REST 网关鉴权、数据模型/CMS 相关控制台操作。
+
 ## [0.9.2] - 2026-09-22
 
 ### Fixed — 第二轮三线交叉复核修复批次（10 项，报告：docs/REVIEW-20260922.md 第六节）

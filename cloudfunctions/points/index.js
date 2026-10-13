@@ -18,12 +18,16 @@ exports.main = wrap(async (event) => {
 
   if (action === 'products') {
     // 附带当前积分与已有改名卡，便于前端直接渲染
-    return ok({ products: PRODUCTS, creditScore: user.creditScore || 0, renameTokens: user.renameTokens || 0 })
+    return ok({
+      products: PRODUCTS,
+      creditScore: user.creditScore || 0,
+      renameTokens: user.renameTokens || 0
+    })
   }
 
   if (action === 'redeem') {
     const { productId } = event
-    const product = PRODUCTS.find(p => p.id === productId)
+    const product = PRODUCTS.find((p) => p.id === productId)
     if (!product) throw new AppError('道具不存在', 'INVALID_PARAM')
 
     const credit = user.creditScore || 0
@@ -32,7 +36,9 @@ exports.main = wrap(async (event) => {
     }
 
     // 扣积分 + 发权益（原子更新）
-    const updateRes = await db.collection('users').where({ _id: user._id, creditScore: _.gte(product.price) })
+    const updateRes = await db
+      .collection('users')
+      .where({ _id: user._id, creditScore: _.gte(product.price) })
       .update({
         data: {
           creditScore: _.inc(-product.price),
@@ -55,7 +61,9 @@ exports.main = wrap(async (event) => {
           createdAt: new Date()
         }
       })
-    } catch { /* 静默 */ }
+    } catch {
+      /* 静默 */
+    }
 
     return ok({ redeemed: true, productId: product.id, creditScore: credit - product.price })
   }

@@ -9,7 +9,8 @@ exports.main = wrap(async (event) => {
 
   const productRes = await db.collection('products').doc(productId).get()
   const product = productRes.data
-  if (!product || product.status === 'deleted') throw new AppError('商品不存在或已下架', 'NOT_FOUND')
+  if (!product || product.status === 'deleted')
+    throw new AppError('商品不存在或已下架', 'NOT_FOUND')
 
   // 浏览量按 (openid, 文档, 自然日) 去重自增
   const viewed = await countViewOnce('products', productId)
@@ -23,9 +24,15 @@ exports.main = wrap(async (event) => {
     if (me.data && me.data.length) {
       const uid = me.data[0]._id
       // 与 post-detail 对齐：返回点赞态（修复前端重载后点赞高亮丢失）
-      const likeRes = await db.collection('likes').where({ userId: uid, targetId: productId, type: 'product' }).count()
+      const likeRes = await db
+        .collection('likes')
+        .where({ userId: uid, targetId: productId, type: 'product' })
+        .count()
       isLiked = likeRes.total > 0
-      const collectRes = await db.collection('collects').where({ userId: uid, targetId: productId, type: 'product' }).count()
+      const collectRes = await db
+        .collection('collects')
+        .where({ userId: uid, targetId: productId, type: 'product' })
+        .count()
       isCollected = collectRes.total > 0
     }
   }

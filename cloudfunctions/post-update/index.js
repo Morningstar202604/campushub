@@ -2,7 +2,17 @@
 // 编辑帖子：仅作者本人可编辑 + fail-closed 内容安全 + 分类校验
 // 可编辑字段：title, content, images, tags, categoryId, categoryPath
 // 不可编辑：kind（普通/任务）, isAnonymous, status, 计数字段
-const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit, resolveCategoryPath } = require('./common-bundle')
+const {
+  getDB,
+  AppError,
+  ok,
+  wrap,
+  requireActiveUser,
+  checkContents,
+  checkImages,
+  rateLimit,
+  resolveCategoryPath
+} = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -14,10 +24,19 @@ exports.main = wrap(async (event) => {
   // 频率限制：60 秒内最多 6 次编辑。必须排在所有权查询与内容审核之前 ——
   // 编辑一次就是一次 msgSecCheck / imgSecCheck 调用，无限编辑可耗尽审核配额，
   // 而审核是 fail-closed 的，配额耗尽即等于全站无法发布。
-  await rateLimit({ collection: 'post-update', match: { userId: user._id }, windowMs: 60000, max: 6 })
+  await rateLimit({
+    collection: 'post-update',
+    match: { userId: user._id },
+    windowMs: 60000,
+    max: 6
+  })
 
   // 获取帖子并验证所有权
-  const postRes = await db.collection('posts').doc(postId).get().catch(() => ({ data: null }))
+  const postRes = await db
+    .collection('posts')
+    .doc(postId)
+    .get()
+    .catch(() => ({ data: null }))
   if (!postRes || !postRes.data) throw new AppError('帖子不存在', 'NOT_FOUND')
   const post = postRes.data
   if (post.status === 'deleted') throw new AppError('该帖子已被删除', 'INVALID_PARAM')
@@ -37,24 +56,26 @@ exports.main = wrap(async (event) => {
   // 内容：按帖子类型套上限（创建侧 confession=500/其余=2000，更新侧必须一致，否则可绕过表白墙 500 字限制）
   if (content !== undefined) {
     const maxContent = post.kind === 'confession' ? 500 : 2000
-    if (String(content).length > maxContent) throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
+    if (String(content).length > maxContent)
+      throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
     patch.content = String(content).trim()
     textsToCheck.push(patch.content)
   }
 
   // 图片
   if (images !== undefined) {
-    if (!Array.isArray(images) || images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
+    if (!Array.isArray(images) || images.length > 9)
+      throw new AppError('图片不能超过9张', 'INVALID_PARAM')
     patch.images = images
     patch.type = images.length > 0 ? 'image' : 'text'
     // 对新图片做安全检查
-    const newImages = images.filter(img => img && !post.images?.includes(img))
+    const newImages = images.filter((img) => img && !post.images?.includes(img))
     if (newImages.length) await checkImages(newImages, { openid: user.openid })
   }
 
   // 标签
   if (tags !== undefined) {
-    const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map(t => String(t).slice(0, 20)) : []
+    const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map((t) => String(t).slice(0, 20)) : []
     patch.tags = safeTags
     textsToCheck.push(safeTags.join(' '))
   }
@@ -63,7 +84,10 @@ exports.main = wrap(async (event) => {
   if (categoryId !== undefined) {
     // 祖先链一律服务端推导（含全链 active 校验），不接受客户端 categoryPath
     const { chain: categoryPath, leaf: cat } = await resolveCategoryPath({ db, categoryId })
-    const childCount = await db.collection('categories').where({ parentId: categoryId, status: 'active' }).count()
+    const childCount = await db
+      .collection('categories')
+      .where({ parentId: categoryId, status: 'active' })
+      .count()
     if (childCount.total > 0) throw new AppError('请选择更具体的分类', 'INVALID_PARAM')
     patch.categoryId = categoryId
     patch.categoryPath = categoryPath

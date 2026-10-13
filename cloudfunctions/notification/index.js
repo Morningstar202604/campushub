@@ -20,17 +20,28 @@ exports.main = wrap(async (event) => {
   // ---- 列表 ----
   if (action === 'list') {
     const [listRes, unreadRes] = await Promise.all([
-      db.collection('notifications')
+      db
+        .collection('notifications')
         .where({ userId: user._id })
-        .orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
+        .orderBy('createdAt', 'desc')
+        .skip(skip)
+        .limit(pSize)
+        .get(),
       db.collection('notifications').where({ userId: user._id, isRead: false }).count()
     ])
-    return ok({ list: listRes.data || [], unreadCount: unreadRes.total, hasMore: listRes.data.length === pSize })
+    return ok({
+      list: listRes.data || [],
+      unreadCount: unreadRes.total,
+      hasMore: listRes.data.length === pSize
+    })
   }
 
   // ---- 未读数 ----
   if (action === 'unreadCount') {
-    const res = await db.collection('notifications').where({ userId: user._id, isRead: false }).count()
+    const res = await db
+      .collection('notifications')
+      .where({ userId: user._id, isRead: false })
+      .count()
     return ok({ unreadCount: res.total })
   }
 
@@ -39,7 +50,8 @@ exports.main = wrap(async (event) => {
     const { notificationId } = event
     if (!notificationId) throw new AppError('缺少通知ID', 'INVALID_PARAM')
     // 属主校验：只能标记自己的通知（防 IDOR）
-    const r = await db.collection('notifications')
+    const r = await db
+      .collection('notifications')
       .where({ _id: notificationId, userId: user._id, isRead: false })
       .update({ data: { isRead: true } })
     const updated = (r && r.stats && r.stats.updated) || 0
@@ -63,7 +75,8 @@ exports.main = wrap(async (event) => {
 
   // ---- 全部已读 ----
   if (action === 'markAllRead') {
-    const res = await db.collection('notifications')
+    const res = await db
+      .collection('notifications')
       .where({ userId: user._id, isRead: false })
       .update({ data: { isRead: true } })
     return ok({ updated: res.stats ? res.stats.updated : 0 })

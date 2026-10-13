@@ -107,7 +107,7 @@ range 现装导致版本漂移，项目把版本**锁定到单一基准**：
   `npm install --package-lock-only` 生成）。
 - **约定**：所有云函数的 `wx-server-sdk` 以 common lock 锁定的 `2.6.3` 为基线。
   **升级时只改 `cloudfunctions/common/package.json` 一处**，再重新生成 lock，
-  然后 `npm run sync:common` 同步 + 各函数对齐声明。
+  然后 `npm run build:functions` 重建产物 + 各函数 `config.json` 对齐 openapi 声明。
 - **自检**：`npm run doctor` 的第 7 项会核对各函数 `package.json` 的 `wx-server-sdk`
   与 common lock 基线是否一致，不一致会告警。
 - **不逐函数建 lock 的原因**：38 个函数各建一份 `package-lock.json` 会引入 38 个冗余

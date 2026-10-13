@@ -45,13 +45,14 @@ jobs:
       - name: uni-app structure & anti-pattern gate
         run: python3 uni-app/scripts/verify_pages.py
 
-      - name: Common layer sync consistency
+      - name: Build cloud functions (kernel inlined at build time)
         run: |
-          npm run sync:common
-          if ! git diff --exit-code -- 'cloudfunctions/*/common-*'; then
-            echo '::error::common kernel out of sync, run npm run sync:common'
-            exit 1
-          fi
-          echo "Common layer consistent"
+          npm run build:functions
+          npm run build:functions:check
+
+      - name: Lint & format gates
+        run: |
+          npm run lint:js
+          npm run format
       - name: Run unit tests
         run: npm test

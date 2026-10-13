@@ -64,4 +64,13 @@ function sanitizeQuery(input, allowedKeys) {
   return out
 }
 
-module.exports = { cloud, initCloud, getCloud, getDB, getCmd, isDuplicateKeyError, insertIdempotent, sanitizeQuery }
+module.exports = {
+  cloud,
+  initCloud,
+  getCloud,
+  getDB,
+  getCmd,
+  isDuplicateKeyError,
+  insertIdempotent,
+  sanitizeQuery
+}

@@ -16,13 +16,13 @@ to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs 
    ```
 3. Install dependencies and sync the shared kernel layer:
    ```bash
-   npm install            # triggers prepublishOnly → auto-runs scripts/sync-common.js
-   # or manually: npm run sync:common
+   npm install            # install build-time devDeps (esbuild / prettier / eslint)
+   npm run build:functions  # inline the kernel into dist/cloudfunctions/
    ```
    > `cloudfunctions/common/` is the single source of truth for auth / content-safety /
    > ban / rate-limit / response-format / content-deletion / index definitions. The sync
    > script copies it into every cloud function directory. **Never edit the `common-*.js`
-   > copies inside individual function folders directly** — edit `cloudfunctions/common/` and re-run `npm run sync:common`.
+   > copies inside individual function folders** — edit `cloudfunctions/common/` only; the kernel is inlined into `dist/` at build time (`npm run build:functions`). Run `npm run gate` before pushing.
    > There are currently **37 cloud functions**, all carrying synced copies of the 9 common modules.
 4. Open the project in **WeChat DevTools** (fill in your own `appid` and cloud `env`).
 5. Create a feature branch: `git checkout -b my-feature`.
@@ -35,7 +35,7 @@ to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs 
 - Follow the existing code style in the repository.
 - Keep changes focused — one feature or fix per pull request.
 - All UGC writes must go through the shared kernel layer (`requireActiveUser`, content-safety, `removeContent`); do not re-implement these per function.
-- New cloud functions must include a `package.json` (so `sync-common.js` picks them up) and reuse `./common-bundle`.
+- New cloud functions must include a `package.json` (the cloud installs deps from it) and reuse `./common-bundle`; add a `config.json` with `permissions.openapi` if the function calls any WeChat openapi (missing declarations make fail-closed moderation reject every publish).
 - New database queries that rely on an index must add the definition to `cloudfunctions/common/common-indexes.js` (the single source of truth) and document it in `docs/INDEXES.md`.
 - Add or update docs for any changed behavior.
 

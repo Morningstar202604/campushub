@@ -13,12 +13,21 @@ const { AppError } = require('./common-error')
 
 // collection: 业务集合名（兼作限频 scene 标识）；match: 主体匹配条件（如 { userId }，值须为服务端身份标量）；
 // windowMs: 时间窗；max: 窗口内允许的最大次数。
-async function rateLimit({ collection, match = {}, windowMs = 30000, max = 1, now = Date.now() } = {}) {
+async function rateLimit({
+  collection,
+  match = {},
+  windowMs = 30000,
+  max = 1,
+  now = Date.now()
+} = {}) {
   if (!collection) throw new AppError('rateLimit 缺少 collection 参数', 'CONFIG_ERROR')
   const db = getDB()
   const _ = db.command
   const windowStart = Math.floor(now / windowMs) * windowMs
-  const subject = Object.keys(match).sort().map(k => `${k}:${String(match[k])}`).join('|')
+  const subject = Object.keys(match)
+    .sort()
+    .map((k) => `${k}:${String(match[k])}`)
+    .join('|')
   const _id = `rl_${collection}_${subject}_${windowStart}`
   const expireAt = new Date(windowStart + windowMs * 3)
   try {
@@ -32,11 +41,19 @@ async function rateLimit({ collection, match = {}, windowMs = 30000, max = 1, no
   // 已有占位：max=1 时主键唯一性保证窗口内恰一次放行，其余全拒（原子，无竞态）
   if (max <= 1) throw new AppError('操作过于频繁，请稍后再试', 'RATE_LIMITED')
   // max>1：原子自增后回读判定（自增失败按限频拒绝，fail-closed）
-  await db.collection('rate_limits').doc(_id)
+  await db
+    .collection('rate_limits')
+    .doc(_id)
     .update({ data: { count: _.inc(1) } })
-    .catch(() => { throw new AppError('操作过于频繁，请稍后再试', 'RATE_LIMITED') })
-  const doc = await db.collection('rate_limits').doc(_id).get().catch(() => ({ data: null }))
-  const count = (doc && doc.data && doc.data.count) || (max + 1)
+    .catch(() => {
+      throw new AppError('操作过于频繁，请稍后再试', 'RATE_LIMITED')
+    })
+  const doc = await db
+    .collection('rate_limits')
+    .doc(_id)
+    .get()
+    .catch(() => ({ data: null }))
+  const count = (doc && doc.data && doc.data.count) || max + 1
   if (count > max) throw new AppError('操作过于频繁，请稍后再试', 'RATE_LIMITED')
 }
 

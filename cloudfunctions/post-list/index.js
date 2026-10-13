@@ -36,11 +36,7 @@ exports.main = wrap(async (event) => {
     const now = new Date()
     where = _.and([
       where,
-      _.or([
-        { kind: _.neq('task') },
-        { resolved: true },
-        { expireAt: _.gt(now) }
-      ])
+      _.or([{ kind: _.neq('task') }, { resolved: true }, { expireAt: _.gt(now) }])
     ])
   }
 
@@ -51,18 +47,33 @@ exports.main = wrap(async (event) => {
   if (tab === 'hot') {
     // 热榜：近 7 天按点赞数排序（需 idx_posts_status_likes 索引）
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    res = await db.collection('posts')
+    res = await db
+      .collection('posts')
       .where(_.and([where, { createdAt: _.gt(since) }]))
-      .orderBy('likeCount', 'desc').orderBy('createdAt', 'desc')
-      .skip(skip).limit(size).get()
+      .orderBy('likeCount', 'desc')
+      .orderBy('createdAt', 'desc')
+      .skip(skip)
+      .limit(size)
+      .get()
   } else if (tab === 'latest') {
     const q = useCursor ? _.and([where, { createdAt: _.lt(cursorDate) }]) : where
-    res = await db.collection('posts')
-      .where(q).orderBy('createdAt', 'desc').skip(useCursor ? 0 : skip).limit(size).get()
+    res = await db
+      .collection('posts')
+      .where(q)
+      .orderBy('createdAt', 'desc')
+      .skip(useCursor ? 0 : skip)
+      .limit(size)
+      .get()
   } else {
     // 推荐：置顶优先 + 时间倒序（需为 isPinned, createdAt 建复合索引，定义见 docs/INDEXES.md 与 common-indexes.js）
-    res = await db.collection('posts')
-      .where(where).orderBy('isPinned', 'desc').orderBy('createdAt', 'desc').skip(skip).limit(size).get()
+    res = await db
+      .collection('posts')
+      .where(where)
+      .orderBy('isPinned', 'desc')
+      .orderBy('createdAt', 'desc')
+      .skip(skip)
+      .limit(size)
+      .get()
   }
   return ok({ list: res.data, hasMore: res.data.length === size })
 })

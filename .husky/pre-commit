@@ -1,12 +1,21 @@
 #!/usr/bin/env sh
 # 提交前门禁：对暂存 .js 文件跑 ESLint（使用仓库根 eslint.config.js flat 配置）
 # 策略：
-#   - 仅检查本次暂存的 .js（排除 common 同步副本与 miniprogram_npm）
+#   - 仅检查本次暂存的 .js（排除构建产物 dist/ 与历史遗留副本路径）
 #   - eslint 未安装则放行（首次 clone 无 lockfile 不阻塞提交），真正门禁在 CI
 #   - 失败则阻断提交（可 git commit --no-verify 绕过，但 CI 会拦截）
 command -v npx >/dev/null 2>&1 || { echo "[husky] npx 不可用，跳过"; exit 0; }
 
-STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.js$' | grep -vE 'cloudfunctions/.+/common/|miniprogram_npm/|eslint\.config\.js' || true)
+# 内核副本一旦被提交回函数目录，"产物必等于当前源码"的前提就失效（历史上正是这样漂移的）
+COPIES=$(git diff --cached --name-only | grep -E '^cloudfunctions/[^/]+/common-[a-z]+\.js$' || true)
+if [ -n "$COPIES" ]; then
+  echo "[husky] ✗ 拒绝提交云函数目录内的内核副本："
+  echo "$COPIES" | sed 's/^/  /'
+  echo "[husky] 内核只在 cloudfunctions/common/ 存一份，构建时内联（npm run build:functions）"
+  exit 1
+fi
+
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.js$' | grep -vE '^cloudfunctions/[^/]+/common-|dist/|node_modules/|eslint\.config\.js' || true)
 [ -z "$STAGED_JS" ] && { echo "[husky] 无暂存 .js 变更，跳过"; exit 0; }
 
 if ! node -e "require.resolve('eslint')" >/dev/null 2>&1; then

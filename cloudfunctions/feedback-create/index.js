@@ -1,7 +1,15 @@
 // cloudfunctions/feedback-create/index.js
 // 用户反馈：统一经云函数（带内容安全 + 频率限制），不再直写数据库
 // 写操作统一经 requireActiveUser，封禁用户不可提交反馈
-const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, rateLimit } = require('./common-bundle')
+const {
+  getDB,
+  AppError,
+  ok,
+  wrap,
+  requireActiveUser,
+  checkContents,
+  rateLimit
+} = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -15,7 +23,9 @@ exports.main = wrap(async (event) => {
   // type 白名单 + contact 限长，防任意大对象/垃圾枚举入库
   const VALID_TYPES = ['suggest', 'bug', 'other']
   const safeType = VALID_TYPES.includes(type) ? type : 'suggest'
-  const safeContact = String(contact || '').trim().slice(0, 50)
+  const safeContact = String(contact || '')
+    .trim()
+    .slice(0, 50)
 
   await rateLimit({ collection: 'feedbacks', match: { userId: user._id }, windowMs: 60000, max: 3 })
   await checkContents([content, safeContact], { openid: user.openid, scene: 2 })

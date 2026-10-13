@@ -17,7 +17,10 @@ const ROOT = path.resolve(__dirname, '..')
 const MP = path.join(ROOT, 'uni-app')
 const CF = path.join(ROOT, 'cloudfunctions')
 
-const jsonOut = (() => { const i = process.argv.indexOf('--json'); return i > -1 ? process.argv[i + 1] : null })()
+const jsonOut = (() => {
+  const i = process.argv.indexOf('--json')
+  return i > -1 ? process.argv[i + 1] : null
+})()
 /** @type {{level:'error'|'warn'|'info'|'ok', msg:string}[]} */
 const results = []
 const report = (level, msg) => results.push({ level, msg })
@@ -55,12 +58,14 @@ for (const f of mpFiles) {
     if (next > -1) win = win.slice(0, next + 10)
     const am = win.match(/action:\s*['"]([\w-]+)['"]/)
     const dyn = !am && /action:/.test(win)
-    add(fn, am ? am[1] : (dyn ? 'dynamic' : null), `${rel(f)}:${line}`)
+    add(fn, am ? am[1] : dyn ? 'dynamic' : null, `${rel(f)}:${line}`)
   }
 }
 
 // ---------- 2. 云函数 action 支持清单 ----------
-const cfNames = fs.readdirSync(CF).filter((n) => fs.statSync(path.join(CF, n)).isDirectory() && n !== 'common')
+const cfNames = fs
+  .readdirSync(CF)
+  .filter((n) => fs.statSync(path.join(CF, n)).isDirectory() && n !== 'common')
 /** @type {Map<string, {actions:Set<string>, distributed:boolean}>} */
 const provided = new Map()
 for (const n of cfNames) {
@@ -75,33 +80,54 @@ for (const n of cfNames) {
 let _errors = 0
 for (const [fn, info] of called) {
   if (!provided.has(fn)) {
-    report('error', `前端调用不存在的云函数「${fn}」← ${[...info.where].join(', ')}`); _errors++; continue
+    report('error', `前端调用不存在的云函数「${fn}」← ${[...info.where].join(', ')}`)
+    _errors++
+    continue
   }
   const p = provided.get(fn)
   for (const a of info.actions) {
     if (p.distributed && !p.actions.has(a)) {
       // 云函数存在 else 兜底分支时，未知 action 会落入 else（如 collect 的 uncollect），降级为提示
-      if (p.hasElse) report('info', `云函数「${fn}」无显式 action '${a}'，走 else 兜底分支 ← ${[...info.where].join(', ')}`)
+      if (p.hasElse)
+        report(
+          'info',
+          `云函数「${fn}」无显式 action '${a}'，走 else 兜底分支 ← ${[...info.where].join(', ')}`
+        )
       else {
-        report('error', `云函数「${fn}」不支持 action '${a}'（支持: ${[...p.actions].join(', ') || '无'}）← ${[...info.where].join(', ')}`)
+        report(
+          'error',
+          `云函数「${fn}」不支持 action '${a}'（支持: ${[...p.actions].join(', ') || '无'}）← ${[...info.where].join(', ')}`
+        )
         _errors++
       }
     }
   }
   // 敏感函数不应被前端直接调用
-  if (fn === 'init-db') report('warn', `前端调用 init-db（含 INIT_SECRET 校验的初始化函数）应仅限控制台手动触发 ← ${[...info.where].join(', ')}`)
+  if (fn === 'init-db')
+    report(
+      'warn',
+      `前端调用 init-db（含 INIT_SECRET 校验的初始化函数）应仅限控制台手动触发 ← ${[...info.where].join(', ')}`
+    )
 }
 for (const [fn, p] of provided) {
   if (!called.has(fn)) {
     const trigger = ['task-expire', 'backup-db'].includes(fn)
-    report('info', `云函数「${fn}」前端无调用${trigger ? '（定时触发器，正常）' : '（确认是否仅控制台/管理端使用）'}`)
+    report(
+      'info',
+      `云函数「${fn}」前端无调用${trigger ? '（定时触发器，正常）' : '（确认是否仅控制台/管理端使用）'}`
+    )
   } else {
     const unused = [...p.actions].filter((a) => !called.get(fn).actions.has(a))
-    for (const a of unused) report('info', `云函数「${fn}」的 action '${a}' 前端未见调用（可能由触发器/控制台/动态调用使用）`)
+    for (const a of unused)
+      report(
+        'info',
+        `云函数「${fn}」的 action '${a}' 前端未见调用（可能由触发器/控制台/动态调用使用）`
+      )
   }
 }
 const dynList = [...called.entries()].filter(([, i]) => i.dynamic.has('dynamic'))
-if (dynList.length) report('info', `${dynList.length} 处 action 为动态变量，静态无法比对（人工确认）`)
+if (dynList.length)
+  report('info', `${dynList.length} 处 action 为动态变量，静态无法比对（人工确认）`)
 
 report('ok', `前端调用 ${called.size} 个云函数 / 云端提供 ${cfNames.length} 个`)
 
@@ -115,5 +141,8 @@ for (const r of results) {
   console.log(`${tag} ${r.msg}`)
 }
 console.log(`\n结果：${counts.error} 个错误，${counts.warn} 个警告，${counts.info} 项提示`)
-if (jsonOut) { fs.writeFileSync(jsonOut, JSON.stringify({ counts, results }, null, 2)); console.log(`JSON 报告已写入 ${jsonOut}`) }
+if (jsonOut) {
+  fs.writeFileSync(jsonOut, JSON.stringify({ counts, results }, null, 2))
+  console.log(`JSON 报告已写入 ${jsonOut}`)
+}
 process.exit(counts.error > 0 ? 1 : 0)

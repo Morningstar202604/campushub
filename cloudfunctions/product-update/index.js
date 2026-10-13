@@ -2,21 +2,51 @@
 // 编辑商品：仅作者本人可编辑 + fail-closed 内容安全 + 图片安全
 // 可编辑字段：title, description, images, price, originalPrice, category, condition, tradeType, location, contactInfo
 // 特殊操作：markSold=true 标记已售, markSold=false 重新上架
-const { getDB, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit } = require('./common-bundle')
+const {
+  getDB,
+  AppError,
+  ok,
+  wrap,
+  requireActiveUser,
+  checkContents,
+  checkImages,
+  rateLimit
+} = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const user = await requireActiveUser()
   const db = getDB()
 
-  const { productId, title, description, images, price, originalPrice,
-    category, condition, tradeType, location, contactInfo, markSold } = event
+  const {
+    productId,
+    title,
+    description,
+    images,
+    price,
+    originalPrice,
+    category,
+    condition,
+    tradeType,
+    location,
+    contactInfo,
+    markSold
+  } = event
   if (!productId) throw new AppError('缺少商品ID', 'INVALID_PARAM')
 
   // 频率限制：60 秒内最多 6 次编辑（同 post-update，防止用编辑刷审核配额）
-  await rateLimit({ collection: 'product-update', match: { userId: user._id }, windowMs: 60000, max: 6 })
+  await rateLimit({
+    collection: 'product-update',
+    match: { userId: user._id },
+    windowMs: 60000,
+    max: 6
+  })
 
   // 获取商品并验证所有权
-  const prodRes = await db.collection('products').doc(productId).get().catch(() => ({ data: null }))
+  const prodRes = await db
+    .collection('products')
+    .doc(productId)
+    .get()
+    .catch(() => ({ data: null }))
   if (!prodRes || !prodRes.data) throw new AppError('商品不存在', 'NOT_FOUND')
   const product = prodRes.data
   if (product.status === 'deleted') throw new AppError('该商品已删除', 'INVALID_PARAM')
@@ -25,9 +55,12 @@ exports.main = wrap(async (event) => {
   // 快捷操作：标记已售 / 重新上架
   if (markSold !== undefined) {
     const newStatus = markSold ? 'sold' : 'on_sale'
-    await db.collection('products').doc(productId).update({
-      data: { status: newStatus, updatedAt: new Date() }
-    })
+    await db
+      .collection('products')
+      .doc(productId)
+      .update({
+        data: { status: newStatus, updatedAt: new Date() }
+      })
     return ok({ updated: true, status: newStatus })
   }
 
@@ -50,18 +83,20 @@ exports.main = wrap(async (event) => {
 
   // 图片
   if (images !== undefined) {
-    if (!Array.isArray(images) || images.length === 0) throw new AppError('请至少上传一张图片', 'INVALID_PARAM')
+    if (!Array.isArray(images) || images.length === 0)
+      throw new AppError('请至少上传一张图片', 'INVALID_PARAM')
     if (images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
     patch.images = images
     // 对新图片做安全检查
-    const newImages = images.filter(img => img && !product.images?.includes(img))
+    const newImages = images.filter((img) => img && !product.images?.includes(img))
     if (newImages.length) await checkImages(newImages, { openid: user.openid })
   }
 
   // 价格
   if (price !== undefined) {
     const numPrice = Number(price)
-    if (!Number.isFinite(numPrice) || numPrice < 0) throw new AppError('请输入有效价格', 'INVALID_PARAM')
+    if (!Number.isFinite(numPrice) || numPrice < 0)
+      throw new AppError('请输入有效价格', 'INVALID_PARAM')
     patch.price = numPrice
   }
 

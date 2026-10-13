@@ -14,7 +14,9 @@ exports.main = wrap(async (event = {}) => {
   const expected = process.env.INIT_SECRET
   if (!expected || event.secret !== expected) {
     throw new AppError(
-      expected ? '无权执行数据库初始化' : 'init-db 未配置 INIT_SECRET 环境变量，已拒绝执行；请先在云函数配置中设置',
+      expected
+        ? '无权执行数据库初始化'
+        : 'init-db 未配置 INIT_SECRET 环境变量，已拒绝执行；请先在云函数配置中设置',
       'FORBIDDEN'
     )
   }
@@ -25,20 +27,43 @@ exports.main = wrap(async (event = {}) => {
   // applySchool 在写库前对种子数据做字符串级替换（覆盖分类、指南标题/正文中的校名与 schoolId）。
   const SEED_SCHOOL_ID = process.env.SEED_SCHOOL_ID || 'HSFNC'
   const SEED_SCHOOL_NAME = process.env.SEED_SCHOOL_NAME || '韩山师范学院'
-  const applySchool = (data) => JSON.parse(
-    JSON.stringify(data).split('HSFNC').join(SEED_SCHOOL_ID).split('韩山师范学院').join(SEED_SCHOOL_NAME)
-  )
+  const applySchool = (data) =>
+    JSON.parse(
+      JSON.stringify(data)
+        .split('HSFNC')
+        .join(SEED_SCHOOL_ID)
+        .split('韩山师范学院')
+        .join(SEED_SCHOOL_NAME)
+    )
   const results = []
 
   // 1. 创建集合（含 view_logs：浏览量去重日志）
   const collections = [
-    'users', 'posts', 'products', 'comments', 'likes', 'collects',
-    'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
-    'follows', 'checkins', 'notifications', 'view_logs', 'verify_requests',
+    'users',
+    'posts',
+    'products',
+    'comments',
+    'likes',
+    'collects',
+    'guides',
+    'guide_categories',
+    'categories',
+    'reports',
+    'feedbacks',
+    'follows',
+    'checkins',
+    'notifications',
+    'view_logs',
+    'verify_requests',
     // 新功能集合：自动备份 / 搜索热词与限频 / 管理审计日志 / 公告 / 积分商城订单
-    'backups', 'search_queries', 'admin_logs', 'announcements', 'points_orders',
+    'backups',
+    'search_queries',
+    'admin_logs',
+    'announcements',
+    'points_orders',
     // 幂等占位（发帖/发品防闪断双写）/ 统一限频占位（rateLimit 原子化，v0.9.2 取代死集合 profile_views）
-    'idempotency', 'rate_limits'
+    'idempotency',
+    'rate_limits'
   ]
   for (const name of collections) {
     try {
@@ -46,7 +71,14 @@ exports.main = wrap(async (event = {}) => {
       results.push({ collection: name, status: 'created' })
     } catch (e) {
       // 区分"已存在"与真实故障：权限不足等错误不再被吞成 exists
-      results.push({ collection: name, status: isDuplicateKeyError(e) || /already exists|exists/i.test(String(e && (e.errMsg || e.message))) ? 'exists' : `error: ${String(e && (e.errMsg || e.message)).slice(0, 120)}` })
+      results.push({
+        collection: name,
+        status:
+          isDuplicateKeyError(e) ||
+          /already exists|exists/i.test(String(e && (e.errMsg || e.message)))
+            ? 'exists'
+            : `error: ${String(e && (e.errMsg || e.message)).slice(0, 120)}`
+      })
     }
   }
 
@@ -59,7 +91,10 @@ exports.main = wrap(async (event = {}) => {
     { categoryId: 'traffic', name: '交通出行', sort: 5, schoolId: 'HSFNC', icon: '🚌' },
     { categoryId: 'play', name: '周边玩乐', sort: 6, schoolId: 'HSFNC', icon: '🎮' }
   ]
-  const existingCats = await db.collection('guide_categories').where({ schoolId: SEED_SCHOOL_ID }).count()
+  const existingCats = await db
+    .collection('guide_categories')
+    .where({ schoolId: SEED_SCHOOL_ID })
+    .count()
   if (existingCats.total === 0) {
     for (const cat of applySchool(categories)) {
       await db.collection('guide_categories').add({ data: { ...cat, createdAt: new Date() } })
@@ -73,28 +108,199 @@ exports.main = wrap(async (event = {}) => {
   // 韩山师范学院仅为示例校区，结构上支持任意学校。
   const categorySeed = [
     // L1 分区
-    { _id: 'zone_national', name: '全国', emoji: '🌏', parentId: null, level: 1, order: 1, kind: 'zone', status: 'active' },
-    { _id: 'zone_campus', name: '校园', emoji: '🏫', parentId: null, level: 1, order: 2, kind: 'zone', status: 'active' },
-    { _id: 'zone_city', name: '城市', emoji: '🏙️', parentId: null, level: 1, order: 3, kind: 'zone', status: 'active' },
-    { _id: 'zone_hobby', name: '兴趣', emoji: '🎯', parentId: null, level: 1, order: 4, kind: 'zone', status: 'active' },
+    {
+      _id: 'zone_national',
+      name: '全国',
+      emoji: '🌏',
+      parentId: null,
+      level: 1,
+      order: 1,
+      kind: 'zone',
+      status: 'active'
+    },
+    {
+      _id: 'zone_campus',
+      name: '校园',
+      emoji: '🏫',
+      parentId: null,
+      level: 1,
+      order: 2,
+      kind: 'zone',
+      status: 'active'
+    },
+    {
+      _id: 'zone_city',
+      name: '城市',
+      emoji: '🏙️',
+      parentId: null,
+      level: 1,
+      order: 3,
+      kind: 'zone',
+      status: 'active'
+    },
+    {
+      _id: 'zone_hobby',
+      name: '兴趣',
+      emoji: '🎯',
+      parentId: null,
+      level: 1,
+      order: 4,
+      kind: 'zone',
+      status: 'active'
+    },
     // L2 吧
-    { _id: 'forum_freshman', name: '新生答疑吧', emoji: '🎓', parentId: 'zone_national', level: 2, order: 1, kind: 'forum', status: 'active' },
-    { _id: 'forum_kaoyan', name: '考研吧', emoji: '📚', parentId: 'zone_national', level: 2, order: 2, kind: 'forum', status: 'active' },
-    { _id: 'forum_parttime', name: '兼职实习吧', emoji: '💼', parentId: 'zone_national', level: 2, order: 3, kind: 'forum', status: 'active' },
-    { _id: 'forum_lostfound', name: '失物招领吧', emoji: '🔍', parentId: 'zone_national', level: 2, order: 4, kind: 'forum', status: 'active' },
-    { _id: 'forum_hanshi', name: '韩山师范学院吧', emoji: '🏫', parentId: 'zone_campus', level: 2, order: 1, kind: 'forum', schoolId: 'HSFNC', status: 'active' },
-    { _id: 'forum_guangzhou', name: '广州吧', emoji: '🌆', parentId: 'zone_city', level: 2, order: 1, kind: 'forum', status: 'active' },
-    { _id: 'forum_chaozhou', name: '潮州吧', emoji: '🏯', parentId: 'zone_city', level: 2, order: 2, kind: 'forum', status: 'active' },
-    { _id: 'forum_photo', name: '摄影吧', emoji: '📷', parentId: 'zone_hobby', level: 2, order: 1, kind: 'forum', status: 'active' },
-    { _id: 'forum_game', name: '电竞吧', emoji: '🎮', parentId: 'zone_hobby', level: 2, order: 2, kind: 'forum', status: 'active' },
-    { _id: 'forum_food', name: '美食吧', emoji: '🍜', parentId: 'zone_hobby', level: 2, order: 3, kind: 'forum', status: 'active' },
+    {
+      _id: 'forum_freshman',
+      name: '新生答疑吧',
+      emoji: '🎓',
+      parentId: 'zone_national',
+      level: 2,
+      order: 1,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_kaoyan',
+      name: '考研吧',
+      emoji: '📚',
+      parentId: 'zone_national',
+      level: 2,
+      order: 2,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_parttime',
+      name: '兼职实习吧',
+      emoji: '💼',
+      parentId: 'zone_national',
+      level: 2,
+      order: 3,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_lostfound',
+      name: '失物招领吧',
+      emoji: '🔍',
+      parentId: 'zone_national',
+      level: 2,
+      order: 4,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_hanshi',
+      name: '韩山师范学院吧',
+      emoji: '🏫',
+      parentId: 'zone_campus',
+      level: 2,
+      order: 1,
+      kind: 'forum',
+      schoolId: 'HSFNC',
+      status: 'active'
+    },
+    {
+      _id: 'forum_guangzhou',
+      name: '广州吧',
+      emoji: '🌆',
+      parentId: 'zone_city',
+      level: 2,
+      order: 1,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_chaozhou',
+      name: '潮州吧',
+      emoji: '🏯',
+      parentId: 'zone_city',
+      level: 2,
+      order: 2,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_photo',
+      name: '摄影吧',
+      emoji: '📷',
+      parentId: 'zone_hobby',
+      level: 2,
+      order: 1,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_game',
+      name: '电竞吧',
+      emoji: '🎮',
+      parentId: 'zone_hobby',
+      level: 2,
+      order: 2,
+      kind: 'forum',
+      status: 'active'
+    },
+    {
+      _id: 'forum_food',
+      name: '美食吧',
+      emoji: '🍜',
+      parentId: 'zone_hobby',
+      level: 2,
+      order: 3,
+      kind: 'forum',
+      status: 'active'
+    },
     // L3 子版块（挂韩师吧下作示例）
-    { _id: 'board_confess', name: '表白墙', emoji: '💌', parentId: 'forum_hanshi', level: 3, order: 1, kind: 'board', schoolId: 'HSFNC', status: 'active' },
-    { _id: 'board_course', name: '课程答疑', emoji: '📝', parentId: 'forum_hanshi', level: 3, order: 2, kind: 'board', schoolId: 'HSFNC', status: 'active' },
-    { _id: 'board_idle', name: '二手闲置', emoji: '🛒', parentId: 'forum_hanshi', level: 3, order: 3, kind: 'board', schoolId: 'HSFNC', status: 'active' },
-    { _id: 'board_event', name: '校园活动', emoji: '🎉', parentId: 'forum_hanshi', level: 3, order: 4, kind: 'board', schoolId: 'HSFNC', status: 'active' }
+    {
+      _id: 'board_confess',
+      name: '表白墙',
+      emoji: '💌',
+      parentId: 'forum_hanshi',
+      level: 3,
+      order: 1,
+      kind: 'board',
+      schoolId: 'HSFNC',
+      status: 'active'
+    },
+    {
+      _id: 'board_course',
+      name: '课程答疑',
+      emoji: '📝',
+      parentId: 'forum_hanshi',
+      level: 3,
+      order: 2,
+      kind: 'board',
+      schoolId: 'HSFNC',
+      status: 'active'
+    },
+    {
+      _id: 'board_idle',
+      name: '二手闲置',
+      emoji: '🛒',
+      parentId: 'forum_hanshi',
+      level: 3,
+      order: 3,
+      kind: 'board',
+      schoolId: 'HSFNC',
+      status: 'active'
+    },
+    {
+      _id: 'board_event',
+      name: '校园活动',
+      emoji: '🎉',
+      parentId: 'forum_hanshi',
+      level: 3,
+      order: 4,
+      kind: 'board',
+      schoolId: 'HSFNC',
+      status: 'active'
+    }
   ]
-  const existingCatDocs = await db.collection('categories').where({ status: 'active' }).count().catch(() => ({ total: 0 }))
+  const existingCatDocs = await db
+    .collection('categories')
+    .where({ status: 'active' })
+    .count()
+    .catch(() => ({ total: 0 }))
   if (existingCatDocs.total === 0) {
     for (const cat of applySchool(categorySeed)) {
       await db.collection('categories').add({ data: { ...cat, createdAt: new Date() } })
@@ -109,50 +315,86 @@ exports.main = wrap(async (event = {}) => {
     {
       title: '韩山师范学院新生入学全攻略',
       summary: '录取通知书收到后该做什么？这份指南帮你一步步完成入学准备。',
-      categoryId: 'freshman', category: '新生入学',
+      categoryId: 'freshman',
+      category: '新生入学',
       tags: ['新生', '入学', '攻略'],
-      content: '<h2>一、收到录取通知书后</h2><p>1. 仔细阅读录取通知书及附带材料</p><p>2. 关注学校官方微信公众号"韩山师范学院"</p><p>3. 加入新生QQ群/微信群（注意识别官方群）</p><p>4. 准备近期免冠证件照若干</p><h2>二、报到所需材料</h2><p>1. 录取通知书原件</p><p>2. 身份证及正反面复印件</p><p>3. 户口迁移证（如需迁移户口）</p><p>4. 团组织关系转接证明</p><p>5. 近期免冠证件照（1寸、2寸各若干）</p><p>6. 银行卡（学校随通知书寄送的银行卡）</p><h2>三、生活用品准备</h2><p>床上用品可到校购买或自带，建议自带被褥枕头。日常用品学校超市均有售。</p><h2>四、到校路线</h2><p>潮州站下车后可乘坐公交车或打车到学校，具体路线见"交通出行"指南。</p>',
-      sort: 1, schoolId: 'HSFNC', status: 'published', viewCount: 0, createdAt: new Date()
+      content:
+        '<h2>一、收到录取通知书后</h2><p>1. 仔细阅读录取通知书及附带材料</p><p>2. 关注学校官方微信公众号"韩山师范学院"</p><p>3. 加入新生QQ群/微信群（注意识别官方群）</p><p>4. 准备近期免冠证件照若干</p><h2>二、报到所需材料</h2><p>1. 录取通知书原件</p><p>2. 身份证及正反面复印件</p><p>3. 户口迁移证（如需迁移户口）</p><p>4. 团组织关系转接证明</p><p>5. 近期免冠证件照（1寸、2寸各若干）</p><p>6. 银行卡（学校随通知书寄送的银行卡）</p><h2>三、生活用品准备</h2><p>床上用品可到校购买或自带，建议自带被褥枕头。日常用品学校超市均有售。</p><h2>四、到校路线</h2><p>潮州站下车后可乘坐公交车或打车到学校，具体路线见"交通出行"指南。</p>',
+      sort: 1,
+      schoolId: 'HSFNC',
+      status: 'published',
+      viewCount: 0,
+      createdAt: new Date()
     },
     {
       title: '宿舍生存指南：韩师各校区宿舍详解',
       summary: '东丽A/B区、东湖区的宿舍条件、设施、注意事项一网打尽。',
-      categoryId: 'life', category: '生活指南',
+      categoryId: 'life',
+      category: '生活指南',
       tags: ['宿舍', '生活', '新生'],
-      content: '<h2>宿舍概况</h2><p>韩山师范学院宿舍主要分布在东丽A区、东丽B区和东湖区。</p><h2>各宿舍区情况</h2><p><strong>东丽A区</strong>：距离教学区较近，6人间为主，有独立卫浴和阳台。</p><p><strong>东丽B区</strong>：新建宿舍区，条件较好，4-6人间，设施较新。</p><p><strong>东湖区</strong>：靠近东湖，环境优美，部分宿舍可看湖景。</p><h2>宿舍注意事项</h2><p>1. 宿舍门禁时间：一般为23:00</p><p>2. 禁止使用大功率电器（如热得快、电饭锅等）</p><p>3. 宿舍电费需自行充值</p><p>4. 每学期开学需到宿管处登记入住</p><p>5. 水电维修可联系宿管阿姨报修</p>',
-      sort: 2, schoolId: 'HSFNC', status: 'published', viewCount: 0, createdAt: new Date()
+      content:
+        '<h2>宿舍概况</h2><p>韩山师范学院宿舍主要分布在东丽A区、东丽B区和东湖区。</p><h2>各宿舍区情况</h2><p><strong>东丽A区</strong>：距离教学区较近，6人间为主，有独立卫浴和阳台。</p><p><strong>东丽B区</strong>：新建宿舍区，条件较好，4-6人间，设施较新。</p><p><strong>东湖区</strong>：靠近东湖，环境优美，部分宿舍可看湖景。</p><h2>宿舍注意事项</h2><p>1. 宿舍门禁时间：一般为23:00</p><p>2. 禁止使用大功率电器（如热得快、电饭锅等）</p><p>3. 宿舍电费需自行充值</p><p>4. 每学期开学需到宿管处登记入住</p><p>5. 水电维修可联系宿管阿姨报修</p>',
+      sort: 2,
+      schoolId: 'HSFNC',
+      status: 'published',
+      viewCount: 0,
+      createdAt: new Date()
     },
     {
       title: '韩师食堂美食全攻略',
       summary: '各食堂特色菜、人均消费、营业时间，吃货必备指南。',
-      categoryId: 'food', category: '美食地图',
+      categoryId: 'food',
+      category: '美食地图',
       tags: ['美食', '食堂', '生活'],
-      content: '<h2>各食堂简介</h2><p><strong>第一食堂</strong>：位于教学区附近，菜品丰富，人均8-12元。推荐：烧鸭饭、麻辣香锅。</p><p><strong>第二食堂</strong>：位于宿舍区，早餐品种多，人均6-10元。推荐：肠粉、皮蛋瘦肉粥。</p><p><strong>第三食堂</strong>：特色小吃窗口多，人均8-15元。推荐：牛肉面、螺蛳粉。</p><h2>周边外卖</h2><p>学校周边有较多小吃店和奶茶店，外卖可送到校门口。</p><h2>省钱小贴士</h2><p>1. 食堂使用校园卡支付有优惠</p><p>2. 晚8点后部分窗口有打折菜</p>',
-      sort: 3, schoolId: 'HSFNC', status: 'published', viewCount: 0, createdAt: new Date()
+      content:
+        '<h2>各食堂简介</h2><p><strong>第一食堂</strong>：位于教学区附近，菜品丰富，人均8-12元。推荐：烧鸭饭、麻辣香锅。</p><p><strong>第二食堂</strong>：位于宿舍区，早餐品种多，人均6-10元。推荐：肠粉、皮蛋瘦肉粥。</p><p><strong>第三食堂</strong>：特色小吃窗口多，人均8-15元。推荐：牛肉面、螺蛳粉。</p><h2>周边外卖</h2><p>学校周边有较多小吃店和奶茶店，外卖可送到校门口。</p><h2>省钱小贴士</h2><p>1. 食堂使用校园卡支付有优惠</p><p>2. 晚8点后部分窗口有打折菜</p>',
+      sort: 3,
+      schoolId: 'HSFNC',
+      status: 'published',
+      viewCount: 0,
+      createdAt: new Date()
     },
     {
       title: '选课攻略：通识选修课推荐',
       summary: '哪些选修课好过又有趣？学长学姐的真实评价。',
-      categoryId: 'study', category: '学习攻略',
+      categoryId: 'study',
+      category: '学习攻略',
       tags: ['选课', '选修', '学习'],
-      content: '<h2>选课时间</h2><p>一般每学期开学第1-2周进行选课，具体时间关注教务系统通知。</p><h2>热门选修课推荐</h2><p>1. <strong>中国茶文化</strong>：潮州是茶乡，这门课很有地方特色，老师讲得好。</p><p>2. <strong>心理学与生活</strong>：内容有趣，考核方式为论文，给分较高。</p><p>3. <strong>影视鉴赏</strong>：看电影写观后感，轻松有趣。</p><p>4. <strong>公共关系学</strong>：实用性强，对未来就业有帮助。</p><h2>选课技巧</h2><p>1. 提前登录教务系统，选课开始后立即操作</p><p>2. 准备好备选课程，热门课可能秒没</p><p>3. 注意选修课学分要求，一般需修满指定学分</p>',
-      sort: 4, schoolId: 'HSFNC', status: 'published', viewCount: 0, createdAt: new Date()
+      content:
+        '<h2>选课时间</h2><p>一般每学期开学第1-2周进行选课，具体时间关注教务系统通知。</p><h2>热门选修课推荐</h2><p>1. <strong>中国茶文化</strong>：潮州是茶乡，这门课很有地方特色，老师讲得好。</p><p>2. <strong>心理学与生活</strong>：内容有趣，考核方式为论文，给分较高。</p><p>3. <strong>影视鉴赏</strong>：看电影写观后感，轻松有趣。</p><p>4. <strong>公共关系学</strong>：实用性强，对未来就业有帮助。</p><h2>选课技巧</h2><p>1. 提前登录教务系统，选课开始后立即操作</p><p>2. 准备好备选课程，热门课可能秒没</p><p>3. 注意选修课学分要求，一般需修满指定学分</p>',
+      sort: 4,
+      schoolId: 'HSFNC',
+      status: 'published',
+      viewCount: 0,
+      createdAt: new Date()
     },
     {
       title: '潮州交通出行指南',
       summary: '从韩师出发，公交、高铁、飞机怎么坐最方便。',
-      categoryId: 'traffic', category: '交通出行',
+      categoryId: 'traffic',
+      category: '交通出行',
       tags: ['交通', '出行', '潮州'],
-      content: '<h2>校内出行</h2><p>校区不大，步行即可。东丽区和东湖区之间步行约10分钟。</p><h2>市内公交</h2><p>校门口有多路公交车，可达潮州古城、牌坊街等景点。</p><h2>高铁出行</h2><p><strong>潮汕站</strong>：距离学校约30分钟车程，可打车或坐公交前往。有通往广州、深圳、厦门等地方向列车。</p><h2>飞机出行</h2><p><strong>揭阳潮汕机场</strong>：距离约40分钟车程，有通往全国主要城市的航班。</p><h2>打车/网约车</h2><p>滴滴等网约车在潮州可正常使用，市内出行方便。</p>',
-      sort: 5, schoolId: 'HSFNC', status: 'published', viewCount: 0, createdAt: new Date()
+      content:
+        '<h2>校内出行</h2><p>校区不大，步行即可。东丽区和东湖区之间步行约10分钟。</p><h2>市内公交</h2><p>校门口有多路公交车，可达潮州古城、牌坊街等景点。</p><h2>高铁出行</h2><p><strong>潮汕站</strong>：距离学校约30分钟车程，可打车或坐公交前往。有通往广州、深圳、厦门等地方向列车。</p><h2>飞机出行</h2><p><strong>揭阳潮汕机场</strong>：距离约40分钟车程，有通往全国主要城市的航班。</p><h2>打车/网约车</h2><p>滴滴等网约车在潮州可正常使用，市内出行方便。</p>',
+      sort: 5,
+      schoolId: 'HSFNC',
+      status: 'published',
+      viewCount: 0,
+      createdAt: new Date()
     },
     {
       title: '韩师周边吃喝玩乐地图',
       summary: '牌坊街、广济桥、西湖公园...周末去哪玩？',
-      categoryId: 'play', category: '周边玩乐',
+      categoryId: 'play',
+      category: '周边玩乐',
       tags: ['周边', '游玩', '周末'],
-      content: '<h2>必去景点</h2><p>1. <strong>牌坊街</strong>：潮州古城标志性景点，有22座牌坊，沿街有各种小吃和手工艺品店。</p><p>2. <strong>广济桥</strong>：中国四大古桥之一，晚上有灯光秀。</p><p>3. <strong>西湖公园</strong>：免费开放，适合散步休闲。</p><p>4. <strong>韩文公祠</strong>：纪念韩愈的文化景点，可了解潮州历史文化。</p><h2>美食推荐</h2><p>1. 牛肉丸（推荐：官塘兄弟牛肉店）</p><p>2. 肠粉（推荐：牌坊街各家肠粉店）</p><p>3. 卤鹅（推荐：溪口刘卜鹅肉店）</p><p>4. 甘草水果（牌坊街多处有售）</p><h2>逛街购物</h2><p>潮州万达广场、潮州大润发等商场可满足日常购物需求。</p>',
-      sort: 6, schoolId: 'HSFNC', status: 'published', viewCount: 0, createdAt: new Date()
+      content:
+        '<h2>必去景点</h2><p>1. <strong>牌坊街</strong>：潮州古城标志性景点，有22座牌坊，沿街有各种小吃和手工艺品店。</p><p>2. <strong>广济桥</strong>：中国四大古桥之一，晚上有灯光秀。</p><p>3. <strong>西湖公园</strong>：免费开放，适合散步休闲。</p><p>4. <strong>韩文公祠</strong>：纪念韩愈的文化景点，可了解潮州历史文化。</p><h2>美食推荐</h2><p>1. 牛肉丸（推荐：官塘兄弟牛肉店）</p><p>2. 肠粉（推荐：牌坊街各家肠粉店）</p><p>3. 卤鹅（推荐：溪口刘卜鹅肉店）</p><p>4. 甘草水果（牌坊街多处有售）</p><h2>逛街购物</h2><p>潮州万达广场、潮州大润发等商场可满足日常购物需求。</p>',
+      sort: 6,
+      schoolId: 'HSFNC',
+      status: 'published',
+      viewCount: 0,
+      createdAt: new Date()
     }
   ]
 
@@ -170,8 +412,10 @@ exports.main = wrap(async (event = {}) => {
   const indexReport = await ensureIndexes(db)
   results.push({ item: 'indexes', checked: EXPECTED_INDEXES.length, missing: indexReport.missing })
   if (indexReport.missing.length) {
-    console.warn('[init-db] 以下索引尚未创建，请在「云开发控制台 → 数据库 → 索引管理」手动创建：',
-      indexReport.missing.map(m => `${m.collection}.${m.name}`))
+    console.warn(
+      '[init-db] 以下索引尚未创建，请在「云开发控制台 → 数据库 → 索引管理」手动创建：',
+      indexReport.missing.map((m) => `${m.collection}.${m.name}`)
+    )
   }
 
   const tip = indexReport.missing.length
@@ -189,7 +433,7 @@ async function ensureIndexes(db) {
     try {
       const r = await db.collection(idx.collection).getIndexes()
       const list = (r && r.indexes) || []
-      existingNames = list.map(i => i.IndexName || i.name || i.indexName).filter(Boolean)
+      existingNames = list.map((i) => i.IndexName || i.name || i.indexName).filter(Boolean)
     } catch {
       // 接口受限或集合尚未就绪：无法检测，仍提示该索引需在控制台确认
       missing.push({ ...idx, note: '无法读取现有索引（接口受限或集合尚未就绪）' })

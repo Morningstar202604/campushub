@@ -33,7 +33,7 @@ jobs:
       - name: Install deps & sync common layer
         run: |
           npm install
-          npm run sync:common
+          npm run build:functions
 
       - name: Doctor (pre-deploy checks)
         run: npm run doctor

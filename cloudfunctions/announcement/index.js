@@ -12,7 +12,8 @@ exports.main = wrap(async (event) => {
   const { action = 'list' } = event
 
   if (action === 'list') {
-    const res = await db.collection('announcements')
+    const res = await db
+      .collection('announcements')
       .where({ status: 'active' })
       .orderBy('isPinned', 'desc')
       .orderBy('createdAt', 'desc')
@@ -26,10 +27,7 @@ exports.main = wrap(async (event) => {
   if (!(await checkAdmin(db, openid))) throw new AppError('无权限', 'FORBIDDEN')
 
   if (action === 'list-all') {
-    const res = await db.collection('announcements')
-      .orderBy('createdAt', 'desc')
-      .limit(50)
-      .get()
+    const res = await db.collection('announcements').orderBy('createdAt', 'desc').limit(50).get()
     return ok({ list: res.data || [] })
   }
 
@@ -56,12 +54,19 @@ exports.main = wrap(async (event) => {
   if (action === 'toggle') {
     const id = String(event.id || '')
     if (!id) throw new AppError('缺少公告ID', 'INVALID_PARAM')
-    const cur = await db.collection('announcements').doc(id).get().catch(() => ({ data: null }))
+    const cur = await db
+      .collection('announcements')
+      .doc(id)
+      .get()
+      .catch(() => ({ data: null }))
     if (!cur.data) throw new AppError('公告不存在', 'NOT_FOUND')
     const next = cur.data.status === 'active' ? 'inactive' : 'active'
-    await db.collection('announcements').doc(id).update({
-      data: { status: next, updatedAt: new Date() }
-    })
+    await db
+      .collection('announcements')
+      .doc(id)
+      .update({
+        data: { status: next, updatedAt: new Date() }
+      })
     return ok({ id, status: next })
   }
 

@@ -31,9 +31,7 @@ async function checkContent({ content = '', openid = '', scene = 2 } = {}) {
 
 // 多段文本合并检测（标题+正文+标签等）
 async function checkContents(texts = [], { openid = '', scene = 2 } = {}) {
-  const joined = (texts || [])
-    .filter(t => t != null && String(t).length)
-    .join('\n')
+  const joined = (texts || []).filter((t) => t != null && String(t).length).join('\n')
   if (!joined) return
   return checkContent({ content: joined, openid, scene })
 }
@@ -88,11 +86,15 @@ async function checkImage({ fileID } = {}) {
   try {
     buffer = fs.readFileSync(tempFilePath)
   } catch (e) {
-    console.error('[图片安全] 读取临时文件失败，按最严策略拒绝:', e && (e.message))
+    console.error('[图片安全] 读取临时文件失败，按最严策略拒绝:', e && e.message)
     throw new AppError('图片审核服务暂不可用，请稍后再试', 'CONTENT_CHECK_UNAVAILABLE')
   } finally {
     // 临时文件用完即删，避免实例复用时无限堆积占用磁盘
-    try { fs.unlinkSync(tempFilePath) } catch (e) { /* 删不掉不影响审核结论 */ }
+    try {
+      fs.unlinkSync(tempFilePath)
+    } catch {
+      /* 删不掉不影响审核结论 */
+    }
   }
 
   if (!buffer || !buffer.length) {
@@ -146,7 +148,10 @@ async function checkImages(fileIDs = [], { concurrency = IMAGE_CHECK_CONCURRENCY
 // 提取自 admin/resolve 的重复实现，统一为单一事实来源。
 async function checkAdmin(db, openid) {
   // ① 云函数环境变量 ADMIN_OPENIDS（逗号分隔）—— 命中直接放行
-  const envAdmins = (process.env.ADMIN_OPENIDS || '').split(',').map(s => s.trim()).filter(Boolean)
+  const envAdmins = (process.env.ADMIN_OPENIDS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   if (envAdmins.includes(openid)) return true
   // ② 数据库 config 集合 doc('global').adminOpenids 数组
   // fail-closed：区分"文档不存在/无该字段"（返回 false）与"DB 调用异常"（抛出，
@@ -166,7 +171,13 @@ async function checkAdmin(db, openid) {
     }
     cfg = { data: null }
   }
-  if (cfg && cfg.data && Array.isArray(cfg.data.adminOpenids) && cfg.data.adminOpenids.includes(openid)) return true
+  if (
+    cfg &&
+    cfg.data &&
+    Array.isArray(cfg.data.adminOpenids) &&
+    cfg.data.adminOpenids.includes(openid)
+  )
+    return true
   return false
 }
 

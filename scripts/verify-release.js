@@ -68,7 +68,9 @@ if (appJson) {
   if (pages.length === 0) report('error', 'pages', 'app.json 未注册任何页面')
   for (const p of pages) {
     pageDirs.add(p)
-    const missing = ['js', 'json', 'wxml', 'wxss'].filter((e) => !exists(path.join(MP, `${p}.${e}`)))
+    const missing = ['js', 'json', 'wxml', 'wxss'].filter(
+      (e) => !exists(path.join(MP, `${p}.${e}`))
+    )
     if (missing.length) report('error', 'pages', `页面 ${p} 缺少: ${missing.join(', ')}`)
   }
   if (!results.some((r) => r.group === 'pages' && r.level === 'error'))
@@ -79,7 +81,9 @@ if (appJson) {
   for (const sp of appJson.subPackages || appJson.subpackages || []) {
     for (const p of sp.pages || []) {
       const full = path.join(sp.root, p)
-      const missing = ['js', 'json', 'wxml', 'wxss'].filter((e) => !exists(path.join(MP, `${full}.${e}`)))
+      const missing = ['js', 'json', 'wxml', 'wxss'].filter(
+        (e) => !exists(path.join(MP, `${full}.${e}`))
+      )
       if (missing.length) report('error', 'pages', `分包页面 ${full} 缺少: ${missing.join(', ')}`)
     }
   }
@@ -104,12 +108,16 @@ if (appJson && appJson.tabBar && Array.isArray(appJson.tabBar.list)) {
 // ============ 4. JS 语法 + 5. require 解析 ============
 const jsFiles = [...walk(MP, ['.js']), ...walk(CF, ['.js'])]
 const usingComponentsGlobal = (appJson && appJson.usingComponents) || {}
-const BUILTIN_WXML_TAGS = new Set(('view,text,image,button,block,scroll-view,swiper,swiper-item,input,textarea,form,' +
-  'picker,picker-view,picker-view-column,checkbox,checkbox-group,radio,radio-group,slider,switch,label,navigator,' +
-  'video,camera,live-player,live-pusher,map,canvas,web-view,progress,rich-text,icon,audio,ad,official-account,' +
-  'open-data,editor,movable-area,movable-view,cover-view,cover-image,page-meta,navigation-bar,match-media,' +
-  'functional-page-navigator,snapshot,root-portal,grid-view,list-view,sticky-section,sticky-header,custom-wrapper,' +
-  'wxs,import-wxs').split(','))
+const BUILTIN_WXML_TAGS = new Set(
+  (
+    'view,text,image,button,block,scroll-view,swiper,swiper-item,input,textarea,form,' +
+    'picker,picker-view,picker-view-column,checkbox,checkbox-group,radio,radio-group,slider,switch,label,navigator,' +
+    'video,camera,live-player,live-pusher,map,canvas,web-view,progress,rich-text,icon,audio,ad,official-account,' +
+    'open-data,editor,movable-area,movable-view,cover-view,cover-image,page-meta,navigation-bar,match-media,' +
+    'functional-page-navigator,snapshot,root-portal,grid-view,list-view,sticky-section,sticky-header,custom-wrapper,' +
+    'wxs,import-wxs'
+  ).split(',')
+)
 
 const WXML_VOID = new Set(['input', 'import', 'include', 'wxs'])
 
@@ -119,11 +127,19 @@ function parseWxml(src) {
   const tags = []
   let i = 0
   while (i < src.length) {
-    if (src.startsWith('<!--', i)) { const e = src.indexOf('-->', i); i = e === -1 ? src.length : e + 3; continue }
-    if (src[i] !== '<') { i++; continue }
+    if (src.startsWith('<!--', i)) {
+      const e = src.indexOf('-->', i)
+      i = e === -1 ? src.length : e + 3
+      continue
+    }
+    if (src[i] !== '<') {
+      i++
+      continue
+    }
     // 闭标签
     if (src.startsWith('</', i)) {
-      let j = i + 2, name = ''
+      let j = i + 2,
+        name = ''
       while (j < src.length && /[\w-]/.test(src[j])) name += src[j++]
       while (j < src.length && src[j] !== '>') j++
       if (name) tags.push({ name, type: 'close', pos: i })
@@ -131,18 +147,37 @@ function parseWxml(src) {
       continue
     }
     // 开标签 / 自闭合
-    let j = i + 1, name = ''
+    let j = i + 1,
+      name = ''
     while (j < src.length && /[\w-]/.test(src[j])) name += src[j++]
-    if (!name) { i++; continue } // '<' 或表达式比较符
-    let selfClose = false, closed = false
+    if (!name) {
+      i++
+      continue
+    } // '<' 或表达式比较符
+    let selfClose = false,
+      closed = false
     while (j < src.length) {
       const c = src[j]
-      if (c === '"' || c === "'") { const q = c; j++; while (j < src.length && src[j] !== q) j++; j++ }
-      else if (c === '/' && src[j + 1] === '>') { selfClose = true; closed = true; j += 2; break }
-      else if (c === '>') { closed = true; j++; break }
-      else j++
+      if (c === '"' || c === "'") {
+        const q = c
+        j++
+        while (j < src.length && src[j] !== q) j++
+        j++
+      } else if (c === '/' && src[j + 1] === '>') {
+        selfClose = true
+        closed = true
+        j += 2
+        break
+      } else if (c === '>') {
+        closed = true
+        j++
+        break
+      } else j++
     }
-    if (!closed) { errors.push(`标签 <${name}> 未闭合（偏移 ${i} 处截断）`); break }
+    if (!closed) {
+      errors.push(`标签 <${name}> 未闭合（偏移 ${i} 处截断）`)
+      break
+    }
     tags.push({ name, type: selfClose ? 'self' : 'open', pos: i })
     i = j
   }
@@ -154,7 +189,8 @@ function parseWxml(src) {
     else {
       const top = stack.pop()
       if (!top) errors.push(`多余的闭标签 </${t.name}>（偏移 ${t.pos}）`)
-      else if (top.name !== t.name) errors.push(`标签错配：<${top.name}>（偏移 ${top.pos}）被 </${t.name}> 闭合`)
+      else if (top.name !== t.name)
+        errors.push(`标签错配：<${top.name}>（偏移 ${top.pos}）被 </${t.name}> 闭合`)
     }
   }
   for (const t of stack) errors.push(`标签 <${t.name}>（偏移 ${t.pos}）未闭合`)
@@ -162,11 +198,16 @@ function parseWxml(src) {
 }
 
 // 逐个 JS 文件检查
-let syntaxBad = 0, requireBad = 0
+let syntaxBad = 0,
+  requireBad = 0
 for (const file of jsFiles) {
   const code = fs.readFileSync(file, 'utf8')
-  try { execSync(`node --check ${JSON.stringify(file)}`, { stdio: 'pipe' }) }
-  catch (e) { report('error', 'js-syntax', `${rel(file)}: ${e.stderr.toString().split('\n')[0]}`); syntaxBad++ }
+  try {
+    execSync(`node --check ${JSON.stringify(file)}`, { stdio: 'pipe' })
+  } catch (e) {
+    report('error', 'js-syntax', `${rel(file)}: ${e.stderr.toString().split('\n')[0]}`)
+    syntaxBad++
+  }
 
   const isCF = file.startsWith(CF)
   // common 是共享内核（随各云函数一起部署），不独立检查依赖声明
@@ -177,12 +218,22 @@ for (const file of jsFiles) {
     if (!spec.startsWith('.')) {
       // 云函数外部依赖必须声明在 package.json
       if (isCF && !isCommonKernel) {
-        const pkgName = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]
+        const pkgName = spec.startsWith('@')
+          ? spec.split('/').slice(0, 2).join('/')
+          : spec.split('/')[0]
         const pkgPath = path.join(baseDir, 'package.json')
         let deps = {}
-        try { deps = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).dependencies || {} } catch (_) { /* 下方统一报 */ }
+        try {
+          deps = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).dependencies || {}
+        } catch (_) {
+          /* 下方统一报 */
+        }
         if (!deps[pkgName]) {
-          report('error', 'cf-deps', `${rel(file)}: require('${spec}') 未在 ${rel(pkgPath)} dependencies 声明`)
+          report(
+            'error',
+            'cf-deps',
+            `${rel(file)}: require('${spec}') 未在 ${rel(pkgPath)} dependencies 声明`
+          )
           requireBad++
         }
       }
@@ -201,7 +252,9 @@ if (!requireBad) report('ok', 'require', '全部 require() 相对路径可解析
 
 // ============ 6. WXML 检查 ============
 const wxmlFiles = [...walk(MP, ['.wxml'])]
-let wxmlBad = 0, compBad = 0, imgBad = 0
+let wxmlBad = 0,
+  compBad = 0,
+  imgBad = 0
 const definedVars = new Set()
 // 7. CSS 变量定义先收集（所有 wxss）
 const wxssFiles = walk(MP, ['.wxss'])
@@ -212,12 +265,17 @@ for (const f of wxssFiles) {
 for (const f of wxmlFiles) {
   const src = fs.readFileSync(f, 'utf8')
   const parsed = parseWxml(src)
-  for (const e of parsed.errors) { report('error', 'wxml', `${rel(f)}: ${e}`); wxmlBad++ }
+  for (const e of parsed.errors) {
+    report('error', 'wxml', `${rel(f)}: ${e}`)
+    wxmlBad++
+  }
   // 自定义组件注册检查
   const pageDir = path.dirname(f)
   const jsonPath = f.replace(/\.wxml$/, '.json')
   let comps = { ...usingComponentsGlobal }
-  try { comps = { ...comps, ...(JSON.parse(fs.readFileSync(jsonPath, 'utf8')).usingComponents || {}) } } catch (_) {}
+  try {
+    comps = { ...comps, ...(JSON.parse(fs.readFileSync(jsonPath, 'utf8')).usingComponents || {}) }
+  } catch (_) {}
   for (const t of parsed.tags) {
     if (!t.name.includes('-') || BUILTIN_WXML_TAGS.has(t.name)) continue
     if (!comps[t.name]) {
@@ -227,38 +285,57 @@ for (const f of wxmlFiles) {
     }
     const ref = comps[t.name]
     let base = null
-    if (ref.startsWith('/')) base = path.join(MP, ref) // 小程序根绝对路径
-    else if (ref.startsWith('.')) base = path.resolve(pageDir, ref) // 相对路径
+    if (ref.startsWith('/'))
+      base = path.join(MP, ref) // 小程序根绝对路径
+    else if (ref.startsWith('.'))
+      base = path.resolve(pageDir, ref) // 相对路径
     else if (ref.includes('/')) base = path.join(MP, 'miniprogram_npm', ref) // npm 包引用
     if (base) {
       const missing = ['js', 'json', 'wxml'].filter((e) => !exists(`${base}.${e}`))
       if (missing.length) {
-        report('error', 'wxml', `${rel(f)}: 组件 <${t.name}> → ${ref} 缺少文件: ${missing.join(', ')}`)
+        report(
+          'error',
+          'wxml',
+          `${rel(f)}: 组件 <${t.name}> → ${ref} 缺少文件: ${missing.join(', ')}`
+        )
         compBad++
       }
     }
   }
   // 图片引用
-  for (const m of src.matchAll(/['"]((?:\/|\.\.\/)+assets\/[\w\-./]+\.(?:png|jpe?g|gif|svg|webp))['"]/g)) {
+  for (const m of src.matchAll(
+    /['"]((?:\/|\.\.\/)+assets\/[\w\-./]+\.(?:png|jpe?g|gif|svg|webp))['"]/g
+  )) {
     const p = m[1].replace(/^\/+/, '').replace(/^(\.\.\/)+/, '')
-    if (!exists(path.join(MP, p))) { report('error', 'assets', `${rel(f)}: 图片不存在 ${m[1]}`); imgBad++ }
+    if (!exists(path.join(MP, p))) {
+      report('error', 'assets', `${rel(f)}: 图片不存在 ${m[1]}`)
+      imgBad++
+    }
   }
 }
-if (!wxmlBad && !compBad) report('ok', 'wxml', `${wxmlFiles.length} 个 WXML 标签平衡、组件注册与文件完整`)
+if (!wxmlBad && !compBad)
+  report('ok', 'wxml', `${wxmlFiles.length} 个 WXML 标签平衡、组件注册与文件完整`)
 if (!imgBad) report('ok', 'assets', 'WXML 引用的 assets 图片全部存在')
 
 // ============ 7. WXSS 变量 + 图片 ============
-let varBad = 0, _cssImgBad = 0
+let varBad = 0,
+  _cssImgBad = 0
 for (const f of wxssFiles) {
   const css = fs.readFileSync(f, 'utf8')
   for (const m of css.matchAll(/var\(\s*(--[\w-]+)/g)) {
-    if (!definedVars.has(m[1])) { report('error', 'wxss', `${rel(f)}: 使用未定义变量 ${m[1]}`); varBad++ }
+    if (!definedVars.has(m[1])) {
+      report('error', 'wxss', `${rel(f)}: 使用未定义变量 ${m[1]}`)
+      varBad++
+    }
   }
   for (const m of css.matchAll(/url\(\s*['"]?([^'")]+)['"]?\s*\)/g)) {
     let u = m[1].trim()
     if (/^(https?:|data:)/.test(u)) continue
     const abs = u.startsWith('/') ? path.join(MP, u) : path.resolve(path.dirname(f), u)
-    if (!exists(abs)) { report('error', 'assets', `${rel(f)}: 样式图片不存在 ${u}`); _cssImgBad++ }
+    if (!exists(abs)) {
+      report('error', 'assets', `${rel(f)}: 样式图片不存在 ${u}`)
+      _cssImgBad++
+    }
   }
 }
 if (!varBad) report('ok', 'wxss', `${wxssFiles.length} 个 WXSS 的 CSS 变量引用全部有定义`)
@@ -267,7 +344,10 @@ if (!varBad) report('ok', 'wxss', `${wxssFiles.length} 个 WXSS 的 CSS 变量�
 for (const f of walk(MP, ['.js'])) {
   const code = fs.readFileSync(f, 'utf8')
   for (const m of code.matchAll(/['"](\/assets\/[\w\-./]+\.(?:png|jpe?g|gif|svg|webp))['"]/g)) {
-    if (!exists(path.join(MP, m[1]))) { report('error', 'assets', `${rel(f)}: 图片不存在 ${m[1]}`); imgBad++ }
+    if (!exists(path.join(MP, m[1]))) {
+      report('error', 'assets', `${rel(f)}: 图片不存在 ${m[1]}`)
+      imgBad++
+    }
   }
 }
 
@@ -279,17 +359,27 @@ if (exists(CF)) {
     const dir = path.join(CF, name)
     if (!fs.statSync(dir).isDirectory()) continue
     const pkg = path.join(dir, 'package.json')
-    if (!exists(pkg)) { report('error', 'cloudfunctions', `云函数 ${name} 缺少 package.json`); cfBad++; continue }
+    if (!exists(pkg)) {
+      report('error', 'cloudfunctions', `云函数 ${name} 缺少 package.json`)
+      cfBad++
+      continue
+    }
     try {
       const p = JSON.parse(fs.readFileSync(pkg, 'utf8'))
       if (!p.dependencies || !p.dependencies['wx-server-sdk']) {
         report('warn', 'cloudfunctions', `云函数 ${name} 未声明 wx-server-sdk 依赖`)
       }
-      if (!p.main) { report('warn', 'cloudfunctions', `云函数 ${name} package.json 缺少 main 字段`); }
-      if (!exists(path.join(dir, p.main || 'index.js'))) {
-        report('error', 'cloudfunctions', `云函数 ${name} 入口文件 ${p.main || 'index.js'} 不存在`); cfBad++
+      if (!p.main) {
+        report('warn', 'cloudfunctions', `云函数 ${name} package.json 缺少 main 字段`)
       }
-    } catch (e) { report('error', 'cloudfunctions', `云函数 ${name} package.json 解析失败: ${e.message}`); cfBad++ }
+      if (!exists(path.join(dir, p.main || 'index.js'))) {
+        report('error', 'cloudfunctions', `云函数 ${name} 入口文件 ${p.main || 'index.js'} 不存在`)
+        cfBad++
+      }
+    } catch (e) {
+      report('error', 'cloudfunctions', `云函数 ${name} package.json 解析失败: ${e.message}`)
+      cfBad++
+    }
   }
   if (!cfBad) report('ok', 'cloudfunctions', '全部云函数 package.json 与入口文件完整')
 }

@@ -8,7 +8,16 @@
 // （best-effort，失败仅告警不阻断归档主流程——对账是低频兜底，非关键路径）。
 // v0.9.2：① 调用方守卫（fail-closed）——定时触发无 OPENID 放行，客户端手动调用仅限管理员；
 //         ② 过期日志清理（云开发无自动 TTL）：view_logs 保留 90 天、rate_limits 清过期窗口占位。
-const { cloud, getDB, getCmd, ok, wrap, AppError, reconcileUserCounts, checkAdmin } = require('./common-bundle')
+const {
+  cloud,
+  getDB,
+  getCmd,
+  ok,
+  wrap,
+  AppError,
+  reconcileUserCounts,
+  checkAdmin
+} = require('./common-bundle')
 
 exports.main = wrap(async () => {
   const db = getDB()
@@ -25,7 +34,8 @@ exports.main = wrap(async () => {
   }
 
   // 已解决的任务不进过期页 — resolved 字段可能不存在（旧数据），用 neq(true) 兼容
-  const res = await db.collection('posts')
+  const res = await db
+    .collection('posts')
     .where({
       kind: 'task',
       status: 'normal',
@@ -50,17 +60,21 @@ exports.main = wrap(async () => {
   //   rate_limits 清 expireAt 已过的窗口占位文档。每次各最多 500 条，剩余留给下次触发。
   let cleaned = 0
   try {
-    const oldViews = await db.collection('view_logs')
+    const oldViews = await db
+      .collection('view_logs')
       .where({ createdAt: _.lt(new Date(now.getTime() - 90 * 86400000)) })
-      .limit(500).get()
-    for (const d of (oldViews.data || [])) {
+      .limit(500)
+      .get()
+    for (const d of oldViews.data || []) {
       await db.collection('view_logs').doc(d._id).remove()
       cleaned++
     }
-    const oldRates = await db.collection('rate_limits')
+    const oldRates = await db
+      .collection('rate_limits')
       .where({ expireAt: _.lt(now) })
-      .limit(500).get()
-    for (const d of (oldRates.data || [])) {
+      .limit(500)
+      .get()
+    for (const d of oldRates.data || []) {
       await db.collection('rate_limits').doc(d._id).remove()
       cleaned++
     }

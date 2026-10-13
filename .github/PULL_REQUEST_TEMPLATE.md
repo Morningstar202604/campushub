@@ -18,7 +18,7 @@
 
 ## Checklist
 
-- [ ] Ran `npm run sync:common` (if changes touch `cloudfunctions/common/`)
+- [ ] Ran `npm run gate` (build + contract + lint + format + tests)
 - [ ] New cloud functions include a `package.json`
 - [ ] New indexes are registered in `cloudfunctions/common/common-indexes.js` and documented in `docs/INDEXES.md`
 - [ ] Did NOT edit `common-*.js` copies inside `cloudfunctions/*/` directly

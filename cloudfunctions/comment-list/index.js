@@ -23,15 +23,21 @@ exports.main = wrap(async (event) => {
   // 获取主楼层（parentId 为 null 或不存在）
   const floorWhere = { targetId, status: 'normal', parentId: _.or(_.eq(null), _.exists(false)) }
   if (useCursor) floorWhere.createdAt = _.gt(cursorDate)
-  const floorRes = await db.collection('comments')
-    .where(floorWhere).orderBy('createdAt', 'asc').skip(useCursor ? 0 : skip).limit(size).get()
+  const floorRes = await db
+    .collection('comments')
+    .where(floorWhere)
+    .orderBy('createdAt', 'asc')
+    .skip(useCursor ? 0 : skip)
+    .limit(size)
+    .get()
 
   const floors = floorRes.data || []
   if (floors.length === 0) return ok({ list: [], hasMore: false })
 
   // 获取这些楼层的子回复（parentId 在这些楼层 id 中）
-  const floorIds = floors.map(f => f._id)
-  const replyRes = await db.collection('comments')
+  const floorIds = floors.map((f) => f._id)
+  const replyRes = await db
+    .collection('comments')
     .where({ parentId: _.in(floorIds), status: 'normal' })
     .orderBy('createdAt', 'asc')
     .limit(500) // 子回复上限（超出极罕见；如需严格分页后续按楼层分组续拉）
@@ -55,11 +61,13 @@ exports.main = wrap(async (event) => {
       const u = await db.collection('users').where({ openid }).field({ _id: true }).limit(1).get()
       if (u.data && u.data[0]) {
         const viewerId = u.data[0]._id
-        const allIds = [...floorIds, ...replies.map(r => r._id)]
-        const likedRes = await db.collection('likes')
+        const allIds = [...floorIds, ...replies.map((r) => r._id)]
+        const likedRes = await db
+          .collection('likes')
           .where({ userId: viewerId, targetId: _.in(allIds), type: 'comment' })
-          .field({ targetId: true }).get()
-        likedSet = new Set((likedRes.data || []).map(l => l.targetId))
+          .field({ targetId: true })
+          .get()
+        likedSet = new Set((likedRes.data || []).map((l) => l.targetId))
       }
     }
   } catch {
@@ -69,7 +77,7 @@ exports.main = wrap(async (event) => {
 
   const markLiked = (c) => ({ ...c, liked: likedSet ? likedSet.has(c._id) : false })
 
-  const list = floors.map(f => ({
+  const list = floors.map((f) => ({
     ...markLiked(f),
     replies: (replyMap[f._id] || []).map(markLiked)
   }))

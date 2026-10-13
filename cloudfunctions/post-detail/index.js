@@ -23,9 +23,15 @@ exports.main = wrap(async (event) => {
     const me = await db.collection('users').where({ openid }).field({ _id: true }).get()
     if (me.data && me.data.length) {
       const uid = me.data[0]._id
-      const likeRes = await db.collection('likes').where({ userId: uid, targetId: postId, type: 'post' }).count()
+      const likeRes = await db
+        .collection('likes')
+        .where({ userId: uid, targetId: postId, type: 'post' })
+        .count()
       isLiked = likeRes.total > 0
-      const collectRes = await db.collection('collects').where({ userId: uid, targetId: postId, type: 'post' }).count()
+      const collectRes = await db
+        .collection('collects')
+        .where({ userId: uid, targetId: postId, type: 'post' })
+        .count()
       isCollected = collectRes.total > 0
     }
   }

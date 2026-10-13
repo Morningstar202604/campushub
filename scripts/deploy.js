@@ -44,22 +44,28 @@ function fail(msg) {
 }
 
 const ROOT = path.resolve(__dirname, '..')
-const CF_DIR = path.join(ROOT, 'cloudfunctions')
+// 部署物 = 构建期内联产物，而不是 cloudfunctions/ 源码目录。
+// 源码目录里不再有内核副本；把内核打进每个函数是 build-functions.js 的职责，
+// 这样"上传的是当前源码"由构建保证，而不是靠人记得先跑一次同步。
+const SRC_DIR = path.join(ROOT, 'cloudfunctions')
+const CF_DIR = path.join(ROOT, 'dist', 'cloudfunctions')
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const targetEnv = args.env || 'prod'
 
-  // ---------- 前置强制同步（先于一切上传动作）----------
-  // 上传=必然带最新 common 内核：在 npm install（云端 remoteNpmInstall）之后、
-  // uploadFunctions 之前，强制先把 cloudfunctions/common/ 同步进全部函数目录，
-  // 杜绝"漏同步 / 副本漂移"被上传到线上。sync-common.js 本身带 SHA-256 漂移告警。
-  console.log('前置强制同步 common 内核：node scripts/sync-common.js')
+  // ---------- 前置构建（先于一切上传动作）----------
+  // 内核只在 cloudfunctions/common/ 存一份源码，构建时内联进每个函数产物。
+  // 部署前强制重建，杜绝"改了内核没同步/传了旧副本"这类漂移上线。
+  console.log('前置构建：把内核内联进各云函数 → dist/cloudfunctions/')
+  if (!fs.existsSync(SRC_DIR)) fail(`缺少源码目录：${SRC_DIR}`)
   try {
-    execSync('node scripts/sync-common.js', { stdio: 'inherit', cwd: ROOT })
+    execSync('node scripts/build-functions.js', { stdio: 'inherit', cwd: ROOT })
+    execSync('node scripts/build-functions.js --check', { stdio: 'inherit', cwd: ROOT })
   } catch (e) {
-    fail(`前置同步失败，终止部署：${e.message}`)
+    fail(`前置构建/校验失败，终止部署：${e.message}`)
   }
+  if (!fs.existsSync(CF_DIR)) fail(`缺少构建产物目录：${CF_DIR}（请先 npm run build:functions）`)
 
   // ---------- 配置合并 ----------
   let fileConfig = {}
@@ -76,10 +82,13 @@ async function main() {
   const envId =
     args['env-id'] ||
     process.env.CLOUD_ENV_ID ||
-    (fileConfig.environments && fileConfig.environments[targetEnv] && fileConfig.environments[targetEnv].envId)
+    (fileConfig.environments &&
+      fileConfig.environments[targetEnv] &&
+      fileConfig.environments[targetEnv].envId)
 
   // ---------- 私钥定位 ----------
-  let privateKeyPath = args['private-key-path'] || process.env.WX_UPLOAD_PRIVATE_KEY_PATH || fileConfig.privateKeyPath
+  let privateKeyPath =
+    args['private-key-path'] || process.env.WX_UPLOAD_PRIVATE_KEY_PATH || fileConfig.privateKeyPath
   let tmpKeyFile = null
   if (!privateKeyPath && process.env.WX_UPLOAD_PRIVATE_KEY_B64) {
     tmpKeyFile = path.join(os.tmpdir(), `campushub-upload-key-${Date.now()}.key`)
@@ -88,13 +97,25 @@ async function main() {
   }
 
   if (!appid) fail('缺少 AppID：请通过 --appid、环境变量 WX_APPID 或 deploy.config.json 提供')
-  if (!envId) fail(`缺少云环境 ID：请通过 --env-id、环境变量 CLOUD_ENV_ID 或 deploy.config.json environments.${targetEnv}.envId 提供`)
-  if (!privateKeyPath) fail('缺少上传私钥：请通过 --private-key-path、WX_UPLOAD_PRIVATE_KEY_PATH 或 WX_UPLOAD_PRIVATE_KEY_B64 提供')
+  if (!envId)
+    fail(
+      `缺少云环境 ID：请通过 --env-id、环境变量 CLOUD_ENV_ID 或 deploy.config.json environments.${targetEnv}.envId 提供`
+    )
+  if (!privateKeyPath)
+    fail(
+      '缺少上传私钥：请通过 --private-key-path、WX_UPLOAD_PRIVATE_KEY_PATH 或 WX_UPLOAD_PRIVATE_KEY_B64 提供'
+    )
   if (!fs.existsSync(privateKeyPath)) fail(`私钥文件不存在：${privateKeyPath}`)
 
   // ---------- 枚举云函数 ----------
-  const only = args.only ? String(args.only).split(',').map(s => s.trim()).filter(Boolean) : null
-  const functions = fs.readdirSync(CF_DIR)
+  const only = args.only
+    ? String(args.only)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : null
+  const functions = fs
+    .readdirSync(CF_DIR)
     .filter((name) => {
       if (name === 'common') return false
       const dir = path.join(CF_DIR, name)
@@ -105,8 +126,8 @@ async function main() {
     .map((name) => ({ name, path: path.join(CF_DIR, name) }))
 
   if (only) {
-    const found = new Set(functions.map(f => f.name))
-    const missing = only.filter(n => !found.has(n))
+    const found = new Set(functions.map((f) => f.name))
+    const missing = only.filter((n) => !found.has(n))
     if (missing.length) fail(`--only 指定的函数不存在或缺少 index.js：${missing.join(', ')}`)
   }
   if (!functions.length) fail('没有可部署的云函数')
@@ -132,27 +153,23 @@ async function main() {
     fail(`miniprogram-ci Project 初始化失败：${e.message}`)
   }
 
-  // ---------- 预部署：common 内核同步一致性校验（指纹）----------
-  // 部署前强制校验各函数副本与 .sync-manifest.json 一致；漂移则自动重同步一次再校验
+  // ---------- 预部署：源码目录不得残留内核副本 ----------
+  // 副本一旦回到源码目录，"产物永远等于当前内核"这个前提就失效了，直接中止。
   {
-    const check = require('child_process').spawnSync(
-      process.execPath, [path.join(__dirname, 'sync-common.js'), '--check'],
-      { stdio: 'inherit' }
-    )
-    if (check.status !== 0) {
-      console.log('检测到 common 内核漂移，自动重同步后重新校验…')
-      const resync = require('child_process').spawnSync(
-        process.execPath, [path.join(__dirname, 'sync-common.js')],
-        { stdio: 'inherit' }
-      )
-      if (resync.status !== 0) fail('自动重同步失败，请手动执行 npm run sync:common')
-      const recheck = require('child_process').spawnSync(
-        process.execPath, [path.join(__dirname, 'sync-common.js'), '--check'],
-        { stdio: 'inherit' }
-      )
-      if (recheck.status !== 0) fail('重同步后仍漂移，中止部署')
+    const leftovers = []
+    for (const name of fs.readdirSync(SRC_DIR)) {
+      const dir = path.join(SRC_DIR, name)
+      if (name === 'common' || !fs.statSync(dir).isDirectory()) continue
+      for (const f of fs.readdirSync(dir)) {
+        if (/^common-[a-z]+\.js$/.test(f)) leftovers.push(`${name}/${f}`)
+      }
     }
-    console.log('✓ common 内核同步一致')
+    if (leftovers.length) {
+      fail(
+        `源码目录残留 ${leftovers.length} 份内核副本（会导致漂移上线），请删除后重试：${leftovers.slice(0, 5).join(', ')}`
+      )
+    }
+    console.log('✓ 源码目录零副本，部署物由构建期内联')
   }
 
   // ---------- 并发部署 ----------
@@ -179,25 +196,33 @@ async function main() {
     }
   }
 
-  console.log(`开始部署 ${functions.length} 个云函数到环境「${targetEnv}」(${envId})，并发=${concurrency}`)
+  console.log(
+    `开始部署 ${functions.length} 个云函数到环境「${targetEnv}」(${envId})，并发=${concurrency}`
+  )
   const startedAt = Date.now()
   await Promise.all(Array.from({ length: Math.min(concurrency, functions.length) }, worker))
 
   if (tmpKeyFile) {
-    try { fs.unlinkSync(tmpKeyFile) } catch { /* ignore */ }
+    try {
+      fs.unlinkSync(tmpKeyFile)
+    } catch {
+      /* ignore */
+    }
   }
 
-  const failed = results.filter(r => !r.ok)
+  const failed = results.filter((r) => !r.ok)
   const seconds = ((Date.now() - startedAt) / 1000).toFixed(1)
   console.log(`\n完成：成功 ${results.length - failed.length}/${results.length}，耗时 ${seconds}s`)
 
-  if (functions.some(f => f.name === 'task-expire')) {
+  if (functions.some((f) => f.name === 'task-expire')) {
     console.log('\n提醒：task-expire 为定时触发器函数。若该环境首次部署，请到')
     console.log('开发者工具右键 task-expire →「上传触发器」确认 cron（当前为每 6 小时）。')
   }
 
   if (failed.length) {
-    console.error(`\n以下函数部署失败，可单独重试：node scripts/deploy.js --only ${failed.map(f => f.name).join(',')}`)
+    console.error(
+      `\n以下函数部署失败，可单独重试：node scripts/deploy.js --only ${failed.map((f) => f.name).join(',')}`
+    )
     process.exit(1)
   }
 }

@@ -21,7 +21,11 @@ async function removeContent({ collection, docId, actor, opts = {} }) {
   const db = getDB()
   const _ = getCmd()
 
-  const res = await db.collection(collection).doc(docId).get().catch(() => ({ data: null }))
+  const res = await db
+    .collection(collection)
+    .doc(docId)
+    .get()
+    .catch(() => ({ data: null }))
   const doc = res && res.data
   if (!doc) throw new AppError('内容不存在', 'NOT_FOUND')
 
@@ -37,7 +41,8 @@ async function removeContent({ collection, docId, actor, opts = {} }) {
 
   // 原子占位软删：条件更新保证并发双击/重复请求只有一次真正生效，
   // 计数回退只随首次删除执行一次，杜绝双重扣减。
-  const claim = await db.collection(collection)
+  const claim = await db
+    .collection(collection)
     .where({ _id: docId, status: _.neq('deleted') })
     .update({ data: { status: 'deleted', updatedAt: new Date() } })
   if (!claim || !claim.stats || !claim.stats.updated) {
@@ -46,10 +51,12 @@ async function removeContent({ collection, docId, actor, opts = {} }) {
 
   // 回收云存储图片，避免孤儿文件长期堆积（失败仅告警，不影响主删除）
   const images = Array.isArray(doc[imageField])
-    ? doc[imageField].filter(f => typeof f === 'string' && f.startsWith('cloud://'))
+    ? doc[imageField].filter((f) => typeof f === 'string' && f.startsWith('cloud://'))
     : []
   if (images.length) {
-    cloud.deleteFile({ fileList: images }).catch(e => console.warn('[removeContent] 图片清理失败(已忽略):', e))
+    cloud
+      .deleteFile({ fileList: images })
+      .catch((e) => console.warn('[removeContent] 图片清理失败(已忽略):', e))
   }
 
   // 回退用户计数（best-effort：主删除已成功，计数失败仅记录不回滚）。
@@ -57,18 +64,33 @@ async function removeContent({ collection, docId, actor, opts = {} }) {
   // 避免并发/重复把计数打成负数；失败改为告警日志（原 .catch(()=>{}) 静默吞
   // 是 postCount 永久漂移的根因之一，现留痕供 reconcileUserCounts 对账兜底）。
   if (userCountField && doc.userId) {
-    await db.collection('users')
+    await db
+      .collection('users')
       .where({ _id: doc.userId, [userCountField]: _.gt(0) })
       .update({ data: { [userCountField]: _.inc(-1) } })
-      .catch(e => console.error('[removeContent] 计数回退失败，需对账 reconcileUserCounts:', doc.userId, userCountField, e && (e.errMsg || e.message)))
+      .catch((e) =>
+        console.error(
+          '[removeContent] 计数回退失败，需对账 reconcileUserCounts:',
+          doc.userId,
+          userCountField,
+          e && (e.errMsg || e.message)
+        )
+      )
   }
   // 评论删除：回退目标内容评论数（仅 normal 状态才曾计入；同样防负值 + 留痕）
   if (targetComment && doc.status === 'normal' && doc.targetType && doc.targetId) {
     const tcol = doc.targetType === 'post' ? 'posts' : 'products'
-    await db.collection(tcol)
+    await db
+      .collection(tcol)
       .where({ _id: doc.targetId, commentCount: _.gt(0) })
       .update({ data: { commentCount: _.inc(-1) } })
-      .catch(e => console.error('[removeContent] 评论数回退失败，需对账:', doc.targetId, e && (e.errMsg || e.message)))
+      .catch((e) =>
+        console.error(
+          '[removeContent] 评论数回退失败，需对账:',
+          doc.targetId,
+          e && (e.errMsg || e.message)
+        )
+      )
   }
 
   return { alreadyDeleted: false }
@@ -86,13 +108,20 @@ async function countViewOnce(collection, docId) {
     if (!openid) return false
     const db = getDB()
     const d = new Date(Date.now() + 8 * 3600 * 1000)
-    const bucket = d.getUTCFullYear() +
+    const bucket =
+      d.getUTCFullYear() +
       String(d.getUTCMonth() + 1).padStart(2, '0') +
       String(d.getUTCDate()).padStart(2, '0')
     const _id = `v_${openid}_${collection}_${docId}_${bucket}`
     try {
       await db.collection('view_logs').add({
-        data: { _id, targetType: collection, targetId: String(docId), openid, createdAt: new Date() }
+        data: {
+          _id,
+          targetType: collection,
+          targetId: String(docId),
+          openid,
+          createdAt: new Date()
+        }
       })
     } catch (e) {
       const msg = String(e && (e.errMsg || e.message || ''))
@@ -101,7 +130,10 @@ async function countViewOnce(collection, docId) {
       }
       return false
     }
-    const r = await db.collection(collection).doc(docId).update({ data: { viewCount: getCmd().inc(1) } })
+    const r = await db
+      .collection(collection)
+      .doc(docId)
+      .update({ data: { viewCount: getCmd().inc(1) } })
     return !!(r && r.stats && r.stats.updated)
   } catch (e) {
     console.warn('[countViewOnce] 失败(按未浏览处理):', e && e.message)
@@ -124,7 +156,8 @@ async function reconcileUserCounts(dbOverride) {
   let scanned = 0
   let skipped = 0
   // 取所有有计数的用户（postCount 或 productCount > 0 才可能对得上内容，省查询）
-  const usersRes = await db.collection('users')
+  const usersRes = await db
+    .collection('users')
     .where(_.or([{ postCount: _.gt(0) }, { productCount: _.gt(0) }]))
     .field({ _id: true, postCount: true, productCount: true })
     .limit(1000)
@@ -134,8 +167,14 @@ async function reconcileUserCounts(dbOverride) {
     try {
       // 真实「未删除」内容数（status neq deleted）
       const [postCount, productCount] = await Promise.all([
-        db.collection('posts').where({ userId: u._id, status: _.neq('deleted') }).count(),
-        db.collection('products').where({ userId: u._id, status: _.neq('deleted') }).count()
+        db
+          .collection('posts')
+          .where({ userId: u._id, status: _.neq('deleted') })
+          .count(),
+        db
+          .collection('products')
+          .where({ userId: u._id, status: _.neq('deleted') })
+          .count()
       ])
       const newPost = postCount.total || 0
       const newProduct = productCount.total || 0
@@ -143,14 +182,21 @@ async function reconcileUserCounts(dbOverride) {
       const curProduct = u.productCount || 0
       if (newPost !== curPost || newProduct !== curProduct) {
         scanned++
-        await db.collection('users').doc(u._id).update({
-          data: { postCount: newPost, productCount: newProduct, updatedAt: new Date() }
-        })
+        await db
+          .collection('users')
+          .doc(u._id)
+          .update({
+            data: { postCount: newPost, productCount: newProduct, updatedAt: new Date() }
+          })
         corrected++
       }
     } catch (e) {
       skipped++
-      console.error('[reconcileUserCounts] 用户对账失败(跳过):', u._id, e && (e.errMsg || e.message))
+      console.error(
+        '[reconcileUserCounts] 用户对账失败(跳过):',
+        u._id,
+        e && (e.errMsg || e.message)
+      )
     }
   }
   return { corrected, scanned, skipped }

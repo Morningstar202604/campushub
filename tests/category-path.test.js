@@ -17,14 +17,7 @@ function readIndex(fn) {
 }
 
 // common-content.js 会经 common-db.js 拉起 wx-server-sdk，测试里注入空壳即可（本用例不碰云调用）
-function stubSdk() {
-  Module._load = function (request) {
-    if (request === 'wx-server-sdk') {
-      return { DYNAMIC_CURRENT_ENV: 'test', init() {}, database: () => ({ command: {} }), getWXContext: () => ({}) }
-    }
-    return originalLoad.apply(this, arguments)
-  }
-}
+
 
 // 用给定分类树构造 mock db；categories 集合按 _id 取文档
 function makeDb(tree) {

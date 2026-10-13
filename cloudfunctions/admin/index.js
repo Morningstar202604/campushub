@@ -12,7 +12,17 @@
 //   list-reports 分页列出待处理举报，并 join 目标内容摘要与作者
 //   delete       删除指定内容（管理员越权，含云存储图片回收）
 //   resolve      将举报标记为已处理（避免重复处理）
-const { getDB, getCmd, AppError, ok, wrap, getOpenid, removeContent, checkAdmin, checkContents } = require('./common-bundle')
+const {
+  getDB,
+  getCmd,
+  AppError,
+  ok,
+  wrap,
+  getOpenid,
+  removeContent,
+  checkAdmin,
+  checkContents
+} = require('./common-bundle')
 
 // 与 search 一致的正则转义，防关键词注入/查询报错
 function escapeRegExp(s) {
@@ -37,16 +47,23 @@ exports.main = wrap(async (event) => {
   if (action === 'ban' || action === 'unban') {
     let { targetOpenid, targetUserId } = event
     if (!targetOpenid && targetUserId) {
-      const u = await db.collection('users').doc(targetUserId).get().catch(() => ({ data: null }))
+      const u = await db
+        .collection('users')
+        .doc(targetUserId)
+        .get()
+        .catch(() => ({ data: null }))
       if (!u || !u.data) throw new AppError('目标用户不存在', 'NOT_FOUND')
       targetOpenid = u.data.openid
     }
     if (!targetOpenid) throw new AppError('缺少目标用户', 'INVALID_PARAM')
 
     const status = action === 'ban' ? 'banned' : 'unverified'
-    const res = await db.collection('users').where({ openid: targetOpenid }).update({
-      data: { verifyStatus: status, updatedAt: new Date() }
-    })
+    const res = await db
+      .collection('users')
+      .where({ openid: targetOpenid })
+      .update({
+        data: { verifyStatus: status, updatedAt: new Date() }
+      })
     await logAdmin(db, operatorOpenid, action, { targetOpenid })
     return ok({ action, targetOpenid, updated: res.stats ? res.stats.updated : undefined })
   }
@@ -56,7 +73,13 @@ exports.main = wrap(async (event) => {
     const pSize = Math.min(100, Math.max(1, Number(pageSize) || 20))
     const skip = Math.max(0, (Number(page) - 1) * pSize)
     const [listRes, totalRes] = await Promise.all([
-      db.collection('reports').where({ status: 'pending' }).orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
+      db
+        .collection('reports')
+        .where({ status: 'pending' })
+        .orderBy('createdAt', 'desc')
+        .skip(skip)
+        .limit(pSize)
+        .get(),
       db.collection('reports').where({ status: 'pending' }).count()
     ])
     // N+1 消除：先按集合分组收集 targetId，每个集合一次 _.in 批量查（≤3 次），
@@ -64,23 +87,29 @@ exports.main = wrap(async (event) => {
     const reports = listRes.data || []
     const byCol = { posts: [], products: [], comments: [] }
     for (const r of reports) {
-      const col = r.targetType === 'post' ? 'posts' : r.targetType === 'product' ? 'products' : 'comments'
+      const col =
+        r.targetType === 'post' ? 'posts' : r.targetType === 'product' ? 'products' : 'comments'
       byCol[col].push(r.targetId)
     }
     const summaryMap = {}
-    await Promise.all(Object.entries(byCol).map(async ([col, ids]) => {
-      const uniq = Array.from(new Set(ids.filter(id => id != null)))
-      if (!uniq.length) return
-      const res = await db.collection(col).where({ _id: _.in(uniq) }).get()
-      for (const d of res.data || []) {
-        const raw = d.title || d.content || ''
-        summaryMap[d._id] = {
-          ownerId: d.userId,
-          ownerNickname: d.userNickname || '',
-          snippet: String(raw).slice(0, 80)
+    await Promise.all(
+      Object.entries(byCol).map(async ([col, ids]) => {
+        const uniq = Array.from(new Set(ids.filter((id) => id != null)))
+        if (!uniq.length) return
+        const res = await db
+          .collection(col)
+          .where({ _id: _.in(uniq) })
+          .get()
+        for (const d of res.data || []) {
+          const raw = d.title || d.content || ''
+          summaryMap[d._id] = {
+            ownerId: d.userId,
+            ownerNickname: d.userNickname || '',
+            snippet: String(raw).slice(0, 80)
+          }
         }
-      }
-    }))
+      })
+    )
     const items = reports.map((r) => ({
       reportId: r._id,
       targetType: r.targetType,
@@ -119,9 +148,12 @@ exports.main = wrap(async (event) => {
   if (action === 'resolve') {
     const { reportId } = event
     if (!reportId) throw new AppError('缺少举报ID', 'INVALID_PARAM')
-    const updateRes = await db.collection('reports').doc(reportId).update({
-      data: { status: 'resolved', resolvedAt: new Date() }
-    })
+    const updateRes = await db
+      .collection('reports')
+      .doc(reportId)
+      .update({
+        data: { status: 'resolved', resolvedAt: new Date() }
+      })
     const updated = updateRes.stats ? updateRes.stats.updated : 0
     if (updated === 0) throw new AppError('举报不存在或已处理', 'NOT_FOUND')
     await logAdmin(db, operatorOpenid, 'resolve', { reportId })
@@ -132,10 +164,15 @@ exports.main = wrap(async (event) => {
   if (action === 'pin' || action === 'unpin') {
     const { postId } = event
     if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
-    const updateRes = await db.collection('posts').doc(postId).update({
-      data: { isPinned: action === 'pin', updatedAt: new Date() }
-    }).catch(() => ({ stats: { updated: 0 } }))
-    if (updateRes.stats && updateRes.stats.updated === 0) throw new AppError('帖子不存在', 'NOT_FOUND')
+    const updateRes = await db
+      .collection('posts')
+      .doc(postId)
+      .update({
+        data: { isPinned: action === 'pin', updatedAt: new Date() }
+      })
+      .catch(() => ({ stats: { updated: 0 } }))
+    if (updateRes.stats && updateRes.stats.updated === 0)
+      throw new AppError('帖子不存在', 'NOT_FOUND')
     await logAdmin(db, operatorOpenid, action, { postId })
     return ok({ action, postId, isPinned: action === 'pin' })
   }
@@ -144,10 +181,15 @@ exports.main = wrap(async (event) => {
   if (action === 'essence' || action === 'unessence') {
     const { postId } = event
     if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
-    const updateRes = await db.collection('posts').doc(postId).update({
-      data: { isEssence: action === 'essence', updatedAt: new Date() }
-    }).catch(() => ({ stats: { updated: 0 } }))
-    if (updateRes.stats && updateRes.stats.updated === 0) throw new AppError('帖子不存在', 'NOT_FOUND')
+    const updateRes = await db
+      .collection('posts')
+      .doc(postId)
+      .update({
+        data: { isEssence: action === 'essence', updatedAt: new Date() }
+      })
+      .catch(() => ({ stats: { updated: 0 } }))
+    if (updateRes.stats && updateRes.stats.updated === 0)
+      throw new AppError('帖子不存在', 'NOT_FOUND')
     await logAdmin(db, operatorOpenid, action, { postId })
     return ok({ action, postId, isEssence: action === 'essence' })
   }
@@ -159,11 +201,28 @@ exports.main = wrap(async (event) => {
     const skip = Math.max(0, (Number(page) - 1) * pSize)
     const where = {}
     if (keyword && String(keyword).trim()) {
-      where.nickname = db.RegExp({ regexp: escapeRegExp(String(keyword).trim().slice(0, 20)), options: 'i' })
+      where.nickname = db.RegExp({
+        regexp: escapeRegExp(String(keyword).trim().slice(0, 20)),
+        options: 'i'
+      })
     }
     const [listRes, totalRes] = await Promise.all([
-      db.collection('users').where(where).orderBy('createdAt', 'desc').skip(skip).limit(pSize)
-        .field({ _id: true, nickname: true, avatar: true, school: true, verifyStatus: true, postCount: true, productCount: true, createdAt: true })
+      db
+        .collection('users')
+        .where(where)
+        .orderBy('createdAt', 'desc')
+        .skip(skip)
+        .limit(pSize)
+        .field({
+          _id: true,
+          nickname: true,
+          avatar: true,
+          school: true,
+          verifyStatus: true,
+          postCount: true,
+          productCount: true,
+          createdAt: true
+        })
         .get(),
       db.collection('users').where(where).count()
     ])
@@ -187,13 +246,18 @@ exports.main = wrap(async (event) => {
     const { feedbackId, reply } = event
     if (!feedbackId) throw new AppError('缺少反馈ID', 'INVALID_PARAM')
     // 管理回复会展示给用户：限长 + 过内容安全（与其他面向用户的文本一致）
-    const safeReply = String(reply || '').trim().slice(0, 500)
+    const safeReply = String(reply || '')
+      .trim()
+      .slice(0, 500)
     if (safeReply) {
       await checkContents([safeReply], { openid: operatorOpenid, scene: 2 })
     }
-    await db.collection('feedbacks').doc(feedbackId).update({
-      data: { status: 'resolved', adminReply: safeReply, resolvedAt: new Date() }
-    })
+    await db
+      .collection('feedbacks')
+      .doc(feedbackId)
+      .update({
+        data: { status: 'resolved', adminReply: safeReply, resolvedAt: new Date() }
+      })
     await logAdmin(db, operatorOpenid, 'resolve-feedback', { feedbackId })
     return ok({ resolved: true })
   }
@@ -202,11 +266,16 @@ exports.main = wrap(async (event) => {
   if (action === 'list-verifies') {
     const vPage = Math.max(1, Number(event.page) || 1)
     const vSize = Math.min(100, Math.max(1, Number(event.pageSize) || 20))
-    const vStatus = event.status === 'all' ? undefined : (event.status || 'pending')
+    const vStatus = event.status === 'all' ? undefined : event.status || 'pending'
     const vWhere = vStatus ? { status: vStatus } : {}
     const [listRes, totalRes] = await Promise.all([
-      db.collection('verify_requests').where(vWhere)
-        .orderBy('createdAt', 'asc').skip((vPage - 1) * vSize).limit(vSize).get(),
+      db
+        .collection('verify_requests')
+        .where(vWhere)
+        .orderBy('createdAt', 'asc')
+        .skip((vPage - 1) * vSize)
+        .limit(vSize)
+        .get(),
       db.collection('verify_requests').where(vWhere).count()
     ])
     return ok({ list: listRes.data || [], total: totalRes.total })
@@ -216,11 +285,16 @@ exports.main = wrap(async (event) => {
   if (action === 'verify-review') {
     const { requestId, approve, reason } = event
     if (!requestId) throw new AppError('缺少申请ID', 'INVALID_PARAM')
-    const reqRes = await db.collection('verify_requests').doc(requestId).get().catch(() => ({ data: null }))
+    const reqRes = await db
+      .collection('verify_requests')
+      .doc(requestId)
+      .get()
+      .catch(() => ({ data: null }))
     const reqDoc = reqRes && reqRes.data
     if (!reqDoc) throw new AppError('申请不存在', 'NOT_FOUND')
 
-    const claim = await db.collection('verify_requests')
+    const claim = await db
+      .collection('verify_requests')
       .where({ _id: requestId, status: 'pending' })
       .update({
         data: {
@@ -234,12 +308,16 @@ exports.main = wrap(async (event) => {
       return ok({ reviewed: false, already: true })
     }
 
-    await db.collection('users').doc(reqDoc.userId).update({
-      data: {
-        campusVerified: !!approve,
-        campusVerifyStatus: approve ? 'approved' : 'rejected'
-      }
-    }).catch(() => {})
+    await db
+      .collection('users')
+      .doc(reqDoc.userId)
+      .update({
+        data: {
+          campusVerified: !!approve,
+          campusVerifyStatus: approve ? 'approved' : 'rejected'
+        }
+      })
+      .catch(() => {})
     await logAdmin(db, operatorOpenid, 'verify-review', { requestId, approve: !!approve })
     return ok({ reviewed: true })
   }
@@ -264,7 +342,9 @@ async function logAdmin(db, operatorOpenid, action, detail) {
     await db.collection('admin_logs').add({
       data: { action, operator: operatorOpenid, detail: detail || {}, createdAt: new Date() }
     })
-  } catch { /* 静默 */ }
+  } catch {
+    /* 静默 */
+  }
 }
 
 // 取被举报内容摘要（用于审核台展示）

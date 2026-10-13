@@ -12,7 +12,8 @@ exports.main = wrap(async (event = {}) => {
   if (parentId !== undefined && parentId !== null && parentId !== '') {
     where.parentId = parentId
   }
-  const res = await db.collection('categories')
+  const res = await db
+    .collection('categories')
     .where(where)
     .orderBy('level', 'asc')
     .orderBy('order', 'asc')

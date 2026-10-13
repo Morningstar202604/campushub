@@ -8,7 +8,11 @@ exports.main = wrap(async (event) => {
   const { postId } = event
   if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
 
-  const postRes = await db.collection('posts').doc(postId).get().catch(() => ({ data: null }))
+  const postRes = await db
+    .collection('posts')
+    .doc(postId)
+    .get()
+    .catch(() => ({ data: null }))
   if (!postRes || !postRes.data) throw new AppError('帖子不存在', 'NOT_FOUND')
   const p = postRes.data
 
@@ -27,8 +31,11 @@ exports.main = wrap(async (event) => {
     if (!isAdmin) throw new AppError('无权操作', 'FORBIDDEN')
   }
 
-  await db.collection('posts').doc(postId).update({
-    data: { resolved: true, resolvedAt: new Date() }
-  })
+  await db
+    .collection('posts')
+    .doc(postId)
+    .update({
+      data: { resolved: true, resolvedAt: new Date() }
+    })
   return ok({ resolved: true })
 })

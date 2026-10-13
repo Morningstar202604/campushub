@@ -1,8 +1,8 @@
 // ESLint flat config（ESLint 8.57+ / 9+ 通用）
 // 说明：
 //   - 小程序全局（wx/App/Page/Component/getApp/cloud）声明为 readonly，避免 no-undef 误报。
-//   - cloudfunctions/*/common/* 是「common kernel 同步副本」（由 scripts/sync-common.js 维护），
-//     与 miniprogram_npm、node_modules 一并忽略——lint 只覆盖源文件，不碰同步产物。
+//   - dist/ 是 scripts/build-functions.js 的内联产物（生成物），
+//     与 node_modules 一并忽略——lint 只覆盖源文件，不碰构建产物。
 //   - no-unused-vars 允许 _ 前缀（未用形参/变量常见于事件回调占位）。
 const globals = {
   wx: 'readonly',
@@ -29,8 +29,7 @@ module.exports = [
       'miniprogram_npm/**',
       'node_modules/**',
       '.husky/**',
-      'cloudfunctions/*/common/**',
-      'cloudfunctions/*/common-*.js',
+      'dist/**',
       'scripts/coverage/**',
       'uni-app/**'
     ]

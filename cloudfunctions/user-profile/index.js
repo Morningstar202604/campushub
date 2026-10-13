@@ -2,7 +2,16 @@
 // 查看他人主页：公开资料 + 统计 + 最近帖子 + 关注状态
 // 安全：仅登录态用户可访问（requireActiveUser），限流 60s 内最多 20 次
 // 隐私：查看他人主页时不回传 creditScore/checkinStreak/followerCount 等敏感统计
-const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, rateLimit, checkAdmin } = require('./common-bundle')
+const {
+  getDB,
+  getCmd,
+  AppError,
+  ok,
+  wrap,
+  requireActiveUser,
+  rateLimit,
+  checkAdmin
+} = require('./common-bundle')
 
 exports.main = wrap(async (event) => {
   const db = getDB()
@@ -26,15 +35,26 @@ exports.main = wrap(async (event) => {
   // 写入限流计数（失败静默，不阻断主流程；scene 标记隔离浏览去重记录）
   try {
     await db.collection('view_logs').add({
-      data: { _id: `pl_${me.openid}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, openid: me.openid, scene: 'profile', createdAt: new Date() }
+      data: {
+        _id: `pl_${me.openid}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        openid: me.openid,
+        scene: 'profile',
+        createdAt: new Date()
+      }
     })
-  } catch { /* 静默 */ }
+  } catch {
+    /* 静默 */
+  }
 
   const pSize = Math.min(50, Math.max(1, Number(pageSize)))
   const skip = Math.max(0, (Number(page) - 1) * pSize)
 
   // 获取用户公开资料
-  const userRes = await db.collection('users').doc(userId).get().catch(() => ({ data: null }))
+  const userRes = await db
+    .collection('users')
+    .doc(userId)
+    .get()
+    .catch(() => ({ data: null }))
   if (!userRes || !userRes.data) throw new AppError('用户不存在', 'NOT_FOUND')
 
   const u = userRes.data
@@ -90,17 +110,30 @@ exports.main = wrap(async (event) => {
   // 当前用户的关注状态（复用 me.openid，不再重复 getOpenid）
   let isFollowing = false
   if (me.openid && me._id !== userId) {
-    const followRes = await db.collection('follows')
+    const followRes = await db
+      .collection('follows')
       .where({ followerId: me._id, followingId: userId })
       .count()
     isFollowing = followRes.total > 0
   }
 
   // 最近帖子（非匿名，未删除）
-  const postRes = await db.collection('posts')
+  const postRes = await db
+    .collection('posts')
     .where({ userId, status: _.neq('deleted'), isAnonymous: false })
-    .orderBy('createdAt', 'desc').skip(skip).limit(pSize)
-    .field({ title: true, images: true, likeCount: true, commentCount: true, createdAt: true, kind: true, resolved: true, status: true })
+    .orderBy('createdAt', 'desc')
+    .skip(skip)
+    .limit(pSize)
+    .field({
+      title: true,
+      images: true,
+      likeCount: true,
+      commentCount: true,
+      createdAt: true,
+      kind: true,
+      resolved: true,
+      status: true
+    })
     .get()
 
   return ok({ profile, isFollowing, posts: postRes.data || [] })

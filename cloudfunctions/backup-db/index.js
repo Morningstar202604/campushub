@@ -14,15 +14,29 @@ const { checkAdmin } = require('./common-bundle')
 
 // 备份集合清单：排除超大日志表 view_logs（可重建）
 const BACKUP_COLLECTIONS = [
-  'users', 'posts', 'products', 'comments', 'likes', 'collects',
-  'guides', 'guide_categories', 'categories', 'reports', 'feedbacks',
-  'follows', 'checkins', 'notifications', 'verify_requests'
+  'users',
+  'posts',
+  'products',
+  'comments',
+  'likes',
+  'collects',
+  'guides',
+  'guide_categories',
+  'categories',
+  'reports',
+  'feedbacks',
+  'follows',
+  'checkins',
+  'notifications',
+  'verify_requests'
 ]
 const DEFAULT_RETENTION_DAYS = 7
 const PAGE_SIZE = 500
 const MAX_PARTS_PER_COLLECTION = 40 // 单集合最多备份 2 万条，防定时任务失控
 
-function pad(n) { return n < 10 ? '0' + n : '' + n }
+function pad(n) {
+  return n < 10 ? '0' + n : '' + n
+}
 function dateKey(d) {
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 }
@@ -83,9 +97,11 @@ exports.main = async () => {
       for (const part of r.parts) {
         await backupCol.add({ data: part })
       }
-      summary.push(r.truncated
-        ? { collection: name, total: r.total, parts: r.partCount, truncated: true }
-        : { collection: name, total: r.total, parts: r.partCount })
+      summary.push(
+        r.truncated
+          ? { collection: name, total: r.total, parts: r.partCount, truncated: true }
+          : { collection: name, total: r.total, parts: r.partCount }
+      )
     } catch (e) {
       summary.push({ collection: name, error: String(e && (e.errMsg || e.message)).slice(0, 120) })
     }
@@ -95,7 +111,10 @@ exports.main = async () => {
   let removed = 0
   try {
     const since = new Date(now.getTime() - retention * 86400000)
-    const oldRes = await backupCol.where({ createdAt: _.lt(since) }).limit(500).get()
+    const oldRes = await backupCol
+      .where({ createdAt: _.lt(since) })
+      .limit(500)
+      .get()
     for (const doc of oldRes.data || []) {
       await backupCol.doc(doc._id).remove()
       removed++

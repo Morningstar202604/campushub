@@ -1,12 +1,27 @@
 // cloudfunctions/product-create/index.js
 // 发布商品：统一鉴权 + fail-closed 内容安全(文本+图片) + 频率限制 + 封禁拦截
-const { getDB, getCmd, AppError, ok, wrap, requireActiveUser, checkContents, checkImages, rateLimit, isDuplicateKeyError } = require('./common-bundle')
+const {
+  getDB,
+  getCmd,
+  AppError,
+  ok,
+  wrap,
+  requireActiveUser,
+  checkContents,
+  checkImages,
+  rateLimit,
+  isDuplicateKeyError
+} = require('./common-bundle')
 
 // 轮询等待同 clientReqId 的首请求落地（处理并发/重试），最多 waitMs 后返回 null
 async function waitIdempotency(db, clientReqId, waitMs) {
   const start = Date.now()
   while (Date.now() - start < waitMs) {
-    const rec = await db.collection('idempotency').where({ clientReqId }).get().catch(() => null)
+    const rec = await db
+      .collection('idempotency')
+      .where({ clientReqId })
+      .get()
+      .catch(() => null)
     if (rec && rec.data && rec.data.length) {
       const hit = rec.data[0]
       if (hit.resultId || hit.status === 'done') return hit
@@ -28,8 +43,12 @@ exports.main = wrap(async (event) => {
   if (clientReqId) {
     const TTL = 30 * 24 * 60 * 60 * 1000
     const build = () => ({
-      clientReqId, type: 'product', resultId: null, status: 'pending',
-      createdAt: new Date(), expireAt: new Date(Date.now() + TTL)
+      clientReqId,
+      type: 'product',
+      resultId: null,
+      status: 'pending',
+      createdAt: new Date(),
+      expireAt: new Date(Date.now() + TTL)
     })
     try {
       const r = await db.collection('idempotency').add({ data: build() })
@@ -40,34 +59,55 @@ exports.main = wrap(async (event) => {
       if (done && done.resultId) {
         return ok({ productId: done.resultId, idempotent: true })
       }
-      await db.collection('idempotency').where({ clientReqId }).remove().catch(() => {})
+      await db
+        .collection('idempotency')
+        .where({ clientReqId })
+        .remove()
+        .catch(() => {})
       const r2 = await db.collection('idempotency').add({ data: build() })
       idemId = r2._id
     }
   }
 
   const {
-    title: rawTitle, description, images = [], price, originalPrice,
-    category = 'other', condition = 'good', tradeType = 'face',
-    location = '', contactInfo = ''
+    title: rawTitle,
+    description,
+    images = [],
+    price,
+    originalPrice,
+    category = 'other',
+    condition = 'good',
+    tradeType = 'face',
+    location = '',
+    contactInfo = ''
   } = event
   // 统一 String 化：客户端可传非字符串，避免 .trim()/.length 抛 TypeError
   const title = String(rawTitle == null ? '' : rawTitle).trim()
 
   if (!title) throw new AppError('请输入商品标题', 'INVALID_PARAM')
   const numPrice = Number(price)
-  if (price === undefined || price === null || !Number.isFinite(numPrice) || numPrice < 0) throw new AppError('请输入有效价格', 'INVALID_PARAM')
-  if (!Array.isArray(images) || images.length === 0) throw new AppError('请至少上传一张图片', 'INVALID_PARAM')
+  if (price === undefined || price === null || !Number.isFinite(numPrice) || numPrice < 0)
+    throw new AppError('请输入有效价格', 'INVALID_PARAM')
+  if (!Array.isArray(images) || images.length === 0)
+    throw new AppError('请至少上传一张图片', 'INVALID_PARAM')
   if (images.length > 9) throw new AppError('图片不能超过9张', 'INVALID_PARAM')
   if (title.length > 30) throw new AppError('标题不能超过30字', 'INVALID_PARAM')
   // 原价合理性：不能低于售价
-  if (originalPrice !== undefined && originalPrice !== null && Number(originalPrice) > 0 && Number(originalPrice) < numPrice) {
+  if (
+    originalPrice !== undefined &&
+    originalPrice !== null &&
+    Number(originalPrice) > 0 &&
+    Number(originalPrice) < numPrice
+  ) {
     throw new AppError('原价不能低于售价', 'INVALID_PARAM')
   }
   // 枚举白名单（与 product-update 及前端枚举一致，防 API 层写入任意值）
-  if (!['digital', 'books', 'living', 'sports', 'other'].includes(category)) throw new AppError('非法的商品分类', 'INVALID_PARAM')
-  if (!['new', 'good', 'fair', 'old'].includes(condition)) throw new AppError('非法的成色', 'INVALID_PARAM')
-  if (!['face', 'mail', 'both'].includes(tradeType)) throw new AppError('非法的交易方式', 'INVALID_PARAM')
+  if (!['digital', 'books', 'living', 'sports', 'other'].includes(category))
+    throw new AppError('非法的商品分类', 'INVALID_PARAM')
+  if (!['new', 'good', 'fair', 'old'].includes(condition))
+    throw new AppError('非法的成色', 'INVALID_PARAM')
+  if (!['face', 'mail', 'both'].includes(tradeType))
+    throw new AppError('非法的交易方式', 'INVALID_PARAM')
 
   // 频率限制：30秒内最多1条（必须在审核之前，防止用无效请求烧穿审核配额）
   await rateLimit({ collection: 'products', match: { userId: user._id }, windowMs: 30000, max: 1 })
@@ -85,7 +125,9 @@ exports.main = wrap(async (event) => {
     userAvatar: user.avatar,
     schoolId: user.schoolId || '',
     title,
-    description: String(description || '').trim().slice(0, 2000),
+    description: String(description || '')
+      .trim()
+      .slice(0, 2000),
     images,
     price: numPrice,
     originalPrice: originalPrice ? Number(originalPrice) : null,
@@ -103,10 +145,17 @@ exports.main = wrap(async (event) => {
   }
 
   const addRes = await db.collection('products').add({ data: product })
-  await db.collection('users').doc(user._id).update({ data: { productCount: _.inc(1) } })
+  await db
+    .collection('users')
+    .doc(user._id)
+    .update({ data: { productCount: _.inc(1) } })
 
   if (idemId) {
-    await db.collection('idempotency').doc(idemId).update({ data: { resultId: addRes._id, status: 'done' } }).catch(() => {})
+    await db
+      .collection('idempotency')
+      .doc(idemId)
+      .update({ data: { resultId: addRes._id, status: 'done' } })
+      .catch(() => {})
   }
 
   return ok({ productId: addRes._id })

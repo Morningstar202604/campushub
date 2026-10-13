@@ -8,7 +8,7 @@
 
 ```bash
 npm install          # 装依赖 + 自动同步 common 内核
-npm run sync:common  # （保险起见再同步一次）
+npm run build:functions  # 把内核内联进 dist/cloudfunctions/
 npm run doctor       # 自检：AppID / envId / 内核一致性 —— 错误必须清零
 npm run verify       # 发布级静态校验：页面/组件/WXML/WXSS/依赖/图片 —— 必须 0 错误
 npm run contract     # 跨端契约校验：前端 callFunction 与云函数 action 比对 —— 必须 0 错误
@@ -91,7 +91,7 @@ npm install
 
 这会：
 - 安装 `tdesign-miniprogram` 组件库
-- 自动触发 `prepublishOnly` → 运行 `sync-common.js` → 把 `cloudfunctions/common/` 同步进所有云函数目录
+- `npm run deploy` 会先执行 `scripts/build-functions.js` 重建并用 `--check` 校验产物指纹，再上传 `dist/cloudfunctions/` —— 不再依赖"记得同步副本"
 
 ### 3.2 构建 npm（微信开发者工具操作）
 
@@ -112,7 +112,7 @@ npm install
 >
 > ```bash
 > npm install                      # 安装依赖（含 miniprogram-ci）
-> npm run sync:common              # 同步 common 内核到所有函数
+> npm run build:functions          # 内联 common 内核 → dist/cloudfunctions/
 > npm run doctor                   # 自检 AppID/环境ID/内核一致性
 > ```
 >
@@ -465,7 +465,7 @@ CampusHub/
 ├── cloudfunctions/        # 云函数（37 个）
 │   └── common/            # 共享内核层（单一事实来源）
 ├── scripts/
-│   ├── sync-common.js     # 内核同步脚本
+│   ├── build-functions.js # 内核构建期内联（esbuild）
 │   ├── deploy.js          # miniprogram-ci 一键部署（配合 deploy.config.json）
 │   ├── doctor.js          # 部署前自检（npm run doctor）
 │   ├── verify-release.js  # 发布级静态校验（npm run verify）

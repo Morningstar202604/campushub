@@ -31,17 +31,23 @@ exports.main = wrap(async (event) => {
   // 真实热搜：近 7 天搜索日志聚合 top6（无需登录/限频）
   if (event.action === 'hot') {
     const since = new Date(Date.now() - HOT_WINDOW_MS)
-    const res = await db.collection('search_queries')
+    const res = await db
+      .collection('search_queries')
       .where({ createdAt: _.gt(since) })
       .field({ keyword: true })
       .limit(500)
       .get()
     const count = {}
     for (const r of res.data || []) {
-      const k = String(r.keyword || '').trim().slice(0, 20)
+      const k = String(r.keyword || '')
+        .trim()
+        .slice(0, 20)
       if (k) count[k] = (count[k] || 0) + 1
     }
-    const hot = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6).map(x => x[0])
+    const hot = Object.entries(count)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map((x) => x[0])
     return ok({ hot })
   }
 
@@ -80,15 +86,28 @@ exports.main = wrap(async (event) => {
   if (schoolId) guideWhere.schoolId = schoolId
 
   const [postsRes, productsRes, guidesRes] = await Promise.all([
-    db.collection('posts')
+    db
+      .collection('posts')
       .where(_.and([postWhere, _.or([{ title: reg }, { content: reg }])]))
-      .orderBy('createdAt', 'desc').skip(skip).limit(size).get(),
-    db.collection('products')
+      .orderBy('createdAt', 'desc')
+      .skip(skip)
+      .limit(size)
+      .get(),
+    db
+      .collection('products')
       .where(_.and([productWhere, _.or([{ title: reg }, { description: reg }])]))
-      .orderBy('createdAt', 'desc').skip(skip).limit(size).get(),
+      .orderBy('createdAt', 'desc')
+      .skip(skip)
+      .limit(size)
+      .get(),
     // 指南仅按标题检索（正文为富文本，量大且无需全文场景）
-    db.collection('guides').where({ ...guideWhere, title: reg })
-      .orderBy('createdAt', 'desc').skip(skip).limit(size).get()
+    db
+      .collection('guides')
+      .where({ ...guideWhere, title: reg })
+      .orderBy('createdAt', 'desc')
+      .skip(skip)
+      .limit(size)
+      .get()
   ])
 
   // 写搜索日志（供热词聚合与审计；失败静默不影响结果）
@@ -96,7 +115,9 @@ exports.main = wrap(async (event) => {
     await db.collection('search_queries').add({
       data: { userId: openid || 'anon', keyword: kw, createdAt: new Date() }
     })
-  } catch { /* 静默 */ }
+  } catch {
+    /* 静默 */
+  }
 
   return ok({ posts: postsRes.data, products: productsRes.data, guides: guidesRes.data })
 })
