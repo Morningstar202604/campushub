@@ -22,8 +22,12 @@ function loadCommonDb({ addImpl } = {}) {
   const fakeSdk = {
     DYNAMIC_CURRENT_ENV: 'test',
     init() {},
-    database() { return db },
-    getWXContext() { return { OPENID: 'test' } }
+    database() {
+      return db
+    },
+    getWXContext() {
+      return { OPENID: 'test' }
+    }
   }
   Module._load = function (request, _parent, _isMain) {
     if (request === 'wx-server-sdk') return fakeSdk
@@ -35,7 +39,9 @@ function loadCommonDb({ addImpl } = {}) {
   return mod
 }
 
-afterEach(() => { Module._load = originalLoad })
+afterEach(() => {
+  Module._load = originalLoad
+})
 
 test('isDuplicateKeyError 识别唯一索引冲突（含微信云开发错误码）', () => {
   const { isDuplicateKeyError } = loadCommonDb()
@@ -49,7 +55,15 @@ test('isDuplicateKeyError 识别唯一索引冲突（含微信云开发错误码
 test('insertIdempotent：插入成功返回 true，唯一键冲突返回 false，其他异常原样抛出', async () => {
   let call = 0
   const { insertIdempotent } = loadCommonDb({
-    addImpl: async () => { call++; if (call === 2) { const e = new Error('duplicate key'); e.errCode = -502001; throw e } if (call === 3) throw new Error('db down') }
+    addImpl: async () => {
+      call++
+      if (call === 2) {
+        const e = new Error('duplicate key')
+        e.errCode = -502001
+        throw e
+      }
+      if (call === 3) throw new Error('db down')
+    }
   })
   assert.equal(await insertIdempotent('likes', {}), true)
   assert.equal(await insertIdempotent('likes', {}), false) // 冲突 → 幂等 false

@@ -11,8 +11,11 @@ const path = require('path')
 
 const ROOT = path.resolve(__dirname, '..', 'cloudfunctions')
 
+const UNITS = require('./lib/unit-paths')
+
+// 入口名 → 真实源码路径（网关 handler / 独立函数），由 gateway-routes.json 决定
 function readIndex(fn) {
-  return fs.readFileSync(path.join(ROOT, fn, 'index.js'), 'utf8')
+  return fs.readFileSync(UNITS.sourceFile(fn), 'utf8')
 }
 
 const MUTATION_PATHS = [

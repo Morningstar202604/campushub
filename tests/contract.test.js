@@ -7,7 +7,49 @@ const path = require('path')
 
 const ROOT = path.resolve(__dirname, '..')
 
+const UNITS = require('./lib/unit-paths')
+
+/**
+ * 从源码推导"当前事实"，供文档一致性断言使用。
+ * 目的：文档数字不再由人手抄，抄错/过期由测试当场拦下 —— 这也让本文件不再需要随
+ * 云函数收敛这类结构调整去改一堆硬编码常量。
+ */
+function currentFacts() {
+  const fsx = require('fs')
+  const pathx = require('path')
+  const pkg = JSON.parse(fsx.readFileSync(pathx.join(ROOT, 'package.json'), 'utf8'))
+  const pages = JSON.parse(fsx.readFileSync(pathx.join(ROOT, 'uni-app/src/pages.json'), 'utf8'))
+  const idxSrc = read('cloudfunctions/common/common-indexes.js')
+  const idxNames = new Set([...idxSrc.matchAll(/name:\s*'([^']+)'/g)].map((m) => m[1]))
+  const kernel = fsx
+    .readdirSync(pathx.join(ROOT, 'cloudfunctions/common'))
+    .filter((f) => /^common-[a-z]+\.js$/.test(f))
+  // 集合清单必须只取 init-db 里 `const collections = [...]` 这一段；
+  // 早先直接对整份文件抓引号串，会把 action 名/字段名当集合，推出 56 这种假数字。
+  const initSrc = read('cloudfunctions/init-db/index.js')
+  const arrLiteral = initSrc.match(/const\s+collections\s*=\s*\[([\s\S]*?)\]/)
+  const collNames = new Set(
+    arrLiteral ? [...arrLiteral[1].matchAll(/'([a-z_-]+)'/g)].map((m) => m[1]) : []
+  )
+  return {
+    version: pkg.version,
+    deploys: UNITS.deployNames().length,
+    units: UNITS.unitNames().length,
+    pages: (pages.pages || []).length,
+    indexes: idxNames.size,
+    kernel: kernel.length,
+    collections: collNames.size
+  }
+}
+
 function read(rel) {
+  // 收敛为资源型网关后，`cloudfunctions/<入口>/index.js` 对 34 个入口不再成立。
+  // 这里按 gateway-routes 把逻辑入口解析到真实文件（网关 handler 或独立函数），
+  // 使断言继续锁"行为"，而不是锁"某一种目录布局"。
+  const m = rel.match(/^cloudfunctions\/([a-z0-9-]+)\/index\.js$/)
+  if (m && UNITS.ROUTES[m[1]]) {
+    rel = path.relative(ROOT, UNITS.sourceFile(m[1])).split(path.sep).join('/')
+  }
   return fs.readFileSync(path.join(ROOT, rel), 'utf8')
 }
 
@@ -20,31 +62,44 @@ test('P1: admin 删除内容必须传 openid（否则内核 checkAdmin(actor.ope
 test('P3: follow 关注改用 insertIdempotent（依赖唯一索引幂等，杜绝并发撞唯一键 500）', () => {
   const src = read('cloudfunctions/follow/index.js')
   assert.match(src, /insertIdempotent/, 'follow 必须引入 insertIdempotent')
-  assert.ok(!src.includes("action === 'follow'") || !/collection\('follows'\)\s*\.\s*add/.test(src),
-    'follow 分支不再使用裸 add（改为 insertIdempotent）')
+  assert.ok(
+    !src.includes("action === 'follow'") || !/collection\('follows'\)\s*\.\s*add/.test(src),
+    'follow 分支不再使用裸 add（改为 insertIdempotent）'
+  )
 })
 
 test('P4: login 返回给客户端的用户文档必须剔除 openid', () => {
   const src = read('cloudfunctions/login/index.js')
   assert.match(src, /function\s+stripOpenid/, 'login 需定义 stripOpenid')
-  assert.ok(!/ok\(\{\s*user:\s*userRes\.data\[0\]\s*\}\)/.test(src), 'login 所有返回点都要过 stripOpenid')
+  assert.ok(
+    !/ok\(\{\s*user:\s*userRes\.data\[0\]\s*\}\)/.test(src),
+    'login 所有返回点都要过 stripOpenid'
+  )
 })
 
 test('P4: user-update 不允许空昵称，且返回剔除 openid', () => {
   const src = read('cloudfunctions/user-update/index.js')
   assert.match(src, /昵称不能为空/, 'user-update 需校验空昵称')
-  assert.match(src, /const\s*\{\s*openid:\s*_openid,[^}]*\}\s*=\s*updated\.data/, 'user-update 返回需剔除 openid')
+  assert.match(
+    src,
+    /const\s*\{\s*openid:\s*_openid,[^}]*\}\s*=\s*updated\.data/,
+    'user-update 返回需剔除 openid'
+  )
 })
 
 test('P2: common-indexes 包含推荐流/热榜复合索引，且与 docs/INDEXES.md 对齐', () => {
   const def = read('cloudfunctions/common/common-indexes.js')
   const doc = read('docs/INDEXES.md')
-  for (const idx of ['idx_posts_status_pinned_created', 'idx_posts_category_status_pinned_created', 'idx_posts_status_likes_created']) {
+  for (const idx of [
+    'idx_posts_status_pinned_created',
+    'idx_posts_category_status_pinned_created',
+    'idx_posts_status_likes_created'
+  ]) {
     assert.ok(def.includes(`name: '${idx}'`), `${idx} 必须在 common-indexes.js 定义`)
     assert.ok(doc.includes(idx), `${idx} 必须出现在 docs/INDEXES.md`)
   }
   // 定义的每个索引都应在文档里可找到（单一事实来源 ↔ 部署文档双向对齐）
-  const defNames = [...def.matchAll(/name: '([a-z_]+)'/g)].map(m => m[1])
+  const defNames = [...def.matchAll(/name: '([a-z_]+)'/g)].map((m) => m[1])
   for (const n of defNames) {
     assert.ok(doc.includes(n), `索引 ${n} 缺失于 docs/INDEXES.md`)
   }
@@ -62,31 +117,53 @@ test('P4: 所有 UGC 写入入口对非字符串输入做 String 化（防 .trim
   for (const fn of targets) {
     const src = read(`cloudfunctions/${fn}/index.js`)
     assert.ok(!/if \(!title \|\| !title\.trim\(\)\)/.test(src), `${fn}: title 不应再裸 .trim()`)
-    assert.ok(!/if \(!content \|\| !content\.trim\(\)\)/.test(src), `${fn}: content 不应再裸 .trim()`)
-    assert.match(src, /统一 String 化|String\(raw|String\([^)]*== null/, `${fn}: 需对非字符串输入做 String 化`)
+    assert.ok(
+      !/if \(!content \|\| !content\.trim\(\)\)/.test(src),
+      `${fn}: content 不应再裸 .trim()`
+    )
+    assert.match(
+      src,
+      /统一 String 化|String\(raw|String\([^)]*== null/,
+      `${fn}: 需对非字符串输入做 String 化`
+    )
   }
 })
 
-test('P4: 落地页 index.html 统计与链接应保持最新（37/20/23/46/9 + Morningstar202604）', () => {
+test('P4: 落地页 index.html 统计与版本必须等于当前事实（数字由源码推导，不写死）', () => {
   const src = read('index.html')
   assert.ok(src.includes('Morningstar202604'), '落地页链接应指向当前仓库账号')
   assert.ok(!src.includes('weed33834'), '落地页不应残留旧账号 weed33834')
-  for (const n of ['>37<', '>20<', '>23<', '>46<', '>9<']) {
-    assert.ok(src.includes(n), `落地页统计应包含 ${n}`)
+  const facts = currentFacts()
+  const expect = [
+    [`>${facts.deploys}<`, '云函数部署单元'],
+    [`>${facts.units}<`, '业务入口'],
+    [`>${facts.pages}<`, '前端页面'],
+    [`>${facts.collections}<`, '数据集合'],
+    [`>${facts.indexes}<`, '数据库索引'],
+    [`>${facts.kernel}<`, '共享内核模块']
+  ]
+  for (const [needle, label] of expect) {
+    assert.ok(src.includes(needle), `落地页统计应包含 ${label}=${needle}`)
   }
-  assert.match(src, /version-0\.9\.2-green/, '落地页版本 badge 应为 0.9.2')
+  assert.ok(
+    src.includes(`version-${facts.version}-green`),
+    `落地页版本 badge 应为 ${facts.version}（package.json 为准）`
+  )
 })
 
-test('P4: 文档统计数字与事实一致（37 云函数 / 20 页面 / 23 集合 / 46 索引 / 9 内核）', () => {
+test('P4: README 中英文版统计必须等于当前事实（部署单元 / 业务入口 / 集合 / 索引）', () => {
   const readme = read('README.md')
   const zh = read('docs/README.zh-CN.md')
-  assert.ok(!readme.includes('| Cloud Functions | 34 |'), 'README 不应残留 34（旧值）')
-  assert.ok(!zh.includes('| 云函数 | 34 |'), 'zh-CN 不应残留 34（旧值）')
-  assert.ok(readme.includes('| 云函数 | 37 |'), 'README 云函数=37')
-  assert.ok(readme.includes('| 已定义索引 | 46'), 'README 索引=46')
-  assert.ok(zh.includes('| 云函数 | 37'), 'zh-CN 云函数=37')
-  assert.ok(zh.includes('| 数据集合 | 23 |'), 'zh-CN 集合=23')
-  assert.ok(zh.includes('| 索引定义 | 46 |'), 'zh-CN 索引=46')
+  const f = currentFacts()
+  assert.ok(readme.includes(`| 云函数（部署单元） | ${f.deploys} `), `README 部署单元=${f.deploys}`)
+  assert.ok(readme.includes(`| 业务入口（handler） | ${f.units} |`), `README 业务入口=${f.units}`)
+  assert.ok(readme.includes(`| 已定义索引 | ${f.indexes}`), `README 索引=${f.indexes}`)
+  assert.ok(zh.includes(`| 云函数（部署单元） | ${f.deploys}`), `zh-CN 部署单元=${f.deploys}`)
+  assert.ok(zh.includes(`| 业务入口（handler） | ${f.units} |`), `zh-CN 业务入口=${f.units}`)
+  assert.ok(zh.includes(`| 数据集合 | ${f.collections} |`), `zh-CN 集合=${f.collections}`)
+  assert.ok(zh.includes(`| 索引定义 | ${f.indexes} |`), `zh-CN 索引=${f.indexes}`)
+  // 收敛后"云函数 = 37"这类旧口径不得残留，否则读者会按 37 个目录去找部署单元
+  assert.ok(!readme.includes('| 云函数 | 37 |'), 'README 不应残留旧口径「云函数 | 37」')
 })
 
 test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与 34 云函数', () => {
@@ -97,31 +174,55 @@ test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与
   assert.ok(readme.includes('./docs/USER_GUIDE.md'), 'README 需链接使用说明书')
   assert.ok(zh.includes('./USER_GUIDE.md'), 'zh-CN 需链接使用说明书')
   // 覆盖全部 23 个页面（以页面目录名 + 页面标题出现为准）
-  const pages = ['admin', 'agreement', 'category-admin', 'expired', 'feedback', 'guide', 'guide-detail', 'index',
-    'login', 'lost-found', 'market', 'my-list', 'notifications', 'post-detail', 'post-publish', 'product-detail',
-    'product-publish', 'profile', 'profile-edit', 'search', 'user-profile', 'verify', 'wall']
+  const pages = [
+    'admin',
+    'agreement',
+    'category-admin',
+    'expired',
+    'feedback',
+    'guide',
+    'guide-detail',
+    'index',
+    'login',
+    'lost-found',
+    'market',
+    'my-list',
+    'notifications',
+    'post-detail',
+    'post-publish',
+    'product-detail',
+    'product-publish',
+    'profile',
+    'profile-edit',
+    'search',
+    'user-profile',
+    'verify',
+    'wall'
+  ]
   for (const p of pages) {
     assert.ok(guide.includes(p), `说明书应覆盖页面 ${p}`)
   }
-  // 覆盖全部 37 个云函数
-  const cfs = ['admin', 'category-list', 'category-manage', 'checkin', 'collect', 'comment-create', 'comment-delete',
-    'comment-list', 'feedback-create', 'follow', 'guide-detail', 'guide-list', 'init-db', 'like', 'login', 'my-list',
-    'notification', 'post-create', 'post-delete', 'post-detail', 'post-list', 'post-update', 'product-create',
-    'product-delete', 'product-detail', 'product-list', 'product-update', 'report', 'resolve', 'search', 'task-expire',
-    'user-profile', 'user-update', 'verify', 'backup-db', 'announcement', 'points']
+  // 覆盖全部业务入口 —— 清单由 gateway-routes.json 推导，不手填（手填清单本身就是漂移源）
+  const cfs = UNITS.unitNames()
   for (const c of cfs) {
     assert.ok(guide.includes(c), `说明书云函数清单应包含 ${c}`)
   }
   // 关键章节
-  for (const sec of ['角色与权限', '页面使用手册', '功能模块详解', '管理后台操作手册', '常见问题']) {
+  for (const sec of [
+    '角色与权限',
+    '页面使用手册',
+    '功能模块详解',
+    '管理后台操作手册',
+    '常见问题'
+  ]) {
     assert.ok(guide.includes(sec), `说明书应包含章节「${sec}」`)
   }
 })
 test('DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止漏建索引）', () => {
   const def = read('cloudfunctions/common/common-indexes.js')
   const deploy = read('docs/DEPLOY.md')
-  const srcNames = new Set([...def.matchAll(/name: '(idx_[a-z_]+)'/g)].map(m => m[1]))
-  const depNames = new Set([...deploy.matchAll(/\|\s*(idx_[a-z_]+)\s*\|/g)].map(m => m[1]))
+  const srcNames = new Set([...def.matchAll(/name: '(idx_[a-z_]+)'/g)].map((m) => m[1]))
+  const depNames = new Set([...deploy.matchAll(/\|\s*(idx_[a-z_]+)\s*\|/g)].map((m) => m[1]))
   for (const n of srcNames) {
     assert.ok(depNames.has(n), `DEPLOY.md 缺失索引 ${n}`)
   }
@@ -141,8 +242,8 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   // 1) 新云函数目录完整；内核不再以副本形式躺在函数目录里，
   //    改由 scripts/build-functions.js 构建期内联 —— 校验产物里确实带上了内核。
   for (const fn of ['backup-db', 'announcement', 'points']) {
-    assert.ok(fs.existsSync(path.join(root, 'cloudfunctions', fn, 'index.js')), `${fn}/index.js 存在`)
-    const built = path.join(root, 'dist', 'cloudfunctions', fn, 'index.js')
+    assert.ok(fs.existsSync(UNITS.sourceFile(fn)), `${fn} 源码存在（网关 handler 或独立函数）`)
+    const built = path.join(root, 'dist', 'cloudfunctions', UNITS.deployOf(fn), 'index.js')
     assert.ok(fs.existsSync(built), `${fn} 缺少构建产物（请先 npm run build:functions）`)
     const code = fs.readFileSync(built, 'utf8')
     assert.ok(code.includes('wx-server-sdk'), `${fn} 产物应保留外部 wx-server-sdk 引用`)
@@ -152,8 +253,14 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
     )
   }
   // 2) backup-db 定时触发器 + 备份集合逻辑
-  assert.ok(fs.existsSync(path.join(root, 'cloudfunctions', 'backup-db', 'config.json')), 'backup-db 触发器配置存在')
-  assert.ok(read('cloudfunctions/backup-db/index.js').includes("collection('backups')"), 'backup-db 写入 backups 集合')
+  assert.ok(
+    fs.existsSync(path.join(root, 'cloudfunctions', 'backup-db', 'config.json')),
+    'backup-db 触发器配置存在'
+  )
+  assert.ok(
+    read('cloudfunctions/backup-db/index.js').includes("collection('backups')"),
+    'backup-db 写入 backups 集合'
+  )
 
   // 3) 新集合已登记进 init-db
   const init = read('cloudfunctions/init-db/index.js')
@@ -167,7 +274,10 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
     assert.ok(anno.includes(`action === '${a}'`) || anno.includes(`'${a}'`), `公告动作 ${a}`)
   }
   // 4b) uni-app 前端接入（旧 miniprogram 断言已随前端替换退役）
-  assert.ok(read('uni-app/src/pages/index/index.vue').includes('loadAnnouncements'), 'uni-app 首页加载公告')
+  assert.ok(
+    read('uni-app/src/pages/index/index.vue').includes('loadAnnouncements'),
+    'uni-app 首页加载公告'
+  )
   assert.ok(read('uni-app/src/adapters/index.ts').includes('adaptNotice'), 'uni-app 通知适配层')
 
   // 5) 管理审计日志：logAdmin 注入 + list-logs
@@ -181,12 +291,21 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
 
   // 7) 积分消费闭环：points 商城 + 改名卡校验
   assert.ok(read('cloudfunctions/points/index.js').includes('rename-token'), '积分商城含改名卡')
-  assert.ok(read('cloudfunctions/user-update/index.js').includes('RENAME_LIMITED'), 'user-update 改名卡校验')
+  assert.ok(
+    read('cloudfunctions/user-update/index.js').includes('RENAME_LIMITED'),
+    'user-update 改名卡校验'
+  )
   assert.ok(read('uni-app/src/pages/points/points.vue').includes('redeem'), 'uni-app 前端积分兑换')
 
   // 8) 深分页 cursor：post-list latest 流 + comment-list（后端侧；前端 cursor 分页待 uni-app 接入）
-  assert.ok(read('cloudfunctions/post-list/index.js').includes('useCursor'), 'post-list 支持 cursor')
-  assert.ok(read('cloudfunctions/comment-list/index.js').includes('useCursor'), 'comment-list 支持 cursor')
+  assert.ok(
+    read('cloudfunctions/post-list/index.js').includes('useCursor'),
+    'post-list 支持 cursor'
+  )
+  assert.ok(
+    read('cloudfunctions/comment-list/index.js').includes('useCursor'),
+    'comment-list 支持 cursor'
+  )
 
   // 9) 合规个人化：COMPLIANCE 文档 + 定位词收敛
   assert.ok(fs.existsSync(path.join(root, 'docs', 'COMPLIANCE.md')), 'COMPLIANCE.md 存在')
@@ -195,4 +314,3 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   assert.ok(!readme.includes('nationwide by default'), 'README 不应残留 nationwide 定位')
   assert.ok(!read('docs/README.zh-CN.md').includes('开源贴吧'), 'zh-CN 不应残留「贴吧」定位')
 })
-

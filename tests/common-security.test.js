@@ -12,21 +12,41 @@ const originalLoad = Module._load
 // 构造 mock 云环境
 // 图片审核走「downloadFile → 本地 Buffer → 同步 imgSecCheck」链路，
 // 因此 mock 必须提供 downloadFile 并返回一个真实存在的临时文件。
-function makeMockCloud({ msgSecResult = null, msgSecError = null, imgSecResult = null, imgSecError = null, imgBytes = 1024, downloadFail = null } = {}) {
+function makeMockCloud({
+  msgSecResult = null,
+  msgSecError = null,
+  imgSecResult = null,
+  imgSecError = null,
+  imgBytes = 1024,
+  downloadFail = null
+} = {}) {
   return {
     DYNAMIC_CURRENT_ENV: 'test',
     init() {},
-    getWXContext() { return { OPENID: 'test_openid' } },
+    getWXContext() {
+      return { OPENID: 'test_openid' }
+    },
     openapi: {
       security: {
-        msgSecCheck: async () => { if (msgSecError) throw msgSecError; return msgSecResult },
-        imgSecCheck: async () => { if (imgSecError) throw imgSecError; return imgSecResult }
+        msgSecCheck: async () => {
+          if (msgSecError) throw msgSecError
+          return msgSecResult
+        },
+        imgSecCheck: async () => {
+          if (imgSecError) throw imgSecError
+          return imgSecResult
+        }
       }
     },
-    getTempFileURL: async () => ({ fileList: [{ tempFileURL: 'https://tmp.example.com/img.jpg' }] }),
+    getTempFileURL: async () => ({
+      fileList: [{ tempFileURL: 'https://tmp.example.com/img.jpg' }]
+    }),
     downloadFile: async () => {
       if (downloadFail) throw downloadFail
-      const p = path.join(os.tmpdir(), `campushub-sec-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`)
+      const p = path.join(
+        os.tmpdir(),
+        `campushub-sec-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+      )
       fs.writeFileSync(p, Buffer.alloc(imgBytes, 0x41))
       return { tempFilePath: p, statusCode: 200 }
     },
@@ -79,7 +99,11 @@ test('checkAdmin：DB 文档不存在时返回 false（非异常，正常降级�
   const db = {
     collection: () => ({
       doc: () => ({
-        get: async () => { const e = new Error('document not exists'); e.errCode = -1; throw e }
+        get: async () => {
+          const e = new Error('document not exists')
+          e.errCode = -1
+          throw e
+        }
       })
     })
   }
@@ -91,13 +115,14 @@ test('checkAdmin：DB 异常（非"不存在"）时 fail-closed 抛出 ADMIN_CON
   const { checkAdmin } = loadSecurity(makeMockCloud())
   const db = {
     collection: () => ({
-      doc: () => ({ get: async () => { throw new Error('ETIMEDOUT network error') } })
+      doc: () => ({
+        get: async () => {
+          throw new Error('ETIMEDOUT network error')
+        }
+      })
     })
   }
-  await assert.rejects(
-    checkAdmin(db, 'openid_any'),
-    (err) => err.code === 'ADMIN_CONFIG_ERROR'
-  )
+  await assert.rejects(checkAdmin(db, 'openid_any'), (err) => err.code === 'ADMIN_CONFIG_ERROR')
 })
 
 // ---------- checkImage (fail-closed) ----------
@@ -159,7 +184,9 @@ test('checkContent：msgSecCheck 异常时 fail-closed 拒绝', async () => {
 test('checkContent：空字符串不调用 API（正常放行）', async () => {
   let called = false
   const cloud = makeMockCloud()
-  cloud.openapi.security.msgSecCheck = async () => { called = true }
+  cloud.openapi.security.msgSecCheck = async () => {
+    called = true
+  }
   const { checkContent } = loadSecurity(cloud)
   await checkContent({ content: '   ', openid: 'o1' })
   assert.equal(called, false, '空内容不应调用 msgSecCheck')

@@ -42,8 +42,11 @@ function makeRateMock() {
     }
   }
   const fakeSdk = {
-    DYNAMIC_CURRENT_ENV: 'test', init() {},
-    database() { return db },
+    DYNAMIC_CURRENT_ENV: 'test',
+    init() {},
+    database() {
+      return db
+    },
     getWXContext: () => ({ OPENID: 'test' })
   }
   return { db, records, fakeSdk, nextId: () => `id_${++_idCounter}` }
@@ -62,25 +65,53 @@ function loadRate(fakeSdk) {
   return rate
 }
 
-beforeEach(() => { delete process.env.ADMIN_OPENIDS })
-afterEach(() => { Module._load = originalLoad })
+beforeEach(() => {
+  delete process.env.ADMIN_OPENIDS
+})
+afterEach(() => {
+  Module._load = originalLoad
+})
 
 test('rateLimit：max=1 时窗口内首请求放行，第二次拒绝', async () => {
   const { rateLimit } = loadRate(makeRateMock().fakeSdk)
   // 首请求 → 放行
-  await rateLimit({ collection: 'posts', match: { userId: 'u1' }, windowMs: 30000, max: 1, now: 100000 })
+  await rateLimit({
+    collection: 'posts',
+    match: { userId: 'u1' },
+    windowMs: 30000,
+    max: 1,
+    now: 100000
+  })
   // 第二次 → 限频拒绝
   await assert.rejects(
-    rateLimit({ collection: 'posts', match: { userId: 'u1' }, windowMs: 30000, max: 1, now: 100500 }),
+    rateLimit({
+      collection: 'posts',
+      match: { userId: 'u1' },
+      windowMs: 30000,
+      max: 1,
+      now: 100500
+    }),
     (err) => err.code === 'RATE_LIMITED'
   )
 })
 
 test('rateLimit：不同 userId 各自独立限频', async () => {
   const { rateLimit } = loadRate(makeRateMock().fakeSdk)
-  await rateLimit({ collection: 'posts', match: { userId: 'u1' }, windowMs: 30000, max: 1, now: 200000 })
+  await rateLimit({
+    collection: 'posts',
+    match: { userId: 'u1' },
+    windowMs: 30000,
+    max: 1,
+    now: 200000
+  })
   // 不同用户不受影响
-  await rateLimit({ collection: 'posts', match: { userId: 'u2' }, windowMs: 30000, max: 1, now: 200000 })
+  await rateLimit({
+    collection: 'posts',
+    match: { userId: 'u2' },
+    windowMs: 30000,
+    max: 1,
+    now: 200000
+  })
 })
 
 test('rateLimit：窗口过期后重新放行（固定窗口边界）', async () => {
@@ -92,7 +123,13 @@ test('rateLimit：窗口过期后重新放行（固定窗口边界）', async ()
     (err) => err.code === 'RATE_LIMITED'
   )
   // 新窗口重新放行
-  await rateLimit({ collection: 'posts', match: { userId: 'u1' }, windowMs: 10000, max: 1, now: 10000 })
+  await rateLimit({
+    collection: 'posts',
+    match: { userId: 'u1' },
+    windowMs: 10000,
+    max: 1,
+    now: 10000
+  })
 })
 
 test('rateLimit：max=3 时允许窗口内 3 次，第 4 次拒绝', async () => {
@@ -102,10 +139,7 @@ test('rateLimit：max=3 时允许窗口内 3 次，第 4 次拒绝', async () =>
   await rateLimit({ ...opts, now: 300100 })
   await rateLimit({ ...opts, now: 300200 })
   // 第 4 次 → 限频
-  await assert.rejects(
-    rateLimit({ ...opts, now: 300300 }),
-    (err) => err.code === 'RATE_LIMITED'
-  )
+  await assert.rejects(rateLimit({ ...opts, now: 300300 }), (err) => err.code === 'RATE_LIMITED')
 })
 
 test('rateLimit：缺少 collection 时 throw CONFIG_ERROR（fail-closed，M1 修复）', async () => {

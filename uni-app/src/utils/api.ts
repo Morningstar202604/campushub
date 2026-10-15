@@ -16,6 +16,8 @@
 //   4. 生产环境建议把 restToken 放到服务端反代，避免 token 被反编译提取。
 
 import { useSchoolStore } from '@/stores/school'
+// 自动生成的寻址表（源 = 仓库根 gateway-routes.json；改路由请改 JSON 后跑 npm run gen:gateways）
+import { GATEWAY_ROUTES, USE_GATEWAY, resolveTarget, buildPayload } from '@/config/gateway-routes'
 
 type Platform = 'miniprogram' | 'app' | 'h5'
 
@@ -80,7 +82,10 @@ export function sanitizeForUser(raw: string): string {
 }
 
 /** 小程序端：wx.cloud.callFunction（已鉴权） */
-function callViaWxCloud(name: string, data: Record<string, any>): Promise<any> {
+function callViaWxCloud(name: string, data: Record<string, any>, logical?: string): Promise<any> {
+  // 收敛后"调用哪个函数"与"哪个业务入口"是两个概念：前者进 SDK，后者进日志与错误文案，
+  // 否则排查时会看到一堆 api-post，丢掉具体入口信息。
+  const label = logical || name
   const corePromise = new Promise((resolve, reject) => {
     // @ts-ignore  wx 在小程序端由运行时注入
     wx.cloud.callFunction({
@@ -92,7 +97,7 @@ function callViaWxCloud(name: string, data: Record<string, any>): Promise<any> {
         // 业务失败时 success 回调仍会被触发，故用 success 标志兜底
         const body = res.result
         if (body && body.success === false) {
-          reject(new CloudFunctionError(name, body.message || body.code || '业务异常', body.code))
+          reject(new CloudFunctionError(label, body.message || body.code || '业务异常', body.code))
           return
         }
         resolve(body ?? {})
@@ -117,12 +122,13 @@ function callViaWxCloud(name: string, data: Record<string, any>): Promise<any> {
  * H5 / App 端：CloudBase 云函数 HTTP 访问服务（REST）
  * 端点：https://{envId}.api.tcloudbasegateway.com/v1/functions/{name}?webfn=true
  */
-async function callViaRest(name: string, data: Record<string, any>): Promise<any> {
+async function callViaRest(name: string, data: Record<string, any>, logical?: string): Promise<any> {
+  const label = logical || name
   const schoolStore = useSchoolStore()
   const { envId } = schoolStore
   if (!envId) {
     throw new CloudFunctionError(
-      name,
+      label,
       '未配置 envId，无法调用云函数。请编辑 src/config/school.config.js 填入',
       'ENV_NOT_CONFIGURED'
     )
@@ -151,7 +157,7 @@ async function callViaRest(name: string, data: Record<string, any>): Promise<any
   } catch (e: any) {
     const aborted = e?.name === 'AbortError'
     throw new CloudFunctionError(
-      name,
+      label,
       aborted ? `请求超时（${REST_TIMEOUT_MS / 1000}s）` : `REST 网络异常：${e?.message || e}`,
       aborted ? 'TIMEOUT' : 'NETWORK'
     )
@@ -172,16 +178,16 @@ async function callViaRest(name: string, data: Record<string, any>): Promise<any
   if (resp.ok && parsed && 'result' in parsed) {
     const body = parsed.result
     if (body && body.success === false) {
-      throw new CloudFunctionError(name, body.message || `云函数 ${name} 业务异常`, body.code)
+      throw new CloudFunctionError(label, body.message || `云函数 ${name} 业务异常`, body.code)
     }
     return body ?? {}
   }
 
   // 失败：{ code, message, requestId } 或网关错误
   const code = String(parsed?.code || `HTTP ${resp.status}`)
-  const message = parsed?.message || `云函数 ${name} 调用失败`
-  console.error(`[云函数:${name}] REST 失败 ${code}`, parsed)
-  throw new CloudFunctionError(name, message, code)
+  const message = parsed?.message || `云函数 ${label} 调用失败`
+  console.error(`[云函数:${label}] REST 失败 ${code}`, parsed)
+  throw new CloudFunctionError(label, message, code)
 }
 
 /**
@@ -192,13 +198,23 @@ export function callFunction<T = any>(
   name: string,
   data: Record<string, any> = {}
 ): Promise<T> {
-  // fnName 注入防护：防止非法函数名导致 REST URL 注入或后端异常
+  // fnName 注入防护（两层）：
+  //  ① 字符集校验，避免非法名字进 REST URL；
+  //  ② 白名单校验 —— 只允许 gateway-routes.json 里登记过的入口。
+  // 第二层是收敛点：仅靠字符集校验时，任何"能拼出合法函数名"的调用（含被 XSS/脚本
+  // 污染的调用点）都能直接打到 init-db / admin 这类高危函数上；白名单后只能命中业务入口。
   if (!/^[a-zA-Z0-9_-]{1,40}$/.test(name)) throw new Error('Invalid function name')
+  const target = resolveTarget(name)
+  if (!Object.prototype.hasOwnProperty.call(GATEWAY_ROUTES, name)) {
+    throw new Error(`未登记的云函数调用：${name}`)
+  }
+  // 命中网关时注入 fn，网关据此分发给对应 handler；直连函数（定时器/初始化）保持原样。
+  const payload = buildPayload(name, data)
   const platform = getPlatform()
   if (platform === 'miniprogram') {
-    return callViaWxCloud(name, data) as Promise<T>
+    return callViaWxCloud(target, payload, name) as Promise<T>
   }
-  return callViaRest(name, data) as Promise<T>
+  return callViaRest(target, payload, name) as Promise<T>
 }
 
 // ---------------------------------------------------------------------------

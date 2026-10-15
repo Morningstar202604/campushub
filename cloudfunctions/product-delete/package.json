@@ -1,9 +1,0 @@
-{
-  "name": "product-delete",
-  "version": "1.0.0",
-  "description": "删除商品（作者/管理员，软删除+图片回收）",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}

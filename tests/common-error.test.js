@@ -3,7 +3,9 @@ const { test } = require('node:test')
 const assert = require('node:assert')
 const path = require('path')
 
-const { AppError, ok, fail, wrap } = require(path.resolve(__dirname, '..', 'cloudfunctions', 'common', 'common-error.js'))
+const { AppError, ok, fail, wrap } = require(
+  path.resolve(__dirname, '..', 'cloudfunctions', 'common', 'common-error.js')
+)
 
 test('AppError 携带 code/status', () => {
   const e = new AppError('内容包含敏感信息', 'CONTENT_RISKY')
@@ -27,7 +29,9 @@ test('fail() 返回失败结构', () => {
 })
 
 test('wrap 把 AppError 收敛为 { success:false }', async () => {
-  const handler = wrap(async () => { throw new AppError('已关注该用户', 'ALREADY') })
+  const handler = wrap(async () => {
+    throw new AppError('已关注该用户', 'ALREADY')
+  })
   const r = await handler()
   assert.equal(r.success, false)
   assert.equal(r.message, '已关注该用户')
@@ -35,7 +39,9 @@ test('wrap 把 AppError 收敛为 { success:false }', async () => {
 })
 
 test('wrap 把未知异常收敛为 INTERNAL_ERROR，不泄漏内部信息', async () => {
-  const handler = wrap(async () => { throw new Error('数据库连接串 password=secret 泄漏') })
+  const handler = wrap(async () => {
+    throw new Error('数据库连接串 password=secret 泄漏')
+  })
   const r = await handler()
   assert.equal(r.success, false)
   assert.equal(r.code, 'INTERNAL_ERROR')

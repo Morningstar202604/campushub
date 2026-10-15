@@ -15,9 +15,18 @@ const originalLoad = Module._load
 
 const calls = []
 
-function makeMockCloud({ ext = 'png', bytes = 1024, downloadFail = false, secError = null, secErrCode = null } = {}) {
+function makeMockCloud({
+  ext = 'png',
+  bytes = 1024,
+  downloadFail = false,
+  secError = null,
+  secErrCode = null
+} = {}) {
   const mk = () => {
-    const p = path.join(os.tmpdir(), `campushub-img-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`)
+    const p = path.join(
+      os.tmpdir(),
+      `campushub-img-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    )
     fs.writeFileSync(p, Buffer.alloc(bytes, 0x42))
     return p
   }
@@ -51,7 +60,10 @@ function makeMockCloud({ ext = 'png', bytes = 1024, downloadFail = false, secErr
         msgSecCheck: async () => ({ errCode: 0 })
       }
     },
-    database: () => ({ collection: () => ({ doc: () => ({ get: async () => ({ data: null }) }) }), command: {} })
+    database: () => ({
+      collection: () => ({ doc: () => ({ get: async () => ({ data: null }) }) }),
+      command: {}
+    })
   }
 }
 
@@ -133,7 +145,11 @@ test('checkImages：并发必须有上限，避免 9 张图瞬时打穿审核接
   let inFlight = 0
   let peak = 0
   const mock = makeMockCloud()
-  mock.downloadFile = async ({ fileID }) => ({ tempFilePath: mock.fresh(), statusCode: 200, fileID })
+  mock.downloadFile = async ({ fileID }) => ({
+    tempFilePath: mock.fresh(),
+    statusCode: 200,
+    fileID
+  })
   mock.openapi.security.imgSecCheck = async () => {
     inFlight++
     peak = Math.max(peak, inFlight)

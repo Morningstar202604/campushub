@@ -6,7 +6,7 @@
 > 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](../index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
-[![Version](https://img.shields.io/badge/version-0.9.2-green.svg)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.5-green.svg)](../CHANGELOG.md)
 [![uni-app](https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg)](https://uniapp.dcloud.net.cn/)
 [![GitCode](https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue)](https://gitcode.com/badhope/campushub)
 
@@ -30,7 +30,7 @@
 
 CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBase）** 的开源校园内容社区，采用「**一校一部署**」模式：
 
-- **一套代码，三端交付**：微信小程序（`wx.cloud.callFunction`）、H5（REST + restToken）、安卓 APK（HBuilderX 云打包），共用 20 个页面与同一套 37 个云函数
+- **一套代码，三端交付**：微信小程序（`wx.cloud.callFunction`）、H5（REST + restToken）、安卓 APK（HBuilderX 云打包），共用 20 个页面与同一套 37 个业务入口（部署在 10 个云函数上）
 - 内容**面向本校师生**，每个学校独立部署一个云环境
 - 分类树（分区→版块→子版，三级）**由管理员后台管理**，加学校、开新分类无需改代码
 - 任务类内容支持**自动过期**与**已解决标注**
@@ -56,7 +56,8 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 
 | 指标 | 数量 |
 |---|---|
-| 云函数 | 37（+ 1 共享内核目录） |
+| 云函数（部署单元） | 10（7 网关 + 3 独立函数；+ 1 共享内核目录） |
+| 业务入口（handler） | 37 |
 | 前端页面 | 20（三端共用） |
 | 数据集合 | 23 |
 | 索引定义 | 46 |

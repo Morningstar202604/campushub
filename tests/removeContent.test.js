@@ -22,7 +22,11 @@ function makeTargetPost(overrides = {}) {
 
 // 构造一个 mock 云环境 + mock db，真实加载 common-content.js
 // claimUpdate: posts.where().update 返回的 updated 行数（模拟原子占位结果）
-function loadRemoveContent({ targetPost, adminOpenidsEnv: _adminOpenidsEnv = '', claimUpdate = 1 }) {
+function loadRemoveContent({
+  targetPost,
+  adminOpenidsEnv: _adminOpenidsEnv = '',
+  claimUpdate = 1
+}) {
   const db = {
     command: {
       neq: (v) => ({ $neq: v }),
@@ -59,16 +63,26 @@ function loadRemoveContent({ targetPost, adminOpenidsEnv: _adminOpenidsEnv = '',
         return { doc: () => ({ get: async () => ({ data: { adminOpenids: [] } }) }) }
       }
       return {
-        doc: () => ({ get: async () => ({ data: null }), update: async () => ({ stats: { updated: 0 } }) }),
-        where: () => ({ update: async () => ({ stats: { updated: 0 } }), get: async () => ({ data: [] }) })
+        doc: () => ({
+          get: async () => ({ data: null }),
+          update: async () => ({ stats: { updated: 0 } })
+        }),
+        where: () => ({
+          update: async () => ({ stats: { updated: 0 } }),
+          get: async () => ({ data: [] })
+        })
       }
     }
   }
   const fakeSdk = {
     DYNAMIC_CURRENT_ENV: 'test',
     init() {},
-    database() { return db },
-    getWXContext() { return { OPENID: 'test' } },
+    database() {
+      return db
+    },
+    getWXContext() {
+      return { OPENID: 'test' }
+    },
     deleteFile: async () => ({ fileList: [] })
   }
   // 拦截 wx-server-sdk 的解析
@@ -85,8 +99,13 @@ function loadRemoveContent({ targetPost, adminOpenidsEnv: _adminOpenidsEnv = '',
   return removeContent
 }
 
-beforeEach(() => { delete process.env.ADMIN_OPENIDS })
-afterEach(() => { delete process.env.ADMIN_OPENIDS; Module._load = originalLoad })
+beforeEach(() => {
+  delete process.env.ADMIN_OPENIDS
+})
+afterEach(() => {
+  delete process.env.ADMIN_OPENIDS
+  Module._load = originalLoad
+})
 
 test('作者本人可删除自己的内容', async () => {
   const removeContent = loadRemoveContent({ targetPost: makeTargetPost() })

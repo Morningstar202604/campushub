@@ -5,6 +5,20 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.9.5] - 2026-10-16
+
+云函数收敛（分支 `feat/gateway-consolidation`，**需 dev 环境验证后再合入**）：
+
+- 37 个云函数目录收敛为 **10 个部署单元**：7 个资源型网关（auth / post / product / comment / social / admin / content）+ 3 个独立函数（task-expire、backup-db 两个定时器与 init-db）。动因是配额：云开发函数上限 50 个、集合上限 100 个，官方对超限的建议也正是"合并函数、按参数区分功能"。
+- 入口通过 `event.fn` 分发；鉴权、限频、内容安全仍留在各业务入口内部执行，**未因收敛而减少任何校验点**。客户端直连网关，`getWXContext().OPENID` 身份不丢失。
+- 新增唯一事实来源 `gateway-routes.json` 与生成器 `scripts/gen-gateways.js`：网关入口、`config.json` 权限并集、前端寻址表全部由路由表推导，手改生成物会被 `npm run gate` 拦下。
+- 前端零改动：`callFunction('post-create', …)` 由 `api.ts` 经生成表改写为 `api-post` + `fn`，日志与错误仍显示业务入口名；`useGateway=false` 即可整体回退。
+- 顺带收紧一处越权面：调用名从"仅校验字符集"升级为"必须在路由表白名单内"，避免调用点直接打到 `init-db` / `admin`。
+- `doctor` / `contract-check` / 测试统一改用共享解析器 `scripts/lib/routes.js`，不再假设"函数名 == 目录名"；文档统计改为**由源码推导**（部署单元 / 业务入口 / 页面 / 集合 / 索引 / 内核模块数），不再手填常量。
+- 生成器与 Prettier 冲突已修：显式解析 `.prettierrc`，避免两个工具就同一文件互相判红。
+- 测试 83 → 90（新增网关一致性、权限并集、触发器保留、`fn` 不污染落库数据等）。`npm run gate` 退出码 0。
+- 未验证项：真实云环境下的网关身份传递、`imgSecCheck` 真机返回、7 个网关的 HTTP 访问服务配置、冷启动耗时变化。上线与回滚顺序见 `docs/GATEWAYS.md`。
+
 ## [0.9.4] - 2026-10-13
 
 安全与部署一致性（全部先写失败测试再修复，TDD）：

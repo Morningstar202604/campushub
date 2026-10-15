@@ -24,7 +24,10 @@ test('上传上限必须等于后端审核上限 1MB，且不得残留 10MB 旧�
 test('小程序端必须按质量阶梯反复压缩直到达标，而不是只压一次', () => {
   assert.match(API, /COMPRESS_QUALITY_LADDER\s*=\s*\[[^\]]*\]/, '缺少质量阶梯')
   const ladder = API.match(/COMPRESS_QUALITY_LADDER\s*=\s*\[([^\]]*)\]/)[1]
-  const steps = ladder.split(',').map((s) => s.trim()).filter(Boolean)
+  const steps = ladder
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   assert.ok(steps.length >= 3, `阶梯至少 3 档，当前 ${steps.length} 档`)
   assert.match(API, /for\s*\(/, '阶梯必须有循环收敛，单次压缩无法保证 ≤1MB')
 })
@@ -48,5 +51,9 @@ test('压缩后仍超限必须就地报错，不能等后端审核才失败', ()
 test('GIF 等不支持压缩的格式必须走大小校验后拒绝，而不是静默上传', () => {
   // 后端图片白名单：jpg/jpeg/png/gif/bmp；wx.compressImage 仅支持 jpeg/png。
   // 因此不可压缩的格式必须显式判大小。
-  assert.match(API, /不支持压缩|compressImage 不可用|无法压缩|skipCompress/, '需说明不可压缩格式的处置')
+  assert.match(
+    API,
+    /不支持压缩|compressImage 不可用|无法压缩|skipCompress/,
+    '需说明不可压缩格式的处置'
+  )
 })

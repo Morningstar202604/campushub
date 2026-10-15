@@ -1,0 +1,41 @@
+// cloudfunctions/resolve/index.js
+// 将任务/请求帖标记为「已解决」（仅作者本人或管理员）
+const { getDB, AppError, ok, wrap, requireActiveUser, checkAdmin } = require('./common-bundle')
+
+module.exports = wrap(async (event) => {
+  const user = await requireActiveUser()
+  const db = getDB()
+  const { postId } = event
+  if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
+
+  const postRes = await db
+    .collection('posts')
+    .doc(postId)
+    .get()
+    .catch(() => ({ data: null }))
+  if (!postRes || !postRes.data) throw new AppError('帖子不存在', 'NOT_FOUND')
+  const p = postRes.data
+
+  // 任务/失物/招领均可标记完成（已解决/已找回/已归还）
+  if (!['task', 'lost', 'found'].includes(p.kind)) {
+    throw new AppError('该类内容不支持标记完成', 'INVALID_PARAM')
+  }
+  // 已删除的帖子不可标记
+  if (p.status === 'deleted') throw new AppError('该帖子已被删除', 'INVALID_PARAM')
+  if (p.resolved) return ok({ resolved: true, already: true })
+
+  // 作者本人，或管理员
+  const isAuthor = p.userId === user._id
+  if (!isAuthor) {
+    const isAdmin = await checkAdmin(db, user.openid)
+    if (!isAdmin) throw new AppError('无权操作', 'FORBIDDEN')
+  }
+
+  await db
+    .collection('posts')
+    .doc(postId)
+    .update({
+      data: { resolved: true, resolvedAt: new Date() }
+    })
+  return ok({ resolved: true })
+})

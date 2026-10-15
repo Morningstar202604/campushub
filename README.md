@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"/></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.9.4-green.svg" alt="Version"/></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.9.5-green.svg" alt="Version"/></a>
   <a href="https://uniapp.dcloud.net.cn/"><img src="https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg" alt="uni-app"/></a>
   <a href="https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html"><img src="https://img.shields.io/badge/WeChat-CloudBase-orange.svg" alt="CloudBase"/></a>
   <a href="https://gitcode.com/badhope/campushub"><img src="https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue" alt="GitCode"/></a>
@@ -75,10 +75,10 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 ## 🏗️ Architecture / 系统架构
 
-系统由 **uni-app 三端前端 → 云函数 API 层 → 微信云开发后端** 三层构成（v0.9.4 口径）：
+系统由 **uni-app 三端前端 → 云函数 API 层 → 微信云开发后端** 三层构成：
 
-- **前端**：uni-app（Vue 3 + Vite），20 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 37 个云函数复用
-- **API 层**：37 个云函数，按资源（post / product / comment / 社交 / 管理 / 系统任务）分组
+- **前端**：uni-app（Vue 3 + Vite），20 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 37 个业务入口复用（部署在 10 个云函数上）
+- **API 层**：37 个业务入口收敛为 **7 个资源型网关**（auth / post / product / comment / social / admin / content）+ 3 个独立函数（2 个定时器 + init-db）；入口按 `event.fn` 分发，鉴权/限频/审核仍在各入口内部执行。寻址表见 `gateway-routes.json`，说明见 [docs/GATEWAYS.md](docs/GATEWAYS.md)
 - **共享内核**：`cloudfunctions/common/` 下 9 个模块（context / security / rate / db / content / indexes / error / bundle / subscribe）只保留一份源码，由 `build:functions`（esbuild）在构建期内联进每个函数产物 —— 部署物永远等于当前源码，副本漂移在结构上不可能（详见 [docs/SYNC.md](docs/SYNC.md)）
 - **后端**：CloudBase 云数据库（23 集合 / 46 索引）、云存储、云调用（内容安全）、定时触发器（03:00 自动备份 · 6h 任务归档 + 日志清理）
 - **v0.9.2 加固**：限频原子化（`rate_limits` 确定性 _id 占位 + 原子自增，杜绝并发绕过）、读侧查询白名单（`sanitizeQuery`）、定时函数管理员守卫（fail-closed）
@@ -136,7 +136,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 数据存储 | 微信云数据库（23 集合 / 46 索引）+ 云存储 |
 | 开放能力 | 微信登录、内容安全 `msgSecCheck` / `imgSecCheck`、Canvas 海报 |
 | 质量工具链 | vue-tsc 类型检查 · 25 项契约测试 · 4 个可复跑 Python 校验脚本 · GitHub Actions CI |
-| 同步脚本 | `scripts/sync-common.js`（9 个公共模块自动同步到 37 个云函数） |
+| 构建脚本 | `scripts/build-functions.js`（9 个内核模块构建期内联到各云函数产物）· `scripts/gen-gateways.js`（由路由表生成网关） |
 
 ---
 
@@ -144,7 +144,8 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 | 指标 | 数量 |
 |---|---|
-| 云函数 | 37 |
+| 云函数（部署单元） | 10 = 7 资源型网关 + 3 独立函数（定时器 ×2 / 初始化） |
+| 业务入口（handler） | 37 |
 | 前端页面 | 20（uni-app，三端共用） |
 | 数据集合 | 23 |
 | 已定义索引 | 46（`init-db` 自动比对缺失清单） |
@@ -161,7 +162,7 @@ CampusHub/
 │   ├── scripts/              #    可复跑校验脚本（纯 Python 标准库，无需装包）
 │   ├── docs/                 #    安卓打包手册 / 设计系统 / 版本基线
 │   └── README.md             #    前端架构与启动说明
-├── cloudfunctions/           # 37 个云函数（后端唯一事实源）
+├── cloudfunctions/           # 10 个部署单元（7 网关 + 3 独立函数）+ common 内核，37 个业务入口
 │   ├── common/               # ★ 共享内核层（单一数据源）
 │   │   ├── common-bundle.js  # 一行的聚合导出
 │   │   ├── common-context.js # 用户上下文 & 鉴权

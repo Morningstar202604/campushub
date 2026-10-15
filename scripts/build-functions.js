@@ -69,11 +69,22 @@ function sha1(file) {
 // 任何一个变了，产物都算"过期"——这就是取代 sync 校验的方式。
 function sourceFingerprint(fn) {
   const parts = []
-  const dir = path.join(SRC, fn)
-  for (const f of fs.readdirSync(dir).sort()) {
-    if (/^common-[a-z]+\.js$/.test(f)) continue // 旧副本不参与指纹（应当已不存在）
-    parts.push(f, sha1(path.join(dir, f)))
+  // 递归收集：网关的 handlers/ 子目录同样是源码，必须参与新鲜度指纹，
+  // 否则改了 handler 不会被判定为"产物过期"，等于把刚修掉的漂移换个地方重演。
+  const walk = (dir, prefix) => {
+    for (const f of fs
+      .readdirSync(dir, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))) {
+      const rel = prefix ? `${prefix}/${f.name}` : f.name
+      if (f.isDirectory()) {
+        walk(path.join(dir, f.name), rel)
+        continue
+      }
+      if (/^common-[a-z]+\.js$/.test(f.name)) continue // 旧副本不参与指纹（应当已不存在）
+      parts.push(rel, sha1(path.join(dir, f.name)))
+    }
   }
+  walk(path.join(SRC, fn), '')
   for (const f of fs.readdirSync(COMMON_DIR).sort()) {
     if (f.endsWith('.js')) parts.push('kernel', f, sha1(path.join(COMMON_DIR, f)))
   }
@@ -127,9 +138,16 @@ async function main() {
   // 陈旧副本必须清场：它们会让"产物内联的是源码"这个前提失真
   const leftovers = []
   for (const fn of fns) {
-    for (const f of fs.readdirSync(path.join(SRC, fn))) {
-      if (/^common-[a-z]+\.js$/.test(f)) leftovers.push(path.join(fn, f))
+    const scan = (dir, rel) => {
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (ent.isDirectory()) {
+          scan(path.join(dir, ent.name), `${rel}/${ent.name}`)
+          continue
+        }
+        if (/^common-[a-z]+\.js$/.test(ent.name)) leftovers.push(`${rel}/${ent.name}`)
+      }
     }
+    scan(path.join(SRC, fn), fn)
   }
   if (leftovers.length) {
     console.error(`✗ 函数目录里仍有 ${leftovers.length} 份内核副本（构建期内联后不应存在）`)

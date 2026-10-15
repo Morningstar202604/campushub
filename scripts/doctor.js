@@ -164,34 +164,37 @@ function checkFunctions() {
 // 云调用权限：漏声明会让 msgSecCheck/imgSecCheck 返回 api unauthorized。
 // 本项目的审核是 fail-closed，所以症状不是"跳过审核"，而是上线后所有人发布都被拒。
 function checkOpenapiPermissions() {
-  const base = path.join(ROOT, 'cloudfunctions')
-  if (!fs.existsSync(base)) return
+  // 按"入口 → 部署函数"校验：网关的 config.json 必须覆盖组内所有成员的并集，
+  // 漏一项就会让 fail-closed 审核在该入口上拒掉全部发布。
   const offenders = []
-  for (const name of fs.readdirSync(base)) {
-    if (name === 'common') continue
-    const idx = path.join(base, name, 'index.js')
-    if (!fs.existsSync(idx)) continue
-    const code = fs.readFileSync(idx, 'utf8')
+  const needByDeploy = new Map()
+  for (const unit of ROUTE.unitNames()) {
+    const code = ROUTE.readSource(unit)
     const need = new Set()
     for (const m of code.matchAll(/cloud\.openapi\.([a-zA-Z]+\.[a-zA-Z]+)/g)) need.add(m[1])
     if (/await\s+checkContents?\(/.test(code)) need.add('security.msgSecCheck')
     if (/await\s+checkImages?\(/.test(code)) need.add('security.imgSecCheck')
     if (/sendSubscribe\(/.test(code)) need.add('subscribeMessage.send')
     if (!need.size) continue
+    const deploy = ROUTE.deployOf(unit)
+    if (!needByDeploy.has(deploy)) needByDeploy.set(deploy, new Set())
+    for (const a of need) needByDeploy.get(deploy).add(a)
+  }
+  for (const [deploy, need] of needByDeploy) {
     let declared = []
     try {
-      const cfg = JSON.parse(fs.readFileSync(path.join(base, name, 'config.json'), 'utf8'))
+      const cfg = JSON.parse(fs.readFileSync(path.join(ROUTE.CF, deploy, 'config.json'), 'utf8'))
       declared = (cfg.permissions && cfg.permissions.openapi) || []
     } catch {
       /* 无 config.json 即未声明 */
     }
     const gap = [...need].filter((a) => !declared.includes(a))
-    if (gap.length) offenders.push(`${name}(未声明 ${gap.join('/')})`)
+    if (gap.length) offenders.push(`${deploy}(未声明 ${gap.join('/')})`)
   }
   if (offenders.length) {
     err(`云调用权限缺失，上线即表现为发布全被拒：${offenders.join(', ')}`)
   } else {
-    ok('全部云调用的 openapi 权限已在 config.json 声明')
+    ok('全部云调用的 openapi 权限已在所属部署函数声明')
   }
 }
 
@@ -227,19 +230,27 @@ function checkDeps() {
 
 // ---------- 5.5 新增功能函数检查 ----------
 const REQUIRED_NEW_FNS = ['backup-db', 'announcement', 'points']
+const ROUTE = require('./lib/routes')
+
 function checkNewFns() {
-  let missing = 0
+  // 注意校验层次：入口源码（可能在网关的 handlers/ 里）与部署函数目录（package.json 所在层）
+  // 是两件事，收敛后不能再用"函数名 == 目录名"这一假设。
+  const missingSrc = []
+  const missingDeploy = []
   for (const fn of REQUIRED_NEW_FNS) {
-    const dir = path.join(ROOT, 'cloudfunctions', fn)
-    if (
-      !fs.existsSync(path.join(dir, 'index.js')) ||
-      !fs.existsSync(path.join(dir, 'package.json'))
-    ) {
-      err(`功能函数 ${fn} 目录不完整`)
-      missing++
-    }
+    if (!fs.existsSync(ROUTE.sourceFile(fn))) missingSrc.push(fn)
+    if (!fs.existsSync(path.join(ROUTE.deployDir(fn), 'package.json')))
+      missingDeploy.push(ROUTE.deployOf(fn))
   }
-  if (!missing) ok('新增功能函数（backup-db / announcement / points）目录完整')
+  if (missingSrc.length) {
+    err(`功能入口源码缺失：${missingSrc.join(', ')}`)
+  }
+  if (missingDeploy.length) {
+    err(`部署函数缺少 package.json：${[...new Set(missingDeploy)].join(', ')}`)
+  }
+  if (!missingSrc.length && !missingDeploy.length) {
+    ok(`功能入口齐备（${REQUIRED_NEW_FNS.join(' / ')}）`)
+  }
   const backupCfg = path.join(ROOT, 'cloudfunctions', 'backup-db', 'config.json')
   if (fs.existsSync(backupCfg)) ok('backup-db 定时触发器配置存在（需在控制台单独上传触发器）')
   else warn('backup-db/config.json 缺失：将无法自动备份')

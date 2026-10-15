@@ -1,0 +1,9 @@
+{
+  "name": "api-admin",
+  "version": "1.0.0",
+  "description": "api-admin 资源网关（自动生成）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

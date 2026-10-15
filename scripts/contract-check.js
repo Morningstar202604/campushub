@@ -63,13 +63,25 @@ for (const f of mpFiles) {
 }
 
 // ---------- 2. 云函数 action 支持清单 ----------
-const cfNames = fs
-  .readdirSync(CF)
-  .filter((n) => fs.statSync(path.join(CF, n)).isDirectory() && n !== 'common')
+// 可调用入口的唯一事实来源是 gateway-routes.json：收敛为资源型网关后，
+// "云端提供"的是业务入口（37 个 handler），而不是部署单元（10 个云函数目录）。
+// 若仍以目录名作清单，前端每一次调用都会被判成"调用不存在的云函数"，契约检查当场失效。
+const ROUTES = JSON.parse(fs.readFileSync(path.join(ROOT, 'gateway-routes.json'), 'utf8')).routes
+const cfNames = Object.keys(ROUTES)
+const deployNames = [...new Set(Object.values(ROUTES))]
+function unitSource(n) {
+  const target = ROUTES[n]
+  return target === n ? path.join(CF, n, 'index.js') : path.join(CF, target, 'handlers', `${n}.js`)
+}
 /** @type {Map<string, {actions:Set<string>, distributed:boolean}>} */
 const provided = new Map()
 for (const n of cfNames) {
-  const code = fs.readFileSync(path.join(CF, n, 'index.js'), 'utf8')
+  const file = unitSource(n)
+  if (!fs.existsSync(file)) {
+    report('error', `路由表入口「${n}」指向的源码不存在：${path.relative(ROOT, file)}`)
+    continue
+  }
+  const code = fs.readFileSync(file, 'utf8')
   const actions = new Set()
   for (const m of code.matchAll(/action\s*={1,3}\s*['"]([\w-]+)['"]/g)) actions.add(m[1])
   for (const m of code.matchAll(/case\s*['"]([\w-]+)['"]/g)) actions.add(m[1])
@@ -129,7 +141,10 @@ const dynList = [...called.entries()].filter(([, i]) => i.dynamic.has('dynamic')
 if (dynList.length)
   report('info', `${dynList.length} 处 action 为动态变量，静态无法比对（人工确认）`)
 
-report('ok', `前端调用 ${called.size} 个云函数 / 云端提供 ${cfNames.length} 个`)
+report(
+  'ok',
+  `前端调用 ${called.size} 个入口 / 云端提供 ${cfNames.length} 个入口（部署单元 ${deployNames.length} 个）`
+)
 
 // ---------- 输出 ----------
 const counts = { error: 0, warn: 0, info: 0, ok: 0 }

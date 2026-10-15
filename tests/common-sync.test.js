@@ -47,7 +47,8 @@ test('函数源码目录不得再出现内核副本（副本=漂移的载体）'
   for (const fn of fs.readdirSync(SRC)) {
     const dir = path.join(SRC, fn)
     if (fn === 'common' || !fs.statSync(dir).isDirectory()) continue
-    for (const f of fs.readdirSync(dir)) if (/^common-[a-z]+\.js$/.test(f)) copies.push(`${fn}/${f}`)
+    for (const f of fs.readdirSync(dir))
+      if (/^common-[a-z]+\.js$/.test(f)) copies.push(`${fn}/${f}`)
   }
   assert.deepEqual(copies, [], `仍有 ${copies.length} 份副本：${copies.slice(0, 5).join(', ')}`)
 })

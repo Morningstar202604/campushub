@@ -26,8 +26,11 @@ function makeUserDb(userDoc) {
 function loadContext(wxContext, userDoc) {
   const db = makeUserDb(userDoc)
   const fakeSdk = {
-    DYNAMIC_CURRENT_ENV: 'test', init() {},
-    database() { return db },
+    DYNAMIC_CURRENT_ENV: 'test',
+    init() {},
+    database() {
+      return db
+    },
     getWXContext: () => wxContext
   }
   Module._load = function (request, _parent, _isMain) {
@@ -42,7 +45,9 @@ function loadContext(wxContext, userDoc) {
   return ctx
 }
 
-afterEach(() => { Module._load = originalLoad })
+afterEach(() => {
+  Module._load = originalLoad
+})
 
 test('getOpenid：有 WXContext 时返回 OPENID', async () => {
   const { getOpenid } = loadContext({ OPENID: 'openid_abc' })
@@ -82,5 +87,8 @@ test('requireActive：verifyStatus=banned 时 throw USER_BANNED', () => {
 
 test('requireActive：空用户 throw USER_NOT_FOUND', () => {
   const { requireActive } = loadContext({})
-  assert.throws(() => requireActive(null), (err) => err.code === 'USER_NOT_FOUND')
+  assert.throws(
+    () => requireActive(null),
+    (err) => err.code === 'USER_NOT_FOUND'
+  )
 })

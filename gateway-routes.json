@@ -1,0 +1,51 @@
+{
+  "_comment": "云函数寻址表 —— 唯一事实来源。改这个文件后执行 npm run gen:gateways 重新生成网关入口与前端路由；手改生成物会被 npm run gate 拦下。",
+  "_usage": "routes[原函数名] = 目标云函数名。目标等于原名时为直连（定时/初始化类函数不经过网关）。网关模式下前端会额外注入 fn=原函数名。",
+  "useGateway": true,
+  "routes": {
+    "login": "api-auth",
+    "user-profile": "api-auth",
+    "user-update": "api-auth",
+    "verify": "api-auth",
+
+    "post-list": "api-post",
+    "post-detail": "api-post",
+    "post-create": "api-post",
+    "post-update": "api-post",
+    "post-delete": "api-post",
+    "my-list": "api-post",
+    "resolve": "api-post",
+
+    "product-list": "api-product",
+    "product-detail": "api-product",
+    "product-create": "api-product",
+    "product-update": "api-product",
+    "product-delete": "api-product",
+
+    "comment-list": "api-comment",
+    "comment-create": "api-comment",
+    "comment-delete": "api-comment",
+
+    "like": "api-social",
+    "collect": "api-social",
+    "follow": "api-social",
+    "notification": "api-social",
+    "checkin": "api-social",
+    "points": "api-social",
+
+    "admin": "api-admin",
+    "category-list": "api-admin",
+    "category-manage": "api-admin",
+    "announcement": "api-admin",
+    "feedback-create": "api-admin",
+    "report": "api-admin",
+
+    "guide-list": "api-content",
+    "guide-detail": "api-content",
+    "search": "api-content",
+
+    "task-expire": "task-expire",
+    "backup-db": "backup-db",
+    "init-db": "init-db"
+  }
+}

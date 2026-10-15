@@ -9,15 +9,16 @@ const fs = require('fs')
 const path = require('path')
 
 const COMMON_DIR = path.resolve(__dirname, '..', 'cloudfunctions', 'common')
-const ROOT = path.resolve(__dirname, '..', 'cloudfunctions')
 const originalLoad = Module._load
 
+const UNITS = require('./lib/unit-paths')
+
+// 入口名 → 真实源码路径（网关 handler / 独立函数），由 gateway-routes.json 决定
 function readIndex(fn) {
-  return fs.readFileSync(path.join(ROOT, fn, 'index.js'), 'utf8')
+  return fs.readFileSync(UNITS.sourceFile(fn), 'utf8')
 }
 
 // common-content.js 会经 common-db.js 拉起 wx-server-sdk，测试里注入空壳即可（本用例不碰云调用）
-
 
 // 用给定分类树构造 mock db；categories 集合按 _id 取文档
 function makeDb(tree) {
@@ -41,7 +42,10 @@ function loadContent() {
         DYNAMIC_CURRENT_ENV: 'test',
         init() {},
         getWXContext: () => ({ OPENID: 't' }),
-        database: () => ({ collection: () => ({ doc: () => ({ get: async () => ({ data: null }) }) }), command: {} })
+        database: () => ({
+          collection: () => ({ doc: () => ({ get: async () => ({ data: null }) }) }),
+          command: {}
+        })
       }
     }
     return originalLoad.apply(this, arguments)
@@ -126,7 +130,11 @@ test('写入侧必须忽略客户端 categoryPath，一律采用服务端推导�
     const code = readIndex(fn)
     if (!code.includes('resolveCategoryPath')) offenders.push(`${fn}(未调用推导)`)
     // 落库语句里不得再出现客户端 categoryPath 变量
-    if (/categoryPath:\s*(Array\.isArray\(categoryPath\)\s*\?\s*categoryPath|categoryPath)\b/.test(code)) {
+    if (
+      /categoryPath:\s*(Array\.isArray\(categoryPath\)\s*\?\s*categoryPath|categoryPath)\b/.test(
+        code
+      )
+    ) {
       offenders.push(`${fn}(仍落库客户端值)`)
     }
   }

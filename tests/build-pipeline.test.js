@@ -27,7 +27,10 @@ before(() => {
     encoding: 'utf8'
   })
   if (check.status !== 0) {
-    const build = spawnSync(process.execPath, ['scripts/build-functions.js'], { cwd, encoding: 'utf8' })
+    const build = spawnSync(process.execPath, ['scripts/build-functions.js'], {
+      cwd,
+      encoding: 'utf8'
+    })
     if (build.status !== 0) throw new Error(`构建失败：${build.stderr || build.stdout}`)
   }
 })
@@ -47,12 +50,17 @@ test('每个函数都必须产出单文件构建产物，且能被 Node 解析',
     const p = path.join(DIST, fn, 'index.js')
     assert.ok(fs.existsSync(p), `缺少产物 ${fn}/index.js`)
     const code = fs.readFileSync(p, 'utf8')
-    assert.doesNotThrow(() => new Function('module', 'exports', 'require', code), `${fn} 产物语法不可解析`)
+    assert.doesNotThrow(
+      () => new Function('module', 'exports', 'require', code),
+      `${fn} 产物语法不可解析`
+    )
   }
 })
 
 test('产物必须内联当前内核（而不是残留旧副本内容）', () => {
-  const code = fs.readFileSync(path.join(DIST, 'post-create', 'index.js'), 'utf8')
+  // post-create 收敛后住在 api-post 网关里，产物按部署单元而非入口名定位
+  const U = require('./lib/unit-paths')
+  const code = fs.readFileSync(U.productFile('post-create'), 'utf8')
   assert.match(code, /rateLimit 缺少 collection 参数/, '限频 fail-closed 文案未内联')
   assert.match(code, /function resolveCategoryPath/, '分类链推导未内联')
   assert.match(code, /IMAGE_TOO_LARGE/, '图片上限守卫未内联')
@@ -68,7 +76,10 @@ test('wx-server-sdk 必须保持 external（由云端注入，打进包会破坏
 
 test('产物必须随附 package.json，云调用权限/定时触发器不得在构建中丢失', () => {
   for (const fn of funcs) {
-    assert.ok(fs.existsSync(path.join(DIST, fn, 'package.json')), `${fn} 缺 package.json（云端装依赖要用）`)
+    assert.ok(
+      fs.existsSync(path.join(DIST, fn, 'package.json')),
+      `${fn} 缺 package.json（云端装依赖要用）`
+    )
     const srcCfg = path.join(ROOT, fn, 'config.json')
     if (fs.existsSync(srcCfg)) {
       const built = JSON.parse(fs.readFileSync(path.join(DIST, fn, 'config.json'), 'utf8'))
@@ -79,6 +90,8 @@ test('产物必须随附 package.json，云调用权限/定时触发器不得在
 })
 
 test('产物体积必须远小于"源码+全部副本"，证明内联而非复制', () => {
-  const size = fs.statSync(path.join(DIST, 'post-create', 'index.js')).size
-  assert.ok(size < 120 * 1024, `post-create 产物 ${size} 字节异常偏大`)
+  const U = require('./lib/unit-paths')
+  const size = fs.statSync(U.productFile('post-create')).size
+  // 网关产物承载 7 个 handler，上限放宽到 120KB；仍远小于"每入口一份内核副本"的旧形态
+  assert.ok(size < 120 * 1024, `api-post 产物 ${size} 字节异常偏大`)
 })
