@@ -132,10 +132,10 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 状态管理 | pinia 2.2.4 + pinia-plugin-persistedstate 4.1.3（锁版） |
 | 列表/组件 | z-paging 2.8.8（分页）· wot-design-uni 1.14.0（组件库） |
 | H5/App 云端接入 | @cloudbase/js-sdk 2.32.0（v2 API：匿名登录 + uploadFile/getTempFileURL）+ REST（restToken） |
-| 后端服务 | 微信云开发 Cloud Functions × 37 |
+| 后端服务 | 微信云开发云函数 × 10 个部署单元（37 个业务入口） |
 | 数据存储 | 微信云数据库（23 集合 / 46 索引）+ 云存储 |
 | 开放能力 | 微信登录、内容安全 `msgSecCheck` / `imgSecCheck`、Canvas 海报 |
-| 质量工具链 | vue-tsc 类型检查 · 25 项契约测试 · 4 个可复跑 Python 校验脚本 · GitHub Actions CI |
+| 质量工具链 | `npm run gate`（网关生成校验 → 构建内联 → 契约 → ESLint → Prettier → 测试）· ESLint/Prettier 已入库强制 · CI 见 `.github/workflows` |
 | 构建脚本 | `scripts/build-functions.js`（9 个内核模块构建期内联到各云函数产物）· `scripts/gen-gateways.js`（由路由表生成网关） |
 
 ---
@@ -149,7 +149,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 前端页面 | 20（uni-app，三端共用） |
 | 数据集合 | 23 |
 | 已定义索引 | 46（`init-db` 自动比对缺失清单） |
-| 契约测试 | 25 项（CI 强制） |
+| 质量门禁 | `npm run gate` 一条命令全跑（Actions 在 GitCode 不执行，故门禁必须本地可用） |
 
 ---
 
@@ -162,6 +162,7 @@ CampusHub/
 │   ├── scripts/              #    可复跑校验脚本（纯 Python 标准库，无需装包）
 │   ├── docs/                 #    安卓打包手册 / 设计系统 / 版本基线
 │   └── README.md             #    前端架构与启动说明
+├── gateway-routes.json       # ★ 业务入口 → 部署单元 的唯一寻址表
 ├── cloudfunctions/           # 10 个部署单元（7 网关 + 3 独立函数）+ common 内核，37 个业务入口
 │   ├── common/               # ★ 共享内核层（单一数据源）
 │   │   ├── common-bundle.js  # 一行的聚合导出
@@ -189,11 +190,12 @@ CampusHub/
 │   ├── architecture.svg      # 系统架构图（v0.9.2）
 │   └── data-model.svg        # 内容模型与分类树（v0.9.2）
 ├── scripts/
-│   ├── sync-common.js        # 同步 common/ 到各云函数
+│   ├── build-functions.js  # 构建期内联内核（esbuild）
+│   ├── gen-gateways.js       # 由 gateway-routes.json 生成网关
 │   └── doctor.js             # 部署前环境自检
-├── tests/                    # 25 项契约一致性测试（node --test）
+├── tests/                    # 契约与回归测试（node --test，glob 自动发现）
 ├── .github/workflows/        # CI（JSON/契约/单测 + uni-app 结构门禁）
-├── CHANGELOG.md              # 版本日志（0.9.0 → 0.9.2）
+├── CHANGELOG.md              # 版本日志
 ├── LICENSE                   # Apache-2.0
 └── README.md                 # 本文件
 ```
@@ -226,7 +228,7 @@ npm run build:mp-weixin    # 10. 小程序 → dist/build/mp-weixin → 微信�
 # ── 质量自检（可选，纯 Python 标准库无需装包）──────
 python uni-app/scripts/verify_pages.py       # 页面结构 / 反模式 / 一致性
 python uni-app/scripts/verify_contracts.py   # 前后端契约交叉校验
-npm test                                     # 25 项契约一致性测试
+npm run gate                                 # 门禁一把梭（含测试）
 ```
 
 ---
@@ -252,7 +254,7 @@ npm test                                     # 25 项契约一致性测试
 
 详见 [`CHANGELOG.md`](./CHANGELOG.md)。
 
-**Latest: v0.9.2**（2026-09-22）— 三端架构迁移（v0.9.0）→ 严格审核修复 19 项（v0.9.1）→ 三线交叉复核加固 10 项（v0.9.2）。
+**Latest: v0.9.5** — 修复部署态内核漂移与图片审核形态、补齐云调用权限声明（0.9.4）→ 内核改为构建期内联、门禁本地可用（0.9.4）→ 37 个云函数收敛为 10 个部署单元（0.9.5）。
 
 ---
 

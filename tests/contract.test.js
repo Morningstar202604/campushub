@@ -166,6 +166,20 @@ test('P4: README 中英文版统计必须等于当前事实（部署单元 / 业
   assert.ok(!readme.includes('| 云函数 | 37 |'), 'README 不应残留旧口径「云函数 | 37」')
 })
 
+test('文档不得残留已废弃机制与过期口径（sync-common / 旧计数写法）', () => {
+  const readme = read('README.md')
+  const zh = read('docs/README.zh-CN.md')
+  const f = currentFacts()
+  // sync-common.js 已随构建期内联一起删除，文档里再出现就是给新人指错路
+  for (const [name, doc] of [['README', readme], ['zh-CN', zh]]) {
+    assert.ok(!doc.includes('sync-common'), `${name} 仍引用已删除的 scripts/sync-common.js`)
+    assert.ok(!doc.includes('sync:common'), `${name} 仍引用已废弃的 npm run sync:common`)
+    assert.ok(!doc.includes('Cloud Functions × 37'), `${name} 仍写「37 个云函数」旧口径`)
+  }
+  // 文档必须用推导出来的部署单元数，而不是任何别的数字
+  assert.ok(readme.includes(`云函数 × ${f.deploys} 个部署单元`), `README 部署单元应为 ${f.deploys}`)
+})
+
 test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与 34 云函数', () => {
   const guide = read('docs/USER_GUIDE.md')
   const readme = read('README.md')
