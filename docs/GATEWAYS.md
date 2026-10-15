@@ -47,7 +47,7 @@
 4. 控制台：为 7 个网关开启 HTTP 访问服务并配置鉴权（H5/App 端要用；旧函数的 REST 配置不影响）。
 5. `task-expire`、`backup-db` 重新部署一次即可，触发器绑定不变；`init-db` 保持环境变量 `INIT_SECRET`。
 6. 前端把 `gateway-routes.json` 的 `useGateway` 设为 `true` → `npm run gen:gateways` → 构建三端 → 指向 dev 环境冒烟。
-7. 冒烟清单（每条都要看返回码，不要只看界面）：
+7. 冒烟与留痕：逐条填 [docs/DEPLOY_VERIFICATION.md](DEPLOY_VERIFICATION.md)（含 task-expire / backup-db 两个定时器与负向用例），每条都要看返回码，不要只看界面：
    - 登录、资料读取与修改（`api-auth`）
    - 发**带图**帖（`api-post`：验证 `imgSecCheck` 同步 Buffer 形态在真机是否通过——这是本仓无法在沙箱证伪的一项）
    - 评论 + 点赞 + 关注 + 通知（`api-social` / `api-comment`）
@@ -56,7 +56,7 @@
    - **负向用例**：手工调用 `api-post` 传 `fn:'init-db'` → 必须 `UNKNOWN_FUNCTION`
    - 限频：同一账号 30s 内连发两帖 → 第二条必须 `RATE_LIMITED`；60s 内连改 7 次帖子 → 第 7 次必须 `RATE_LIMITED`
 8. dev 全绿后再上 prod，同样的冒烟一遍。
-9. 稳定观察 1–2 周后，在控制台删除旧的 37 个函数，配额才真正释放。
+9. 稳定观察 1–2 周后，按 `docs/DEPLOY_VERIFICATION.md` 第四节顺序在控制台删除旧的 37 个函数，配额才真正释放。
 
 ## 回滚
 
