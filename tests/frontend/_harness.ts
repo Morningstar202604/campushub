@@ -16,11 +16,8 @@ export const SRC = path.resolve(__dirname, '..', '..', 'uni-app', 'src')
 const UNI_STUBS = {
   name: 'uni-stubs',
   setup(build) {
-    // pinia / uni 运行时：测试里不需要真实实现，统一桩掉
-    build.onResolve({ filter: /^pinia$/ }, () => ({
-      path: 'pinia-stub',
-      namespace: 'stub'
-    }))
+    // pinia / uni 运行时 / cloudbase：测试里不需要真实实现，统一桩掉
+    build.onResolve({ filter: /^pinia$/ }, () => ({ path: 'pinia-stub', namespace: 'stub' }))
     build.onResolve({ filter: /^@dcloudio\/uni-app$/ }, () => ({
       path: 'uni-app-stub',
       namespace: 'stub'
@@ -29,7 +26,34 @@ const UNI_STUBS = {
       path: 'cloudbase-stub',
       namespace: 'stub'
     }))
+    // vue 只提供被测代码用到的最小响应式 API（ref/computed/isRef/nextTick）
+    build.onResolve({ filter: /^vue$/ }, () => ({ path: 'vue-stub', namespace: 'stub' }))
     build.onLoad({ filter: /.*/, namespace: 'stub' }, (args) => {
+      if (args.path === 'vue-stub') {
+        return {
+          contents: `
+            export function ref(v) {
+              const box = { value: v }
+              return box
+            }
+            export function computed(fn) {
+              return {
+                get value() { return fn() }
+              }
+            }
+            export function isRef(v) {
+              return !!v && typeof v === 'object' && 'value' in v
+            }
+            export function nextTick(fn) { return Promise.resolve().then(fn) }
+            export function reactive(o) { return o }
+            export function onMounted(fn) { globalThis.__VUE_ONMOUNTED__ = fn }
+            export function onUnmounted() {}
+            export function watch() {}
+            export function toRefs(o) { return o }
+          `,
+          loader: 'js'
+        }
+      }
       if (args.path === 'pinia-stub') {
         return {
           contents: `
@@ -93,8 +117,12 @@ export async function loadModule(entryRel, define = {}) {
       ...define
     },
     plugins: [UNI_STUBS],
+    // 用虚拟模块提供 vue 的 API 子集，而不是 alias 到真实 vue：
+    // 真实 vue 的 ESM 入口会连带引入 @vue/compiler-*（依赖 @babel/parser 等），
+    // 在干净克隆里解析不到，CI 首次跑就 6 条全红。被测代码只用到 ref/computed 等少数 API。
     alias: {
-      '@': SRC
+      '@': SRC,
+      vue: 'vue-stub'
     },
     external: ['node:*']
   })

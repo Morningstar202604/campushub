@@ -16,9 +16,9 @@ jobs:
     name: Syntax & consistency
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -49,6 +49,9 @@ jobs:
       - name: uni-app structure & anti-pattern gate
         run: python3 uni-app/scripts/verify_pages.py
 
+      - name: Frontend ↔ backend contract check
+        run: python3 uni-app/scripts/verify_contracts.py
+
       - name: Generate & build gates (gateway routes + kernel inlining)
         run: |
           npm run gen:gateways:check
@@ -63,5 +66,55 @@ jobs:
           npm run lint:js
           npm run format
 
-      - name: Run unit tests
+      - name: Unit tests (cloud functions)
         run: npm test
+
+      - name: Unit tests (frontend composables + demo layer)
+        run: npm run test:frontend
+
+  build:
+    name: Build all platforms
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            uni-app/package-lock.json
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install uni-app deps
+        working-directory: uni-app
+        run: npm ci
+
+      - name: Type check (vue-tsc)
+        working-directory: uni-app
+        run: npx vue-tsc --noEmit
+
+      - name: Build H5
+        working-directory: uni-app
+        run: npm run build:h5
+
+      - name: Build WeChat mini program
+        working-directory: uni-app
+        run: npm run build:mp-weixin
+
+      - name: Upload H5 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: h5-build
+          path: uni-app/dist/build/h5
+          retention-days: 7
+
+      - name: Upload mp-weixin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mp-weixin-build
+          path: uni-app/dist/build/mp-weixin
+          retention-days: 7
