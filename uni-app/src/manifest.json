@@ -73,7 +73,7 @@
   "h5": {
     "router": {
       "mode": "hash",
-      "base": "/"
+      "base": "./"
     },
     "title": "CampusHub"
   },

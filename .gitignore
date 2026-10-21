@@ -36,3 +36,15 @@ cloudfunctions/*/node_modules/
 
 # Coverage / test artifacts
 coverage/
+
+# Android 壳工程构建产物与本地 SDK 配置（工程源码入库，产物可重建）
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+# APK 交付物不入库（可执行 npm run build:apk 重建），避免仓库随二进制膨胀
+out/*.apk
+out/plan.md
+# Android 壳内嵌的 H5 产物由 `node scripts/build-apk.js` 自动同步，不入库
+android/app/src/main/assets/www/
+android/.v2c/

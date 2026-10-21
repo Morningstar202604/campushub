@@ -20,6 +20,13 @@ import { useSchoolStore } from '@/stores/school'
 import { GATEWAY_ROUTES, USE_GATEWAY, resolveTarget, buildPayload } from '@/config/gateway-routes'
 import { callDemo, hasDemoHandler } from '@/utils/demo-data'
 
+// CloudBase JS SDK 只在 H5 端需要（App/小程序有原生存储 API）。
+// 用静态 import + 条件编译：App 端产物是 iife，任何动态 import 都会触发
+// "iife 不支持代码分割" 而让 build:app 直接失败；而不加平台条件又会让 App 包体白扛一份 web SDK。
+// #ifdef H5
+import * as cloudbaseSdk from '@cloudbase/js-sdk'
+// #endif
+
 type Platform = 'miniprogram' | 'app' | 'h5'
 
 /** REST 单次请求超时（毫秒）。云函数冷启动偶发较慢，给足 15s，避免无限挂起。 */
@@ -261,8 +268,21 @@ async function ensureCloudbase(): Promise<any> {
   if (cbSdkPromise) return cbSdkPromise
   cbSdkPromise = (async () => {
     // v2 web SDK（官方文档 tencentcloud.com/zh/document/product/1266/71665）：
-    //   init 参数名是 env（不是 envId）；动态导入需处理 CJS 互操作取 default
-    const mod: any = await import('@cloudbase/js-sdk')
+    //   init 参数名是 env（不是 envId）。
+    //
+    // ⚠️ SDK 用文件顶部的静态 import（仅 H5 编译），不能 `await import(...)`：
+    //    App 端（uni-app app-plus）产物是 iife，iife 不支持代码分割，任何动态 import
+    //    都会生成独立 chunk 并让 `npm run build:app` 直接失败：
+    //    "Invalid value 'iife' for option 'output.format' — UMD and IIFE output formats
+    //     are not supported for code-splitting builds."
+    //    这正是此前 APK 打不出来的根因。
+    // #ifdef H5
+    const mod: any = cloudbaseSdk
+    // #endif
+    // #ifndef H5
+    // App/小程序不走 web SDK（App 用 uni 原生存储 API），这里给个空壳让类型收敛
+    const mod: any = {}
+    // #endif
     const sdk = mod?.default ?? mod
     const schoolStore = useSchoolStore()
     if (!schoolStore.envId) {

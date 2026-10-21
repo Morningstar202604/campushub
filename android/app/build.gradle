@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.campushub.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.campushub.app"
+        minSdk 21
+        targetSdk 34
+        versionCode 100
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            // 用 debug 签名以保证可直接安装（生产应替换为自有 keystore）
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // 资产目录里已放好 H5 产物，无需额外 sourceSets 配置
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.webkit:webkit:1.8.0'
+}

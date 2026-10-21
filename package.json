@@ -43,7 +43,8 @@
     "gate": "npm run gen:gateways:check && npm run build:functions && npm run build:functions:check && npm run contract && npm run lint:js && npm run format && npm run test && npm run test:frontend",
     "pretest": "node scripts/build-functions.js",
     "test:frontend": "node --experimental-strip-types --test tests/frontend/*.test.ts",
-    "test:all": "npm run test && npm run test:frontend"
+    "test:all": "npm run test && npm run test:frontend",
+    "build:apk": "node scripts/build-apk.js"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

@@ -1,0 +1,12 @@
+// Android 壳工程（WebView 容器）
+//
+// 为什么是这个形态：uni-app 的 App 端标准产物（dist/build/app）只是 www 资源，
+// 要变成 APK 必须经 DCloud 的 Android 运行时（HBuilderX 云打包 / 离线 SDK）。
+// 本工程用系统 WebView 承载同一份 H5 产物，好处是零第三方依赖、纯离线可构建、
+// 产物可直接安装；代价是拿不到 uni 的原生能力（相机/推送/支付），
+// 这些能力在 WebView 里退化为浏览器 API（chooseImage → <input type=file>）。
+//
+// 需要完整原生能力时，用 HBuilderX 导入 uni-app/ 做云打包，二者产物可共存。
+plugins {
+    id 'com.android.application' version '8.13.2' apply false
+}
