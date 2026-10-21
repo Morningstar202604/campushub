@@ -45,7 +45,7 @@
           <text v-if="item.originalPrice" class="market-orig">¥{{ item.originalPrice }}</text>
         </view>
         <view class="market-foot">
-          <text class="market-cat">{{ item.category || '未分类' }}</text>
+          <text class="market-cat">{{ categoryLabel(item.category) }}</text>
           <text class="market-time tabular-nums">{{ item.time }}</text>
         </view>
       </view>
@@ -83,6 +83,16 @@ const categories = [
 
 // 响应式 query：activeCategory 变化时自动带进下一次 callFunction
 const activeCategory = ref('all')
+
+// 商品卡展示用中文分类名：后端存的是 category 枚举值（digital/books/...），
+// 直接渲染会把 'digital' 原样显示在卡片上。
+const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
+  categories.map((c) => [c.value, c.label])
+)
+function categoryLabel(v: string): string {
+  if (!v) return '未分类'
+  return CATEGORY_LABEL[v] || v
+}
 /** 加载失败的商品封面索引（按 item.id），失败后显示占位图 */
 const brokenImages = ref<Record<string, boolean>>({})
 
