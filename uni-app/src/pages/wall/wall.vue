@@ -1,5 +1,12 @@
 <template>
-  <z-paging ref="pagingRef" v-model="list" :auto="true" :back-to-top="true" @query="queryList" safe-area-inset-bottom>
+  <z-paging
+    ref="pagingRef"
+    v-model="list"
+    :auto="true"
+    :back-to-top="true"
+    @query="queryList"
+    safe-area-inset-bottom
+  >
     <template #top>
       <!-- 页头：标题 + 斜切角品牌标签 -->
       <view class="wall-header">
@@ -47,6 +54,10 @@
       </view>
     </template>
   </z-paging>
+  <!-- 常驻发布入口：有数据时也要能发（旧版只有空态 CTA，列表一有内容就再无入口） -->
+  <view class="page-fab sticker press" @click="goCreate()">
+    <text class="page-fab-label">去表白</text>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -111,8 +122,14 @@ function goCreate() {
     display: flex;
     justify-content: space-between;
     margin-bottom: 16rpx;
-    .wall-author { font-weight: var(--fw-title); color: var(--text-primary); }
-    .wall-time { font-size: 22rpx; color: var(--text-tertiary); }
+    .wall-author {
+      font-weight: var(--fw-title);
+      color: var(--text-primary);
+    }
+    .wall-time {
+      font-size: 22rpx;
+      color: var(--text-tertiary);
+    }
   }
 
   .wall-content {
@@ -132,7 +149,9 @@ function goCreate() {
     font-size: 22rpx;
     color: var(--text-secondary);
 
-    .wall-like { color: var(--accent); }
+    .wall-like {
+      color: var(--accent);
+    }
   }
 }
 
@@ -141,7 +160,11 @@ function goCreate() {
     margin-top: 28rpx;
     padding: 14rpx 40rpx;
     background: var(--accent);
-    text { font-size: 26rpx; font-weight: var(--fw-title); color: #0D110E; }
+    text {
+      font-size: 26rpx;
+      font-weight: var(--fw-title);
+      color: #0d110e;
+    }
   }
 }
 
@@ -155,7 +178,31 @@ function goCreate() {
   border: 1rpx solid var(--danger);
   border-radius: var(--radius-sharp);
 
-  .error-text { font-size: 24rpx; color: var(--danger); }
-  .error-retry { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); }
+  .error-text {
+    font-size: 24rpx;
+    color: var(--danger);
+  }
+  .error-retry {
+    font-size: 24rpx;
+    font-weight: var(--fw-title);
+    color: var(--accent);
+  }
+}
+
+.page-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: calc(120rpx + constant(safe-area-inset-bottom));
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  z-index: 90;
+  padding: 20rpx 36rpx;
+  background: var(--accent);
+  border-radius: var(--radius-sharp);
+  box-shadow: 0 6rpx 0 rgba(0, 0, 0, 0.55);
+}
+.page-fab-label {
+  font-size: 28rpx;
+  font-weight: var(--fw-title);
+  color: #0d110e;
 }
 </style>

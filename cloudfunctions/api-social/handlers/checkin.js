@@ -77,11 +77,22 @@ module.exports = wrap(async (_event) => {
       }
     })
 
+  // 回读真实余额再返回：`(user.creditScore || 100) + points` 是错的 ——
+  // `||` 会把「余额为 0」当成缺省值补成 100，实测返回 totalPoints=101 而库里只有 1。
+  const fresh = await db
+    .collection('users')
+    .doc(user._id)
+    .field({ creditScore: true })
+    .get()
+    .catch(() => null)
+  const totalPoints =
+    fresh && fresh.data ? fresh.data.creditScore || 0 : (user.creditScore || 0) + points
+
   return ok({
     date: today,
     streak: newStreak,
     points,
-    totalPoints: (user.creditScore || 100) + points,
+    totalPoints,
     message:
       newStreak >= 7 ? `连续签到${newStreak}天，奖励${points}积分！` : `签到成功，获得${points}积分`
   })

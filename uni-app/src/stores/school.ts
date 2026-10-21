@@ -25,9 +25,13 @@ export const useSchoolStore = defineStore('school', {
       this.demoMode = c.demoMode !== false
       this.configured = Boolean(this.envId)
       if (!this.configured && this.demoMode) {
-        console.info('[CampusHub] 未配置 envId，已启用本地演示数据（界面可完整浏览；接真实环境请填 src/config/school.config.js）')
+        console.info(
+          '[CampusHub] 未配置 envId，已启用本地演示数据（界面可完整浏览；接真实环境请填 src/config/school.config.js）'
+        )
       } else if (!this.configured) {
-        console.warn('[CampusHub] 未配置 school.config.js（envId 为空）且已关闭演示模式，接口将全部失败')
+        console.warn(
+          '[CampusHub] 未配置 school.config.js（envId 为空）且已关闭演示模式，接口将全部失败'
+        )
       }
       return this
     }

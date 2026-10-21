@@ -118,7 +118,10 @@ async function onOpen(n: NoticeCard) {
   // 1) 未读则标记已读（后端参数名是 notificationId）
   if (!n.isRead) {
     try {
-      const res: any = await callFunction('notification', { action: 'markRead', notificationId: n.id })
+      const res: any = await callFunction('notification', {
+        action: 'markRead',
+        notificationId: n.id
+      })
       if (res?.marked) {
         n.isRead = true
         unreadCount.value = Math.max(0, unreadCount.value - 1)
@@ -192,6 +195,10 @@ async function onOpen(n: NoticeCard) {
   padding: 0 24rpx;
   height: 56rpx;
   line-height: 56rpx;
+  /* 原生 button 默认 margin: auto 会把它推到容器中间，头部左右失衡（实测 x=214） */
+  margin: 0;
+  width: auto;
+  display: inline-block;
 }
 
 /* 列表 */

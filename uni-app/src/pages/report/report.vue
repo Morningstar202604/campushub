@@ -17,7 +17,7 @@
         v-for="r in REASONS"
         :key="r"
         class="rp-reason"
-        :class="{ 'rp-reason-on': form.reason === r, 'press': true }"
+        :class="{ 'rp-reason-on': form.reason === r, press: true }"
         @click="form.reason = r"
       >
         <text class="rp-reason-label">{{ r }}</text>
@@ -81,13 +81,14 @@ onLoad((opts) => {
   targetId.value = String(id)
   const t = (opts && (opts.targetType || opts.type)) || 'post'
   targetType.value = t === 'product' || t === 'comment' ? t : 'post'
-  targetLabel.value = opts && opts.title
-    ? String(opts.title).slice(0, 30)
-    : t === 'product'
-      ? '商品'
-      : t === 'comment'
-        ? '评论'
-        : '帖子'
+  targetLabel.value =
+    opts && opts.title
+      ? String(opts.title).slice(0, 30)
+      : t === 'product'
+        ? '商品'
+        : t === 'comment'
+          ? '评论'
+          : '帖子'
   if (!targetId.value) {
     uni.showToast({ title: '缺少举报对象，请从内容页进入', icon: 'none' })
     setTimeout(() => uni.navigateBack(), 800)

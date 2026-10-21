@@ -1,8 +1,8 @@
 <template>
   <view class="detail-root">
     <!-- 加载中：product 未就绪时不渲染 product.xxx（避免首屏 TypeError） -->
-    <view v-if="loading" class="state-block">
-      <text class="state-text">LOADING</text>
+    <view v-if="loading" class="detail-skeleton">
+      <Skeleton :rows="3" :card="true" />
     </view>
 
     <!-- 失败 / 已下架 / 无此商品 -->
@@ -36,7 +36,9 @@
         <view class="product-price-row">
           <text class="price-now">¥{{ product.price }}</text>
           <text v-if="product.originalPrice" class="price-orig">¥{{ product.originalPrice }}</text>
-          <text class="product-cat">{{ catLabel(product.category) }} · {{ condLabel(product.condition) }}</text>
+          <text class="product-cat"
+            >{{ catLabel(product.category) }} · {{ condLabel(product.condition) }}</text
+          >
         </view>
       </view>
 
@@ -71,7 +73,8 @@
           class="contact-btn clip-tag press"
           :class="{ disabled: !canTrade }"
           @click="onContact"
-        >{{ contactBtnLabel }}</text>
+          >{{ contactBtnLabel }}</text
+        >
       </view>
       <view v-if="!canTrade" class="info-hint">
         <text>该商品{{ statusLabel }}，暂不可联系卖家</text>
@@ -79,11 +82,19 @@
 
       <!-- 操作行 -->
       <view class="action-bar sticker">
-        <view class="action-item press" :class="{ active: action.liked.value }" @click="action.toggleLike()">
+        <view
+          class="action-item press"
+          :class="{ active: action.liked.value }"
+          @click="action.toggleLike()"
+        >
           <text class="action-label">点赞</text>
           <text class="action-count tabular-nums">{{ action.likeCount.value }}</text>
         </view>
-        <view class="action-item press" :class="{ active: action.collected.value }" @click="action.toggleCollect()">
+        <view
+          class="action-item press"
+          :class="{ active: action.collected.value }"
+          @click="action.toggleCollect()"
+        >
           <text class="action-label">收藏</text>
           <text class="action-count tabular-nums">{{ collectCount }}</text>
         </view>
@@ -91,8 +102,19 @@
         <view v-if="isMine" class="action-item mine press" @click="onEdit">
           <text class="action-label">编辑</text>
         </view>
-        <view v-if="isMine" class="action-item mine press" :class="{ done: product.status === 'sold' }" @click="onToggleSold">
-          <text class="action-label">{{ product.status === 'sold' ? '重新上架' : '标记已售' }}</text>
+        <view
+          v-if="isMine"
+          class="action-item mine press"
+          :class="{ done: product.status === 'sold' }"
+          @click="onToggleSold"
+        >
+          <text class="action-label">{{
+            product.status === 'sold' ? '重新上架' : '标记已售'
+          }}</text>
+        </view>
+        <!-- 举报：非本人商品（此前举报页全站无入口，实际不可达） -->
+        <view v-if="!isMine" class="action-item press" @click="onReport">
+          <text class="action-label">举报</text>
         </view>
       </view>
     </template>
@@ -100,6 +122,7 @@
 </template>
 
 <script setup lang="ts">
+import Skeleton from '@/components/Skeleton.vue'
 import { ref, computed, onUnmounted } from 'vue'
 import { onLoad, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { callFunction, fileIDToTempUrl } from '@/utils/api'
@@ -121,7 +144,13 @@ const loadError = ref('')
 const action = useAction({ targetId: productId, targetType: 'product' })
 
 function catLabel(c: string): string {
-  const m: Record<string, string> = { digital: '数码', books: '教材', living: '生活', sports: '运动', other: '其他' }
+  const m: Record<string, string> = {
+    digital: '数码',
+    books: '教材',
+    living: '生活',
+    sports: '运动',
+    other: '其他'
+  }
   return m[c] || c || '其他'
 }
 function condLabel(c: string): string {
@@ -148,7 +177,9 @@ const statusClass = computed(() => {
 })
 const canTrade = computed(() => (product.value?.status ?? 'on_sale') === 'on_sale')
 
-const isPhone = computed(() => /^(?:\+?\d[\d\s-]{4,})$/.test((product.value?.contactInfo || '').trim()))
+const isPhone = computed(() =>
+  /^(?:\+?\d[\d\s-]{4,})$/.test((product.value?.contactInfo || '').trim())
+)
 const contactBtnLabel = computed(() => {
   if (!canTrade.value) return '不可联系'
   return isPhone.value ? '拨号' : '复制'
@@ -168,6 +199,16 @@ const isMine = computed(() => {
 })
 
 // 编辑：带 id 进商品创建页的编辑模式（预填表单）
+/** 举报：带 targetId/targetType 跳到举报页 */
+function onReport() {
+  const id = product.value?.id || productId.value
+  if (!id) return
+  const label = (product.value?.title || '商品').slice(0, 20)
+  uni.navigateTo({
+    url: `/pages/report/report?targetId=${encodeURIComponent(id)}&targetType=product&targetLabel=${encodeURIComponent(label)}`
+  })
+}
+
 function onEdit() {
   // @ts-ignore
   uni.navigateTo({ url: `/pages/product-create/product-create?id=${productId.value}` })
@@ -177,7 +218,10 @@ function onEdit() {
 async function onToggleSold() {
   const mark = (product.value?.status ?? 'on_sale') !== 'sold'
   try {
-    const res: any = await callFunction('product-update', { productId: productId.value, markSold: mark })
+    const res: any = await callFunction('product-update', {
+      productId: productId.value,
+      markSold: mark
+    })
     if (product.value) product.value.status = res?.status || (mark ? 'sold' : 'on_sale')
     uni.showToast({ title: mark ? '已标记为已售' : '已重新上架', icon: 'success' })
   } catch (e: any) {
@@ -205,7 +249,11 @@ async function loadDetail() {
     productRaw.value = res?.product ?? null
     initialCollected.value = vm.isCollected
     // 回填 useAction 已知状态（后端 v0.9.2 起返回 isLiked，重载后点赞高亮不再丢失）
-    action.hydrate({ isLiked: !!res?.isLiked, isCollected: vm.isCollected, likeCount: vm.likeCount })
+    action.hydrate({
+      isLiked: !!res?.isLiked,
+      isCollected: vm.isCollected,
+      likeCount: vm.likeCount
+    })
     // 图片 fileID(cloud://) → 临时可访问 URL，否则小程序/App 端不显示
     displayImages.value = await Promise.all(
       (vm.images || []).map((f) => fileIDToTempUrl(f).catch(() => f))
@@ -240,12 +288,18 @@ function onContact() {
       fail: () => {
         // 拨号不可用（如 H5）时退化为复制
         // @ts-ignore
-        uni.setClipboardData({ data: v, success: () => uni.showToast({ title: '号码已复制', icon: 'none' }) })
+        uni.setClipboardData({
+          data: v,
+          success: () => uni.showToast({ title: '号码已复制', icon: 'none' })
+        })
       }
     })
   } else {
     // @ts-ignore
-    uni.setClipboardData({ data: v, success: () => uni.showToast({ title: '已复制联系方式', icon: 'none' }) })
+    uni.setClipboardData({
+      data: v,
+      success: () => uni.showToast({ title: '已复制联系方式', icon: 'none' })
+    })
   }
 }
 
@@ -280,73 +334,221 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.detail-root { padding: 24rpx 32rpx 80rpx; }
+.detail-root {
+  padding: 24rpx 32rpx 80rpx;
+}
 
-.state-block { padding: 140rpx 32rpx; text-align: center; }
-.state-text { display: block; font-size: 24rpx; color: var(--text-secondary); letter-spacing: 2rpx; }
+.state-block {
+  padding: 140rpx 32rpx;
+  text-align: center;
+}
+.state-text {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  letter-spacing: 2rpx;
+}
 .state-retry {
-  display: inline-block; margin-top: 28rpx; padding: 12rpx 36rpx;
-  font-size: 24rpx; font-weight: var(--fw-title); color: var(--secondary);
-  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: inline-block;
+  margin-top: 28rpx;
+  padding: 12rpx 36rpx;
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  color: var(--secondary);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
 
 .product-gallery {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8rpx;
-  padding: 12rpx; background: var(--bg-card);
-  border: 2rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx;
-  .product-img { width: 100%; height: 300rpx; border-radius: var(--radius-sharp); background: var(--bg-elevated); }
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8rpx;
+  padding: 12rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  margin-bottom: 20rpx;
+  .product-img {
+    width: 100%;
+    height: 300rpx;
+    border-radius: var(--radius-sharp);
+    background: var(--bg-elevated);
+  }
 }
 
 .product-head {
-  padding: 24rpx; background: var(--bg-card);
-  border: 2rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx;
+  padding: 24rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  margin-bottom: 20rpx;
 }
-.head-top { display: flex; align-items: flex-start; gap: 16rpx; }
-.product-title { flex: 1; font-size: 34rpx; color: var(--text-primary); }
+.head-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+.product-title {
+  flex: 1;
+  font-size: 34rpx;
+  color: var(--text-primary);
+}
 .product-status {
-  flex-shrink: 0; padding: 4rpx 14rpx; font-size: 20rpx; font-weight: var(--fw-title);
-  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
-  &.is-on { color: var(--secondary); border-color: var(--secondary); }
-  &.is-sold { color: var(--warning); border-color: var(--warning); }
-  &.is-off { color: var(--text-tertiary); }
+  flex-shrink: 0;
+  padding: 4rpx 14rpx;
+  font-size: 20rpx;
+  font-weight: var(--fw-title);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  &.is-on {
+    color: var(--secondary);
+    border-color: var(--secondary);
+  }
+  &.is-sold {
+    color: var(--warning);
+    border-color: var(--warning);
+  }
+  &.is-off {
+    color: var(--text-tertiary);
+  }
 }
 
-.product-price-row { display: flex; align-items: baseline; gap: 16rpx; margin-top: 16rpx; }
-.price-now { font-size: 40rpx; font-weight: var(--fw-title); color: var(--accent); }
-.price-orig { font-size: 24rpx; color: var(--text-tertiary); text-decoration: line-through; }
-.product-cat { margin-left: auto; font-size: 22rpx; color: var(--text-secondary); }
+.product-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+.price-now {
+  font-size: 40rpx;
+  font-weight: var(--fw-title);
+  color: var(--accent);
+}
+.price-orig {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+.product-cat {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: var(--text-secondary);
+}
 
-.product-desc { padding: 24rpx; background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp); margin-bottom: 20rpx; }
-.desc-text { font-size: 26rpx; color: var(--text-primary); line-height: 1.75; }
+.product-desc {
+  padding: 24rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  margin-bottom: 20rpx;
+}
+.desc-text {
+  font-size: 26rpx;
+  color: var(--text-primary);
+  line-height: 1.75;
+}
 
-.product-info { padding: 8rpx 24rpx; background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp); }
-.info-row { display: flex; padding: 16rpx 0; border-bottom: 2rpx solid var(--border); }
-.info-row:last-child { border-bottom: none; }
-.info-label { width: 140rpx; font-size: 24rpx; color: var(--text-tertiary); flex-shrink: 0; }
-.info-value { flex: 1; font-size: 26rpx; color: var(--text-primary); }
+.product-info {
+  padding: 8rpx 24rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+}
+.info-row {
+  display: flex;
+  padding: 16rpx 0;
+  border-bottom: 2rpx solid var(--border);
+}
+.info-row:last-child {
+  border-bottom: none;
+}
+.info-label {
+  width: 140rpx;
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.info-value {
+  flex: 1;
+  font-size: 26rpx;
+  color: var(--text-primary);
+}
 
 .contact-row {
-  display: flex; align-items: center; gap: 16rpx; margin-top: 20rpx; padding: 20rpx 24rpx;
-  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.contact-body { flex: 1; min-width: 0; }
-.contact-label { display: block; font-size: 20rpx; color: var(--text-tertiary); }
-.contact-value { display: block; font-size: 28rpx; font-weight: var(--fw-title); color: var(--text-primary); margin-top: 4rpx; }
+.contact-body {
+  flex: 1;
+  min-width: 0;
+}
+.contact-label {
+  display: block;
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+}
+.contact-value {
+  display: block;
+  font-size: 28rpx;
+  font-weight: var(--fw-title);
+  color: var(--text-primary);
+  margin-top: 4rpx;
+}
 .contact-btn {
-  flex-shrink: 0; padding: 12rpx 32rpx; font-size: 24rpx; font-weight: var(--fw-title);
-  color: var(--bg-page); background: var(--secondary);
-  &.disabled { color: var(--text-tertiary); background: var(--bg-elevated); }
+  flex-shrink: 0;
+  padding: 12rpx 32rpx;
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  color: var(--bg-page);
+  background: var(--secondary);
+  &.disabled {
+    color: var(--text-tertiary);
+    background: var(--bg-elevated);
+  }
 }
-.info-hint { margin-top: 12rpx; font-size: 22rpx; color: var(--text-tertiary); }
+.info-hint {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
 
 .action-bar {
-  display: flex; gap: 48rpx; margin-top: 24rpx; padding: 20rpx 32rpx;
-  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
-  .action-item { display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
-  .action-label { font-size: 22rpx; color: var(--text-secondary); }
-  .action-count { font-size: 24rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .action-item.active .action-label { color: var(--secondary); }
-  .action-item.mine .action-label { color: var(--secondary); }
-  .action-item.mine.done .action-label { color: var(--text-tertiary); }
+  display: flex;
+  gap: 48rpx;
+  margin-top: 24rpx;
+  padding: 20rpx 32rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  .action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4rpx;
+  }
+  .action-label {
+    font-size: 22rpx;
+    color: var(--text-secondary);
+  }
+  .action-count {
+    font-size: 24rpx;
+    font-weight: var(--fw-title);
+    color: var(--text-primary);
+  }
+  .action-item.active .action-label {
+    color: var(--secondary);
+  }
+  .action-item.mine .action-label {
+    color: var(--secondary);
+  }
+  .action-item.mine.done .action-label {
+    color: var(--text-tertiary);
+  }
 }
 </style>

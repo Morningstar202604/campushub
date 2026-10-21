@@ -1,5 +1,12 @@
 <template>
-  <z-paging ref="pagingRef" v-model="list" :auto="true" :back-to-top="true" @query="queryList" safe-area-inset-bottom>
+  <z-paging
+    ref="pagingRef"
+    v-model="list"
+    :auto="true"
+    :back-to-top="true"
+    @query="queryList"
+    safe-area-inset-bottom
+  >
     <template #top>
       <view class="page-header">
         <text class="title-900 page-title">二手市集</text>
@@ -26,7 +33,12 @@
     </view>
 
     <!-- 商品卡：封面 + 价格 + 硬边框（价格保持白色让详情页做荧光焦点） -->
-    <view v-for="item in list" :key="item.id" class="market-card sticker press" @click="openDetail(item)">
+    <view
+      v-for="item in list"
+      :key="item.id"
+      class="market-card sticker press"
+      @click="openDetail(item)"
+    >
       <image
         v-if="item.image && !brokenImages[item.id]"
         class="market-cover"
@@ -63,6 +75,10 @@
       </view>
     </template>
   </z-paging>
+  <!-- 常驻发布入口：有数据时也要能发（旧版只有空态 CTA，列表一有内容就再无入口） -->
+  <view class="page-fab sticker press" @click="goCreate()">
+    <text class="page-fab-label">上架</text>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -125,9 +141,23 @@ function goCreate() {
 </script>
 
 <style lang="scss" scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; padding: 32rpx; }
-.page-title { font-size: 40rpx; color: var(--text-primary); }
-.page-badge { padding: 6rpx 20rpx; font-size: 22rpx; font-weight: var(--fw-title); color: var(--accent); background: var(--bg-card); }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+}
+.page-title {
+  font-size: 40rpx;
+  color: var(--text-primary);
+}
+.page-badge {
+  padding: 6rpx 20rpx;
+  font-size: 22rpx;
+  font-weight: var(--fw-title);
+  color: var(--accent);
+  background: var(--bg-card);
+}
 
 .cat-scroll {
   white-space: nowrap;
@@ -144,7 +174,7 @@ function goCreate() {
   border: 1rpx solid var(--border);
 
   &.active {
-    color: #0D110E;
+    color: #0d110e;
     background: var(--accent);
     font-weight: var(--fw-title);
   }
@@ -165,16 +195,27 @@ function goCreate() {
     border-radius: var(--radius-sharp);
     flex-shrink: 0;
     &--ph {
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: var(--bg-elevated);
       border: 2rpx solid var(--border);
       clip-path: var(--clip-diamond);
       opacity: 0.5;
     }
-    &--ph-text { font-size: 20rpx; color: var(--text-tertiary); letter-spacing: 2rpx; }
+    &--ph-text {
+      font-size: 20rpx;
+      color: var(--text-tertiary);
+      letter-spacing: 2rpx;
+    }
   }
 
-  .market-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .market-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
 
   .market-title {
     font-size: 28rpx;
@@ -185,8 +226,17 @@ function goCreate() {
     white-space: nowrap;
   }
 
-  .market-row { display: flex; align-items: baseline; gap: 12rpx; margin-top: 8rpx; }
-  .market-price { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
+  .market-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12rpx;
+    margin-top: 8rpx;
+  }
+  .market-price {
+    font-size: 32rpx;
+    font-weight: var(--fw-title);
+    color: var(--text-primary);
+  }
   .market-orig {
     font-size: 22rpx;
     color: var(--text-tertiary);
@@ -203,20 +253,75 @@ function goCreate() {
   }
 }
 
-.empty-state { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0;
-  .empty-shape { width: 64rpx; height: 64rpx; background: var(--accent); opacity: 0.15; clip-path: var(--clip-diamond); margin-bottom: 24rpx; }
-  .empty-title { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .empty-sub { margin-top: 8rpx; font-size: 24rpx; color: var(--text-secondary); }
-  .empty-cta { margin-top: 28rpx; padding: 14rpx 40rpx; background: var(--accent);
-    text { font-size: 26rpx; font-weight: var(--fw-title); color: #0D110E; }
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
+  .empty-shape {
+    width: 64rpx;
+    height: 64rpx;
+    background: var(--accent);
+    opacity: 0.15;
+    clip-path: var(--clip-diamond);
+    margin-bottom: 24rpx;
+  }
+  .empty-title {
+    font-size: 32rpx;
+    font-weight: var(--fw-title);
+    color: var(--text-primary);
+  }
+  .empty-sub {
+    margin-top: 8rpx;
+    font-size: 24rpx;
+    color: var(--text-secondary);
+  }
+  .empty-cta {
+    margin-top: 28rpx;
+    padding: 14rpx 40rpx;
+    background: var(--accent);
+    text {
+      font-size: 26rpx;
+      font-weight: var(--fw-title);
+      color: #0d110e;
+    }
   }
 }
 
 .error-banner {
-  display: flex; justify-content: space-between; align-items: center;
-  margin: 16rpx 32rpx 0; padding: 16rpx 24rpx;
-  background: var(--bg-card); border: 1rpx solid var(--danger); border-radius: var(--radius-sharp);
-  .error-text { font-size: 24rpx; color: var(--danger); }
-  .error-retry { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16rpx 32rpx 0;
+  padding: 16rpx 24rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--danger);
+  border-radius: var(--radius-sharp);
+  .error-text {
+    font-size: 24rpx;
+    color: var(--danger);
+  }
+  .error-retry {
+    font-size: 24rpx;
+    font-weight: var(--fw-title);
+    color: var(--accent);
+  }
+}
+
+.page-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: calc(120rpx + constant(safe-area-inset-bottom));
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  z-index: 90;
+  padding: 20rpx 36rpx;
+  background: var(--accent);
+  border-radius: var(--radius-sharp);
+  box-shadow: 0 6rpx 0 rgba(0, 0, 0, 0.55);
+}
+.page-fab-label {
+  font-size: 28rpx;
+  font-weight: var(--fw-title);
+  color: #0d110e;
 }
 </style>

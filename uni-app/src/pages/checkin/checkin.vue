@@ -118,7 +118,13 @@ const week = computed<WeekCell[]>(() => {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(mondayMs + i * 86400000)
     const ds = ymd(d)
-    return { ds, label: String(d.getUTCDate()), signed: signed.has(ds), today: ds === todayStr, bonus: i === 6 }
+    return {
+      ds,
+      label: String(d.getUTCDate()),
+      signed: signed.has(ds),
+      today: ds === todayStr,
+      bonus: i === 6
+    }
   })
 })
 
@@ -260,8 +266,13 @@ onMounted(() => {
   letter-spacing: 4rpx;
 }
 @keyframes ck-pulse {
-  0%, 100% { border-color: var(--accent-dim); }
-  50% { border-color: var(--border); }
+  0%,
+  100% {
+    border-color: var(--accent-dim);
+  }
+  50% {
+    border-color: var(--border);
+  }
 }
 .ck-cta {
   font-size: 26rpx;
@@ -313,7 +324,7 @@ onMounted(() => {
   border-color: var(--accent);
 }
 .ck-day-on .ck-day-num {
-  color: #0D110E;
+  color: #0d110e;
 }
 .ck-day-today {
   border-color: var(--accent);

@@ -66,7 +66,9 @@
             <view class="mini-meta">
               <text class="mini-kind">{{ kindLabel(p.kind) }}</text>
               <text v-if="p.resolved" class="mini-resolved">已解决</text>
-              <text class="mini-stat tabular-nums">{{ p.likeCount ?? 0 }} 赞 · {{ p.commentCount ?? 0 }} 回应</text>
+              <text class="mini-stat tabular-nums"
+                >{{ p.likeCount ?? 0 }} 赞 · {{ p.commentCount ?? 0 }} 回应</text
+              >
               <text class="mini-time tabular-nums">{{ fmtTime(p.createdAt) }}</text>
             </view>
           </view>
@@ -100,8 +102,8 @@ const rawProfile = ref<any>(null)
 const userStore = useUserStore()
 
 const queryUserId = ref('') // 路由带来的他人 id（空 = 看自己）
-const viewingId = ref('')   // 实际请求的 userId
-const myId = ref('')        // 当前登录用户 _id（用于推断 isSelf）
+const viewingId = ref('') // 实际请求的 userId
+const myId = ref('') // 当前登录用户 _id（用于推断 isSelf）
 
 const loading = ref(true)
 const loadingMore = ref(false)
@@ -128,7 +130,13 @@ const stats = computed<{ label: string; value: number }[]>(() => {
 })
 
 function kindLabel(kind: string): string {
-  const map: Record<string, string> = { post: '信息', task: '任务', lost: '失物', found: '招领', confession: '表白' }
+  const map: Record<string, string> = {
+    post: '信息',
+    task: '任务',
+    lost: '失物',
+    found: '招领',
+    confession: '表白'
+  }
   return map[kind] || '信息'
 }
 
@@ -265,61 +273,165 @@ onLoad((q) => {
 </script>
 
 <style lang="scss" scoped>
-.profile-root { padding: 24rpx 32rpx 80rpx; }
+.profile-root {
+  padding: 24rpx 32rpx 80rpx;
+}
 
-.state-block { padding: 140rpx 32rpx; text-align: center; }
-.state-text { display: block; font-size: 24rpx; color: var(--text-secondary); letter-spacing: 2rpx; }
-.state-err { color: var(--danger); }
+.state-block {
+  padding: 140rpx 32rpx;
+  text-align: center;
+}
+.state-text {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  letter-spacing: 2rpx;
+}
+.state-err {
+  color: var(--danger);
+}
 .state-retry {
-  display: inline-block; margin-top: 28rpx; padding: 12rpx 36rpx;
-  font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent);
-  border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: inline-block;
+  margin-top: 28rpx;
+  padding: 12rpx 36rpx;
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  color: var(--accent);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
 
 .profile-head {
-  display: flex; gap: 24rpx; padding: 28rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: flex;
+  gap: 24rpx;
+  padding: 28rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
 .avatar {
-  width: 120rpx; height: 120rpx; border-radius: var(--radius-sharp); flex-shrink: 0;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: var(--radius-sharp);
+  flex-shrink: 0;
   &--ph {
-    background: var(--accent-dim); clip-path: var(--clip-diamond); opacity: 0.3;
-    display: flex; align-items: center; justify-content: center;
+    background: var(--accent-dim);
+    clip-path: var(--clip-diamond);
+    opacity: 0.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  &--ph-text { font-size: 40rpx; font-weight: var(--fw-title); color: var(--text-primary); }
+  &--ph-text {
+    font-size: 40rpx;
+    font-weight: var(--fw-title);
+    color: var(--text-primary);
+  }
 }
-.head-body { flex: 1; min-width: 0; }
-.head-top { display: flex; align-items: center; gap: 16rpx; }
-.nickname { font-size: 32rpx; color: var(--text-primary); }
+.head-body {
+  flex: 1;
+  min-width: 0;
+}
+.head-top {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.nickname {
+  font-size: 32rpx;
+  color: var(--text-primary);
+}
 .head-btn {
-  padding: 6rpx 20rpx; font-size: 22rpx; font-weight: var(--fw-title);
-  color: var(--accent); background: var(--bg-elevated);
+  padding: 6rpx 20rpx;
+  font-size: 22rpx;
+  font-weight: var(--fw-title);
+  color: var(--accent);
+  background: var(--bg-elevated);
   margin-left: auto;
-  &.following { color: var(--text-tertiary); background: var(--bg-card); border-width: 3rpx; }
-  &.busy { opacity: 0.6; }
+  &.following {
+    color: var(--text-tertiary);
+    background: var(--bg-card);
+    border-width: 3rpx;
+  }
+  &.busy {
+    opacity: 0.6;
+  }
 }
-.bio { display: block; font-size: 24rpx; color: var(--text-secondary); margin-top: 12rpx; }
-.meta { display: block; font-size: 22rpx; color: var(--text-tertiary); margin-top: 8rpx; }
-.tags { display: flex; gap: 12rpx; flex-wrap: wrap; margin-top: 12rpx; }
-.tag { padding: 4rpx 14rpx; font-size: 20rpx; color: var(--accent); background: var(--bg-elevated); }
+.bio {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  margin-top: 12rpx;
+}
+.meta {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+.tags {
+  display: flex;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  margin-top: 12rpx;
+}
+.tag {
+  padding: 4rpx 14rpx;
+  font-size: 20rpx;
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
 
 .stat-row {
-  display: flex; justify-content: space-around; padding: 20rpx; margin: 20rpx 0;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+  margin: 20rpx 0;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.stat-item { display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
-.stat-num { font-size: 36rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-.stat-label { font-size: 22rpx; color: var(--text-tertiary); }
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+.stat-num {
+  font-size: 36rpx;
+  font-weight: var(--fw-title);
+  color: var(--text-primary);
+}
+.stat-label {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
 
-.section { margin-top: 8rpx; }
-.section-title { display: block; font-size: 30rpx; color: var(--text-primary); margin: 20rpx 0; }
+.section {
+  margin-top: 8rpx;
+}
+.section-title {
+  display: block;
+  font-size: 30rpx;
+  color: var(--text-primary);
+  margin: 20rpx 0;
+}
 .mini-card {
-  display: flex; align-items: center; gap: 16rpx;
-  padding: 20rpx; margin-bottom: 16rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
 .mini-thumb {
-  width: 96rpx; height: 96rpx; flex-shrink: 0; border-radius: var(--radius-sharp); background: var(--bg-elevated);
+  width: 96rpx;
+  height: 96rpx;
+  flex-shrink: 0;
+  border-radius: var(--radius-sharp);
+  background: var(--bg-elevated);
   &--ph {
     background: var(--bg-elevated);
     border: 2rpx solid var(--border);
@@ -327,19 +439,49 @@ onLoad((q) => {
     opacity: 0.5;
   }
 }
-.mini-body { flex: 1; min-width: 0; }
-.mini-title {
-  display: block; font-size: 26rpx; color: var(--text-primary);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.mini-body {
+  flex: 1;
+  min-width: 0;
 }
-.mini-meta { display: flex; align-items: center; gap: 12rpx; margin-top: 8rpx; }
-.mini-kind { font-size: 20rpx; color: var(--accent); }
-.mini-resolved { font-size: 20rpx; color: var(--secondary); }
-.mini-stat { font-size: 20rpx; color: var(--text-tertiary); }
-.mini-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
+.mini-title {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mini-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+.mini-kind {
+  font-size: 20rpx;
+  color: var(--accent);
+}
+.mini-resolved {
+  font-size: 20rpx;
+  color: var(--secondary);
+}
+.mini-stat {
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+}
+.mini-time {
+  margin-left: auto;
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+}
 .load-more {
-  margin-top: 8rpx; padding: 20rpx; text-align: center; font-size: 24rpx;
-  color: var(--text-secondary); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  margin-top: 8rpx;
+  padding: 20rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
   background: var(--bg-card);
 }
 </style>

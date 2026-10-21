@@ -36,5 +36,21 @@ module.exports = wrap(async (event) => {
     }
   }
 
-  return ok({ post, isLiked, isCollected })
+  return ok({ post: maskAnonymous(post), isLiked, isCollected })
 })
+
+/**
+ * 匿名帖脱敏。
+ *
+ * 背景：post-create 落库时 userId 永远是真实用户，isAnonymous 只替换了显示昵称。
+ * 直接在详情/列表返回原文档，等于把「匿名」的真实身份随 userId 一起下发 ——
+ * 任何登录用户拿 userId 调 user-profile 就能反查作者，匿名机制形同虚设。
+ *
+ * 手机号、openid 这类字段本就不该出现在帖子文档里，这里一并兜底剔除。
+ */
+function maskAnonymous(post) {
+  if (!post || !post.isAnonymous) return post
+  const { userId: _userId, userAvatar: _avatar, ...safe } = post
+  // 详情页需要「是否自己的帖子」来显示编辑入口：用另一个不暴露身份的布尔代替 userId
+  return { ...safe, userId: '', isMine: false }
+}

@@ -7,8 +7,12 @@
         <text class="adm-sub">举报 / 用户 / 认证 / 反馈 / 日志</text>
       </view>
       <view class="adm-links">
-        <button class="btn-ghost adm-link press" @click="go('/pages/admin/announcements')">公告</button>
-        <button class="btn-ghost adm-link press" @click="go('/pages/admin/categories')">类目</button>
+        <button class="btn-ghost adm-link press" @click="go('/pages/admin/announcements')">
+          公告
+        </button>
+        <button class="btn-ghost adm-link press" @click="go('/pages/admin/categories')">
+          类目
+        </button>
       </view>
     </view>
 
@@ -105,7 +109,13 @@
           </text>
           <view class="card-actions">
             <button class="act act-accent press" @click.stop="goUser(u)">主页</button>
-            <button v-if="u.verifyStatus !== 'banned'" class="act act-danger press" @click.stop="onBan(u)">封禁</button>
+            <button
+              v-if="u.verifyStatus !== 'banned'"
+              class="act act-danger press"
+              @click.stop="onBan(u)"
+            >
+              封禁
+            </button>
             <button v-else class="act act-ok press" @click.stop="onUnban(u)">解封</button>
           </view>
         </view>
@@ -115,8 +125,12 @@
       <view v-if="!error && tab === 'list-verifies'" class="adm-list">
         <view v-for="v in list" :key="v._id" class="card">
           <view class="card-head">
-            <text class="card-title title-900">{{ v.school || '未知学校' }} · {{ v.studentId || '-' }}</text>
-            <text class="badge" :class="verifyBadgeClass(v.status)">{{ verifyLabel(v.status) }}</text>
+            <text class="card-title title-900"
+              >{{ v.school || '未知学校' }} · {{ v.studentId || '-' }}</text
+            >
+            <text class="badge" :class="verifyBadgeClass(v.status)">{{
+              verifyLabel(v.status)
+            }}</text>
           </view>
           <image
             v-if="v._img"
@@ -126,10 +140,14 @@
             @click.stop="preview(v._img)"
           />
           <text v-else class="card-meta">证件图加载中或缺失</text>
-          <text v-if="v.status === 'rejected'" class="card-reply">驳回理由：{{ v.rejectReason || '-' }}</text>
+          <text v-if="v.status === 'rejected'" class="card-reply"
+            >驳回理由：{{ v.rejectReason || '-' }}</text
+          >
           <view v-if="v.status === 'pending'" class="card-actions">
             <button class="act act-ok press" @click.stop="onVerifyReview(v, true)">通过</button>
-            <button class="act act-danger press" @click.stop="onVerifyReview(v, false)">驳回</button>
+            <button class="act act-danger press" @click.stop="onVerifyReview(v, false)">
+              驳回
+            </button>
           </view>
         </view>
       </view>
@@ -143,7 +161,9 @@
           </view>
           <text class="card-body-text">{{ f.content }}</text>
           <text v-if="f.contact" class="card-meta">联系方式：{{ f.contact }}</text>
-          <text v-if="f.status === 'resolved'" class="card-reply">已回复：{{ f.adminReply || '-' }}</text>
+          <text v-if="f.status === 'resolved'" class="card-reply"
+            >已回复：{{ f.adminReply || '-' }}</text
+          >
           <view v-if="f.status !== 'resolved'" class="card-actions">
             <button class="act act-ok press" @click.stop="onResolveFeedback(f)">回复并处理</button>
           </view>
@@ -158,6 +178,30 @@
             <text class="time tabular-nums">{{ fmt(l.createdAt) }}</text>
           </view>
           <text class="card-meta">{{ logDetail(l) }}</text>
+        </view>
+      </view>
+
+      <!-- ⑥ 内容运营：pin/unpin/essence/unessence/delete
+           后端这 5 个动作早就实现了，但一直没有前端入口，加精数据写了没人能看见 -->
+      <view v-if="!error && tab === 'list-posts'" class="adm-list">
+        <view v-for="p in list" :key="p._id" class="card">
+          <view class="card-head">
+            <text class="badge">{{ p.isPinned ? '置顶' : p.isEssence ? '精华' : '普通' }}</text>
+            <text class="time tabular-nums">{{ fmt(p.createdAt) }}</text>
+          </view>
+          <text class="card-title">{{ p.title || p.content }}</text>
+          <text class="card-meta"
+            >{{ p.userNickname }} · 赞 {{ p.likeCount || 0 }} · 评 {{ p.commentCount || 0 }}</text
+          >
+          <view class="act-row">
+            <button class="act" @click.stop="onPin(p)">
+              {{ p.isPinned ? '取消置顶' : '置顶' }}
+            </button>
+            <button class="act" @click.stop="onEssence(p)">
+              {{ p.isEssence ? '取消精华' : '加精' }}
+            </button>
+            <button class="act act-danger" @click.stop="onDeleteContent(p)">删除</button>
+          </view>
         </view>
       </view>
 
@@ -208,6 +252,7 @@ const tabs = [
   { label: '用户', value: 'list-users' },
   { label: '认证', value: 'list-verifies' },
   { label: '反馈', value: 'list-feedbacks' },
+  { label: '内容', value: 'list-posts' },
   { label: '日志', value: 'list-logs' }
 ]
 const tab = ref('list-reports')
@@ -267,7 +312,17 @@ async function queryList(page: number, size: number) {
     if (tab.value === 'list-users' && kw) payload.keyword = kw.slice(0, 20)
     if (tab.value === 'list-verifies') payload.status = verifyStatus.value
     const res: any = await callFunction('admin', payload)
-    const rows: any[] = res?.list ?? []
+    let rows: any[] = res?.list ?? []
+    // 内容运营 Tab 用普通 post-list 拉数据（admin 云函数没有列表动作），
+    // 拿到后再用 admin 的 pin/essence/delete 操作。
+    if (tab.value === 'list-posts') {
+      const pr: any = await callFunction('post-list', {
+        tab: 'latest',
+        page,
+        pageSize: size
+      })
+      rows = pr?.list ?? []
+    }
     // 认证证件图：cloud:// fileID 异步转临时 URL（失败静默，行内显示占位文案）
     if (tab.value === 'list-verifies') {
       for (const row of rows) {
@@ -332,6 +387,43 @@ function removeRow(id: string) {
   list.value = list.value.filter((x: any) => x._id !== id && x.reportId !== id)
 }
 
+// ---- 内容运营（pin / essence / delete）----
+
+async function onPin(p: any, prevTab?: string) {
+  void prevTab
+  const action = p.isPinned ? 'unpin' : 'pin'
+  try {
+    await callFunction('admin', { action, postId: p._id })
+    p.isPinned = !p.isPinned
+    uni.showToast({ title: p.isPinned ? '已置顶' : '已取消置顶', icon: 'none' })
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
+  }
+}
+
+async function onEssence(p: any) {
+  const action = p.isEssence ? 'unessence' : 'essence'
+  try {
+    await callFunction('admin', { action, postId: p._id })
+    p.isEssence = !p.isEssence
+    uni.showToast({ title: p.isEssence ? '已加精' : '已取消精华', icon: 'none' })
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
+  }
+}
+
+async function onDeleteContent(p: any) {
+  const ok = await confirmModal('删除内容', '删除后用户在信息流中不可见，确定继续？', '删除')
+  if (!ok) return
+  try {
+    await callFunction('admin', { action: 'delete', targetType: 'post', targetId: p._id })
+    removeRow(p._id)
+    uni.showToast({ title: '已删除', icon: 'success' })
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '删除失败', icon: 'none' })
+  }
+}
+
 // ---- 展示映射 ----
 
 function typeLabel(t: string): string {
@@ -391,9 +483,17 @@ function goTarget(r: any) {
 }
 
 async function onDeleteTarget(r: any) {
-  if (!(await confirmModal('删除内容', `确定删除被举报的${typeLabel(r.targetType)}？删除后不可恢复。`, '删除'))) return
+  if (
+    !(await confirmModal(
+      '删除内容',
+      `确定删除被举报的${typeLabel(r.targetType)}？删除后不可恢复。`,
+      '删除'
+    ))
+  )
+    return
   await run(
-    () => callFunction('admin', { action: 'delete', targetType: r.targetType, targetId: r.targetId }),
+    () =>
+      callFunction('admin', { action: 'delete', targetType: r.targetType, targetId: r.targetId }),
     '已删除'
   )
   removeRow(r.reportId)
@@ -412,7 +512,14 @@ function goUser(u: any) {
 }
 
 async function onBan(u: any) {
-  if (!(await confirmModal('封禁用户', `确定封禁「${u.nickname || u._id}」？封禁后无法发帖/交易。`, '封禁'))) return
+  if (
+    !(await confirmModal(
+      '封禁用户',
+      `确定封禁「${u.nickname || u._id}」？封禁后无法发帖/交易。`,
+      '封禁'
+    ))
+  )
+    return
   await run(() => callFunction('admin', { action: 'ban', targetUserId: u._id }), '已封禁')
   removeRow(u._id)
 }
@@ -450,7 +557,12 @@ async function onResolveFeedback(f: any) {
   const reply = await promptModal('回复反馈', '管理回复（选填，≤500 字，展示给用户）')
   if (reply === null) return
   await run(
-    () => callFunction('admin', { action: 'resolve-feedback', feedbackId: f._id, reply: reply.slice(0, 500) }),
+    () =>
+      callFunction('admin', {
+        action: 'resolve-feedback',
+        feedbackId: f._id,
+        reply: reply.slice(0, 500)
+      }),
     '已处理'
   )
   removeRow(f._id)
@@ -488,81 +600,245 @@ async function onResolveFeedback(f: any) {
   justify-content: space-between;
   padding: 28rpx 32rpx 20rpx;
 }
-.adm-heading { display: flex; flex-direction: column; gap: 8rpx; }
-.adm-kicker { font-size: 20rpx; letter-spacing: 4rpx; color: var(--text-secondary); font-weight: var(--fw-title); }
-.adm-sub { font-size: 24rpx; color: var(--text-tertiary); }
-.adm-links { display: flex; gap: 12rpx; }
-.adm-link { font-size: 22rpx; height: 56rpx; line-height: 56rpx; padding: 0 24rpx; margin: 0; }
+.adm-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.adm-kicker {
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+  color: var(--text-secondary);
+  font-weight: var(--fw-title);
+}
+.adm-sub {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+.adm-links {
+  display: flex;
+  gap: 12rpx;
+}
+.adm-link {
+  font-size: 22rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 24rpx;
+  margin: 0;
+}
 
 /* Tab（my-list 模式） */
-.tab-row { display: flex; padding: 0 32rpx 16rpx; gap: 16rpx; }
+.tab-row {
+  display: flex;
+  padding: 0 32rpx 16rpx;
+  gap: 16rpx;
+}
 .adm-tab {
-  flex-shrink: 0; padding: 10rpx 30rpx; font-size: 26rpx; color: var(--text-secondary);
-  background: var(--bg-card); border: 1rpx solid var(--border);
-  &.active { color: #0d110e; background: var(--accent); font-weight: var(--fw-title); }
+  flex-shrink: 0;
+  padding: 10rpx 30rpx;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  &.active {
+    color: #0d110e;
+    background: var(--accent);
+    font-weight: var(--fw-title);
+  }
 }
 
 /* 搜索 / 筛选 */
-.adm-search { display: flex; gap: 12rpx; padding: 0 32rpx 16rpx; }
-.adm-input {
-  flex: 1; height: 64rpx; background: var(--bg-card); border: 1rpx solid var(--border);
-  border-radius: var(--radius-sharp); padding: 0 20rpx; font-size: 26rpx; color: var(--text-body);
+.adm-search {
+  display: flex;
+  gap: 12rpx;
+  padding: 0 32rpx 16rpx;
 }
-.adm-search-btn { font-size: 24rpx; height: 64rpx; line-height: 64rpx; padding: 0 28rpx; margin: 0; }
+.adm-input {
+  flex: 1;
+  height: 64rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  padding: 0 20rpx;
+  font-size: 26rpx;
+  color: var(--text-body);
+}
+.adm-search-btn {
+  font-size: 24rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 28rpx;
+  margin: 0;
+}
 
-.seg-row { display: flex; padding: 0 32rpx 16rpx; gap: 12rpx; }
+.seg-row {
+  display: flex;
+  padding: 0 32rpx 16rpx;
+  gap: 12rpx;
+}
 .seg {
-  padding: 8rpx 24rpx; font-size: 24rpx; color: var(--text-secondary);
-  background: var(--bg-card); border: 1rpx solid var(--border);
-  &.active { color: #0d110e; background: var(--accent); font-weight: var(--fw-title); }
+  padding: 8rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  &.active {
+    color: #0d110e;
+    background: var(--accent);
+    font-weight: var(--fw-title);
+  }
 }
 
 /* 列表卡片 */
-.adm-list { padding: 0 24rpx 40rpx; }
+.adm-list {
+  padding: 0 24rpx 40rpx;
+}
 .card {
-  background: var(--bg-card); border: 1rpx solid var(--border);
-  border-radius: var(--radius-sharp); padding: 24rpx; margin-bottom: 20rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
 }
-.log-card { opacity: 0.9; }
-.card-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 8rpx; }
+.log-card {
+  opacity: 0.9;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
 .card-title {
-  font-size: 28rpx; color: var(--text-primary); flex: 1; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.card-reason, .card-desc, .card-snippet, .card-meta, .card-body-text {
-  display: block; font-size: 24rpx; color: var(--text-secondary); line-height: 1.6; margin-top: 6rpx;
+.card-reason,
+.card-desc,
+.card-snippet,
+.card-meta,
+.card-body-text {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-top: 6rpx;
 }
-.card-snippet { color: var(--text-tertiary); }
-.card-reply { display: block; margin-top: 10rpx; font-size: 24rpx; color: var(--secondary); line-height: 1.6; }
-.time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); flex-shrink: 0; }
+.card-snippet {
+  color: var(--text-tertiary);
+}
+.card-reply {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--secondary);
+  line-height: 1.6;
+}
+.time {
+  margin-left: auto;
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
 
 /* 徽标 */
 .badge {
-  font-size: 18rpx; padding: 4rpx 12rpx; font-weight: var(--fw-title);
-  letter-spacing: 2rpx; background: var(--bg-elevated); color: var(--text-secondary); flex-shrink: 0;
+  font-size: 18rpx;
+  padding: 4rpx 12rpx;
+  font-weight: var(--fw-title);
+  letter-spacing: 2rpx;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  flex-shrink: 0;
 }
-.badge-danger { color: var(--danger); background: var(--bg-elevated); }
-.badge-ok { color: var(--success); background: var(--bg-elevated); }
-.badge-pin { color: #0d110e; background: var(--accent); }
+.badge-danger {
+  color: var(--danger);
+  background: var(--bg-elevated);
+}
+.badge-ok {
+  color: var(--success);
+  background: var(--bg-elevated);
+}
+.badge-pin {
+  color: #0d110e;
+  background: var(--accent);
+}
 
 /* 操作按钮 */
-.card-actions { display: flex; justify-content: flex-end; gap: 16rpx; margin-top: 16rpx; }
-.act { font-size: 22rpx; height: 56rpx; line-height: 56rpx; padding: 0 24rpx; margin: 0; border-radius: var(--radius-sharp); }
-.act-ghost { background: transparent; color: var(--text-body); border: 2rpx solid var(--border); }
-.act-danger { background: var(--danger); color: #14100e; border: none; font-weight: var(--fw-title); }
-.act-ok { background: var(--accent); color: #0d110e; border: none; font-weight: var(--fw-title); }
-.act-accent { background: transparent; color: var(--accent); border: 2rpx solid var(--accent-dim); }
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+/* 内容运营行：与 card-actions 同构，保留独立类名以便后续单独调布局 */
+.act-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  flex-wrap: wrap;
+}
+.act {
+  font-size: 22rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 24rpx;
+  margin: 0;
+  border-radius: var(--radius-sharp);
+}
+.act-ghost {
+  background: transparent;
+  color: var(--text-body);
+  border: 2rpx solid var(--border);
+}
+.act-danger {
+  background: var(--danger);
+  color: #14100e;
+  border: none;
+  font-weight: var(--fw-title);
+}
+.act-ok {
+  background: var(--accent);
+  color: #0d110e;
+  border: none;
+  font-weight: var(--fw-title);
+}
+.act-accent {
+  background: transparent;
+  color: var(--accent);
+  border: 2rpx solid var(--accent-dim);
+}
 
 .verify-img {
-  width: 320rpx; height: 220rpx; border-radius: var(--radius-sharp);
-  border: 1rpx solid var(--border); margin-top: 12rpx; background: var(--bg-deep);
+  width: 320rpx;
+  height: 220rpx;
+  border-radius: var(--radius-sharp);
+  border: 1rpx solid var(--border);
+  margin-top: 12rpx;
+  background: var(--bg-deep);
 }
 
 /* 状态 */
-.adm-state { padding: 60rpx 32rpx; text-align: center; }
+.adm-state {
+  padding: 60rpx 32rpx;
+  text-align: center;
+}
 .adm-retry {
-  margin: 20rpx auto 0; background: var(--bg-elevated); color: var(--text-body);
-  font-size: 24rpx; font-weight: var(--fw-title); border: 2rpx solid var(--border);
-  padding: 0 40rpx; height: 64rpx; line-height: 64rpx; border-radius: var(--radius-sharp);
+  margin: 20rpx auto 0;
+  background: var(--bg-elevated);
+  color: var(--text-body);
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  border: 2rpx solid var(--border);
+  padding: 0 40rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border-radius: var(--radius-sharp);
 }
 </style>

@@ -30,7 +30,14 @@
 
     <!-- 树（cat-node 递归渲染） -->
     <view v-else class="cat-tree sticker">
-      <cat-node :node="root" @add="onAdd" @edit="onEdit" @del="onDel" v-for="root in tree" :key="root._id" />
+      <cat-node
+        :node="root"
+        @add="onAdd"
+        @edit="onEdit"
+        @del="onDel"
+        v-for="root in tree"
+        :key="root._id"
+      />
     </view>
 
     <!-- 新建根分类 -->
@@ -42,7 +49,12 @@
         <text class="editor-title title-900">{{ editId ? '编辑分类' : '新建分类' }}</text>
 
         <text class="editor-label">名称</text>
-        <input v-model="editor.name" class="cat-input" :maxlength="30" placeholder="分类名称（30 字内）" />
+        <input
+          v-model="editor.name"
+          class="cat-input"
+          :maxlength="30"
+          placeholder="分类名称（30 字内）"
+        />
 
         <text class="editor-label">Emoji（选填）</text>
         <input v-model="editor.emoji" class="cat-input" :maxlength="4" placeholder="如 🎓" />
@@ -63,7 +75,9 @@
         <text class="editor-label">排序（数字越小越靠前）</text>
         <input v-model="editor.order" class="cat-input" type="number" placeholder="默认 99" />
 
-        <text v-if="editParentName" class="editor-hint">父级：{{ editParentName }}（层级自动继承）</text>
+        <text v-if="editParentName" class="editor-hint"
+          >父级：{{ editParentName }}（层级自动继承）</text
+        >
 
         <view class="editor-foot">
           <button class="btn-ghost editor-cancel press" @click="closeEditor">取消</button>
@@ -255,54 +269,145 @@ async function onDel(node: any) {
   justify-content: space-between;
   padding: 28rpx 32rpx 20rpx;
 }
-.cat-heading { display: flex; flex-direction: column; gap: 8rpx; }
-.cat-kicker { font-size: 20rpx; letter-spacing: 4rpx; color: var(--text-secondary); font-weight: var(--fw-title); }
-.cat-sub { font-size: 24rpx; color: var(--text-tertiary); }
-.cat-refresh { font-size: 22rpx; height: 56rpx; line-height: 56rpx; padding: 0 24rpx; margin: 0; }
+.cat-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.cat-kicker {
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+  color: var(--text-secondary);
+  font-weight: var(--fw-title);
+}
+.cat-sub {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+.cat-refresh {
+  font-size: 22rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 24rpx;
+  margin: 0;
+}
 
 /* 树容器 */
 .cat-tree {
-  margin: 0 32rpx 24rpx; padding: 8rpx 20rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  margin: 0 32rpx 24rpx;
+  padding: 8rpx 20rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
 
 /* 新建按钮 */
 .cat-new {
-  display: block; margin: 0 32rpx; height: 80rpx; line-height: 80rpx; font-size: 28rpx;
+  display: block;
+  margin: 0 32rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
 }
 
 /* 状态 */
-.cat-state { padding: 60rpx 32rpx; text-align: center; }
-.cat-loading { font-size: 24rpx; color: var(--text-tertiary); }
+.cat-state {
+  padding: 60rpx 32rpx;
+  text-align: center;
+}
+.cat-loading {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
 .cat-retry {
-  margin: 20rpx auto 0; background: var(--bg-elevated); color: var(--text-body);
-  font-size: 24rpx; font-weight: var(--fw-title); border: 2rpx solid var(--border);
-  padding: 0 40rpx; height: 64rpx; line-height: 64rpx; border-radius: var(--radius-sharp);
+  margin: 20rpx auto 0;
+  background: var(--bg-elevated);
+  color: var(--text-body);
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  border: 2rpx solid var(--border);
+  padding: 0 40rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border-radius: var(--radius-sharp);
 }
 
 /* 编辑弹层 */
 .mask {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 999;
-  display: flex; align-items: center; justify-content: center; padding: 32rpx;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
 }
 .editor {
-  width: 100%; max-width: 640rpx; max-height: 80vh; overflow-y: auto;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
-  padding: 32rpx; display: flex; flex-direction: column; gap: 12rpx;
+  width: 100%;
+  max-width: 640rpx;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
 }
-.editor-title { font-size: 30rpx; color: var(--text-primary); margin-bottom: 8rpx; }
-.editor-label { font-size: 22rpx; color: var(--text-tertiary); margin-top: 8rpx; }
-.editor-hint { font-size: 22rpx; color: var(--accent); margin-top: 8rpx; }
+.editor-title {
+  font-size: 30rpx;
+  color: var(--text-primary);
+  margin-bottom: 8rpx;
+}
+.editor-label {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+.editor-hint {
+  font-size: 22rpx;
+  color: var(--accent);
+  margin-top: 8rpx;
+}
 .cat-input {
-  height: 72rpx; padding: 0 20rpx; font-size: 26rpx; color: var(--text-body);
-  background: var(--bg-deep); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  height: 72rpx;
+  padding: 0 20rpx;
+  font-size: 26rpx;
+  color: var(--text-body);
+  background: var(--bg-deep);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.kind-row { display: flex; gap: 12rpx; }
+.kind-row {
+  display: flex;
+  gap: 12rpx;
+}
 .kind-seg {
-  padding: 8rpx 24rpx; font-size: 24rpx; color: var(--text-secondary);
-  background: var(--bg-deep); border: 1rpx solid var(--border);
-  &.active { color: #0d110e; background: var(--accent); font-weight: var(--fw-title); }
+  padding: 8rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  background: var(--bg-deep);
+  border: 1rpx solid var(--border);
+  &.active {
+    color: #0d110e;
+    background: var(--accent);
+    font-weight: var(--fw-title);
+  }
 }
-.editor-foot { display: flex; justify-content: flex-end; gap: 16rpx; margin-top: 16rpx; }
-.editor-cancel, .editor-save { font-size: 26rpx; height: 68rpx; line-height: 68rpx; padding: 0 36rpx; margin: 0; }
+.editor-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+.editor-cancel,
+.editor-save {
+  font-size: 26rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0 36rpx;
+  margin: 0;
+}
 </style>

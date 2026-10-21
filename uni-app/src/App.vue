@@ -68,28 +68,43 @@ onHide(() => {})
 @import '@/styles/global.scss';
 
 .app-boot {
-  position: fixed; inset: 0; z-index: 99999;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-page);
   gap: var(--sp-4);
 }
 .app-boot-title {
-  font-size: 48rpx; font-weight: var(--fw-title);
-  letter-spacing: 8rpx; color: var(--accent);
+  font-size: 48rpx;
+  font-weight: var(--fw-title);
+  letter-spacing: 8rpx;
+  color: var(--accent);
 }
 .app-boot-bar {
-  width: 200rpx; height: 4rpx;
-  background: var(--bg-elevated); border-radius: 2rpx;
+  width: 200rpx;
+  height: 4rpx;
+  background: var(--bg-elevated);
+  border-radius: 2rpx;
   overflow: hidden;
 }
 .app-boot-bar-fill {
-  height: 100%; background: var(--accent);
+  height: 100%;
+  background: var(--accent);
   animation: boot-progress 1.5s var(--ease-snap) infinite;
 }
 @keyframes boot-progress {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
 }
 </style>

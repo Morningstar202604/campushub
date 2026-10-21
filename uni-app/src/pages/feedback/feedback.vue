@@ -10,8 +10,8 @@
       <view
         v-for="t in TYPES"
         :key="t.value"
-      class="fb-type"
-      :class="{ 'fb-type-on': form.type === t.value, 'press': true }"
+        class="fb-type"
+        :class="{ 'fb-type-on': form.type === t.value, press: true }"
         @click="form.type = t.value"
       >
         <text class="fb-type-label">{{ t.label }}</text>

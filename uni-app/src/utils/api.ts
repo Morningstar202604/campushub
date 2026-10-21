@@ -93,7 +93,16 @@ export class CloudFunctionError extends Error {
 function raceWithTimeout<T>(promise: Promise<T>, ms = 15000, label = ''): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new CloudFunctionError(`${label} 请求超时`, 'TIMEOUT')), ms)
-    promise.then(v => { clearTimeout(t); resolve(v) }, e => { clearTimeout(t); reject(e) })
+    promise.then(
+      (v) => {
+        clearTimeout(t)
+        resolve(v)
+      },
+      (e) => {
+        clearTimeout(t)
+        reject(e)
+      }
+    )
   })
 }
 
@@ -147,7 +156,11 @@ function callViaWxCloud(name: string, data: Record<string, any>, logical?: strin
  * H5 / App 端：CloudBase 云函数 HTTP 访问服务（REST）
  * 端点：https://{envId}.api.tcloudbasegateway.com/v1/functions/{name}?webfn=true
  */
-async function callViaRest(name: string, data: Record<string, any>, logical?: string): Promise<any> {
+async function callViaRest(
+  name: string,
+  data: Record<string, any>,
+  logical?: string
+): Promise<any> {
   const label = logical || name
   const schoolStore = useSchoolStore()
   const { envId } = schoolStore
@@ -164,9 +177,7 @@ async function callViaRest(name: string, data: Record<string, any>, logical?: st
 
   // 超时保护：REST 一旦挂起会永久阻塞首屏，必须 AbortController 兜底
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
-  const timer = controller
-    ? setTimeout(() => controller.abort(), REST_TIMEOUT_MS)
-    : null
+  const timer = controller ? setTimeout(() => controller.abort(), REST_TIMEOUT_MS) : null
 
   let resp: Response
   try {
@@ -219,10 +230,7 @@ async function callViaRest(name: string, data: Record<string, any>, logical?: st
  * 统一入口。三端同一调用契约：
  *   const res = await callFunction<{ list: Post[]; hasMore: boolean }>('post-list', { page: 1 })
  */
-export function callFunction<T = any>(
-  name: string,
-  data: Record<string, any> = {}
-): Promise<T> {
+export function callFunction<T = any>(name: string, data: Record<string, any> = {}): Promise<T> {
   // fnName 注入防护（两层）：
   //  ① 字符集校验，避免非法名字进 REST URL；
   //  ② 白名单校验 —— 只允许 gateway-routes.json 里登记过的入口。
@@ -287,7 +295,9 @@ async function ensureCloudbase(): Promise<any> {
     const schoolStore = useSchoolStore()
     if (!schoolStore.envId) {
       // 明确的配置缺失错误（init({ env: '' }) 会在 SDK 内部抛出难懂的错）
-      throw new Error('未配置 envId，无法初始化 CloudBase 存储。请编辑 src/config/school.config.js 填入')
+      throw new Error(
+        '未配置 envId，无法初始化 CloudBase 存储。请编辑 src/config/school.config.js 填入'
+      )
     }
     const app = sdk.init({ env: schoolStore.envId })
     // 云存储默认仅「已登录」用户可写（官方文档）：尝试匿名登录；
@@ -441,7 +451,9 @@ export async function compressBlobForAudit(blob: Blob): Promise<Blob> {
       const ctx: any = canvas.getContext('2d')
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      const next: Blob | null = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality))
+      const next: Blob | null = await new Promise((res) =>
+        canvas.toBlob(res, 'image/jpeg', quality)
+      )
       if (!next) break
       out = next
       if (out.size <= IMAGE_AUDIT_MAX_BYTES) return out
@@ -519,7 +531,9 @@ export async function uploadImage(localPath: string, cloudDir = 'campushub'): Pr
       const compressible = /\.(jpe?g|png)$/i.test(localPath)
       if (size && size > IMAGE_AUDIT_MAX_BYTES) {
         if (!compressible) {
-          reject(new Error(`图片过大（${mb(size)}MB）且该格式不支持压缩，请改用 JPG/PNG 或先缩小尺寸`))
+          reject(
+            new Error(`图片过大（${mb(size)}MB）且该格式不支持压缩，请改用 JPG/PNG 或先缩小尺寸`)
+          )
           return
         }
         for (let i = 0; i < COMPRESS_QUALITY_LADDER.length; i++) {

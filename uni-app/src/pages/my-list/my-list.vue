@@ -1,5 +1,19 @@
 <template>
   <view class="my-root">
+    <!-- 个人资料条：此前「我的」没有任何直达自己主页/编辑资料的入口，
+         普通用户只能从通知或关注页间接进入 user-profile，改昵称头像在真实流程里不可达 -->
+    <view class="me-bar sticker press" @click="goMyProfile">
+      <view class="me-avatar">
+        <image v-if="me.avatar" class="me-avatar-img" :src="me.avatar" mode="aspectFill" />
+        <text v-else class="me-avatar-ph">{{ (me.nickname || '?').slice(0, 1) }}</text>
+      </view>
+      <view class="me-info">
+        <text class="me-name title-900">{{ me.nickname || '未登录' }}</text>
+        <text class="me-sub">{{ me.school || '点击查看个人主页' }}</text>
+      </view>
+      <text class="me-arrow">→</text>
+    </view>
+
     <!-- 顶部统计 -->
     <view class="stat-row sticker">
       <view class="stat-item">
@@ -36,14 +50,41 @@
       <text class="admin-entry-arrow">→</text>
     </view>
 
+    <!-- 内容发现入口：指南与关注列表此前注册但零链接，用户点不到 -->
+    <view class="entry-row">
+      <view class="entry-chip sticker press" @click="goPage('/pages/guide-list/guide-list')">
+        <text class="entry-chip-label">校园指南</text>
+      </view>
+      <view class="entry-chip sticker press" @click="goPage('/pages/follow/follow')">
+        <text class="entry-chip-label">关注 / 粉丝</text>
+      </view>
+      <view class="entry-chip sticker press" @click="goPage('/pages/feedback/feedback')">
+        <text class="entry-chip-label">意见反馈</text>
+      </view>
+    </view>
+
     <!-- Tab：帖子 / 好物 / 收藏 -->
     <view class="tab-row">
-      <view v-for="t in tabs" :key="t.value" class="my-tab clip-tag press" :class="{ active: t.value === tab }" @click="onTab(t.value)">
+      <view
+        v-for="t in tabs"
+        :key="t.value"
+        class="my-tab clip-tag press"
+        :class="{ active: t.value === tab }"
+        @click="onTab(t.value)"
+      >
         <text>{{ t.label }}</text>
       </view>
     </view>
 
-    <z-paging ref="pagingRef" v-model="list" :auto="true" :fixed="false" :back-to-top="true" @query="queryList" safe-area-inset-bottom>
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :auto="true"
+      :fixed="false"
+      :back-to-top="true"
+      @query="queryList"
+      safe-area-inset-bottom
+    >
       <!-- 请求失败：出错时必须占用列表位，否则 #empty 空态会顶着「还没有内容」显示，与失败原因矛盾 -->
       <view v-if="error" class="my-state">
         <view class="empty-state">
@@ -121,6 +162,18 @@ import { useUserStore } from '@/stores/user'
 // 管理台入口显隐：role 只在 login 云函数返回后可信（restore 刷新），不持久化
 const userStore = useUserStore()
 const isAdmin = computed(() => userStore.userInfo?.role === 'admin')
+/** 个人资料条用：昵称/头像/学校 */
+const me = computed(() => (userStore.userInfo || {}) as any)
+
+/** 打开自己的主页（user-profile 传自己的 _id） */
+function goMyProfile() {
+  const id = userStore.userInfo?._id
+  if (!id) {
+    uni.navigateTo({ url: '/pages/user-update/user-update' })
+    return
+  }
+  uni.navigateTo({ url: `/pages/user-profile/user-profile?id=${id}` })
+}
 
 function goAdmin() {
   uni.navigateTo({ url: '/pages/admin/admin' })
@@ -128,6 +181,10 @@ function goAdmin() {
 
 function goVerify() {
   uni.navigateTo({ url: '/pages/verify/verify' })
+}
+
+function goPage(url: string) {
+  uni.navigateTo({ url })
 }
 
 const tabs = [
@@ -198,6 +255,8 @@ async function onDelete(item: any) {
     }
     uni.showToast({ title: '已删除', icon: 'success' })
     reload()
+    // 统计也要重算：旧版只 reload 列表，删掉唯一一条后顶部仍显示「1 帖子」
+    loadStats()
   } catch (e: any) {
     uni.showToast({ title: e?.message || '删除失败', icon: 'none' })
   }
@@ -279,62 +338,231 @@ onShow(() => {
 }
 
 .stat-row {
-  display: flex; justify-content: space-around; padding: 24rpx; margin: 0 32rpx 20rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: flex;
+  justify-content: space-around;
+  padding: 24rpx;
+  margin: 0 32rpx 20rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.stat-item { display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
-.stat-num { font-size: 40rpx; font-weight: var(--fw-title); }
-.stat-label { font-size: 22rpx; color: var(--text-tertiary); }
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+.stat-num {
+  font-size: 40rpx;
+  font-weight: var(--fw-title);
+}
+.stat-label {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
 
-.tab-row { display: flex; padding: 0 32rpx 16rpx; gap: 16rpx; }
+.tab-row {
+  display: flex;
+  padding: 0 32rpx 16rpx;
+  gap: 16rpx;
+}
 .my-tab {
-  padding: 10rpx 32rpx; font-size: 26rpx; color: var(--text-secondary);
-  background: var(--bg-card); border: 1rpx solid var(--border);
-  &.active { color: #0D110E; background: var(--accent); font-weight: var(--fw-title); }
+  padding: 10rpx 32rpx;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  &.active {
+    color: #0d110e;
+    background: var(--accent);
+    font-weight: var(--fw-title);
+  }
 }
 
 .admin-entry {
-  display: flex; align-items: center; gap: 20rpx; margin: 0 32rpx 20rpx; padding: 20rpx 24rpx;
-  background: var(--bg-elevated); border: 1rpx solid var(--accent-dim); border-radius: var(--radius-sharp);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 0 32rpx 20rpx;
+  padding: 20rpx 24rpx;
+  background: var(--bg-elevated);
+  border: 1rpx solid var(--accent-dim);
+  border-radius: var(--radius-sharp);
   .admin-entry-badge {
-    font-size: 18rpx; letter-spacing: 3rpx; font-weight: var(--fw-title);
-    color: #0D110E; background: var(--accent); padding: 6rpx 14rpx;
+    font-size: 18rpx;
+    letter-spacing: 3rpx;
+    font-weight: var(--fw-title);
+    color: #0d110e;
+    background: var(--accent);
+    padding: 6rpx 14rpx;
   }
-  .admin-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
-  .admin-entry-title { font-size: 28rpx; color: var(--text-primary); }
-  .admin-entry-sub { font-size: 20rpx; color: var(--text-tertiary); }
-  .admin-entry-arrow { font-size: 28rpx; color: var(--accent); font-weight: var(--fw-title); }
+  .admin-entry-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4rpx;
+  }
+  .admin-entry-title {
+    font-size: 28rpx;
+    color: var(--text-primary);
+  }
+  .admin-entry-sub {
+    font-size: 20rpx;
+    color: var(--text-tertiary);
+  }
+  .admin-entry-arrow {
+    font-size: 28rpx;
+    color: var(--accent);
+    font-weight: var(--fw-title);
+  }
 }
 
 .my-card {
-  display: flex; gap: 20rpx; margin: 20rpx 32rpx; padding: 20rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
-  .my-img { width: 140rpx; height: 140rpx; border-radius: var(--radius-sharp); flex-shrink: 0; background: var(--bg-elevated); }
-  .my-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .my-title { font-size: 28rpx; font-weight: var(--fw-title); color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .my-content { font-size: 24rpx; color: var(--text-secondary); margin-top: 8rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .my-foot { margin-top: auto; display: flex; align-items: center; gap: 12rpx; padding-top: 12rpx; }
-  .my-kind { padding: 2rpx 12rpx; font-size: 20rpx; color: var(--text-secondary); background: var(--bg-elevated); font-weight: var(--fw-title); }
-  .my-time { font-size: 22rpx; color: var(--text-tertiary); }
+  display: flex;
+  gap: 20rpx;
+  margin: 20rpx 32rpx;
+  padding: 20rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  .my-img {
+    width: 140rpx;
+    height: 140rpx;
+    border-radius: var(--radius-sharp);
+    flex-shrink: 0;
+    background: var(--bg-elevated);
+  }
+  .my-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .my-title {
+    font-size: 28rpx;
+    font-weight: var(--fw-title);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .my-content {
+    font-size: 24rpx;
+    color: var(--text-secondary);
+    margin-top: 8rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .my-foot {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    padding-top: 12rpx;
+  }
+  .my-kind {
+    padding: 2rpx 12rpx;
+    font-size: 20rpx;
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    font-weight: var(--fw-title);
+  }
+  .my-time {
+    font-size: 22rpx;
+    color: var(--text-tertiary);
+  }
   .my-edit {
-    margin-left: auto; padding: 4rpx 16rpx; font-size: 22rpx; font-weight: var(--fw-body);
-    color: var(--accent); border-radius: var(--radius-sharp);
+    margin-left: auto;
+    padding: 4rpx 16rpx;
+    font-size: 22rpx;
+    font-weight: var(--fw-body);
+    color: var(--accent);
+    border-radius: var(--radius-sharp);
   }
   .my-sold {
-    padding: 4rpx 16rpx; font-size: 22rpx; font-weight: var(--fw-body);
-    color: var(--secondary); border-radius: var(--radius-sharp);
+    padding: 4rpx 16rpx;
+    font-size: 22rpx;
+    font-weight: var(--fw-body);
+    color: var(--secondary);
+    border-radius: var(--radius-sharp);
   }
-  .my-sold.sold { color: var(--text-tertiary); }
+  .my-sold.sold {
+    color: var(--text-tertiary);
+  }
   .my-del {
-    padding: 4rpx 16rpx; font-size: 22rpx; font-weight: var(--fw-body);
-    color: var(--danger); border-radius: var(--radius-sharp);
+    padding: 4rpx 16rpx;
+    font-size: 22rpx;
+    font-weight: var(--fw-body);
+    color: var(--danger);
+    border-radius: var(--radius-sharp);
   }
-  .my-del .btn-ghost:active { border-color: var(--danger); }
+  .my-del .btn-ghost:active {
+    border-color: var(--danger);
+  }
 }
 
-.empty-state { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0;
-  .empty-shape { width: 64rpx; height: 64rpx; background: var(--accent); opacity: 0.15; clip-path: var(--clip-diamond); margin-bottom: 24rpx; }
-  .empty-title { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .empty-sub { margin-top: 8rpx; font-size: 24rpx; color: var(--text-secondary); }
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
+  .empty-shape {
+    width: 64rpx;
+    height: 64rpx;
+    background: var(--accent);
+    opacity: 0.15;
+    clip-path: var(--clip-diamond);
+    margin-bottom: 24rpx;
+  }
+  .empty-title {
+    font-size: 32rpx;
+    font-weight: var(--fw-title);
+    color: var(--text-primary);
+  }
+  .empty-sub {
+    margin-top: 8rpx;
+    font-size: 24rpx;
+    color: var(--text-secondary);
+  }
 }
+
+/* 内容发现入口行 */
+.entry-row {
+  display: flex;
+  gap: 16rpx;
+  margin: 0 32rpx 20rpx;
+}
+.entry-chip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18rpx 0;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+}
+.entry-chip-label {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+/* 个人资料条 */
+.me-bar {
+  display: flex; align-items: center; gap: 20rpx;
+  margin: 0 32rpx 20rpx; padding: 20rpx 24rpx;
+  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+}
+.me-avatar {
+  width: 88rpx; height: 88rpx; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-elevated); border-radius: var(--radius-sharp); overflow: hidden;
+}
+.me-avatar-img { width: 88rpx; height: 88rpx; }
+.me-avatar-ph { font-size: 36rpx; font-weight: var(--fw-title); color: var(--accent); }
+.me-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.me-name { font-size: 32rpx; color: var(--text-primary); }
+.me-sub { font-size: 22rpx; color: var(--text-tertiary); }
+.me-arrow { font-size: 28rpx; color: var(--accent); font-weight: var(--fw-title); }
 </style>

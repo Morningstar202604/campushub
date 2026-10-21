@@ -44,16 +44,16 @@
       </view>
     </view>
 
-    <!-- 签到提示 -->
+    <!-- 签到提示：余额够时不该再说「积分不足」（旧版无条件显示，100 分时也在劝人去签到） -->
     <view class="pt-tip">
-      <text class="pt-tip-text">积分不足？</text>
+      <text class="pt-tip-text">{{ canAffordAny ? '想攒更多积分？' : '积分不足？' }}</text>
       <text class="pt-tip-link press" @click="gotoCheckin">去签到 →</text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { callFunction } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 
@@ -70,6 +70,11 @@ const creditScore = ref(0)
 const renameTokens = ref(0)
 const loading = ref(true)
 const redeeming = ref(false)
+/** 现有积分是否买得起任意一件道具（决定提示文案，避免余额充足时仍写「积分不足」） */
+const canAffordAny = computed(() => {
+  if (!products.value.length) return false
+  return products.value.some((p: any) => creditScore.value >= Number(p.price || 0))
+})
 
 async function load() {
   loading.value = true

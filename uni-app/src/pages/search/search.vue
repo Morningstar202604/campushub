@@ -45,12 +45,7 @@
         <text class="sr-hot-sub">近 7 天真实热搜</text>
       </view>
       <view class="sr-hot-list sticker">
-        <view
-          v-for="(k, i) in hotList"
-          :key="i"
-          class="sr-hot-item press"
-          @click="onHot(k)"
-        >
+        <view v-for="(k, i) in hotList" :key="i" class="sr-hot-item press" @click="onHot(k)">
           <text class="sr-hot-rank" :class="{ 'sr-hot-rank-top': i < 3 }">{{ i + 1 }}</text>
           <text class="sr-hot-keyword">{{ k }}</text>
         </view>
@@ -90,10 +85,12 @@
             @click="openDetail('post', h.id)"
           >
             <view class="sr-card-body">
-              <view class="sr-card-title">{{ h.title || h.content }}</view>
+              <view class="sr-card-title"
+                ><rich-text :nodes="highlight(h.title || h.content)"
+              /></view>
               <view class="sr-card-sub">{{ h.time }}</view>
             </view>
-            <view class="sr-card-tag clip-tag">POST</view>
+            <view class="sr-card-tag clip-tag">帖子</view>
           </view>
         </view>
 
@@ -110,10 +107,12 @@
             @click="openDetail('product', h.id)"
           >
             <view class="sr-card-body">
-              <view class="sr-card-title">{{ h.title || h.content }}</view>
+              <view class="sr-card-title"
+                ><rich-text :nodes="highlight(h.title || h.content)"
+              /></view>
               <view class="sr-card-sub">{{ h.time }}</view>
             </view>
-            <view class="sr-card-tag clip-tag">DEAL</view>
+            <view class="sr-card-tag clip-tag">好物</view>
           </view>
         </view>
 
@@ -130,10 +129,10 @@
             @click="openGuide(h.id)"
           >
             <view class="sr-card-body">
-              <view class="sr-card-title">{{ h.title }}</view>
-              <view class="sr-card-sub">{{ h.summary || ('浏览 ' + h.viewCount) }}</view>
+              <view class="sr-card-title"><rich-text :nodes="highlight(h.title)" /></view>
+              <view class="sr-card-sub">{{ h.summary || '浏览 ' + h.viewCount }}</view>
             </view>
-            <view class="sr-card-tag clip-tag">GUIDE</view>
+            <view class="sr-card-tag clip-tag">指南</view>
           </view>
         </view>
       </view>
@@ -226,6 +225,24 @@ function adaptGuideHit(raw: any): GuideHit {
   }
 }
 
+/**
+ * 搜索结果关键词高亮。
+ * 用 rich-text 而不是 v-html：uni-app 三端只有 rich-text 支持富文本，
+ * v-html 在小程序端会被直接忽略（等于没高亮）。
+ * 先转义再插入标记，避免标题里的 < > 被当成标签。
+ */
+function highlight(text: string): string {
+  const raw = String(text || '')
+  const kw = keyword.value.trim()
+  const escaped = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  if (!kw) return escaped
+  const safeKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return escaped.replace(
+    new RegExp(safeKw, 'gi'),
+    (m) => `<span style="color:var(--accent);font-weight:600">${m}</span>`
+  )
+}
+
 async function loadHot() {
   hotLoading.value = true
   try {
@@ -243,8 +260,8 @@ async function loadHot() {
 async function doSearch() {
   const kw = keyword.value.trim()
   if (!kw) return
-  if (kw.length < 2) {
-    uni.showToast({ title: '请输入至少 2 个字符', icon: 'none', duration: 2000 })
+  if (kw.length < 1) {
+    uni.showToast({ title: '请输入搜索关键词', icon: 'none', duration: 2000 })
     return
   }
   if (searching.value) return

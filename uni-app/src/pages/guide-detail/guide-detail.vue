@@ -118,7 +118,8 @@ async function load() {
 // ---- rich-text 正文 ----
 // uni-app 已知限制：rich-text 内部是原生节点，页面样式（含 :deep）命不中，
 // 因此必须把样式内联进 HTML 字符串。颜色只用 CSS 变量（--text-body 等），不写死色值。
-const STYLE_H = 'font-size:32rpx;line-height:1.4;margin:24rpx 0 12rpx;color:var(--text-primary);font-weight:var(--fw-title)'
+const STYLE_H =
+  'font-size:32rpx;line-height:1.4;margin:24rpx 0 12rpx;color:var(--text-primary);font-weight:var(--fw-title)'
 const STYLE_P = 'font-size:27rpx;line-height:1.8;margin:0 0 14rpx;color:var(--text-body)'
 const STYLE_LI = 'font-size:26rpx;line-height:1.75;margin:0 0 8rpx;color:var(--text-body)'
 const STYLE_EMPTY = 'color:var(--text-tertiary);font-size:24rpx'
@@ -151,18 +152,21 @@ function sanitizeHtml(html: string): string {
 
 /** 给富文本原生标签注入内联样式（已带 style 的做追加合并） */
 function decorate(html: string): string {
-  return html.replace(/<\s*(h[1-6]|p|li|strong|em|a)([^>]*)>/gi, (m, tag: string, attrs: string) => {
-    const style = INLINE_STYLES[tag.toLowerCase()]
-    if (!style) return m
-    if (/style\s*=/i.test(attrs)) {
-      const merged = attrs.replace(
-        /style\s*=\s*(['"])(.*?)\1/i,
-        (_x, q: string, s: string) => `style=${q}${s};${style}${q}`
-      )
-      return `<${tag}${merged}>`
+  return html.replace(
+    /<\s*(h[1-6]|p|li|strong|em|a)([^>]*)>/gi,
+    (m, tag: string, attrs: string) => {
+      const style = INLINE_STYLES[tag.toLowerCase()]
+      if (!style) return m
+      if (/style\s*=/i.test(attrs)) {
+        const merged = attrs.replace(
+          /style\s*=\s*(['"])(.*?)\1/i,
+          (_x, q: string, s: string) => `style=${q}${s};${style}${q}`
+        )
+        return `<${tag}${merged}>`
+      }
+      return `<${tag}${attrs} style="${style}">`
     }
-    return `<${tag}${attrs} style="${style}">`
-  })
+  )
 }
 
 const contentNodes = computed(() => {
@@ -177,7 +181,8 @@ const contentNodes = computed(() => {
     .map((line) => {
       const t = line.trim()
       if (!t) return ''
-      if (/^#{1,6}\s/.test(t) || /^step/i.test(t)) return `<p style="${STYLE_H}">${t.replace(/^#{1,6}\s*/, '')}</p>`
+      if (/^#{1,6}\s/.test(t) || /^step/i.test(t))
+        return `<p style="${STYLE_H}">${t.replace(/^#{1,6}\s*/, '')}</p>`
       if (/^[-*•]\s/.test(t)) return `<p style="${STYLE_LI}">– ${t.replace(/^[-*•]\s*/, '')}</p>`
       return `<p style="${STYLE_P}">${t}</p>`
     })

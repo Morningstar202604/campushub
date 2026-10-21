@@ -48,3 +48,4 @@ out/plan.md
 # Android 壳内嵌的 H5 产物由 `node scripts/build-apk.js` 自动同步，不入库
 android/app/src/main/assets/www/
 android/.v2c/
+out/

@@ -163,7 +163,8 @@ export function adaptPostDetail(res: any): PostDetail {
   for (const src of p.images || p.imageList || []) {
     // 旧仓可能存 fileID / https / 本地 path，统一走 fileIDToTempUrl 调用方处理
     if (typeof src === 'string') images.push(src)
-    else if (src && typeof src === 'object' && (src.fileID || src.url)) images.push(src.fileID || src.url)
+    else if (src && typeof src === 'object' && (src.fileID || src.url))
+      images.push(src.fileID || src.url)
   }
   return {
     id: p._id || p.id || '',
@@ -217,7 +218,8 @@ export function adaptProductDetail(res: any): ProductDetail {
   const images: string[] = []
   for (const src of p.images || p.imageList || []) {
     if (typeof src === 'string') images.push(src)
-    else if (src && typeof src === 'object' && (src.fileID || src.url)) images.push(src.fileID || src.url)
+    else if (src && typeof src === 'object' && (src.fileID || src.url))
+      images.push(src.fileID || src.url)
   }
   return {
     id: p._id || p.id || '',

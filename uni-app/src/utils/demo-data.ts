@@ -99,7 +99,7 @@ function seed(): DemoState {
         images: [],
         tags: ['社团活动'],
         likeCount: 128,
-        commentCount: 1,
+        commentCount: 0,
         collectCount: 23,
         viewCount: 1042,
         status: 'normal',
@@ -151,7 +151,7 @@ function seed(): DemoState {
         images: [],
         tags: ['求助'],
         likeCount: 31,
-        commentCount: 3,
+        commentCount: 1,
         collectCount: 5,
         viewCount: 240,
         status: 'normal',
@@ -205,7 +205,7 @@ function seed(): DemoState {
         images: [],
         tags: ['食堂测评'],
         likeCount: 76,
-        commentCount: 1,
+        commentCount: 0,
         collectCount: 31,
         viewCount: 892,
         status: 'normal',
@@ -257,7 +257,7 @@ function seed(): DemoState {
         price: 1580,
         originalPrice: 4399,
         category: 'digital',
-        condition: 'like_new',
+        condition: 'new',
         tradeType: 'face',
         location: '东区宿舍楼下',
         contactInfo: '微信同号',
@@ -303,7 +303,7 @@ function seed(): DemoState {
         price: 320,
         originalPrice: 1280,
         category: 'sports',
-        condition: 'used',
+        condition: 'fair',
         tradeType: 'face',
         location: '南区车棚',
         contactInfo: '电话联系',
@@ -563,6 +563,7 @@ function seed(): DemoState {
       followingCount: 1,
       checkinStreak: 0,
       lastCheckinDate: '',
+      renameTokens: 0,
       role: 'admin'
     },
     feedbacks: [],
@@ -799,6 +800,11 @@ const handlers: Record<string, Handler> = {
 
   'post-create': (e) => {
     const s = load()
+    // 与真实后端一致：必须选叶子分类（父分类下还有子节点则拒绝）
+    const catId = String(e.categoryId || '')
+    if (!catId) throw new Error('请选择分类')
+    const hasChildren = s.categories.some((c) => c.parentId === catId && c.status === 'active')
+    if (hasChildren) throw new Error('请选择更具体的分类')
     const id = nextId('p')
     const isAnon = e.kind === 'confession' ? true : !!e.isAnonymous
     s.posts.unshift({
@@ -891,6 +897,12 @@ const handlers: Record<string, Handler> = {
 
   'product-create': (e) => {
     const s = load()
+    // 校验强度必须与真实后端一致：真实 product-create 要求至少一张图，
+    // 演示层放行会造成「演示能发、上线被拒」的错觉。
+    if (!Array.isArray(e.images) || e.images.length === 0) {
+      throw new Error('请至少上传一张图片')
+    }
+    if (!String(e.title || '').trim()) throw new Error('请输入商品标题')
     const id = nextId('pr')
     s.products.unshift({
       _id: id,
@@ -1050,6 +1062,8 @@ const handlers: Record<string, Handler> = {
 
   'comment-create': (e) => {
     const s = load()
+    if (!String(e.content || '').trim()) throw new Error('请输入评论内容')
+    if (String(e.content).length > 500) throw new Error('评论不能超过500字')
     const id = newCommentId()
     s.comments.push({
       _id: id,
@@ -1160,11 +1174,23 @@ const handlers: Record<string, Handler> = {
       if (s.checkin.points < p.price) throw new Error('积分不足，继续签到赚积分吧')
       s.checkin.points -= p.price
       s.user.creditScore = s.checkin.points
+      // 道具要真的入库：真实 points.js 会 _.inc(renameTokens, 1)，
+      // 旧版演示层不记，兑换后 renameTokens 恒 0，用户看到「兑换成功」却查无此卡。
+      s.user.renameTokens = (s.user.renameTokens || 0) + 1
       s.pointsOrders.push({ productId: p.id, price: p.price, createdAt: new Date().toISOString() })
       save()
-      return { redeemed: true, productId: p.id, creditScore: s.checkin.points }
+      return {
+        redeemed: true,
+        productId: p.id,
+        creditScore: s.checkin.points,
+        renameTokens: s.user.renameTokens
+      }
     }
-    return { products: PRODUCTS, creditScore: s.checkin.points, renameTokens: 0 }
+    return {
+      products: PRODUCTS,
+      creditScore: s.checkin.points,
+      renameTokens: s.user.renameTokens || 0
+    }
   },
 
   /* ---- 内容 ---- */
@@ -1288,8 +1314,36 @@ const handlers: Record<string, Handler> = {
   admin: (e) => {
     const s = load()
     if (e.action === 'check') return { isAdmin: s.user.role === 'admin' }
-    if (e.action === 'list-reports')
-      return { list: clone(s.reports), total: s.reports.length, page: 1, pageSize: 20 }
+
+    // 行结构与真实 admin.js 对齐：主键是 reportId，且带 target 摘要对象。
+    // 旧版直接回传原始报告文档（_id、无 target），管理台按 reportId 取键会拿到
+    // undefined，点「忽略/删除」会把整个列表过滤空。
+    if (e.action === 'list-reports') {
+      const list = s.reports.map((r) => {
+        const target =
+          r.targetType === 'post'
+            ? s.posts.find((x) => x._id === r.targetId)
+            : s.products.find((x) => x._id === r.targetId)
+        return {
+          reportId: r._id,
+          targetType: r.targetType,
+          targetId: r.targetId,
+          reason: r.reason,
+          description: r.description,
+          createdAt: r.createdAt,
+          target: target
+            ? {
+                _id: target._id,
+                status: target.status,
+                ownerId: target.userId,
+                ownerNickname: target.userNickname || '',
+                snippet: String(target.title || target.content || '').slice(0, 80)
+              }
+            : { _id: r.targetId, status: 'deleted', snippet: '(已删除)' }
+        }
+      })
+      return { list, total: list.length, page: 1, pageSize: 20 }
+    }
     if (e.action === 'list-users') {
       return { list: [clone(s.user)], total: 1, page: 1, pageSize: 20 }
     }
@@ -1299,7 +1353,48 @@ const handlers: Record<string, Handler> = {
     }
     if (e.action === 'list-logs') return { list: [], total: 0, page: 1, pageSize: 20 }
     if (e.action === 'verify-review') return { reviewed: true }
-    return { ok: true }
+
+    // 处置动作要真的改本地数据，不能一律返回 {ok:true} 让 UI 假装成功
+    if (e.action === 'delete') {
+      const col = e.targetType === 'product' ? s.products : s.posts
+      const doc = col.find((x) => x._id === e.targetId)
+      if (doc) doc.status = 'deleted'
+      for (const r of s.reports) {
+        if (r.targetId === e.targetId && r.status === 'pending') r.status = 'resolved'
+      }
+      save()
+      return { deleted: true }
+    }
+    if (e.action === 'resolve') {
+      const r = s.reports.find((x) => x._id === e.reportId)
+      if (r) r.status = 'resolved'
+      save()
+      return { resolved: true }
+    }
+    if (e.action === 'ban' || e.action === 'unban') {
+      if (String(e.targetUserId || '') === s.user._id) {
+        s.user.verifyStatus = e.action === 'ban' ? 'banned' : 'unverified'
+        save()
+      }
+      return { action: e.action, updated: 1 }
+    }
+    if (
+      e.action === 'pin' ||
+      e.action === 'unpin' ||
+      e.action === 'essence' ||
+      e.action === 'unessence'
+    ) {
+      const post = s.posts.find((x) => x._id === e.postId)
+      if (post) {
+        if (e.action === 'pin') post.isPinned = true
+        if (e.action === 'unpin') post.isPinned = false
+        if (e.action === 'essence') post.isEssence = true
+        if (e.action === 'unessence') post.isEssence = false
+        save()
+      }
+      return { action: e.action, postId: e.postId }
+    }
+    throw new Error('未知管理操作')
   },
 
   'feedback-create': (e) => {

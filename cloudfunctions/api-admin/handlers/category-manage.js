@@ -138,6 +138,9 @@ async function updateNode(db, event) {
     if (level + subtreeDepth > MAX_LEVEL)
       throw new AppError('移动后子树层级将超过 ' + MAX_LEVEL + ' 级', 'INVALID_PARAM')
     patch.level = level
+    // 父级本身必须落库：旧实现只算 level 不写 parentId，
+    // 接口返回成功但树结构没变（实测把子分类移到根后 parentId 仍是原父级）。
+    patch.parentId = parentId || ''
     if (schoolId === undefined) patch.schoolId = inherited || null
     // 级联更新子节点的 level + schoolId
     await cascadeUpdateLevel(db, id, level, patch.schoolId || cur.data.schoolId)

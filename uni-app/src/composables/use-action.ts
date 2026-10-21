@@ -27,7 +27,7 @@ export function useAction(opts: UseActionOptions) {
 
   function getId(): string {
     const v: any = opts.targetId
-    return typeof v === 'string' ? v : v?.value ?? ''
+    return typeof v === 'string' ? v : (v?.value ?? '')
   }
   function getType(): TargetType {
     const v: any = opts.targetType
@@ -60,9 +60,8 @@ export function useAction(opts: UseActionOptions) {
     } catch (e: any) {
       // 后端 CloudFunctionError 自带友好 message（如「积分不足」「已标记过」），直接透传；
       // 网络/系统类错误经 sanitizeForUser 脱敏后再 Toast
-      const msg = e instanceof CloudFunctionError
-        ? e.message
-        : sanitizeForUser(e?.message || String(e))
+      const msg =
+        e instanceof CloudFunctionError ? e.message : sanitizeForUser(e?.message || String(e))
       uni.showToast({ title: msg, icon: 'none', duration: 2000 })
       console.error('[use-action]', e?.message || e)
       // 失败不更新本地态
@@ -88,9 +87,8 @@ export function useAction(opts: UseActionOptions) {
       await callFunction('collect', { targetId: id, type, action })
       collected.value = action === 'collect'
     } catch (e: any) {
-      const msg = e instanceof CloudFunctionError
-        ? e.message
-        : sanitizeForUser(e?.message || String(e))
+      const msg =
+        e instanceof CloudFunctionError ? e.message : sanitizeForUser(e?.message || String(e))
       uni.showToast({ title: msg, icon: 'none', duration: 2000 })
       console.error('[use-action]', e?.message || e)
     } finally {
@@ -112,9 +110,8 @@ export function useAction(opts: UseActionOptions) {
       const res: any = await callFunction('resolve', { postId: getId() })
       return Boolean(res?.resolved)
     } catch (e: any) {
-      const msg = e instanceof CloudFunctionError
-        ? e.message
-        : sanitizeForUser(e?.message || String(e))
+      const msg =
+        e instanceof CloudFunctionError ? e.message : sanitizeForUser(e?.message || String(e))
       uni.showToast({ title: msg, icon: 'none', duration: 2000 })
       console.error('[use-action]', e?.message || e)
       return false

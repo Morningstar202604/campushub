@@ -151,12 +151,12 @@ export function useComments(opts: UseCommentsOptions) {
     try {
       await callFunction('comment-delete', { commentId })
       // 局部删除：先找顶层楼层，再找其楼中楼（子回复此前漏处理，删完仍留在页面上）
-      const index = floors.value.findIndex(f => f._id === commentId)
+      const index = floors.value.findIndex((f) => f._id === commentId)
       if (index !== -1) {
         floors.value.splice(index, 1)
       } else {
         for (const f of floors.value) {
-          const ri = (f.replies || []).findIndex(r => r._id === commentId)
+          const ri = (f.replies || []).findIndex((r) => r._id === commentId)
           if (ri !== -1) {
             f.replies!.splice(ri, 1)
             break

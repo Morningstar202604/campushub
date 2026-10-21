@@ -1,8 +1,8 @@
 <template>
   <view class="detail-root">
     <!-- 加载中：post 尚未就绪时绝不能让模板取 post.xxx（否则首屏 TypeError） -->
-    <view v-if="loading" class="state-block">
-      <text class="state-text">LOADING</text>
+    <view v-if="loading" class="detail-skeleton">
+      <Skeleton :rows="3" :card="true" />
     </view>
 
     <!-- 失败 / 已删除 / 无此帖 -->
@@ -49,11 +49,19 @@
 
       <!-- 操作行：点赞 / 收藏 / 浏览 -->
       <view class="action-bar sticker">
-        <view class="action-item press" :class="{ active: action.liked.value }" @click="action.toggleLike()">
+        <view
+          class="action-item press"
+          :class="{ active: action.liked.value }"
+          @click="action.toggleLike()"
+        >
           <text class="action-label">点赞</text>
           <text class="action-count tabular-nums">{{ action.likeCount.value }}</text>
         </view>
-        <view class="action-item press" :class="{ active: action.collected.value }" @click="action.toggleCollect()">
+        <view
+          class="action-item press"
+          :class="{ active: action.collected.value }"
+          @click="action.toggleCollect()"
+        >
           <text class="action-label">收藏</text>
           <text class="action-count tabular-nums">{{ collectCount }}</text>
         </view>
@@ -68,6 +76,10 @@
           @click="onResolve"
         >
           <text class="action-label">{{ post.resolved ? '已解决' : '标记已解决' }}</text>
+        </view>
+        <!-- 举报：非本人内容才显示（自己的帖应该去「我的内容」编辑/删除） -->
+        <view v-if="!isMine" class="action-item press" @click="onReport">
+          <text class="action-label">举报</text>
         </view>
       </view>
 
@@ -93,7 +105,9 @@
               {{ f.liked ? '已点灯' : '点灯' }}{{ f.likeCount ? ` · ${f.likeCount}` : '' }}
             </text>
             <text class="floor-like press" @click="onReplyTo(f)">回复</text>
-            <text v-if="canDelete(f)" class="floor-like press" @click="onDeleteComment(f)">删除</text>
+            <text v-if="canDelete(f)" class="floor-like press" @click="onDeleteComment(f)"
+              >删除</text
+            >
           </view>
 
           <!-- 楼中楼（子回复） -->
@@ -101,9 +115,13 @@
             <view v-for="r in f.replies" :key="r._id" class="reply-item">
               <view class="reply-head">
                 <text class="reply-author">{{ r.userNickname }}</text>
-                <text v-if="r.replyToNickname" class="reply-reply">回复 {{ r.replyToNickname }}</text>
+                <text v-if="r.replyToNickname" class="reply-reply"
+                  >回复 {{ r.replyToNickname }}</text
+                >
                 <text class="reply-time tabular-nums">{{ fmtTime(r.createdAt) }}</text>
-                <text v-if="canDelete(r)" class="reply-del press" @click="onDeleteComment(r)">删除</text>
+                <text v-if="canDelete(r)" class="reply-del press" @click="onDeleteComment(r)"
+                  >删除</text
+                >
               </view>
               <text class="reply-content">{{ r.content }}</text>
             </view>
@@ -131,7 +149,11 @@
             maxlength="500"
             @confirm="onSend"
           />
-          <text class="comment-send press" :class="{ disabled: !comments.draft.value.trim() || comments.loading.value }" @click="onSend">
+          <text
+            class="comment-send press"
+            :class="{ disabled: !comments.draft.value.trim() || comments.loading.value }"
+            @click="onSend"
+          >
             发送
           </text>
         </view>
@@ -141,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+import Skeleton from '@/components/Skeleton.vue'
 import { ref, computed, onUnmounted, nextTick } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { callFunction, fileIDToTempUrl } from '@/utils/api'
@@ -152,6 +175,14 @@ import type { PostDetail } from '@/adapters'
 
 const userStore = useUserStore()
 const currentUser = computed(() => userStore.userInfo)
+// 是否本人内容：匿名帖后端已抹掉 userId，此时一律按「非本人」处理（也就看不到编辑入口，
+// 但举报入口会出现 —— 匿名帖同样可被举报，这是期望行为）。
+const isMine = computed(() => {
+  const uid = currentUser.value?._id
+  const raw = postRaw.value
+  if (!uid || !raw || raw.isAnonymous) return false
+  return String(raw.userId || '') === String(uid)
+})
 
 const postId = ref('')
 const post = ref<PostDetail | null>(null)
@@ -183,7 +214,13 @@ const authorName = computed(() => {
 })
 
 function kindLabel(kind: string): string {
-  const map: Record<string, string> = { post: '信息', task: '任务', lost: '失物', found: '招领', confession: '表白' }
+  const map: Record<string, string> = {
+    post: '信息',
+    task: '任务',
+    lost: '失物',
+    found: '招领',
+    confession: '表白'
+  }
   return map[kind] || kind || '校园'
 }
 const canResolve = computed(() => ['task', 'lost', 'found'].includes(post.value?.kind || ''))
@@ -191,10 +228,7 @@ const canResolve = computed(() => ['task', 'lost', 'found'].includes(post.value?
 // 旧实现取 max(commentCount, floors.length)：发一条新评论后 floors.length 可能仍小于
 // 服务端的 commentCount（后者含子回复），标题就一直停在旧数字上，看起来像没发出去。
 const totalComments = computed(() => {
-  const loaded = comments.floors.value.reduce(
-    (n, f) => n + 1 + (f.replies?.length || 0),
-    0
-  )
+  const loaded = comments.floors.value.reduce((n, f) => n + 1 + (f.replies?.length || 0), 0)
   return Math.max(post.value?.commentCount ?? 0, loaded)
 })
 
@@ -278,7 +312,18 @@ async function onDeleteComment(c: any) {
   })
   if (!modal?.confirm) return
   const okDel = await comments.remove(c._id)
-  if (okDel) post.value && (post.value.commentCount = Math.max(0, (post.value.commentCount || 0) - 1))
+  if (okDel)
+    post.value && (post.value.commentCount = Math.max(0, (post.value.commentCount || 0) - 1))
+}
+
+/** 举报：带 targetId/targetType 跳到举报页（此前全站没有任何入口，举报页不可达） */
+function onReport() {
+  const id = post.value?.id || postId.value
+  if (!id) return
+  const label = (post.value?.title || post.value?.content || '帖子').slice(0, 20)
+  uni.navigateTo({
+    url: `/pages/report/report?targetId=${encodeURIComponent(id)}&targetType=post&targetLabel=${encodeURIComponent(label)}`
+  })
 }
 
 async function onResolve() {
@@ -293,9 +338,7 @@ async function onResolve() {
 }
 
 // 可见图片（加载失败的自动隐藏）
-const visibleImages = computed(() =>
-  displayImages.value.filter((_, i) => !brokenImages.value[i])
-)
+const visibleImages = computed(() => displayImages.value.filter((_, i) => !brokenImages.value[i]))
 
 function onImgError(img: string) {
   const idx = displayImages.value.indexOf(img)
@@ -332,14 +375,29 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.detail-root { padding: 24rpx 32rpx 80rpx; }
+.detail-root {
+  padding: 24rpx 32rpx 80rpx;
+}
 
-.state-block { padding: 140rpx 32rpx; text-align: center; }
-.state-text { display: block; font-size: 24rpx; color: var(--text-secondary); letter-spacing: 2rpx; }
+.state-block {
+  padding: 140rpx 32rpx;
+  text-align: center;
+}
+.state-text {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  letter-spacing: 2rpx;
+}
 .state-retry {
-  display: inline-block; margin-top: 28rpx; padding: 12rpx 36rpx;
-  font-size: 24rpx; font-weight: var(--fw-title); color: var(--secondary);
-  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: inline-block;
+  margin-top: 28rpx;
+  padding: 12rpx 36rpx;
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  color: var(--secondary);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
 
 .detail-title {
@@ -348,7 +406,11 @@ onUnmounted(() => {
   background: var(--bg-card);
   border: 2rpx solid var(--border);
   border-radius: var(--radius-sharp);
-  .title-text { font-size: 36rpx; color: var(--text-primary); display: block; }
+  .title-text {
+    font-size: 36rpx;
+    color: var(--text-primary);
+    display: block;
+  }
 }
 
 .detail-card {
@@ -359,73 +421,241 @@ onUnmounted(() => {
 }
 
 .detail-meta {
-  display: flex; align-items: center; gap: 16rpx; margin-bottom: 16rpx;
-  .meta-author { padding: 4rpx 16rpx; font-size: 22rpx; color: var(--text-secondary); background: var(--bg-elevated); }
-  .meta-kind { font-size: 22rpx; color: var(--text-secondary); }
-  .meta-verified { font-size: 18rpx; padding: 2rpx 10rpx; color: var(--accent); background: var(--bg-elevated); font-weight: var(--fw-title); }
-  .meta-resolved { font-size: 20rpx; color: var(--secondary); font-weight: var(--fw-title); }
-  .meta-time { margin-left: auto; font-size: 22rpx; color: var(--text-tertiary); }
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+  .meta-author {
+    padding: 4rpx 16rpx;
+    font-size: 22rpx;
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+  }
+  .meta-kind {
+    font-size: 22rpx;
+    color: var(--text-secondary);
+  }
+  .meta-verified {
+    font-size: 18rpx;
+    padding: 2rpx 10rpx;
+    color: var(--accent);
+    background: var(--bg-elevated);
+    font-weight: var(--fw-title);
+  }
+  .meta-resolved {
+    font-size: 20rpx;
+    color: var(--secondary);
+    font-weight: var(--fw-title);
+  }
+  .meta-time {
+    margin-left: auto;
+    font-size: 22rpx;
+    color: var(--text-tertiary);
+  }
 }
 
-.detail-content { display: block; font-size: 28rpx; line-height: 1.75; color: var(--text-primary); }
+.detail-content {
+  display: block;
+  font-size: 28rpx;
+  line-height: 1.75;
+  color: var(--text-primary);
+}
 
-.detail-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8rpx; margin-top: 20rpx; }
-.detail-img { width: 100%; height: 200rpx; border-radius: var(--radius-sharp); background: var(--bg-elevated); }
+.detail-images {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8rpx;
+  margin-top: 20rpx;
+}
+.detail-img {
+  width: 100%;
+  height: 200rpx;
+  border-radius: var(--radius-sharp);
+  background: var(--bg-elevated);
+}
 
 .action-bar {
-  display: flex; gap: 40rpx; margin-top: 24rpx; padding: 20rpx 32rpx;
-  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
-  .action-item { display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
-  .action-label { font-size: 22rpx; color: var(--text-secondary); }
-  .action-count { font-size: 24rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-  .action-item.active .action-label { color: var(--secondary); }
-  .action-item.resolve .action-label { color: var(--secondary); }
-  .action-item.done .action-label { color: var(--text-tertiary); }
+  display: flex;
+  gap: 40rpx;
+  margin-top: 24rpx;
+  padding: 20rpx 32rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
+  .action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4rpx;
+  }
+  .action-label {
+    font-size: 22rpx;
+    color: var(--text-secondary);
+  }
+  .action-count {
+    font-size: 24rpx;
+    font-weight: var(--fw-title);
+    color: var(--text-primary);
+  }
+  .action-item.active .action-label {
+    color: var(--secondary);
+  }
+  .action-item.resolve .action-label {
+    color: var(--secondary);
+  }
+  .action-item.done .action-label {
+    color: var(--text-tertiary);
+  }
 }
 
-.comment-section { margin-top: 32rpx; }
-.section-head { padding: 16rpx 0; }
-.section-title { font-size: 30rpx; color: var(--text-primary); }
+.comment-section {
+  margin-top: 32rpx;
+}
+.section-head {
+  padding: 16rpx 0;
+}
+.section-title {
+  font-size: 30rpx;
+  color: var(--text-primary);
+}
 
 .comment-floor {
-  margin-top: 16rpx; padding: 20rpx; background: var(--bg-card);
-  border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
+  margin-top: 16rpx;
+  padding: 20rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.floor-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 8rpx; }
-.floor-author { font-size: 24rpx; font-weight: var(--fw-title); color: var(--accent); padding: 2rpx 12rpx; background: var(--bg-elevated); }
-.floor-reply { font-size: 22rpx; color: var(--text-tertiary); }
-.floor-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
-.floor-content { display: block; font-size: 26rpx; color: var(--text-primary); line-height: 1.6; }
-.floor-actions { margin-top: 12rpx; display: flex; gap: 24rpx; }
-.floor-like { font-size: 22rpx; color: var(--text-secondary); }
+.floor-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+.floor-author {
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  color: var(--accent);
+  padding: 2rpx 12rpx;
+  background: var(--bg-elevated);
+}
+.floor-reply {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+.floor-time {
+  margin-left: auto;
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+}
+.floor-content {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+.floor-actions {
+  margin-top: 12rpx;
+  display: flex;
+  gap: 24rpx;
+}
+.floor-like {
+  font-size: 22rpx;
+  color: var(--text-secondary);
+}
 
-.floor-replies { margin-top: 16rpx; padding-left: 24rpx; border-left: 2rpx solid var(--border); }
-.reply-item { padding: 12rpx 0; }
-.reply-head { display: flex; align-items: center; gap: 12rpx; }
-.reply-author { font-size: 22rpx; font-weight: var(--fw-title); color: var(--text-primary); }
-.reply-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
-.reply-del { font-size: 20rpx; color: var(--text-tertiary); }
-.reply-content { display: block; font-size: 24rpx; color: var(--text-secondary); line-height: 1.5; margin-top: 4rpx; }
+.floor-replies {
+  margin-top: 16rpx;
+  padding-left: 24rpx;
+  border-left: 2rpx solid var(--border);
+}
+.reply-item {
+  padding: 12rpx 0;
+}
+.reply-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.reply-author {
+  font-size: 22rpx;
+  font-weight: var(--fw-title);
+  color: var(--text-primary);
+}
+.reply-time {
+  margin-left: auto;
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+}
+.reply-del {
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+}
+.reply-content {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 4rpx;
+}
 
 .reply-hint {
-  display: flex; align-items: center; gap: 12rpx;
-  padding: 0 0 12rpx; border-bottom: 1rpx solid var(--border); margin-bottom: 12rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 0 0 12rpx;
+  border-bottom: 1rpx solid var(--border);
+  margin-bottom: 12rpx;
 }
-.reply-hint-text { font-size: 22rpx; color: var(--accent); }
-.reply-hint-cancel { font-size: 22rpx; color: var(--text-tertiary); margin-left: auto; }
+.reply-hint-text {
+  font-size: 22rpx;
+  color: var(--accent);
+}
+.reply-hint-cancel {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
 
 .comment-input {
-  display: flex; gap: 16rpx; margin-top: 24rpx; padding: 16rpx;
-  background: var(--bg-card); border: 2rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+  padding: 16rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.comment-input-box { flex: 1; font-size: 26rpx; color: var(--text-primary); background: var(--bg-elevated); padding: 12rpx 16rpx; border-radius: var(--radius-sharp); }
-.comment-send { font-size: 24rpx; font-weight: var(--fw-title); color: var(--secondary); padding: 12rpx 24rpx; }
-.comment-send.disabled { color: var(--text-tertiary); opacity: 0.6; }
+.comment-input-box {
+  flex: 1;
+  font-size: 26rpx;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  padding: 12rpx 16rpx;
+  border-radius: var(--radius-sharp);
+}
+.comment-send {
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
+  color: var(--secondary);
+  padding: 12rpx 24rpx;
+}
+.comment-send.disabled {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
 
 .error-banner {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16rpx 24rpx; background: var(--bg-card);
-  border: 2rpx solid var(--danger); border-radius: var(--radius-sharp);
-  .error-text { font-size: 24rpx; color: var(--danger); }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--danger);
+  border-radius: var(--radius-sharp);
+  .error-text {
+    font-size: 24rpx;
+    color: var(--danger);
+  }
 }
 </style>

@@ -30,7 +30,13 @@
     <view class="form-block sticker">
       <text class="block-label">性别</text>
       <view class="gender-row">
-        <view v-for="g in genders" :key="g.value" class="gender-chip clip-tag" :class="{ active: form.gender === g.value }" @click="form.gender = g.value">
+        <view
+          v-for="g in genders"
+          :key="g.value"
+          class="gender-chip clip-tag"
+          :class="{ active: form.gender === g.value }"
+          @click="form.gender = g.value"
+        >
           <text>{{ g.label }}</text>
         </view>
       </view>
@@ -105,7 +111,12 @@ async function chooseAvatar() {
     previewAvatar.value = fileID
   } catch (e: any) {
     // 用户取消选择框（errMsg 含 cancel）静默返回，不弹「头像上传失败」误导
-    if (String(e?.errMsg || e?.message || '').toLowerCase().includes('cancel')) return
+    if (
+      String(e?.errMsg || e?.message || '')
+        .toLowerCase()
+        .includes('cancel')
+    )
+      return
     uni.showToast({ title: e?.message || '头像上传失败', icon: 'none' })
   }
 }
@@ -119,7 +130,11 @@ async function save() {
   renameWarn.value = ''
   try {
     const tags = form.tagsText
-      ? form.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean).slice(0, 10)
+      ? form.tagsText
+          .split(/[,，]/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .slice(0, 10)
       : []
     const res: any = await callFunction('user-update', {
       nickname: form.nickname.trim(),
@@ -162,28 +177,59 @@ onMounted(hydrate)
 </script>
 
 <style lang="scss" scoped>
-.update-root { padding: 24rpx 32rpx 80rpx; }
+.update-root {
+  padding: 24rpx 32rpx 80rpx;
+}
 .form-block {
-  padding: 24rpx; margin-bottom: 20rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.block-label { display: block; font-size: 26rpx; font-weight: var(--fw-title); color: var(--text-primary); margin-bottom: 16rpx; }
+.block-label {
+  display: block;
+  font-size: 26rpx;
+  font-weight: var(--fw-title);
+  color: var(--text-primary);
+  margin-bottom: 16rpx;
+}
 .input {
-  width: 100%; font-size: 28rpx; color: var(--text-primary);
-  background: var(--bg-elevated); padding: 16rpx; border-radius: var(--radius-sharp);
-  border: 1rpx solid var(--border); box-sizing: border-box; margin-bottom: 8rpx;
+  width: 100%;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  padding: 16rpx;
+  border-radius: var(--radius-sharp);
+  border: 1rpx solid var(--border);
+  box-sizing: border-box;
+  margin-bottom: 8rpx;
 }
-.hint.err { display: block; font-size: 22rpx; color: var(--danger); margin-top: 12rpx; }
+.hint.err {
+  display: block;
+  font-size: 22rpx;
+  color: var(--danger);
+  margin-top: 12rpx;
+}
 
-.avatar-row { display: flex; align-items: center; gap: 24rpx; }
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
 .avatar {
-  width: 120rpx; height: 120rpx; border-radius: var(--radius-sharp); background: var(--bg-elevated);
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: var(--radius-sharp);
+  background: var(--bg-elevated);
   &--ph {
     background: rgba(200, 241, 53, 0.18);
     border: 2rpx solid var(--accent-dim);
     clip-path: var(--clip-diamond);
     transform: rotate(0deg);
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   &--ph-plus {
     font-size: 40rpx;
@@ -191,22 +237,51 @@ onMounted(hydrate)
     font-weight: var(--fw-title);
   }
 }
-.avatar-change { font-size: 24rpx; color: var(--accent); font-weight: var(--fw-title); display: inline-block; padding: 6rpx 16rpx; }
-
-.gender-row { display: flex; gap: 16rpx; }
-.gender-chip {
-  padding: 8rpx 24rpx; font-size: 24rpx; color: var(--text-secondary);
-  background: var(--bg-elevated); border: 1rpx solid var(--border);
-  &.active { color: #0D110E; background: var(--accent); font-weight: var(--fw-title); }
+.avatar-change {
+  font-size: 24rpx;
+  color: var(--accent);
+  font-weight: var(--fw-title);
+  display: inline-block;
+  padding: 6rpx 16rpx;
 }
-.gender-chip.press { transition: transform var(--t-fast) var(--ease-out); }
-.gender-chip.press:active { transform: scale(0.95); }
 
-.submit-wrap { margin-top: 40rpx; }
+.gender-row {
+  display: flex;
+  gap: 16rpx;
+}
+.gender-chip {
+  padding: 8rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1rpx solid var(--border);
+  &.active {
+    color: #0d110e;
+    background: var(--accent);
+    font-weight: var(--fw-title);
+  }
+}
+.gender-chip.press {
+  transition: transform var(--t-fast) var(--ease-out);
+}
+.gender-chip.press:active {
+  transform: scale(0.95);
+}
+
+.submit-wrap {
+  margin-top: 40rpx;
+}
 .submit-btn {
-  width: 100%; padding: 24rpx; background: var(--accent);
-  color: #0D110E; font-size: 30rpx; font-weight: var(--fw-title);
-  border: none; border-radius: var(--radius-sharp);
-  &[disabled] { opacity: 0.6; }
+  width: 100%;
+  padding: 24rpx;
+  background: var(--accent);
+  color: #0d110e;
+  font-size: 30rpx;
+  font-weight: var(--fw-title);
+  border: none;
+  border-radius: var(--radius-sharp);
+  &[disabled] {
+    opacity: 0.6;
+  }
 }
 </style>

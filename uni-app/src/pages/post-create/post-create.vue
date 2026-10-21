@@ -18,7 +18,9 @@
         </view>
       </view>
       <text v-if="isEdit" class="hint">编辑模式：类型 / 匿名 / 任务过期等不可修改</text>
-      <text v-else-if="kind === 'confession'" class="hint">表白墙将强制匿名发布（后端强制，无需手动选择）</text>
+      <text v-else-if="kind === 'confession'" class="hint"
+        >表白墙将强制匿名发布（后端强制，无需手动选择）</text
+      >
       <text v-else-if="kind === 'task'" class="hint">任务帖支持设置过期天数</text>
     </view>
 
@@ -88,7 +90,9 @@
       <textarea
         v-model="form.content"
         class="textarea"
-        :placeholder="kind === 'confession' ? '想说的话（不超过500字）' : '详细描述（不超过2000字）'"
+        :placeholder="
+          kind === 'confession' ? '想说的话（不超过500字）' : '详细描述（不超过2000字）'
+        "
         :maxlength="kind === 'confession' ? 500 : 2000"
       />
     </view>
@@ -119,12 +123,10 @@
 
     <!-- 提交 -->
     <view class="submit-wrap">
-      <button
-        class="submit-btn sticker press"
-        :disabled="submitting || uploading"
-        @click="submit"
-      >
-        <text>{{ submitting ? (isEdit ? '保存中…' : '发布中…') : (isEdit ? '保存修改' : '发布') }}</text>
+      <button class="submit-btn sticker press" :disabled="submitting || uploading" @click="submit">
+        <text>{{
+          submitting ? (isEdit ? '保存中…' : '发布中…') : isEdit ? '保存修改' : '发布'
+        }}</text>
       </button>
     </view>
   </view>
@@ -194,7 +196,10 @@ const categoryPath = computed(() =>
   [...catPath.value.map((p) => p.id), categoryId.value].filter(Boolean)
 )
 const selectedLabel = computed(() =>
-  [...catPath.value.map((p) => p.name), ...catOptions.value.filter((c) => c._id === categoryId.value).map((c) => c.name)].join(' / ')
+  [
+    ...catPath.value.map((p) => p.name),
+    ...catOptions.value.filter((c) => c._id === categoryId.value).map((c) => c.name)
+  ].join(' / ')
 )
 
 const submitting = ref(false)
@@ -228,7 +233,15 @@ const initializing = ref(true)
 
 // ---- 脏数据检测 ----
 function isDirty(): boolean {
-  return !!(form.title || form.content || form.images.length || form.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean).length)
+  return !!(
+    form.title ||
+    form.content ||
+    form.images.length ||
+    form.tagsText
+      .split(/[,，]/)
+      .map((t) => t.trim())
+      .filter(Boolean).length
+  )
 }
 
 onMounted(async () => {
@@ -249,7 +262,9 @@ onMounted(async () => {
         content: '已填写的内容将不会被保存',
         confirmText: '放弃',
         cancelText: '继续编辑',
-        success: (r: any) => { if (r.confirm) (uni as any).navigateBack() }
+        success: (r: any) => {
+          if (r.confirm) (uni as any).navigateBack()
+        }
       })
       return true // 阻止默认返回
     }
@@ -344,7 +359,12 @@ async function chooseImage() {
       uni.chooseImage({ count: 9 - form.images.length, success: resolve, fail: reject })
     })
   } catch (e: any) {
-    if (String(e?.errMsg || e?.message || '').toLowerCase().includes('cancel')) return // 用户主动取消
+    if (
+      String(e?.errMsg || e?.message || '')
+        .toLowerCase()
+        .includes('cancel')
+    )
+      return // 用户主动取消
     uni.showToast({ title: e?.message || '选择图片失败', icon: 'none' })
     return
   }
@@ -370,9 +390,7 @@ async function chooseImage() {
 // 维护「fileID → 临时 URL」预览映射（上传后刷新）
 const imagePreviews = ref<string[]>([])
 async function refreshImagePreviews() {
-  imagePreviews.value = await Promise.all(
-    form.images.map((f) => fileIDToTempUrl(f).catch(() => f))
-  )
+  imagePreviews.value = await Promise.all(form.images.map((f) => fileIDToTempUrl(f).catch(() => f)))
 }
 
 function removeImage(i: number) {
@@ -383,12 +401,16 @@ function removeImage(i: number) {
 async function submit() {
   // 本地前置校验（与后端契约对齐，减少无效请求）
   if (!form.title.trim()) return uni.showToast({ title: '请输入标题', icon: 'none' })
-  if (form.title.trim().length > 30) return uni.showToast({ title: '标题不能超过30字', icon: 'none' })
+  if (form.title.trim().length > 30)
+    return uni.showToast({ title: '标题不能超过30字', icon: 'none' })
   if (!form.content.trim() && !form.images.length) {
     return uni.showToast({ title: '请输入内容或上传图片', icon: 'none' })
   }
   if (!categoryId.value) {
-    return uni.showToast({ title: catPath.value.length ? '请继续选择更具体的分类' : '请选择分类', icon: 'none' })
+    return uni.showToast({
+      title: catPath.value.length ? '请继续选择更具体的分类' : '请选择分类',
+      icon: 'none'
+    })
   }
   // 任务过期天数仅创建时可选（编辑模式后端不接受该字段，前端也不展示）
   if (!isEdit.value && kind.value === 'task' && !expireDays.includes(form.expireDays)) {
@@ -398,7 +420,11 @@ async function submit() {
   submitting.value = true
   try {
     const tags = form.tagsText
-      ? form.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean).slice(0, 10)
+      ? form.tagsText
+          .split(/[,，]/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .slice(0, 10)
       : []
     // ---- 编辑分支：post-update，天然幂等，不带 clientReqId；成功后返回上一页 ----
     if (isEdit.value) {
@@ -455,66 +481,169 @@ async function submit() {
 </script>
 
 <style lang="scss" scoped>
-.create-root { padding: 24rpx 32rpx 80rpx; }
+.create-root {
+  padding: 24rpx 32rpx 80rpx;
+}
 
 .init-mask {
-  position: fixed; inset: 0; z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-page);
-  font-size: 24rpx; color: var(--text-secondary);
+  font-size: 24rpx;
+  color: var(--text-secondary);
 }
 
 .form-block {
-  padding: 24rpx; margin-bottom: 20rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.block-label { display: block; font-size: 26rpx; font-weight: var(--fw-title); color: var(--text-primary); margin-bottom: 16rpx; }
-.req { color: var(--accent); }
-
-.kind-grid, .cat-pick { display: flex; flex-wrap: wrap; gap: 16rpx; }
-.kind-chip, .cat-chip {
-  display: flex; align-items: center; gap: 6rpx;
-  padding: 8rpx 24rpx; font-size: 24rpx; color: var(--text-secondary);
-  background: var(--bg-elevated); border: 1rpx solid var(--border);
-  &.active { color: #0D110E; background: var(--accent); font-weight: var(--fw-title); }
+.block-label {
+  display: block;
+  font-size: 26rpx;
+  font-weight: var(--fw-title);
+  color: var(--text-primary);
+  margin-bottom: 16rpx;
 }
-.cat-chip.parent { border-style: dashed; }
-.cat-more { font-size: 26rpx; color: var(--text-tertiary); }
+.req {
+  color: var(--accent);
+}
 
-.cat-crumb { display: flex; flex-wrap: wrap; align-items: center; margin-bottom: 16rpx; }
-.crumb-seg { display: flex; align-items: center; }
-.crumb { font-size: 24rpx; color: var(--text-secondary); }
-.crumb.on { color: var(--accent); font-weight: var(--fw-title); }
-.crumb-sep { margin: 0 8rpx; color: var(--text-tertiary); }
-.picked { display: block; font-size: 22rpx; color: var(--accent); margin-top: 12rpx; }
+.kind-grid,
+.cat-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.kind-chip,
+.cat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1rpx solid var(--border);
+  &.active {
+    color: #0d110e;
+    background: var(--accent);
+    font-weight: var(--fw-title);
+  }
+}
+.cat-chip.parent {
+  border-style: dashed;
+}
+.cat-more {
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+}
+
+.cat-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+.crumb-seg {
+  display: flex;
+  align-items: center;
+}
+.crumb {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+.crumb.on {
+  color: var(--accent);
+  font-weight: var(--fw-title);
+}
+.crumb-sep {
+  margin: 0 8rpx;
+  color: var(--text-tertiary);
+}
+.picked {
+  display: block;
+  font-size: 22rpx;
+  color: var(--accent);
+  margin-top: 12rpx;
+}
 
 .input {
-  width: 100%; font-size: 28rpx; color: var(--text-primary);
-  background: var(--bg-elevated); padding: 16rpx; border-radius: var(--radius-sharp);
-  border: 1rpx solid var(--border); box-sizing: border-box;
+  width: 100%;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  padding: 16rpx;
+  border-radius: var(--radius-sharp);
+  border: 1rpx solid var(--border);
+  box-sizing: border-box;
 }
 .textarea {
-  width: 100%; min-height: 200rpx; font-size: 28rpx; color: var(--text-primary);
-  background: var(--bg-elevated); padding: 16rpx; border-radius: var(--radius-sharp);
-  border: 1rpx solid var(--border); box-sizing: border-box; line-height: 1.6;
+  width: 100%;
+  min-height: 200rpx;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  padding: 16rpx;
+  border-radius: var(--radius-sharp);
+  border: 1rpx solid var(--border);
+  box-sizing: border-box;
+  line-height: 1.6;
 }
 
-.hint { display: block; font-size: 22rpx; color: var(--text-tertiary); margin-top: 12rpx; }
+.hint {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 12rpx;
+}
 
-.img-grid { display: flex; flex-wrap: wrap; gap: 12rpx; }
-.img-item { position: relative; width: 160rpx; height: 160rpx; }
-.img-thumb { width: 100%; height: 100%; border-radius: var(--radius-sharp); background: var(--bg-elevated); }
+.img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.img-item {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+}
+.img-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sharp);
+  background: var(--bg-elevated);
+}
 .img-del {
-  position: absolute; top: -8rpx; right: -8rpx; width: 36rpx; height: 36rpx;
-  background: var(--danger); color: #0D110E; border-radius: 8rpx;
-  display: flex; align-items: center; justify-content: center; font-size: 24rpx; font-weight: var(--fw-title);
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  width: 36rpx;
+  height: 36rpx;
+  background: var(--danger);
+  color: #0d110e;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
 }
 .img-add {
-  width: 160rpx; height: 160rpx;
+  width: 160rpx;
+  height: 160rpx;
   border: 2rpx solid var(--border);
   background: var(--bg-elevated);
   border-radius: var(--radius-sharp);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 12rpx 100%, 0 calc(100% - 12rpx));
   position: relative;
 }
@@ -525,24 +654,37 @@ async function submit() {
 }
 .img-add-h {
   position: absolute;
-  top: 50%; left: 0;
-  width: 100%; height: 4rpx;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 4rpx;
   background: var(--accent);
   transform: translateY(-50%);
 }
 .img-add-v {
   position: absolute;
-  left: 50%; top: 0;
-  height: 100%; width: 4rpx;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  width: 4rpx;
   background: var(--accent);
   transform: translateX(-50%);
 }
 
-.submit-wrap { margin-top: 40rpx; }
+.submit-wrap {
+  margin-top: 40rpx;
+}
 .submit-btn {
-  width: 100%; padding: 24rpx; background: var(--accent);
-  color: #0D110E; font-size: 30rpx; font-weight: var(--fw-title);
-  border: none; border-radius: var(--radius-sharp);
-  &[disabled] { opacity: 0.6; }
+  width: 100%;
+  padding: 24rpx;
+  background: var(--accent);
+  color: #0d110e;
+  font-size: 30rpx;
+  font-weight: var(--fw-title);
+  border: none;
+  border-radius: var(--radius-sharp);
+  &[disabled] {
+    opacity: 0.6;
+  }
 }
 </style>

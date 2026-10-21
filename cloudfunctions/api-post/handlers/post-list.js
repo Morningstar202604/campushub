@@ -90,5 +90,12 @@ module.exports = wrap(async (event) => {
       .limit(size)
       .get()
   }
-  return ok({ list: res.data, hasMore: res.data.length === size })
+  return ok({ list: res.data.map(maskAnonymous), hasMore: res.data.length === size })
 })
+
+/** 匿名帖脱敏：userId 可反查作者主页，不能随匿名内容下发（同 post-detail） */
+function maskAnonymous(post) {
+  if (!post || !post.isAnonymous) return post
+  const { userId: _userId, userAvatar: _avatar, ...safe } = post
+  return { ...safe, userId: '' }
+}

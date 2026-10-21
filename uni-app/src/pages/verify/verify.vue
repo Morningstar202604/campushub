@@ -263,7 +263,9 @@ onLoad(() => {
   color: var(--accent);
   font-weight: var(--fw-title);
 }
-.vf-status--reject .vf-status-kicker { color: var(--destructive, #FF6B6B); }
+.vf-status--reject .vf-status-kicker {
+  color: var(--destructive, #ff6b6b);
+}
 .vf-status-title {
   font-size: 34rpx;
   font-weight: var(--fw-title);
@@ -303,7 +305,9 @@ onLoad(() => {
   color: var(--text-secondary);
   font-weight: var(--fw-title);
 }
-.vf-req { color: var(--accent); }
+.vf-req {
+  color: var(--accent);
+}
 .vf-hint {
   font-size: 22rpx;
   color: var(--text-tertiary);
@@ -379,5 +383,7 @@ onLoad(() => {
   color: var(--text-tertiary);
   box-shadow: none;
 }
-.vf-submit[disabled] { opacity: 0.7; }
+.vf-submit[disabled] {
+  opacity: 0.7;
+}
 </style>

@@ -6,7 +6,9 @@
       <text class="cn-name" :class="{ 'cn-name-root': node.level === 1 }">{{ node.name }}</text>
       <text class="cn-kind">{{ kindLabel }}</text>
       <view class="cn-actions">
-        <text v-if="node.level < 3" class="cn-act cn-act-add press" @click.stop="$emit('add', node)">+子级</text>
+        <text v-if="node.level < 3" class="cn-act cn-act-add press" @click.stop="$emit('add', node)"
+          >+子级</text
+        >
         <text class="cn-act cn-act-edit press" @click.stop="$emit('edit', node)">编辑</text>
         <text
           class="cn-act cn-act-del press"
@@ -43,7 +45,9 @@ defineOptions({ name: 'CatNode' })
 defineEmits(['add', 'edit', 'del'])
 
 const indent = computed(() => `${((props.node.level || 1) - 1) * 32}rpx`)
-const hasChildren = computed(() => Array.isArray(props.node.children) && props.node.children.length > 0)
+const hasChildren = computed(
+  () => Array.isArray(props.node.children) && props.node.children.length > 0
+)
 
 const KIND_LABELS: Record<string, string> = { zone: '分区', forum: '版块', board: '栏目' }
 const kindLabel = computed(() => KIND_LABELS[props.node.kind] || props.node.kind)
@@ -51,25 +55,63 @@ const kindLabel = computed(() => KIND_LABELS[props.node.kind] || props.node.kind
 
 <style lang="scss" scoped>
 .cn-row {
-  display: flex; align-items: center; gap: 10rpx; min-height: 72rpx;
-  border-bottom: 1rpx solid var(--border); padding-right: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-height: 72rpx;
+  border-bottom: 1rpx solid var(--border);
+  padding-right: 8rpx;
 }
-.cn-branch { color: var(--text-tertiary); font-size: 24rpx; flex-shrink: 0; }
-.cn-emoji { font-size: 28rpx; flex-shrink: 0; }
+.cn-branch {
+  color: var(--text-tertiary);
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+.cn-emoji {
+  font-size: 28rpx;
+  flex-shrink: 0;
+}
 .cn-name {
-  font-size: 26rpx; color: var(--text-body); flex: 1; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 26rpx;
+  color: var(--text-body);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.cn-name-root { font-weight: var(--fw-title); color: var(--text-primary); font-size: 28rpx; }
+.cn-name-root {
+  font-weight: var(--fw-title);
+  color: var(--text-primary);
+  font-size: 28rpx;
+}
 .cn-kind {
-  font-size: 18rpx; color: var(--text-tertiary); background: var(--bg-elevated);
-  padding: 2rpx 10rpx; flex-shrink: 0;
+  font-size: 18rpx;
+  color: var(--text-tertiary);
+  background: var(--bg-elevated);
+  padding: 2rpx 10rpx;
+  flex-shrink: 0;
 }
-.cn-actions { display: flex; gap: 18rpx; flex-shrink: 0; }
-.cn-act { font-size: 22rpx; padding: 4rpx 6rpx; }
-.cn-act-add { color: var(--accent); }
-.cn-act-edit { color: var(--secondary); }
-.cn-act-del { color: var(--danger);
-  &.disabled { color: var(--text-tertiary); opacity: 0.6; }
+.cn-actions {
+  display: flex;
+  gap: 18rpx;
+  flex-shrink: 0;
+}
+.cn-act {
+  font-size: 22rpx;
+  padding: 4rpx 6rpx;
+}
+.cn-act-add {
+  color: var(--accent);
+}
+.cn-act-edit {
+  color: var(--secondary);
+}
+.cn-act-del {
+  color: var(--danger);
+  &.disabled {
+    color: var(--text-tertiary);
+    opacity: 0.6;
+  }
 }
 </style>

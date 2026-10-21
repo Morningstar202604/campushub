@@ -3,7 +3,12 @@
     <!-- 标题 -->
     <view class="form-block sticker">
       <text class="block-label">标题 <text class="req">*</text></text>
-      <input v-model="form.title" class="input" placeholder="商品标题（不超过30字）" maxlength="30" />
+      <input
+        v-model="form.title"
+        class="input"
+        placeholder="商品标题（不超过30字）"
+        maxlength="30"
+      />
     </view>
 
     <!-- 图片（必须≥1，最多9） -->
@@ -37,19 +42,37 @@
     <view class="form-block sticker">
       <text class="block-label">分类</text>
       <view class="chip-row">
-        <view v-for="c in categories" :key="c.value" class="chip clip-tag" :class="{ active: form.category === c.value }" @click="form.category = c.value">
+        <view
+          v-for="c in categories"
+          :key="c.value"
+          class="chip clip-tag"
+          :class="{ active: form.category === c.value }"
+          @click="form.category = c.value"
+        >
           <text>{{ c.label }}</text>
         </view>
       </view>
       <text class="block-label sub">成色</text>
       <view class="chip-row">
-        <view v-for="c in conditions" :key="c.value" class="chip clip-tag" :class="{ active: form.condition === c.value }" @click="form.condition = c.value">
+        <view
+          v-for="c in conditions"
+          :key="c.value"
+          class="chip clip-tag"
+          :class="{ active: form.condition === c.value }"
+          @click="form.condition = c.value"
+        >
           <text>{{ c.label }}</text>
         </view>
       </view>
       <text class="block-label sub">交易方式</text>
       <view class="chip-row">
-        <view v-for="c in trades" :key="c.value" class="chip clip-tag" :class="{ active: form.tradeType === c.value }" @click="form.tradeType = c.value">
+        <view
+          v-for="c in trades"
+          :key="c.value"
+          class="chip clip-tag"
+          :class="{ active: form.tradeType === c.value }"
+          @click="form.tradeType = c.value"
+        >
           <text>{{ c.label }}</text>
         </view>
       </view>
@@ -60,19 +83,31 @@
       <text class="block-label">交易地点</text>
       <input v-model="form.location" class="input" placeholder="如：东区宿舍楼下" maxlength="200" />
       <text class="block-label sub">联系方式</text>
-      <input v-model="form.contactInfo" class="input" placeholder="手机号 / 微信号等" maxlength="100" />
+      <input
+        v-model="form.contactInfo"
+        class="input"
+        placeholder="手机号 / 微信号等"
+        maxlength="100"
+      />
     </view>
 
     <!-- 描述 -->
     <view class="form-block sticker">
       <text class="block-label">描述</text>
-      <textarea v-model="form.description" class="textarea" placeholder="补充说明（不超过2000字）" maxlength="2000" />
+      <textarea
+        v-model="form.description"
+        class="textarea"
+        placeholder="补充说明（不超过2000字）"
+        maxlength="2000"
+      />
     </view>
 
     <!-- 提交 -->
     <view class="submit-wrap">
       <button class="submit-btn sticker press" :disabled="submitting || uploading" @click="submit">
-        <text>{{ submitting ? (isEdit ? '保存中…' : '发布中…') : (isEdit ? '保存修改' : '发布好物') }}</text>
+        <text>{{
+          submitting ? (isEdit ? '保存中…' : '发布中…') : isEdit ? '保存修改' : '发布好物'
+        }}</text>
       </button>
     </view>
   </view>
@@ -187,7 +222,12 @@ async function chooseImage() {
       uni.chooseImage({ count: 9 - form.images.length, success: resolve, fail: reject })
     })
   } catch (e: any) {
-    if (String(e?.errMsg || e?.message || '').toLowerCase().includes('cancel')) return // 用户主动取消
+    if (
+      String(e?.errMsg || e?.message || '')
+        .toLowerCase()
+        .includes('cancel')
+    )
+      return // 用户主动取消
     uni.showToast({ title: e?.message || '选择图片失败', icon: 'none' })
     return
   }
@@ -199,7 +239,9 @@ async function chooseImage() {
       const fileID = await uploadImage(p)
       form.images.push(fileID)
     }
-    imagePreviews.value = await Promise.all(form.images.map((f) => fileIDToTempUrl(f).catch(() => f)))
+    imagePreviews.value = await Promise.all(
+      form.images.map((f) => fileIDToTempUrl(f).catch(() => f))
+    )
   } catch (e: any) {
     uni.showToast({ title: e?.message || '图片上传失败', icon: 'none' })
   } finally {
@@ -215,7 +257,8 @@ function removeImage(i: number) {
 async function submit() {
   // 本地前置校验（与后端 product-create 契约严格对齐）
   if (!form.title.trim()) return uni.showToast({ title: '请输入商品标题', icon: 'none' })
-  if (form.title.trim().length > 30) return uni.showToast({ title: '标题不能超过30字', icon: 'none' })
+  if (form.title.trim().length > 30)
+    return uni.showToast({ title: '标题不能超过30字', icon: 'none' })
   if (!form.images.length) return uni.showToast({ title: '请至少上传一张图片', icon: 'none' })
   if (form.images.length > 9) return uni.showToast({ title: '图片不能超过9张', icon: 'none' })
   const price = Number(form.price)
@@ -225,11 +268,16 @@ async function submit() {
   let originalPrice: number | null = null
   if (form.originalPrice !== '') {
     const op = Number(form.originalPrice)
-    if (!Number.isFinite(op) || op <= 0) return uni.showToast({ title: '请输入有效原价', icon: 'none' })
+    if (!Number.isFinite(op) || op <= 0)
+      return uni.showToast({ title: '请输入有效原价', icon: 'none' })
     if (op < price) return uni.showToast({ title: '原价不能低于售价', icon: 'none' })
     originalPrice = op
   }
-  if (!CATEGORY_VALUES.includes(form.category) || !CONDITION_VALUES.includes(form.condition) || !TRADE_VALUES.includes(form.tradeType)) {
+  if (
+    !CATEGORY_VALUES.includes(form.category) ||
+    !CONDITION_VALUES.includes(form.condition) ||
+    !TRADE_VALUES.includes(form.tradeType)
+  ) {
     return uni.showToast({ title: '请选择分类 / 成色 / 交易方式', icon: 'none' })
   }
 
@@ -288,54 +336,138 @@ async function submit() {
 </script>
 
 <style lang="scss" scoped>
-.create-root { padding: 24rpx 32rpx 80rpx; }
+.create-root {
+  padding: 24rpx 32rpx 80rpx;
+}
 
 .form-block {
-  padding: 24rpx; margin-bottom: 20rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
-.block-label { display: block; font-size: 26rpx; font-weight: var(--fw-title); color: var(--text-primary); margin-bottom: 16rpx; }
-.block-label.sub { margin-top: 24rpx; }
-.req { color: var(--accent); }
+.block-label {
+  display: block;
+  font-size: 26rpx;
+  font-weight: var(--fw-title);
+  color: var(--text-primary);
+  margin-bottom: 16rpx;
+}
+.block-label.sub {
+  margin-top: 24rpx;
+}
+.req {
+  color: var(--accent);
+}
 
 .input {
-  width: 100%; font-size: 28rpx; color: var(--text-primary);
-  background: var(--bg-elevated); padding: 16rpx; border-radius: var(--radius-sharp);
-  border: 1rpx solid var(--border); box-sizing: border-box; margin-bottom: 8rpx;
+  width: 100%;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  padding: 16rpx;
+  border-radius: var(--radius-sharp);
+  border: 1rpx solid var(--border);
+  box-sizing: border-box;
+  margin-bottom: 8rpx;
 }
 .textarea {
-  width: 100%; min-height: 160rpx; font-size: 28rpx; color: var(--text-primary);
-  background: var(--bg-elevated); padding: 16rpx; border-radius: var(--radius-sharp);
-  border: 1rpx solid var(--border); box-sizing: border-box; line-height: 1.6;
+  width: 100%;
+  min-height: 160rpx;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  padding: 16rpx;
+  border-radius: var(--radius-sharp);
+  border: 1rpx solid var(--border);
+  box-sizing: border-box;
+  line-height: 1.6;
 }
 
-.chip-row { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
 .chip {
-  padding: 8rpx 24rpx; font-size: 24rpx; color: var(--text-secondary);
-  background: var(--bg-elevated); border: 1rpx solid var(--border);
-  &.active { color: #0D110E; background: var(--accent); font-weight: var(--fw-title); }
+  padding: 8rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1rpx solid var(--border);
+  &.active {
+    color: #0d110e;
+    background: var(--accent);
+    font-weight: var(--fw-title);
+  }
 }
 
-.img-grid { display: flex; flex-wrap: wrap; gap: 12rpx; }
-.img-item { position: relative; width: 160rpx; height: 160rpx; }
-.img-thumb { width: 100%; height: 100%; border-radius: var(--radius-sharp); background: var(--bg-elevated); }
+.img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.img-item {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+}
+.img-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sharp);
+  background: var(--bg-elevated);
+}
 .img-del {
-  position: absolute; top: -8rpx; right: -8rpx; width: 36rpx; height: 36rpx;
-  background: var(--danger); color: #0D110E; border-radius: 8rpx;
-  display: flex; align-items: center; justify-content: center; font-size: 24rpx; font-weight: var(--fw-title);
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  width: 36rpx;
+  height: 36rpx;
+  background: var(--danger);
+  color: #0d110e;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: var(--fw-title);
 }
 .img-add {
-  width: 160rpx; height: 160rpx; border: 2rpx dashed var(--border); border-radius: var(--radius-sharp);
-  display: flex; align-items: center; justify-content: center;
-  .img-plus { font-size: 48rpx; color: var(--text-tertiary); }
+  width: 160rpx;
+  height: 160rpx;
+  border: 2rpx dashed var(--border);
+  border-radius: var(--radius-sharp);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .img-plus {
+    font-size: 48rpx;
+    color: var(--text-tertiary);
+  }
 }
-.hint { display: block; font-size: 22rpx; color: var(--text-tertiary); margin-top: 12rpx; }
+.hint {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 12rpx;
+}
 
-.submit-wrap { margin-top: 40rpx; }
+.submit-wrap {
+  margin-top: 40rpx;
+}
 .submit-btn {
-  width: 100%; padding: 24rpx; background: var(--accent);
-  color: #0D110E; font-size: 30rpx; font-weight: var(--fw-title);
-  border: none; border-radius: var(--radius-sharp);
-  &[disabled] { opacity: 0.6; }
+  width: 100%;
+  padding: 24rpx;
+  background: var(--accent);
+  color: #0d110e;
+  font-size: 30rpx;
+  font-weight: var(--fw-title);
+  border: none;
+  border-radius: var(--radius-sharp);
+  &[disabled] {
+    opacity: 0.6;
+  }
 }
 </style>

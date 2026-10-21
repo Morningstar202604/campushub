@@ -141,8 +141,76 @@ module.exports = wrap(async (event) => {
       actor: { _id: '__admin__', openid: operatorOpenid },
       opts: { userCountField: cfg.userCountField, targetComment: cfg.targetComment }
     })
+    // 管理台删评论楼层时要级联软删子回复并回退计数：
+    // removeContent 只处理单条文档，级联逻辑原本只在 comment-delete 里，
+    // 从管理台删除会留下孤儿回复 + commentCount 少扣。
+    if (targetType === 'comment') {
+      try {
+        const cd = await db
+          .collection('comments')
+          .doc(targetId)
+          .get()
+          .catch(() => ({ data: null }))
+        const doc = cd && cd.data
+        if (doc && !doc.parentId && doc.targetType && doc.targetId) {
+          const claim = await db
+            .collection('comments')
+            .where({ parentId: targetId, status: _.neq('deleted') })
+            .update({ data: { status: 'deleted', updatedAt: new Date() } })
+          const cascaded = (claim && claim.stats && claim.stats.updated) || 0
+          if (cascaded > 0) {
+            const tcol = doc.targetType === 'post' ? 'posts' : 'products'
+            await db
+              .collection(tcol)
+              .doc(doc.targetId)
+              .update({ data: { commentCount: _.inc(-cascaded) } })
+              .catch(() => {})
+          }
+        }
+      } catch (e) {
+        console.warn('[admin] 评论级联删除失败(已忽略):', e && (e.errMsg || e.message))
+      }
+    }
+    // 处置被举报内容后，把关联的 pending 举报置为已处理并通知举报人。
+    // 不做这一步，审核队列永远清不掉，管理员会反复看到已删内容的举报。
+    let reportsResolved = 0
+    try {
+      const rs = await db
+        .collection('reports')
+        .where({ targetType, targetId, status: 'pending' })
+        .get()
+      const reporters = new Set()
+      for (const r of rs.data || []) {
+        if (r.reporterId) reporters.add(r.reporterId)
+      }
+      if (reporters.size > 0) {
+        const upd = await db
+          .collection('reports')
+          .where({ targetType, targetId, status: 'pending' })
+          .update({ data: { status: 'resolved', resolvedAt: new Date() } })
+        reportsResolved = (upd && upd.stats && upd.stats.updated) || 0
+        for (const reporterId of reporters) {
+          await db
+            .collection('notifications')
+            .add({
+              data: {
+                userId: reporterId,
+                type: 'system',
+                targetType: '',
+                targetId: '',
+                content: '你举报的内容已处理，感谢反馈',
+                isRead: false,
+                createdAt: new Date()
+              }
+            })
+            .catch(() => {})
+        }
+      }
+    } catch (e) {
+      console.warn('[admin] 举报闭环处理失败(已忽略):', e && (e.errMsg || e.message))
+    }
     await logAdmin(db, operatorOpenid, 'delete', { targetType, targetId })
-    return ok({ deleted: true })
+    return ok({ deleted: true, reportsResolved })
   }
 
   if (action === 'resolve') {
