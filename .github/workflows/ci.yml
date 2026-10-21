@@ -20,7 +20,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # test:frontend 用 node --experimental-strip-types 直接跑 .ts，
+          # 该 flag 自 Node 22 才可用（Node 20 会直接 "bad option" 退出 9）。
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -80,7 +82,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: |
             package-lock.json
