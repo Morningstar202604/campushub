@@ -30,6 +30,8 @@ module.exports = [
       'node_modules/**',
       '.husky/**',
       'dist/**',
+      // Android 壳工程：build/ 是 Gradle 产物，assets/www 是 H5 构建拷贝，都不是源文件
+      'android/**',
       'scripts/coverage/**',
       'uni-app/**'
     ]

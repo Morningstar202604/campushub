@@ -276,14 +276,14 @@ async function ensureCloudbase(): Promise<any> {
     //    "Invalid value 'iife' for option 'output.format' — UMD and IIFE output formats
     //     are not supported for code-splitting builds."
     //    这正是此前 APK 打不出来的根因。
+    // SDK 模块引用：H5 用静态导入的真实 SDK，其他端保持 null。
+    // 条件编译用「赋值」而不是「声明」，避免两个分支各写一次 const 导致重复声明
+    // （条件编译注释在 vue-tsc / esbuild 阶段两边都可见，这个坑被 tests/frontend 抓到）。
+    let sdkModule: any = null
     // #ifdef H5
-    const mod: any = cloudbaseSdk
+    sdkModule = cloudbaseSdk
     // #endif
-    // #ifndef H5
-    // App/小程序不走 web SDK（App 用 uni 原生存储 API），这里给个空壳让类型收敛
-    const mod: any = {}
-    // #endif
-    const sdk = mod?.default ?? mod
+    const sdk = sdkModule?.default ?? sdkModule
     const schoolStore = useSchoolStore()
     if (!schoolStore.envId) {
       // 明确的配置缺失错误（init({ env: '' }) 会在 SDK 内部抛出难懂的错）
