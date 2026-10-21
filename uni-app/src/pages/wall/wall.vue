@@ -1,5 +1,5 @@
 <template>
-  <z-paging ref="pagingRef" v-model="list" :auto="true" @query="queryList" safe-area-inset-bottom>
+  <z-paging ref="pagingRef" v-model="list" :auto="true" :back-to-top="true" @query="queryList" safe-area-inset-bottom>
     <template #top>
       <!-- 页头：标题 + 斜切角品牌标签 -->
       <view class="wall-header">
@@ -35,12 +35,15 @@
       </view>
     </view>
 
-    <template #empty>
-      <view class="empty-state">
+    <template #empty="{ isLoadFailed }">
+      <view v-if="!isLoadFailed" class="empty-state">
         <view class="empty-shape"></view>
         <text class="empty-kicker">LOVE LETTERS</text>
         <text class="empty-title">这里还黑着灯</text>
         <text class="empty-sub">第一盏灯由你点亮</text>
+        <view class="empty-cta press" @click="goCreate">
+          <text>去表白</text>
+        </view>
       </view>
     </template>
   </z-paging>
@@ -62,6 +65,12 @@ const { pagingRef, list, queryList, error, reload } = usePagedList({
 function openDetail(item: any) {
   // @ts-ignore
   uni.navigateTo({ url: `/pages/post-detail/post-detail?id=${item.id}` })
+}
+
+// 空态引导 → 发布页
+function goCreate() {
+  // @ts-ignore
+  uni.navigateTo({ url: '/pages/post-create/post-create' })
 }
 </script>
 
@@ -124,6 +133,15 @@ function openDetail(item: any) {
     color: var(--text-secondary);
 
     .wall-like { color: var(--accent); }
+  }
+}
+
+.empty-state {
+  .empty-cta {
+    margin-top: 28rpx;
+    padding: 14rpx 40rpx;
+    background: var(--accent);
+    text { font-size: 26rpx; font-weight: var(--fw-title); color: #0D110E; }
   }
 }
 

@@ -19,6 +19,25 @@
       <button class="sr-go press hard-border" @click="doSearch">搜索</button>
     </view>
 
+    <!-- 最近搜索（本地历史，未搜索时展示） -->
+    <view v-if="!hasSearched && history.length" class="sr-hot">
+      <view class="sr-hot-title">
+        <text class="sr-hot-kicker">RECENT</text>
+        <text class="sr-hot-sub">最近搜索</text>
+        <text class="sr-hist-clear press" @click="clearHistory">清空</text>
+      </view>
+      <view class="sr-hist-list">
+        <view
+          v-for="(k, i) in history"
+          :key="k + '-' + i"
+          class="sr-hist-item press"
+          @click="onHistory(k)"
+        >
+          <text>{{ k }}</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 热搜（未搜索时展示） -->
     <view v-if="!hasSearched" class="sr-hot">
       <view class="sr-hot-title">
@@ -151,6 +170,44 @@ const inputEl = ref<HTMLInputElement | null>(null)
 const hotList = ref<string[]>([])
 const hotLoading = ref(false)
 
+// 搜索历史：本地存储，最多 10 条，去重、点词即搜、可清空
+const HISTORY_KEY = 'campushub.searchHistory'
+const HISTORY_MAX = 10
+const history = ref<string[]>([])
+
+function loadHistory() {
+  try {
+    const saved = uni.getStorageSync(HISTORY_KEY)
+    history.value = Array.isArray(saved) ? saved.filter((k) => typeof k === 'string') : []
+  } catch {
+    history.value = []
+  }
+}
+
+function saveHistory(kw: string) {
+  const next = [kw, ...history.value.filter((k) => k !== kw)].slice(0, HISTORY_MAX)
+  history.value = next
+  try {
+    uni.setStorageSync(HISTORY_KEY, next)
+  } catch {
+    // 存储失败不影响搜索主流程
+  }
+}
+
+function clearHistory() {
+  history.value = []
+  try {
+    uni.removeStorageSync(HISTORY_KEY)
+  } catch {
+    // 忽略
+  }
+}
+
+function onHistory(k: string) {
+  keyword.value = k
+  doSearch()
+}
+
 // 结果：后端 search 契约是 { posts, products, guides } 三个键
 const postHits = ref<SearchHit[]>([])
 const productHits = ref<SearchHit[]>([])
@@ -202,6 +259,7 @@ async function doSearch() {
   postHits.value = []
   productHits.value = []
   guideHits.value = []
+  saveHistory(kw)
   try {
     const res: any = await callFunction('search', { keyword: kw, page: 1, pageSize: 30 })
     // 已有更新的请求，丢弃本次结果
@@ -253,7 +311,10 @@ function openGuide(id: string) {
   uni.navigateTo({ url: '/pages/guide-detail/guide-detail?id=' + id })
 }
 
-onMounted(loadHot)
+onMounted(() => {
+  loadHistory()
+  loadHot()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -339,6 +400,28 @@ onMounted(loadHot)
 /* 热搜 */
 .sr-hot {
   padding: 8rpx 32rpx;
+}
+.sr-hist-clear {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+.sr-hist-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding-bottom: 8rpx;
+}
+.sr-hist-item {
+  padding: 12rpx 28rpx;
+  font-size: 24rpx;
+  color: var(--text-body);
+  background: var(--bg-deep);
+  border: 1rpx solid var(--border);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sr-hot-title {
   display: flex;

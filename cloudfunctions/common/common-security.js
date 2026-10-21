@@ -48,7 +48,11 @@ const IMAGE_CONTENT_TYPES = {
   jpeg: 'image/jpeg',
   png: 'image/png',
   gif: 'image/gif',
-  bmp: 'image/bmp'
+  bmp: 'image/bmp',
+  // webp：前端上传白名单（uni-app/src/utils/api.ts）一直放行，后端却拒绝 ——
+  // 用户能选中、能上传，最后在发布时收到「仅支持 jpg/jpeg/png/gif/bmp」。
+  // 微信 imgSecCheck 支持 image/webp，此处与前端对齐。
+  webp: 'image/webp'
 }
 // 审核接口配额为 2000 次/分钟；并发不设上限时，一次 9 图发布就会瞬时打出 9 路请求，
 // 多人同时发帖即可耗尽配额 —— 而配额耗尽在本设计里等于全站发不出图（fail-closed）。
@@ -67,7 +71,7 @@ async function checkImage({ fileID } = {}) {
   }
   const contentType = imageContentTypeOf(fileID)
   if (!contentType) {
-    throw new AppError('仅支持 jpg / jpeg / png / gif / bmp 图片', 'IMAGE_TYPE_UNSUPPORTED')
+    throw new AppError('仅支持 jpg / jpeg / png / gif / bmp / webp 图片', 'IMAGE_TYPE_UNSUPPORTED')
   }
 
   let downloaded

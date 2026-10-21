@@ -88,21 +88,17 @@ export const useUserStore = defineStore('user', {
       }
     },
     /**
-     * 拉取未读通知数并同步到 Tab 角标（仅小程序端）
-     * 后端契约：callFunction('notification', { action: 'unreadCount' }) → { unread: number }
+     * 拉取未读通知数并同步到首页「通知」入口角标
+     * 后端契约：callFunction('notification', { action: 'unreadCount' }) → { unreadCount: number }
+     * （字段名是 unreadCount，不是 unread —— 后者是旧实现，会让角标恒为 0）
      */
     async refreshUnreadCount() {
       try {
         const res: any = await callFunction('notification', { action: 'unreadCount' })
-        this.unreadCount = res?.unread || 0
-        // #ifdef MP-WEIXIN
-        const tabIndex = 3 // 通知 Tab 在 tabBar.list 中的索引
-        if (this.unreadCount > 0) {
-          uni.setTabBarBadge({ index: tabIndex, text: String(this.unreadCount) }).catch(() => {})
-        } else {
-          uni.removeTabBarBadge({ index: tabIndex }).catch(() => {})
-        }
-        // #endif
+        this.unreadCount = Number(res?.unreadCount) || 0
+        // 未读数由首页「通知」入口以角标形式展示（首页直接读 unreadCount）。
+        // ⚠️ 不要恢复 setTabBarBadge({ index: 3 })：tabBar[3] 是「失物」而非通知，
+        //    旧逻辑会把未读角标错打到失物 tab 上（已修复的导航错位 bug）。
       } catch {
         // 静默降级：不影响主流程，角标仅展示用
       }

@@ -26,6 +26,8 @@ export function fmtTime(t: unknown): string {
 export interface WallCard {
   id: string
   author: string
+  /** 作者已通过校园认证（后端 post-create 落库字段 authorVerified） */
+  authorVerified: boolean
   isAnonymous: boolean
   time: string
   content: string
@@ -52,6 +54,8 @@ export function adaptWall(raw: any): WallCard {
     // ⚠️ 后端字段以 post-create/index.js 的落库对象为准：userNickname / isAnonymous
     //    （旧代码写的 authorNickname / anonymous 后端从不写入 → 作者名恒为「匿名同学」）
     author: raw.userNickname || raw.nickname || raw.author || '匿名同学',
+    // 匿名帖不带认证标识（匿名身份与实名认证本就矛盾）
+    authorVerified: Boolean(raw.authorVerified) && !raw.isAnonymous,
     isAnonymous: Boolean(raw.isAnonymous),
     time: fmtTime(raw.createdAt),
     content: raw.content || raw.text || '',
@@ -140,6 +144,7 @@ export interface PostDetail {
   kind: string
   author: string
   authorAvatar?: string
+  authorVerified: boolean
   isAnonymous: boolean
   time: string
   viewCount: number
@@ -169,6 +174,7 @@ export function adaptPostDetail(res: any): PostDetail {
     // 同 adaptWall：后端落库字段是 userNickname / userAvatar / isAnonymous
     author: p.userNickname || p.nickname || p.author || '',
     authorAvatar: p.userAvatar || p.avatar || '',
+    authorVerified: Boolean(p.authorVerified) && !p.isAnonymous,
     isAnonymous: Boolean(p.isAnonymous),
     time: fmtTime(p.createdAt),
     viewCount: p.viewCount ?? 0,
@@ -196,6 +202,8 @@ export interface ProductDetail {
   location: string
   contactInfo: string
   author: string
+  /** 作者已通过校园认证（后端 product-create 落库字段 authorVerified） */
+  authorVerified: boolean
   time: string
   viewCount: number
   likeCount: number
@@ -225,6 +233,7 @@ export function adaptProductDetail(res: any): ProductDetail {
     contactInfo: p.contactInfo || '',
     // 后端 product-create 落库字段是 userNickname
     author: p.userNickname || p.nickname || p.author || '',
+    authorVerified: Boolean(p.authorVerified),
     time: fmtTime(p.createdAt),
     viewCount: p.viewCount ?? 0,
     likeCount: p.likeCount ?? 0,

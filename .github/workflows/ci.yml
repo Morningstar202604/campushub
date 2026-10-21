@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Syntax & consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate JSON configs
+        run: |
+          node -e "
+            const fs=require('fs');
+            const files=['package.json','project.config.json','uni-app/package.json','uni-app/src/pages.json','uni-app/src/manifest.json'];
+            fs.readdirSync('cloudfunctions').forEach(d=>{
+              const p='cloudfunctions/'+d+'/package.json';
+              if(fs.existsSync(p)) files.push(p);
+              const c='cloudfunctions/'+d+'/config.json';
+              if(fs.existsSync(c)) files.push(c);
+            });
+            files.forEach(f=>{JSON.parse(fs.readFileSync(f,'utf8'));console.log('OK',f)});
+          "
+
+      - name: Syntax-check all JS (cloud functions)
+        run: |
+          set -e
+          find cloudfunctions -name '*.js' -not -path '*/node_modules/*' -print0 | xargs -0 -n1 node --check
+          echo "All JS syntax OK"
+
+      - name: uni-app structure & anti-pattern gate
+        run: python3 uni-app/scripts/verify_pages.py
+
+      - name: Generate & build gates (gateway routes + kernel inlining)
+        run: |
+          npm run gen:gateways:check
+          npm run build:functions
+          npm run build:functions:check
+
+      - name: Contract check (frontend ↔ cloudfunctions)
+        run: npm run contract
+
+      - name: Lint & format gates
+        run: |
+          npm run lint:js
+          npm run format
+
+      - name: Run unit tests
+        run: npm test

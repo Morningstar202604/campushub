@@ -42,8 +42,8 @@
       </view>
     </view>
 
-    <template #empty>
-      <view class="empty-state">
+    <template #empty="{ isLoadFailed }">
+      <view v-if="!isLoadFailed" class="empty-state">
         <view class="empty-shape"></view>
         <text class="empty-title">暂无指南</text>
         <text class="empty-sub">攻略还在路上</text>
@@ -81,7 +81,8 @@ async function queryGuides(page: number, size: number) {
     if (page === 1) categories.value = res?.categories ?? []
     const pageData: GuideCard[] = (res?.guides ?? []).map((raw: any) => adaptGuide(raw))
     const hasMore = Boolean(res?.hasMore)
-    paging.completeByNoMore(pageData, hasMore)
+    // 第二参数是 noMore（没有更多），传 hasMore 会把「还有下一页」判成「已到底」
+    paging.completeByNoMore(pageData, !hasMore)
   } catch (e: any) {
     error.value = e?.message || String(e)
     if (typeof paging.completeByError === 'function') paging.completeByError(error.value)

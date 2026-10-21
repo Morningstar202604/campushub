@@ -6,7 +6,7 @@
 
 <rect x="70" y="84" width="780" height="112" rx="12" fill="#EAF2FB" stroke="#4A90D9" stroke-width="1.6"/>
 <text x="90" y="112" font-size="15" font-weight="700" fill="#2F6FB0" text-anchor="start">① uni-app 前端（一套代码 · 三端交付）</text>
-<text x="90" y="134" font-size="12.5" font-weight="400" fill="#41506B" text-anchor="start">Vue 3 + Vite · pinia · z-paging · wot-design-uni · 20 个页面 · 设计系统「墨荧 · Acid Campus」</text>
+<text x="90" y="134" font-size="12.5" font-weight="400" fill="#41506B" text-anchor="start">Vue 3 + Vite · pinia · z-paging · wot-design-uni · 24 个页面 · 设计系统「墨荧 · Acid Campus」</text>
 <rect x="90" y="150" width="170" height="26" rx="6" fill="#FFFFFF" stroke="#9CC2E8" stroke-width="1"/>
 <text x="175" y="166.85" font-size="11" fill="#41506B" text-anchor="middle">微信小程序</text>
 <rect x="278" y="150" width="170" height="26" rx="6" fill="#FFFFFF" stroke="#9CC2E8" stroke-width="1"/>

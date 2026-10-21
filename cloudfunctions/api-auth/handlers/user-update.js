@@ -9,6 +9,7 @@ const {
   requireActiveUser,
   checkContents,
   checkImage,
+  checkAdmin,
   rateLimit
 } = require('./common-bundle')
 
@@ -107,5 +108,13 @@ module.exports = wrap(async (event) => {
   const updated = await db.collection('users').doc(user._id).get()
   // 返回给客户端的用户文档剔除 openid（与服务端可信来源解耦，客户端用 _id 识别身份）
   const { openid: _openid, ...safe } = updated.data || {}
-  return ok({ user: safe })
+  // role 不在 users 文档里，由 checkAdmin(openid) 现算 —— 与 login 保持一致，
+  // 否则保存资料后前端 userInfo 丢掉 role，管理台入口会瞬间消失。
+  let isAdmin = false
+  try {
+    isAdmin = await checkAdmin(db, user.openid)
+  } catch {
+    isAdmin = false
+  }
+  return ok({ user: { ...safe, role: isAdmin ? 'admin' : 'user' } })
 })

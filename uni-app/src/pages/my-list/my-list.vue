@@ -16,6 +16,26 @@
       </view>
     </view>
 
+    <!-- 校园认证入口：全量用户可见（后端 verify 云函数据此判定能否提交/是否已认证） -->
+    <view class="admin-entry sticker press" @click="goVerify">
+      <text class="admin-entry-badge clip-tag">VERIFY</text>
+      <view class="admin-entry-main">
+        <text class="admin-entry-title title-900">校园认证</text>
+        <text class="admin-entry-sub">上传学生证，认证后内容展示「已认证」标识</text>
+      </view>
+      <text class="admin-entry-arrow">→</text>
+    </view>
+
+    <!-- 管理台入口：仅管理员可见（role 为服务端权威字段，restore() 时经 login 刷新） -->
+    <view v-if="isAdmin" class="admin-entry sticker press" @click="goAdmin">
+      <text class="admin-entry-badge clip-tag">ADMIN</text>
+      <view class="admin-entry-main">
+        <text class="admin-entry-title title-900">管理台</text>
+        <text class="admin-entry-sub">举报 · 用户 · 认证 · 反馈 · 公告 · 类目</text>
+      </view>
+      <text class="admin-entry-arrow">→</text>
+    </view>
+
     <!-- Tab：帖子 / 好物 / 收藏 -->
     <view class="tab-row">
       <view v-for="t in tabs" :key="t.value" class="my-tab clip-tag press" :class="{ active: t.value === tab }" @click="onTab(t.value)">
@@ -23,7 +43,17 @@
       </view>
     </view>
 
-    <z-paging ref="pagingRef" v-model="list" :auto="true" @query="queryList" safe-area-inset-bottom>
+    <z-paging ref="pagingRef" v-model="list" :auto="true" :fixed="false" :back-to-top="true" @query="queryList" safe-area-inset-bottom>
+      <!-- 请求失败：出错时必须占用列表位，否则 #empty 空态会顶着「还没有内容」显示，与失败原因矛盾 -->
+      <view v-if="error" class="my-state">
+        <view class="empty-state">
+          <view class="empty-shape"></view>
+          <text class="empty-kicker">ERROR</text>
+          <text class="empty-title">{{ error }}</text>
+        </view>
+        <button class="btn-ghost my-retry press" @click="reload">重试</button>
+      </view>
+
       <view
         v-for="item in list"
         :key="item.id"
@@ -68,8 +98,8 @@
         </view>
       </view>
 
-      <template #empty>
-        <view class="empty-state">
+      <template #empty="{ isLoadFailed }">
+        <view v-if="!isLoadFailed" class="empty-state">
           <view class="empty-shape"></view>
           <text class="empty-kicker">My List</text>
           <text class="empty-title">这里还黑着灯</text>
@@ -86,6 +116,19 @@ import { onShow } from '@dcloudio/uni-app'
 import { usePagedList } from '@/composables/use-paged-list'
 import { adaptMyItem } from '@/adapters'
 import { callFunction } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
+
+// 管理台入口显隐：role 只在 login 云函数返回后可信（restore 刷新），不持久化
+const userStore = useUserStore()
+const isAdmin = computed(() => userStore.userInfo?.role === 'admin')
+
+function goAdmin() {
+  uni.navigateTo({ url: '/pages/admin/admin' })
+}
+
+function goVerify() {
+  uni.navigateTo({ url: '/pages/verify/verify' })
+}
 
 const tabs = [
   { label: '帖子', value: 'posts' },
@@ -97,7 +140,7 @@ const stats = ref<any>({ posts: '0', products: '0', collects: '0' })
 
 // 响应式 query：切 tab 时 hook 自动取最新 type（hook 支持 ref/computed）
 const liveQuery = computed(() => ({ type: tab.value }))
-const { pagingRef, list, queryList, reload } = usePagedList({
+const { pagingRef, list, queryList, reload, error } = usePagedList({
   fnName: 'my-list',
   query: liveQuery,
   adapt: (raw) => adaptMyItem(raw, tab.value as any)
@@ -199,7 +242,41 @@ onShow(() => {
 </script>
 
 <style lang="scss" scoped>
-.my-root { padding: 24rpx 0; }
+/* 统计 + Tab 固定，列表区滚动：z-paging 根节点是 height:100%，
+   父级必须是有确定高度的 flex 容器，只用 padding 会让内容区被裁成 0。 */
+.my-root {
+  display: flex;
+  flex-direction: column;
+  /* H5：--window-top 是导航栏高度，必须扣掉，否则 100vh 会多出一截并产生滚动条。
+     小程序/App：没有该变量，100vh 已是可视区（导航栏由原生层占位）。 */
+  /* #ifdef H5 */
+  height: calc(100vh - var(--window-top));
+  /* #endif */
+  /* #ifndef H5 */
+  height: 100vh;
+  /* #endif */
+  padding: 24rpx 0 0;
+  box-sizing: border-box;
+}
+.my-root > z-paging,
+.my-root > .z-paging-content {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.my-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 0;
+  gap: 24rpx;
+}
+.my-retry {
+  padding: 0 48rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 26rpx;
+}
 
 .stat-row {
   display: flex; justify-content: space-around; padding: 24rpx; margin: 0 32rpx 20rpx;
@@ -214,6 +291,19 @@ onShow(() => {
   padding: 10rpx 32rpx; font-size: 26rpx; color: var(--text-secondary);
   background: var(--bg-card); border: 1rpx solid var(--border);
   &.active { color: #0D110E; background: var(--accent); font-weight: var(--fw-title); }
+}
+
+.admin-entry {
+  display: flex; align-items: center; gap: 20rpx; margin: 0 32rpx 20rpx; padding: 20rpx 24rpx;
+  background: var(--bg-elevated); border: 1rpx solid var(--accent-dim); border-radius: var(--radius-sharp);
+  .admin-entry-badge {
+    font-size: 18rpx; letter-spacing: 3rpx; font-weight: var(--fw-title);
+    color: #0D110E; background: var(--accent); padding: 6rpx 14rpx;
+  }
+  .admin-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+  .admin-entry-title { font-size: 28rpx; color: var(--text-primary); }
+  .admin-entry-sub { font-size: 20rpx; color: var(--text-tertiary); }
+  .admin-entry-arrow { font-size: 28rpx; color: var(--accent); font-weight: var(--fw-title); }
 }
 
 .my-card {

@@ -41,8 +41,8 @@
         </view>
       </view>
 
-      <template #empty>
-        <view class="empty-state">
+      <template #empty="{ isLoadFailed }">
+        <view v-if="!isLoadFailed" class="empty-state">
           <view class="empty-shape empty-shape--hex"></view>
           <text class="empty-kicker">Connections</text>
           <text class="empty-title">{{ tab === 'following' ? '还没有关注任何人' : '还没有粉丝' }}</text>
@@ -126,7 +126,8 @@ async function queryList(page: number, size: number) {
       if (currentTab === tab.value) followingMap.value = { ...followingMap.value, ...m }
     }
     const hasMore = rawList.length >= size
-    paging.completeByNoMore(users, hasMore)
+    // 第二参数是 noMore（没有更多），传 hasMore 会让第 2 页永远加载不出来
+    paging.completeByNoMore(users, !hasMore)
   } catch (e: any) {
     error.value = e?.message || String(e)
     if (typeof paging.completeByError === 'function') paging.completeByError(error.value)
@@ -162,10 +163,26 @@ function openProfile(id: string) {
 </script>
 
 <style lang="scss" scoped>
+/* 页头固定 + 列表区滚动：z-paging 根节点是 height:100%，父级必须是有确定高度的 flex 容器，
+   只用 min-height 会让它的百分比高度解析为 auto，整块内容被 overflow:hidden 裁成 0。 */
 .fw-page {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* H5：--window-top 是导航栏高度，必须扣掉，否则 100vh 会多出一截并产生滚动条。
+     小程序/App：没有该变量，100vh 已是可视区（导航栏由原生层占位）。 */
+  /* #ifdef H5 */
+  height: calc(100vh - var(--window-top));
+  /* #endif */
+  /* #ifndef H5 */
+  height: 100vh;
+  /* #endif */
   background: var(--bg-page);
   color: var(--text-body);
+}
+.fw-page > z-paging,
+.fw-page > .z-paging-content {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .fw-tabs {

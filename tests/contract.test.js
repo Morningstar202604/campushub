@@ -180,42 +180,25 @@ test('文档不得残留已废弃机制与过期口径（sync-common / 旧计数
   assert.ok(readme.includes(`云函数 × ${f.deploys} 个部署单元`), `README 部署单元应为 ${f.deploys}`)
 })
 
-test('使用说明书：存在、README 已挂链接、覆盖全部 23 页面与 34 云函数', () => {
+test('使用说明书：存在、README 已挂链接、覆盖全部当前页面与云函数', () => {
   const guide = read('docs/USER_GUIDE.md')
   const readme = read('README.md')
   const zh = read('docs/README.zh-CN.md')
   // README 两处入口
   assert.ok(readme.includes('./docs/USER_GUIDE.md'), 'README 需链接使用说明书')
   assert.ok(zh.includes('./USER_GUIDE.md'), 'zh-CN 需链接使用说明书')
-  // 覆盖全部 23 个页面（以页面目录名 + 页面标题出现为准）
-  const pages = [
-    'admin',
-    'agreement',
-    'category-admin',
-    'expired',
-    'feedback',
-    'guide',
-    'guide-detail',
-    'index',
-    'login',
-    'lost-found',
-    'market',
-    'my-list',
-    'notifications',
-    'post-detail',
-    'post-publish',
-    'product-detail',
-    'product-publish',
-    'profile',
-    'profile-edit',
-    'search',
-    'user-profile',
-    'verify',
-    'wall'
-  ]
+  // 覆盖全部页面 —— 清单由 pages.json 推导，不手填。
+  // （手填清单是漂移源：早期版本锁死了原生小程序时代的 23 个页面名，
+  //   uni-app 迁移后既包含已删除的 login/agreement/expired/profile，又漏掉
+  //   checkin/points/follow/notification/report 等真实页面，导致断言长期空转。）
+  const pageFacts = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'uni-app/src/pages.json'), 'utf8')
+  ).pages
+  const pages = pageFacts.map((p) => p.path.split('/').pop())
   for (const p of pages) {
     assert.ok(guide.includes(p), `说明书应覆盖页面 ${p}`)
   }
+  assert.ok(pages.length > 0, 'pages.json 应至少声明一个页面')
   // 覆盖全部业务入口 —— 清单由 gateway-routes.json 推导，不手填（手填清单本身就是漂移源）
   const cfs = UNITS.unitNames()
   for (const c of cfs) {
@@ -315,6 +298,18 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   assert.ok(
     read('cloudfunctions/post-list/index.js').includes('useCursor'),
     'post-list 支持 cursor'
+  )
+
+  // 8b) 失物招领「全部」= lost + found 两类，必须传 kinds 多选；
+  //     若退化为不传 kind，普通帖与表白会混入该页（曾出现的真实 bug）。
+  const lostFoundSrc = read('uni-app/src/pages/lost-found/lost-found.vue')
+  assert.ok(
+    lostFoundSrc.includes("q.kinds = ['lost', 'found']"),
+    '失物招领「全部」需用 kinds=[lost,found] 过滤'
+  )
+  assert.ok(
+    read('cloudfunctions/post-list/index.js').includes('kinds'),
+    'post-list 需支持 kinds 多选过滤'
   )
   assert.ok(
     read('cloudfunctions/comment-list/index.js').includes('useCursor'),

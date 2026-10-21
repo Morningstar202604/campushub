@@ -25,6 +25,7 @@
           <view class="meta-author clip-tag">
             <text>{{ authorName }}</text>
           </view>
+          <text v-if="post.authorVerified" class="meta-verified clip-tag">已认证</text>
           <text class="meta-kind">{{ kindLabel(post.kind) }}</text>
           <text v-if="post.resolved" class="meta-resolved">已解决</text>
           <text class="meta-time tabular-nums">{{ post.time }}</text>
@@ -91,6 +92,8 @@
             <text class="floor-like press" @click="comments.toggleLikeComment(f)">
               {{ f.liked ? '已点灯' : '点灯' }}{{ f.likeCount ? ` · ${f.likeCount}` : '' }}
             </text>
+            <text class="floor-like press" @click="onReplyTo(f)">回复</text>
+            <text v-if="canDelete(f)" class="floor-like press" @click="onDeleteComment(f)">删除</text>
           </view>
 
           <!-- 楼中楼（子回复） -->
@@ -100,6 +103,7 @@
                 <text class="reply-author">{{ r.userNickname }}</text>
                 <text v-if="r.replyToNickname" class="reply-reply">回复 {{ r.replyToNickname }}</text>
                 <text class="reply-time tabular-nums">{{ fmtTime(r.createdAt) }}</text>
+                <text v-if="canDelete(r)" class="reply-del press" @click="onDeleteComment(r)">删除</text>
               </view>
               <text class="reply-content">{{ r.content }}</text>
             </view>
@@ -115,10 +119,15 @@
 
         <!-- 发布输入 -->
         <view class="comment-input sticker">
+          <view v-if="replyTarget" class="reply-hint">
+            <text class="reply-hint-text">回复 {{ replyTarget.userNickname }}</text>
+            <text class="reply-hint-cancel press" @click="cancelReply">取消</text>
+          </view>
           <input
+            ref="inputEl"
             v-model="comments.draft.value"
             class="comment-input-box"
-            :placeholder="`回复给 ${authorName}`"
+            :placeholder="replyTarget ? `回复 ${replyTarget.userNickname}` : `回复给 ${authorName}`"
             maxlength="500"
             @confirm="onSend"
           />
@@ -132,13 +141,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { ref, computed, onUnmounted, nextTick } from 'vue'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { callFunction, fileIDToTempUrl } from '@/utils/api'
 import { useAction } from '@/composables/use-action'
 import { useComments } from '@/composables/use-comments'
+import { useUserStore } from '@/stores/user'
 import { adaptPostDetail, fmtTime } from '@/adapters'
 import type { PostDetail } from '@/adapters'
+
+const userStore = useUserStore()
+const currentUser = computed(() => userStore.userInfo)
 
 const postId = ref('')
 const post = ref<PostDetail | null>(null)
@@ -148,6 +161,9 @@ const displayImages = ref<string[]>([])
 const brokenImages = ref<Record<number, boolean>>({})
 const loading = ref(true)
 const loadError = ref('')
+// 楼中楼回复目标：点某楼层「回复」后，下一条评论挂到该楼层下
+const replyTarget = ref<any>(null)
+const inputEl = ref<any>(null)
 
 // useAction 支持 ref；useComments 只接受字符串，故用 getter 把 live 的 postId 透传进去
 const action = useAction({ targetId: postId, targetType: 'post' })
@@ -171,9 +187,16 @@ function kindLabel(kind: string): string {
   return map[kind] || kind || '校园'
 }
 const canResolve = computed(() => ['task', 'lost', 'found'].includes(post.value?.kind || ''))
-const totalComments = computed(() =>
-  Math.max(post.value?.commentCount ?? 0, comments.floors.value.length)
-)
+// 总回应数 = 楼层 + 楼中楼全部回复。
+// 旧实现取 max(commentCount, floors.length)：发一条新评论后 floors.length 可能仍小于
+// 服务端的 commentCount（后者含子回复），标题就一直停在旧数字上，看起来像没发出去。
+const totalComments = computed(() => {
+  const loaded = comments.floors.value.reduce(
+    (n, f) => n + 1 + (f.replies?.length || 0),
+    0
+  )
+  return Math.max(post.value?.commentCount ?? 0, loaded)
+})
 
 // 收藏数：以服务端 collectCount 为基准，只叠加「本次会话内」的收藏状态变化
 const initialCollected = ref(false)
@@ -218,7 +241,44 @@ async function loadDetail() {
 }
 
 async function onSend() {
-  await comments.submit()
+  const target = replyTarget.value
+  const created = await comments.submit(
+    target?._id,
+    target ? { userId: target.userId || '', nickname: target.userNickname } : undefined
+  )
+  if (created) replyTarget.value = null
+}
+
+/** 点击某楼层的「回复」：把该楼层设为回复目标（楼中楼） */
+function onReplyTo(floor: any) {
+  replyTarget.value = floor
+  nextTick(() => inputEl.value?.focus?.())
+}
+
+function cancelReply() {
+  replyTarget.value = null
+}
+
+/** 仅本人或管理员可删（管理员身份由后端最终裁决，这里只做入口显隐） */
+function canDelete(c: any): boolean {
+  if (!c || String(c._id || '').startsWith('temp-')) return false
+  const uid = currentUser.value?._id
+  return !!uid && String(c.userId || '') === String(uid)
+}
+
+async function onDeleteComment(c: any) {
+  const modal: any = await new Promise((resolve) => {
+    uni.showModal({
+      title: '删除评论',
+      content: '删除后不可恢复',
+      confirmText: '删除',
+      success: (r) => resolve(r),
+      fail: () => resolve(null)
+    })
+  })
+  if (!modal?.confirm) return
+  const okDel = await comments.remove(c._id)
+  if (okDel) post.value && (post.value.commentCount = Math.max(0, (post.value.commentCount || 0) - 1))
 }
 
 async function onResolve() {
@@ -255,6 +315,15 @@ onLoad((q) => {
   postId.value = String(q?.id || q?.postId || '')
   loadDetail()
 })
+
+// 分享给好友：标题取标题/正文首行，首图作分享图（仅小程序端生效，H5/App 无害）
+onShareAppMessage(() => ({
+  title:
+    post.value?.title ||
+    (post.value?.content ? post.value.content.slice(0, 30) : 'CampusHub 校园动态'),
+  path: `/pages/post-detail/post-detail?id=${postId.value}`,
+  imageUrl: displayImages.value[0] || ''
+}))
 
 // 页面卸载兜底：清空预览引用，避免大图 URL 随组件实例泄漏
 onUnmounted(() => {
@@ -293,6 +362,7 @@ onUnmounted(() => {
   display: flex; align-items: center; gap: 16rpx; margin-bottom: 16rpx;
   .meta-author { padding: 4rpx 16rpx; font-size: 22rpx; color: var(--text-secondary); background: var(--bg-elevated); }
   .meta-kind { font-size: 22rpx; color: var(--text-secondary); }
+  .meta-verified { font-size: 18rpx; padding: 2rpx 10rpx; color: var(--accent); background: var(--bg-elevated); font-weight: var(--fw-title); }
   .meta-resolved { font-size: 20rpx; color: var(--secondary); font-weight: var(--fw-title); }
   .meta-time { margin-left: auto; font-size: 22rpx; color: var(--text-tertiary); }
 }
@@ -326,7 +396,7 @@ onUnmounted(() => {
 .floor-reply { font-size: 22rpx; color: var(--text-tertiary); }
 .floor-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
 .floor-content { display: block; font-size: 26rpx; color: var(--text-primary); line-height: 1.6; }
-.floor-actions { margin-top: 12rpx; }
+.floor-actions { margin-top: 12rpx; display: flex; gap: 24rpx; }
 .floor-like { font-size: 22rpx; color: var(--text-secondary); }
 
 .floor-replies { margin-top: 16rpx; padding-left: 24rpx; border-left: 2rpx solid var(--border); }
@@ -334,7 +404,15 @@ onUnmounted(() => {
 .reply-head { display: flex; align-items: center; gap: 12rpx; }
 .reply-author { font-size: 22rpx; font-weight: var(--fw-title); color: var(--text-primary); }
 .reply-time { margin-left: auto; font-size: 20rpx; color: var(--text-tertiary); }
+.reply-del { font-size: 20rpx; color: var(--text-tertiary); }
 .reply-content { display: block; font-size: 24rpx; color: var(--text-secondary); line-height: 1.5; margin-top: 4rpx; }
+
+.reply-hint {
+  display: flex; align-items: center; gap: 12rpx;
+  padding: 0 0 12rpx; border-bottom: 1rpx solid var(--border); margin-bottom: 12rpx;
+}
+.reply-hint-text { font-size: 22rpx; color: var(--accent); }
+.reply-hint-cancel { font-size: 22rpx; color: var(--text-tertiary); margin-left: auto; }
 
 .comment-input {
   display: flex; gap: 16rpx; margin-top: 24rpx; padding: 16rpx;

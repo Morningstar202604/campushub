@@ -14,6 +14,7 @@
       v-model="list"
       :auto="true"
       :fixed="false"
+      :back-to-top="true"
       safe-area-inset-bottom
       @query="queryList"
     >
@@ -42,8 +43,8 @@
         </view>
       </view>
 
-      <template #empty>
-        <view class="empty-state">
+      <template #empty="{ isLoadFailed }">
+        <view v-if="!isLoadFailed" class="empty-state">
           <view class="empty-shape"></view>
           <text class="empty-kicker">NOTIFICATIONS</text>
           <text class="empty-title">暂无通知</text>
@@ -85,8 +86,9 @@ async function queryList(page: number, size: number) {
     const res: any = await callFunction('notification', { action: 'list', page, pageSize: size })
     const pageData = (res?.list ?? []).map(adaptNotice)
     unreadCount.value = res?.unreadCount ?? 0
-    // 只回传当前页；z-paging 内部自行拼接。hasMore 由后端 hasMore 决定
-    paging.completeByNoMore(pageData, Boolean(res?.hasMore))
+    // 只回传当前页；z-paging 内部自行拼接。
+    // 第二参数是 noMore（没有更多）—— 必须取反，否则后端还有下一页时会被判成已到底。
+    paging.completeByNoMore(pageData, !Boolean(res?.hasMore))
   } catch (e: any) {
     error.value = e?.message || String(e)
     console.error('[notification] list 失败', error.value)
@@ -106,10 +108,7 @@ async function markAllRead() {
     await callFunction('notification', { action: 'markAllRead' })
     unreadCount.value = 0
     list.value = list.value.map((n) => ({ ...n, isRead: true }))
-    // 同步清除 Tab 角标
-    // #ifdef MP-WEIXIN
-    uni.removeTabBarBadge({ index: 3 }).catch(() => {})
-    // #endif
+    // 不碰 tabBar：tabBar[3] 是「失物」而非通知，角标由首页「通知」入口读 unreadCount 展示。
   } catch (e: any) {
     uni.showToast({ title: '操作失败', icon: 'none' })
   }
@@ -142,10 +141,27 @@ async function onOpen(n: NoticeCard) {
 </script>
 
 <style lang="scss" scoped>
+/* 页头固定 + 列表区滚动：z-paging 的 .z-paging-content 是 height:100%，
+   父级必须是「确定高度」的 flex 容器，只写 min-height 会让它算成 0 并裁掉全部内容。
+   --window-top 在 H5 上是导航栏高度，小程序端未定义 → 回退 0px（此时 100vh 已是可视区）。 */
 .nf-page {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* H5：--window-top 是导航栏高度，必须扣掉，否则 100vh 会多出一截并产生滚动条。
+     小程序/App：没有该变量，100vh 已是可视区（导航栏由原生层占位）。 */
+  /* #ifdef H5 */
+  height: calc(100vh - var(--window-top));
+  /* #endif */
+  /* #ifndef H5 */
+  height: 100vh;
+  /* #endif */
   background: var(--bg-page);
   color: var(--text-body);
+}
+.nf-page > z-paging,
+.nf-page > .z-paging-content {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 /* 顶部 */

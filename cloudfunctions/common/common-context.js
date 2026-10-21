@@ -23,6 +23,10 @@ async function getCurrentUser() {
     .field({
       openid: true,
       verifyStatus: true,
+      // 校园认证：verify.js 读它判断能否重复提交，post-create/product-create 读它写 authorVerified。
+      // 漏投影会让「已认证」恒为 undefined —— 认证通过后仍能重复提交、内容也永远无认证标识。
+      campusVerified: true,
+      campusVerifyStatus: true,
       nickname: true,
       avatar: true,
       schoolId: true,
@@ -41,7 +45,13 @@ async function getCurrentUser() {
       productCount: true,
       collectCount: true,
       followerCount: true,
-      followingCount: true
+      followingCount: true,
+      // 积分商城：points.js 读它算「已持有改名卡」，漏投影会让余额卡永远显示 0。
+      renameTokens: true,
+      // 改名卡消费标记：user-update 用它判断本周期是否已用掉改名机会。
+      hasRenamed: true,
+      // 管理员标记由 checkAdmin(openid) 决定，users 文档不存 role —— 此处不投影。
+      createdAt: true
     })
     .get()
   if (!res.data || res.data.length === 0) {

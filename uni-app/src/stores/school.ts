@@ -10,7 +10,9 @@ export const useSchoolStore = defineStore('school', {
     schoolName: '',
     schoolId: '',
     configured: false,
-    restToken: ''
+    restToken: '',
+    /** 演示模式：envId 为空时用本地数据层（见 utils/api.ts shouldUseDemo） */
+    demoMode: true
   }),
   actions: {
     /** 同步加载多校配置（单点注入：只改一份 school.config.js，对应旧仓 miniprogram/config/school.js） */
@@ -20,9 +22,12 @@ export const useSchoolStore = defineStore('school', {
       this.schoolName = c.schoolName || ''
       this.schoolId = c.schoolId || ''
       this.restToken = c.restToken || ''
+      this.demoMode = c.demoMode !== false
       this.configured = Boolean(this.envId)
-      if (!this.configured) {
-        console.warn('[CampusHub] 未配置 school.config.js（envId 为空），部署新学校前请填入')
+      if (!this.configured && this.demoMode) {
+        console.info('[CampusHub] 未配置 envId，已启用本地演示数据（界面可完整浏览；接真实环境请填 src/config/school.config.js）')
+      } else if (!this.configured) {
+        console.warn('[CampusHub] 未配置 school.config.js（envId 为空）且已关闭演示模式，接口将全部失败')
       }
       return this
     }

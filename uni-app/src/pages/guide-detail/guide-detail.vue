@@ -8,7 +8,7 @@
     <!-- 错误 -->
     <view v-else-if="error" class="gd-state">
       <text class="gd-state-text gd-state-err">{{ error }}</text>
-      <button class="gd-retry press" @click="load">RETRY</button>
+      <button class="gd-retry press" @click="load">重试</button>
     </view>
 
     <!-- 空态：无 id 或后端查无此指南 -->

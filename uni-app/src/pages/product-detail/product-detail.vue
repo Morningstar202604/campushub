@@ -101,7 +101,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { callFunction, fileIDToTempUrl } from '@/utils/api'
 import { useAction } from '@/composables/use-action'
 import { useUserStore } from '@/stores/user'
@@ -253,6 +253,15 @@ onLoad((q) => {
   productId.value = String(q?.id || q?.productId || '')
   loadDetail()
 })
+
+// 分享给好友：商品标题 + 价格做分享文案，首图做分享图（仅小程序端生效）
+onShareAppMessage(() => ({
+  title: product.value
+    ? `¥${product.value.price} ${product.value.title}`.slice(0, 40)
+    : 'CampusHub 二手好物',
+  path: `/pages/product-detail/product-detail?id=${productId.value}`,
+  imageUrl: displayImages.value[0] || ''
+}))
 
 // onShow 刷新：从编辑页 navigateBack 返回后详情已变更（标题/价格/状态），必须重拉；
 // 首次进入跳过（onLoad 已加载，避免同 tick 双请求）。

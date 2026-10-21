@@ -303,6 +303,21 @@ body.clean .screen{top:28px;}
 </head>
 <body>
 
+<!-- 历史版本提示：本原型停留在 v0.8.1 的白蓝主题，
+     当前代码已迁移到 uni-app + 深色「墨荧 · Acid Campus」设计系统，
+     视觉与此处差异很大。保留本文件仅作交互流程参考，不作为 UI 视觉依据。 -->
+<div id="version-banner">
+  <b>历史版本 · v0.8.1</b>
+  <span>此原型为旧版白蓝主题，仅用于参考交互流程；当前界面已改为深色「墨荧」设计，请以实际运行的应用为准。</span>
+</div>
+<style>
+  #version-banner{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;gap:10px;
+    padding:10px 18px;background:#3D2E00;border-bottom:1px solid #C8F135;color:#EAE2C8;
+    font-size:13px;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}
+  #version-banner b{color:#C8F135;white-space:nowrap;font-weight:700;}
+  body{padding-top:52px;}
+</style>
+
 <div class="phone">
   <div class="statusbar"><span>9:41</span><span class="sb-r">5G
     <svg width="17" height="11" viewBox="0 0 24 16" fill="currentColor"><rect x="2" y="4" width="3" height="10" rx="1"/><rect x="7" y="2" width="3" height="12" rx="1"/><rect x="12" y="5" width="3" height="9" rx="1"/><rect x="17" y="1" width="3" height="13" rx="1"/></svg> 100%</span></div>
@@ -1399,8 +1414,10 @@ body.clean .screen{top:28px;}
 
 <!-- 说明面板 -->
 <div class="legend">
-  <h3>CampusHub 交互原型 v2</h3>
-  <p>基于 <code>gitcode.com/badhope/campushub</code> v0.8.1 真实源码重构，含 23 个核心页面。</p>
+  <h3>CampusHub 交互原型 v2 <span style="font-size:12px;color:#C8F135;">（历史版本 v0.8.1）</span></h3>
+  <p>基于 <code>gitcode.com/badhope/campushub</code> v0.8.1 真实源码重构，含 23 个核心页面。<br>
+    <b style="color:#E8A33D;">注意：</b>当前代码已迁移至 uni-app，并改为深色「墨荧 · Acid Campus」设计系统，
+    本原型仅保留作交互流程参考，视觉样式已过时。</p>
   <h4>纠正的偏差</h4>
   <ul>
     <li>tabBar 还原为 <b>首页/二手/指南/我的</b></li>
@@ -1502,7 +1519,10 @@ document.querySelectorAll('.idxbar').forEach(g=>{
 const _q = new URLSearchParams(location.search)
 if(_q.get('clean')) document.body.classList.add('clean')
 const p = _q.get('screen')
+// 必须始终激活一屏：下面只在带 ?screen= 时才调 show()，
+// 直接打开（无参数）时 24 个 .screen 全是 display:none，手机框里一片空白。
 if(p && ROUTES[p]) show(p, false)
+else show('index', false)
 </script>
 </body>
 </html>

@@ -9,7 +9,15 @@ const { getDB, ok, wrap, sanitizeQuery } = require('./common-bundle')
 module.exports = wrap(async (event) => {
   const db = getDB()
   const _ = db.command
-  const { tab = 'recommend', page = 1, pageSize = 20, status = 'normal', kind, cursor } = event
+  const {
+    tab = 'recommend',
+    page = 1,
+    pageSize = 20,
+    status = 'normal',
+    kind,
+    kinds,
+    cursor
+  } = event
   // where 字段白名单：客户端可控的 schoolId/categoryId 只做标量断言，
   // 丢弃对象/RegExp/命令型值，避免拼进 .where() 造成查询报错或异常匹配。
   const { schoolId, categoryId } = sanitizeQuery(event, ['schoolId', 'categoryId'])
@@ -27,6 +35,13 @@ module.exports = wrap(async (event) => {
   // kind 筛选（表白墙/失物/招领专属列表页用）
   const VALID_KINDS = ['post', 'task', 'lost', 'found', 'confession']
   if (kind && VALID_KINDS.includes(kind)) where.kind = kind
+  // kinds 多选筛选：失物招领页的「全部」需要同时包含 lost 与 found。
+  // 只传单 kind 时后端无法表达「这两类」，前端只能退化成不过滤 —— 会把普通帖子也带进来。
+  // 白名单逐项校验，非数组成员一律丢弃；数组为空则忽略该条件。
+  if (Array.isArray(kinds)) {
+    const picked = kinds.filter((k) => VALID_KINDS.includes(k))
+    if (picked.length) where.kind = _.in(picked)
+  }
   // 分类筛选：categoryPath 为数组，直接按元素包含匹配（前端传所选节点 id）
   if (categoryId) where.categoryPath = categoryId
 

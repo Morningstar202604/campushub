@@ -23,28 +23,15 @@ module.exports = wrap(async (event) => {
   const me = await requireActiveUser()
 
   // 按 openid 限流：60s 内最多 20 次。
-  // 复用既有 view_logs 日志集合做计数（避免新增集合破坏契约/需改 init-db），
-  // 用 scene='profile' 标记与 countViewOnce 的浏览去重记录隔离，互不干扰。
+  // 计数完全由 rateLimit 在 rate_limits 集合内以确定性 _id 维护——
+  // 这里不要再往 view_logs 补写记录：rateLimit 不读 view_logs，
+  // 那些记录既不影响限频，又会让「每次看主页」都写一行垃圾数据，撑大 90 天清理量。
   await rateLimit({
     collection: 'view_logs',
     match: { openid: me.openid, scene: 'profile' },
     windowMs: 60000,
     max: 20
   })
-
-  // 写入限流计数（失败静默，不阻断主流程；scene 标记隔离浏览去重记录）
-  try {
-    await db.collection('view_logs').add({
-      data: {
-        _id: `pl_${me.openid}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        openid: me.openid,
-        scene: 'profile',
-        createdAt: new Date()
-      }
-    })
-  } catch {
-    /* 静默 */
-  }
 
   const pSize = Math.min(50, Math.max(1, Number(pageSize)))
   const skip = Math.max(0, (Number(page) - 1) * pSize)

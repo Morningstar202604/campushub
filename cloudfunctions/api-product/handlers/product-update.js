@@ -54,7 +54,16 @@ module.exports = wrap(async (event) => {
 
   // 快捷操作：标记已售 / 重新上架
   if (markSold !== undefined) {
+    // 状态机约束：只允许在 on_sale ↔ sold 之间切换。
+    // 旧实现无条件覆盖 status，传入 markSold=false 能把已下架(off_shelf)商品直接拉回在售，
+    // 绕过下架处置；且返回值恒为成功，前端无法感知无效切换。
+    if (!['on_sale', 'sold'].includes(product.status)) {
+      throw new AppError('该商品当前状态不支持此操作', 'INVALID_STATUS')
+    }
     const newStatus = markSold ? 'sold' : 'on_sale'
+    if (newStatus === product.status) {
+      return ok({ updated: false, status: newStatus, unchanged: true })
+    }
     await db
       .collection('products')
       .doc(productId)

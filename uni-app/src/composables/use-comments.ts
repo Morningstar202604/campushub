@@ -104,9 +104,11 @@ export function useComments(opts: UseCommentsOptions) {
         replyToNickname: replyTo?.nickname
       })
       draft.value = ''
-      // 乐观插入：将新评论 push 到列表头部
-      floors.value.unshift({
-        _id: res?._id || `temp-${Date.now()}`,
+      // 后端返回 ok({ commentId, comment }) —— 必须读 commentId。
+      // 旧实现读 res._id（后端从不返回该字段）→ 落地评论的本地 _id 恒为临时值，
+      // 后续点赞/删除都会拿错误 id 打后端（赞到不存在的评论、删除永远 404）。
+      const created = {
+        _id: res?.commentId || res?.comment?._id || `temp-${Date.now()}`,
         userNickname: currentUser.value?.nickname || '我',
         userAvatar: currentUser.value?.avatar || '',
         content,
@@ -116,13 +118,30 @@ export function useComments(opts: UseCommentsOptions) {
         userId: currentUser.value?._id || '',
         parentId: parentId || null,
         replyToNickname: replyTo?.nickname,
-        replies: []
-      })
+        replies: [] as CommentNode[]
+      }
+      // 楼中楼：有 parentId 时必须挂到对应楼层下，否则回复会跑到顶层、楼层的 replies 永远为空。
+      if (parentId) {
+        const floor = floors.value.find((f) => f._id === parentId)
+        if (floor) {
+          if (!floor.replies) floor.replies = []
+          floor.replies.push(created)
+        } else {
+          // 父楼层不在当前页（理论不该发生）：回退为顶层展示，至少不丢内容
+          floors.value.unshift(created)
+        }
+      } else {
+        // 楼层按时间正序（后端 comment-list 是 createdAt asc）——新楼层追加到末尾，
+        // 用 unshift 会让最新评论排到最上面，与列表首屏之后的顺序不一致。
+        floors.value.push(created)
+      }
       uni.showToast({ title: '评论成功', icon: 'none', duration: 2000 })
+      return created
     } catch (e: any) {
       error.value = e?.message || String(e)
       uni.showToast({ title: '评论失败', icon: 'none', duration: 2000 })
       console.error('[useComments.submit]', error.value)
+      return null
     } finally {
       loading.value = false
     }
@@ -131,16 +150,26 @@ export function useComments(opts: UseCommentsOptions) {
   async function remove(commentId: string) {
     try {
       await callFunction('comment-delete', { commentId })
-      // 局部删除：从 list 中找到并 splice 移除
+      // 局部删除：先找顶层楼层，再找其楼中楼（子回复此前漏处理，删完仍留在页面上）
       const index = floors.value.findIndex(f => f._id === commentId)
       if (index !== -1) {
         floors.value.splice(index, 1)
+      } else {
+        for (const f of floors.value) {
+          const ri = (f.replies || []).findIndex(r => r._id === commentId)
+          if (ri !== -1) {
+            f.replies!.splice(ri, 1)
+            break
+          }
+        }
       }
       uni.showToast({ title: '已删除', icon: 'none', duration: 2000 })
+      return true
     } catch (e: any) {
       error.value = e?.message || String(e)
       uni.showToast({ title: '删除失败', icon: 'none', duration: 2000 })
       console.error('[useComments.remove]', error.value)
+      return false
     }
   }
 

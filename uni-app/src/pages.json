@@ -26,7 +26,11 @@
     { "path": "pages/checkin/checkin", "style": { "navigationBarTitleText": "签到" } },
     { "path": "pages/points/points", "style": { "navigationBarTitleText": "积分商城" } },
     { "path": "pages/feedback/feedback", "style": { "navigationBarTitleText": "反馈" } },
-    { "path": "pages/report/report", "style": { "navigationBarTitleText": "举报" } }
+    { "path": "pages/report/report", "style": { "navigationBarTitleText": "举报" } },
+    { "path": "pages/verify/verify", "style": { "navigationBarTitleText": "校园认证" } },
+    { "path": "pages/admin/admin", "style": { "navigationBarTitleText": "管理台" } },
+    { "path": "pages/admin/announcements", "style": { "navigationBarTitleText": "公告管理" } },
+    { "path": "pages/admin/categories", "style": { "navigationBarTitleText": "类目管理" } }
   ],
   "globalStyle": {
     "navigationBarBackgroundColor": "#0D110E",

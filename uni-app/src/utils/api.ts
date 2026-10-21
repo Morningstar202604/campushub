@@ -18,6 +18,7 @@
 import { useSchoolStore } from '@/stores/school'
 // 自动生成的寻址表（源 = 仓库根 gateway-routes.json；改路由请改 JSON 后跑 npm run gen:gateways）
 import { GATEWAY_ROUTES, USE_GATEWAY, resolveTarget, buildPayload } from '@/config/gateway-routes'
+import { callDemo, hasDemoHandler } from '@/utils/demo-data'
 
 type Platform = 'miniprogram' | 'app' | 'h5'
 
@@ -47,6 +48,23 @@ function getPlatform(): Platform {
  */
 function resolveToken(): string {
   return useSchoolStore().restToken || ''
+}
+
+/**
+ * 是否走本地演示数据层。
+ *
+ * 判定规则（唯一一处，避免散落到各页面）：
+ *   1. 配置里显式 `demoMode: false` → 永不走演示；
+ *   2. 填了 envId → 走真实云端（演示模式自动关闭，不存在演示数据污染生产的可能）；
+ *   3. 未填 envId 且该函数有本地实现 → 走演示。
+ *
+ * 这条路径解决的实际问题：仓库是「一校一部署」模板，克隆后并未连任何 CloudBase 环境。
+ * 旧行为是每个接口都抛 ENV_NOT_CONFIGURED，全站只剩红字提示 —— 项目实际不可预览。
+ */
+export function shouldUseDemo(): boolean {
+  const schoolStore = useSchoolStore()
+  if (schoolStore.demoMode === false) return false
+  return !schoolStore.envId
 }
 
 /** 业务失败统一抛出，携带后端 code，便于调用方按码处理（如 ALREADY / INSUFFICIENT_POINTS）。 */
@@ -210,6 +228,21 @@ export function callFunction<T = any>(
   }
   // 命中网关时注入 fn，网关据此分发给对应 handler；直连函数（定时器/初始化）保持原样。
   const payload = buildPayload(name, data)
+
+  // 测试注入点：单元测试用 esbuild 打包后把 __CALL_STUB__ 挂到 globalThis，
+  // 即可在不启动 uni-app 运行时的情况下验证 composables 的真实调用行为。
+  // 生产构建里该全局变量不存在，分支恒为 false，无运行时开销。
+  const stub = (globalThis as any).__CALL_STUB__
+  if (typeof stub === 'function') {
+    return stub(name, data) as Promise<T>
+  }
+
+  // 演示模式：未接入 CloudBase 环境时用本地数据层，保证页面可浏览、可操作。
+  // 判定条件集中在 shouldUseDemo()，填了 envId 就自动回到真实云端（见该函数注释）。
+  if (shouldUseDemo()) {
+    return callDemo(name, data) as Promise<T>
+  }
+
   const platform = getPlatform()
   if (platform === 'miniprogram') {
     return callViaWxCloud(target, payload, name) as Promise<T>
@@ -271,6 +304,26 @@ export function initCloudSdk(): void {
   ensureCloudbase().catch((e) => {
     console.warn('[CampusHub] CloudBase SDK 预热失败（H5/App 图片能力将降级）', e?.message || e)
   })
+  // #endif
+}
+
+/**
+ * 当前网络是否可用（同步）。
+ * use-action 的点赞/收藏等写操作在发起前用它做前置拦截。
+ * 只有小程序端有同步网络 API；H5/App 端没有可用的同步判断，恒返回 true，
+ * 由请求本身失败时走错误分支兜底。
+ */
+export function isNetworkConnected(): boolean {
+  // #ifdef MP-WEIXIN
+  try {
+    const { networkType } = uni.getNetworkType() as any
+    return networkType !== 'none'
+  } catch {
+    return true
+  }
+  // #endif
+  // #ifndef MP-WEIXIN
+  return true
   // #endif
 }
 
@@ -388,6 +441,17 @@ export async function compressBlobForAudit(blob: Blob): Promise<Blob> {
  */
 export async function uploadImage(localPath: string, cloudDir = 'campushub'): Promise<string> {
   if (!localPath) throw new Error('缺少图片路径')
+
+  // 演示模式：不触网，直接把本地临时路径当 fileID 返回。
+  // 本机路径在当前会话内可直接渲染，足以验证「选图 → 预览 → 发布」整条 UI 链路；
+  // 没有云存储也就没有服务端审核配额消耗，不需要压缩到 1MB。
+  if (shouldUseDemo()) {
+    if (!/\.(jpe?g|png|gif|bmp|webp)$/i.test(localPath)) {
+      throw new Error('仅支持 JPG/PNG/GIF/BMP/WEBP 图片')
+    }
+    return localPath
+  }
+
   const fileName = `${cloudDir}/${Date.now()}-${Math.floor(Math.random() * 1e5)}.${extOf(localPath)}`
 
   // #ifdef MP

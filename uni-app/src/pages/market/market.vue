@@ -1,5 +1,5 @@
 <template>
-  <z-paging ref="pagingRef" v-model="list" :auto="true" @query="queryList" safe-area-inset-bottom>
+  <z-paging ref="pagingRef" v-model="list" :auto="true" :back-to-top="true" @query="queryList" safe-area-inset-bottom>
     <template #top>
       <view class="page-header">
         <text class="title-900 page-title">二手市集</text>
@@ -51,12 +51,15 @@
       </view>
     </view>
 
-    <template #empty>
-      <view class="empty-state">
+    <template #empty="{ isLoadFailed }">
+      <view v-if="!isLoadFailed" class="empty-state">
         <view class="empty-shape"></view>
         <text class="empty-kicker">Market</text>
         <text class="empty-title">市集还没开张</text>
         <text class="empty-sub">第一件好物等你上架</text>
+        <view class="empty-cta press" @click="goCreate">
+          <text>上架好物</text>
+        </view>
       </view>
     </template>
   </z-paging>
@@ -102,6 +105,12 @@ function onCategory(value: string) {
 function openDetail(item: any) {
   // @ts-ignore
   uni.navigateTo({ url: `/pages/product-detail/product-detail?id=${item.id}` })
+}
+
+// 空态引导 → 发布页
+function goCreate() {
+  // @ts-ignore
+  uni.navigateTo({ url: '/pages/product-create/product-create' })
 }
 </script>
 
@@ -188,6 +197,9 @@ function openDetail(item: any) {
   .empty-shape { width: 64rpx; height: 64rpx; background: var(--accent); opacity: 0.15; clip-path: var(--clip-diamond); margin-bottom: 24rpx; }
   .empty-title { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
   .empty-sub { margin-top: 8rpx; font-size: 24rpx; color: var(--text-secondary); }
+  .empty-cta { margin-top: 28rpx; padding: 14rpx 40rpx; background: var(--accent);
+    text { font-size: 26rpx; font-weight: var(--fw-title); color: #0D110E; }
+  }
 }
 
 .error-banner {

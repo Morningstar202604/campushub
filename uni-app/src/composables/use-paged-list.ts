@@ -59,45 +59,55 @@ export function usePagedList<T = any>(opts: UsePagedListOptions<T>) {
     return {}
   }
 
+  // 请求序号：只认最后一次 @query 的结果，用于丢弃过期响应。
+  // ⚠️ 不能用「if (loading) return」做并发保护：reload() 会先置 loading=true 再调
+  //    z-paging 的 reload()，而 reload 触发的新 @query 会被这个判断直接吞掉，
+  //    既不请求也不 complete，列表永久卡在「加载中」——切 tab / onShow 刷新时必现。
+  let reqSeq = 0
+
   async function queryList(page: number, size: number) {
-    // 防并发：若已有请求在进行，跳过
-    if (loading.value) return
     const paging = pagingRef.value
     if (!paging) return
+    const seq = ++reqSeq
+    if (page <= 1) error.value = ''
     loading.value = true
-    error.value = ''
     try {
       const res: any = await callFunction(opts.fnName, {
         ...resolveQuery(),
         page,
         pageSize: size
       })
+      if (seq !== reqSeq) return
       // 契约：ok({ [listKey], [hasMoreKey] }) 展开为 { success, ... }；少数函数直接返回数组
       const rawList: any[] = Array.isArray(res) ? res : (res?.[listKey] ?? [])
-      const hasMore = Array.isArray(res)
-        ? rawList.length === size
-        : Boolean(res?.[hasMoreKey])
+      const hasMore = Array.isArray(res) ? rawList.length === size : Boolean(res?.[hasMoreKey])
       const pageData: T[] = rawList.map((item: any, i: number) =>
         opts.adapt ? opts.adapt(item, { page, index: i }) : item
       )
-      // 只传「当前这一页」的数组，z-paging 内部自行拼接
-      paging.completeByNoMore(pageData, hasMore)
+      // 只传「当前这一页」的数组，z-paging 内部自行拼接。
+      // ⚠️ 第二参数是 noMore（没有更多），不是 hasMore —— 语义相反。
+      //    z-paging 2.8.8 的类型定义写得很明确：@param noMore 是否没有更多数据；
+      //    实现里 `customNoMore = nomore == true ? 1 : 0`，而 1 表示「已经没有更多」。
+      //    直接传 hasMore 会让「后端还有下一页」被判成「没有更多」，第 2 页永远加载不出来。
+      paging.completeByNoMore(pageData, !hasMore)
     } catch (e: any) {
+      if (seq !== reqSeq) return
       error.value = String(e?.message || e)
-      uni.showToast({ title: '加载失败', icon: 'none', duration: 2000 })
+      // 不再弹 toast：各列表页都已有页内 error 分支（带重试），toast 会盖在错误文案上重复提示。
       console.error(`[usePagedList:${opts.fnName}]`, error.value)
       // 优先用 completeByError 把失败原因透传给 z-paging；老版本降级为 complete(false)
       if (typeof paging.completeByError === 'function') paging.completeByError(error.value)
       else paging.complete?.(false)
     } finally {
-      loading.value = false
+      if (seq === reqSeq) loading.value = false
     }
   }
 
   /** 重置并重新加载（首屏手动刷新、筛选切换） */
   function reload() {
     error.value = ''
-    loading.value = true
+    // 不在这里置 loading：交给 queryList 在真正发请求时管理，
+    // 否则 z-paging.reload() 触发的 @query 会被并发判断挡掉。
     pagingRef.value?.reload?.()
   }
 

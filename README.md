@@ -52,7 +52,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 | 核心能力 | 说明 |
 |---|---|
-| **一套代码 · 三端交付** | uni-app（Vue 3 + Vite）：微信小程序、H5、安卓 APK 共用 20 个页面与全部业务逻辑 |
+| **一套代码 · 三端交付** | uni-app（Vue 3 + Vite）：微信小程序、H5、安卓 APK 共用 24 个页面与全部业务逻辑 |
 | **多级分类** | Zone（校区/兴趣圈）→ Category（版块大类）→ Board（子版），后台 UI 即可调整，无需改代码 |
 | **多元内容** | 帖子、任务、失物、招领、表白、二手商品、校园指南等 7 类内容 |
 | **完整闭环** | 发帖 → 评论 → 点赞收藏 → 关注 → 通知 → 管理审核，覆盖社区全链路 |
@@ -77,7 +77,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 系统由 **uni-app 三端前端 → 云函数 API 层 → 微信云开发后端** 三层构成：
 
-- **前端**：uni-app（Vue 3 + Vite），20 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 37 个业务入口复用（部署在 10 个云函数上）
+- **前端**：uni-app（Vue 3 + Vite），24 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 37 个业务入口复用（部署在 10 个云函数上）
 - **API 层**：37 个业务入口收敛为 **7 个资源型网关**（auth / post / product / comment / social / admin / content）+ 3 个独立函数（2 个定时器 + init-db）；入口按 `event.fn` 分发，鉴权/限频/审核仍在各入口内部执行。寻址表见 `gateway-routes.json`，说明见 [docs/GATEWAYS.md](docs/GATEWAYS.md)
 - **共享内核**：`cloudfunctions/common/` 下 9 个模块（context / security / rate / db / content / indexes / error / bundle / subscribe）只保留一份源码，由 `build:functions`（esbuild）在构建期内联进每个函数产物 —— 部署物永远等于当前源码，副本漂移在结构上不可能（详见 [docs/SYNC.md](docs/SYNC.md)）
 - **后端**：CloudBase 云数据库（23 集合 / 46 索引）、云存储、云调用（内容安全）、定时触发器（03:00 自动备份 · 6h 任务归档 + 日志清理）
@@ -120,7 +120,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 💾 **自动备份** | 每日 03:00 自动快照核心集合到 `backups`，保留 7 天；截断显式标记 |
 | 🧹 **日志生命周期** | `task-expire` 定时清理 90 天前浏览日志与过期限频占位（云开发无自动 TTL） |
 | 🖼️ **分享海报** | 一键生成 Canvas 分享卡片，保存到相册 |
-| 📜 **游标分页** | 最新 feed 与评论使用游标分页，深层滚动不丢序 |
+| 📜 **游标分页** | 后端最新 feed 与评论已支持游标分页（深层滚动不丢序）；uni-app 前端当前仍走 page/pageSize 分页，游标接入为待办项 |
 
 ---
 
@@ -146,7 +146,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 |---|---|
 | 云函数（部署单元） | 10 = 7 资源型网关 + 3 独立函数（定时器 ×2 / 初始化） |
 | 业务入口（handler） | 37 |
-| 前端页面 | 20（uni-app，三端共用） |
+| 前端页面 | 24（uni-app，三端共用） |
 | 数据集合 | 23 |
 | 已定义索引 | 46（`init-db` 自动比对缺失清单） |
 | 质量门禁 | `npm run gate` 一条命令全跑（Actions 在 GitCode 不执行，故门禁必须本地可用） |
@@ -158,7 +158,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 ```
 CampusHub/
 ├── uni-app/                  # ★ 前端（uni-app Vue3 三端：微信小程序 / H5 / 安卓 APK）
-│   ├── src/                  #    20 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
+│   ├── src/                  #    24 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
 │   ├── scripts/              #    可复跑校验脚本（纯 Python 标准库，无需装包）
 │   ├── docs/                 #    安卓打包手册 / 设计系统 / 版本基线
 │   └── README.md             #    前端架构与启动说明
@@ -220,6 +220,8 @@ npm run build:functions    # 2. 把内核内联进各云函数，产出 dist/clo
 # ── 前端（uni-app 三端）──────────────────────────
 cd uni-app && npm install  # 6. 依赖已锁版本
                            # 7. 填 src/config/school.config.js（envId/schoolName/schoolId/restToken）
+                           #    ※ 先不填也能跑：envId 为空时自动进入「本地演示模式」，
+                           #      全站页面可浏览、可发帖/点赞/评论/签到，数据存在本机，不连云环境
                            # 8. 填 src/manifest.json（mp-weixin.appid + 顶层 appid）
 npm run build:h5           # 9. H5 → dist/build/h5（静态托管）
 npm run build:mp-weixin    # 10. 小程序 → dist/build/mp-weixin → 微信开发者工具导入 → 上传审核
@@ -230,6 +232,18 @@ python uni-app/scripts/verify_pages.py       # 页面结构 / 反模式 / 一致
 python uni-app/scripts/verify_contracts.py   # 前后端契约交叉校验
 npm run gate                                 # 门禁一把梭（含测试）
 ```
+
+### 本地演示模式
+
+未填 `envId` 时，`uni-app/src/utils/api.ts` 的 `shouldUseDemo()` 判定为真，所有 `callFunction`
+走 `src/utils/demo-data.ts` 的本地实现（种子数据 + `uni` 本地存储）：
+
+- 首页 / 市集 / 表白墙 / 失物 / 指南 / 通知 / 关注 / 我的 / 签到 / 积分 / 搜索 / 管理台 全部有内容；
+- 发帖、评论、点赞、收藏、关注、签到、兑换、校园认证都能真实走通并持久化到本机；
+- **一旦填入 `envId`，演示层整体失效**，所有调用回到真实云端，不存在演示数据污染生产；
+- 想保留真实错误提示（例如排查部署问题），在 `school.config.js` 里设 `demoMode: false`。
+
+清除演示数据：清掉 `campushub.demo.v1` 这个 storage key 即可。
 
 ---
 

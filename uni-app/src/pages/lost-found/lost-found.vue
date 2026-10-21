@@ -1,5 +1,5 @@
 <template>
-  <z-paging ref="pagingRef" v-model="list" :auto="true" @query="queryList" safe-area-inset-bottom>
+  <z-paging ref="pagingRef" v-model="list" :auto="true" :back-to-top="true" @query="queryList" safe-area-inset-bottom>
     <template #top>
       <view class="page-header">
         <text class="title-900 page-title">失物招领</text>
@@ -39,12 +39,15 @@
       </view>
     </view>
 
-    <template #empty>
-      <view class="empty-state">
+    <template #empty="{ isLoadFailed }">
+      <view v-if="!isLoadFailed" class="empty-state">
         <view class="empty-shape"></view>
         <text class="empty-kicker">LOST & FOUND</text>
         <text class="empty-title">暂无失物信息</text>
         <text class="empty-sub">拾金不昧，互帮互助</text>
+        <view class="empty-cta press" @click="goCreate">
+          <text>发布失物/招领</text>
+        </view>
       </view>
     </template>
   </z-paging>
@@ -62,10 +65,12 @@ const kinds = [
 ]
 const activeKind = ref('all')
 
-// 响应式 query：'all' → 不过滤（后端不传 kind），否则传具体 kind
+// 响应式 query：'all' → 只取失物+招领两类。
+// 不能省略 kind 条件（旧实现传空 = 不过滤），否则普通帖子/表白会一起出现在失物页。
 const liveQuery = computed(() => {
   const q: Record<string, any> = { tab: 'latest' }
-  if (activeKind.value !== 'all') q.kind = activeKind.value
+  if (activeKind.value === 'all') q.kinds = ['lost', 'found']
+  else q.kind = activeKind.value
   return q
 })
 
@@ -85,6 +90,12 @@ function onKind(v: string) {
 function openDetail(item: any) {
   // @ts-ignore
   uni.navigateTo({ url: `/pages/post-detail/post-detail?id=${item.id}` })
+}
+
+// 空态引导 → 发布页
+function goCreate() {
+  // @ts-ignore
+  uni.navigateTo({ url: '/pages/post-create/post-create' })
 }
 </script>
 
@@ -129,5 +140,14 @@ function openDetail(item: any) {
   background: var(--bg-card); border: 2rpx solid var(--danger); border-radius: var(--radius-sharp);
   .error-text { font-size: 24rpx; color: var(--danger); }
   .error-retry { font-size: 24rpx; font-weight: var(--fw-title); color: var(--secondary); }
+}
+
+.empty-state { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0;
+  .empty-shape { width: 48rpx; height: 48rpx; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx)); margin-bottom: 24rpx; }
+  .empty-title { font-size: 32rpx; font-weight: var(--fw-title); color: var(--text-primary); }
+  .empty-sub { margin-top: 8rpx; font-size: 22rpx; color: var(--text-tertiary); }
+  .empty-cta { margin-top: 28rpx; padding: 14rpx 40rpx; background: var(--accent);
+    text { font-size: 26rpx; font-weight: var(--fw-title); color: #0D110E; }
+  }
 }
 </style>
