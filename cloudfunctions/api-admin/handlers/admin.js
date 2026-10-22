@@ -189,22 +189,26 @@ module.exports = wrap(async (event) => {
           .where({ targetType, targetId, status: 'pending' })
           .update({ data: { status: 'resolved', resolvedAt: new Date() } })
         reportsResolved = (upd && upd.stats && upd.stats.updated) || 0
-        for (const reporterId of reporters) {
-          await db
-            .collection('notifications')
-            .add({
-              data: {
-                userId: reporterId,
-                type: 'system',
-                targetType: '',
-                targetId: '',
-                content: '你举报的内容已处理，感谢反馈',
-                isRead: false,
-                createdAt: new Date()
-              }
-            })
-            .catch(() => {})
-        }
+        // 批量通知：逐个 add 是 N+1 写，举报人多时会拖长响应。
+        // 云开发没有批量 add，用 Promise.all 并发（数量级很小，通常 1-3 人）。
+        await Promise.all(
+          [...reporters].map((reporterId) =>
+            db
+              .collection('notifications')
+              .add({
+                data: {
+                  userId: reporterId,
+                  type: 'system',
+                  targetType: '',
+                  targetId: '',
+                  content: '你举报的内容已处理，感谢反馈',
+                  isRead: false,
+                  createdAt: new Date()
+                }
+              })
+              .catch(() => {})
+          )
+        )
       }
     } catch (e) {
       console.warn('[admin] 举报闭环处理失败(已忽略):', e && (e.errMsg || e.message))

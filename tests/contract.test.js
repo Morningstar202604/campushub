@@ -171,7 +171,10 @@ test('文档不得残留已废弃机制与过期口径（sync-common / 旧计数
   const zh = read('docs/README.zh-CN.md')
   const f = currentFacts()
   // sync-common.js 已随构建期内联一起删除，文档里再出现就是给新人指错路
-  for (const [name, doc] of [['README', readme], ['zh-CN', zh]]) {
+  for (const [name, doc] of [
+    ['README', readme],
+    ['zh-CN', zh]
+  ]) {
     assert.ok(!doc.includes('sync-common'), `${name} 仍引用已删除的 scripts/sync-common.js`)
     assert.ok(!doc.includes('sync:common'), `${name} 仍引用已废弃的 npm run sync:common`)
     assert.ok(!doc.includes('Cloud Functions × 37'), `${name} 仍写「37 个云函数」旧口径`)

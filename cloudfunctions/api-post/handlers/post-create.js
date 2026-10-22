@@ -94,19 +94,23 @@ module.exports = wrap(async (event) => {
   const title = String(rawTitle == null ? '' : rawTitle).trim()
   const content = String(rawContent == null ? '' : rawContent).trim()
 
+  // 先确定 kind：标题是否必填取决于它（表白墙是短文，不要求标题）
+  const safeKind = VALID_KINDS.includes(kind) ? kind : 'post'
+
   // 参数校验
-  if (!title) throw new AppError('请输入标题', 'INVALID_PARAM')
+  // 表白墙（confession）不强制标题：它的产品形态就是「一段话」，强制标题会让用户
+  // 把正文复制到标题里，前端 post-create 也允许空标题提交。
+  if (!title && safeKind !== 'confession') throw new AppError('请输入标题', 'INVALID_PARAM')
   if (!content) {
     if (!Array.isArray(images) || images.length === 0)
       throw new AppError('请输入内容或上传图片', 'INVALID_PARAM')
   }
   if (title.length > 30) throw new AppError('标题不能超过30字', 'INVALID_PARAM')
-  const maxContent = kind === 'confession' ? 500 : 2000
+  const maxContent = safeKind === 'confession' ? 500 : 2000
   if (content.length > maxContent)
     throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
   if (!Array.isArray(images) || images.length > 9)
     throw new AppError('图片不能超过9张', 'INVALID_PARAM')
-  const safeKind = VALID_KINDS.includes(kind) ? kind : 'post'
   const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map((t) => String(t).slice(0, 20)) : []
   // 失物/招领地点（可选）
   // 表白墙强制匿名（客户端传什么都不算数）

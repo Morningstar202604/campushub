@@ -60,24 +60,42 @@ exports.main = wrap(async () => {
   //   rate_limits 清 expireAt 已过的窗口占位文档。每次各最多 500 条，剩余留给下次触发。
   let cleaned = 0
   try {
+    // 并发删除而不是逐条串行 await：
+    // 每次最多 500+500 条，串行时每条一次网络往返（~10ms），1000 条就 10s+，
+    // 极易撞上云函数超时。按 20 一批并发，总耗时降到 1/20 且仍在配额内。
+    const removeAll = async (col, docs) => {
+      const CONCURRENCY = 20
+      let removed = 0
+      for (let i = 0; i < docs.length; i += CONCURRENCY) {
+        const batch = docs.slice(i, i + CONCURRENCY)
+        const results = await Promise.all(
+          batch.map((d) =>
+            db
+              .collection(col)
+              .doc(d._id)
+              .remove()
+              .then(() => true)
+              .catch(() => false)
+          )
+        )
+        removed += results.filter(Boolean).length
+      }
+      return removed
+    }
+
     const oldViews = await db
       .collection('view_logs')
       .where({ createdAt: _.lt(new Date(now.getTime() - 90 * 86400000)) })
       .limit(500)
       .get()
-    for (const d of oldViews.data || []) {
-      await db.collection('view_logs').doc(d._id).remove()
-      cleaned++
-    }
+    cleaned += await removeAll('view_logs', oldViews.data || [])
+
     const oldRates = await db
       .collection('rate_limits')
       .where({ expireAt: _.lt(now) })
       .limit(500)
       .get()
-    for (const d of oldRates.data || []) {
-      await db.collection('rate_limits').doc(d._id).remove()
-      cleaned++
-    }
+    cleaned += await removeAll('rate_limits', oldRates.data || [])
   } catch (e) {
     console.error('[task-expire] 过期日志清理失败(不影响归档):', e && (e.errMsg || e.message))
   }

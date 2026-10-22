@@ -37,6 +37,23 @@ try {
   process.exit(1)
 }
 
+// 测试运行时会为 handlers/ 生成 common-* 转发桩（见 tests/lib/memory-db.js）。
+// 它们不是源码，构建前必须清掉，否则会被当作多余文件报错。
+const TEST_SHIM_NAMES = new Set(['common-bundle.js', 'common-subscribe.js'])
+function removeTestShims() {
+  for (const name of fs.readdirSync(SRC, { withFileTypes: true })) {
+    if (!name.isDirectory() || !name.name.startsWith('api-')) continue
+    const hdir = path.join(SRC, name.name, 'handlers')
+    if (!fs.existsSync(hdir)) continue
+    for (const f of fs.readdirSync(hdir)) {
+      if (TEST_SHIM_NAMES.has(f)) {
+        fs.unlinkSync(path.join(hdir, f))
+      }
+    }
+  }
+}
+removeTestShims()
+
 function listFunctions() {
   return fs
     .readdirSync(SRC, { withFileTypes: true })

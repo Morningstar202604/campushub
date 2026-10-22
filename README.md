@@ -29,20 +29,30 @@
 
 ## 📸 Screenshots / 截图
 
+> 下表为当前「墨荧 · Acid Campus」深色设计的真实运行截图，由 `docs/screenshots/v1/` 直接产出（390×844，H5 构建产物实机渲染）。
+
 <p align="center">
-  <img src="docs/screenshots/index.png" alt="首页" width="160" />
-  <img src="docs/screenshots/market.png" alt="二手市场" width="160" />
-  <img src="docs/screenshots/lost-found.png" alt="失物招领" width="160" />
-  <img src="docs/screenshots/profile.png" alt="个人中心" width="160" />
+  <img src="docs/screenshots/v1/index.png" alt="首页" width="150" />
+  <img src="docs/screenshots/v1/market.png" alt="二手市集" width="150" />
+  <img src="docs/screenshots/v1/wall.png" alt="表白墙" width="150" />
+  <img src="docs/screenshots/v1/lost-found.png" alt="失物招领" width="150" />
+  <img src="docs/screenshots/v1/post-detail.png" alt="帖子详情" width="150" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/v1/my-list.png" alt="我的内容" width="150" />
+  <img src="docs/screenshots/v1/points.png" alt="积分商城" width="150" />
+  <img src="docs/screenshots/v1/checkin.png" alt="签到" width="150" />
+  <img src="docs/screenshots/v1/search.png" alt="搜索" width="150" />
+  <img src="docs/screenshots/v1/notification.png" alt="通知" width="150" />
 </p>
 
 <p align="center">
-  <a href="./docs/screenshots/overview.png"><b>查看 24 页总览长图（1634×6170）</b></a> ｜
-  <a href="./docs/screenshots/demo.mp4"><b>观看使用视频（37s）</b></a> ｜
-  <a href="./docs/preview.html"><b>打开可交互原型</b></a>
+  <a href="./docs/screenshots/overview-v1.png"><b>查看 13 页总览长图</b></a> ｜
+  <a href="./docs/screenshots/v1/index.png"><b>查看单页大图</b></a>
 </p>
 
-- 📁 **24 张单页高清截图（750×1624）**：[`docs/screenshots/`](./docs/screenshots/)
+- 📁 **13 张单页截图（390×844）**：[`docs/screenshots/v1/`](./docs/screenshots/v1/)
+- ⚠️ `docs/screenshots/` 下 rest 的旧图（`index.png` / `profile.png` / `overview.png` 等）是 v0.8.1 白蓝主题历史版本，**不代表当前界面**；`docs/preview.html` 同理（已在页面顶部标注历史版本）
 
 ---
 
@@ -230,8 +240,40 @@ npm run build:mp-weixin    # 10. 小程序 → dist/build/mp-weixin → 微信�
 # ── 质量自检（可选，纯 Python 标准库无需装包）──────
 python uni-app/scripts/verify_pages.py       # 页面结构 / 反模式 / 一致性
 python uni-app/scripts/verify_contracts.py   # 前后端契约交叉校验
-npm run gate                                 # 门禁一把梭（含测试）
+npm run gate                                 # 门禁一把梭（含全部测试）
+npm test                                     # 后端：234 条（含 57 条 handler 真实行为测试）
+npm run test:frontend                        # 前端：27 条（composable + 演示层）
+node --experimental-test-coverage --test --test-concurrency=1 tests/*.test.js   # 覆盖率
 ```
+
+### 测试与覆盖率（实测，非估计）
+
+| 指标 | 当前值 | 说明 |
+|---|---|---|
+| 后端测试用例 | **207** | 用内存数据库真实执行 handler，不是源码字符串断言 |
+| 前端测试用例 | **27** | `usePagedList` 分页契约 / reload 死锁 / 竞态 / 演示层 |
+| 后端行覆盖率 | **82.3%** | `node --experimental-test-coverage` 实测 |
+| 后端分支覆盖率 | **70.1%** | 同上 |
+| 后端函数覆盖率 | **66.5%** | 同上 |
+| 依赖已知漏洞 | **0** | `npm audit`（root + uni-app） |
+| lockfile 来源 | **100% registry.npmjs.org（HTTPS）** | 已清除明文 http 与第三方镜像 |
+
+覆盖率的已知洼地：`cloudfunctions/init-db/index.js`（33%）与 `backup-db` 属一次性初始化/运维脚本，
+靠真实部署验证而非单测，因此未强行拉高。
+
+### 备份与恢复
+
+`backup-db` 每天 03:00 落盘到 `backups` 集合；恢复用脚本而不是手工点控制台：
+
+```bash
+# 空跑确认范围（推荐先跑）
+WX_APPID=... WX_SECRET=... CLOUD_ENV=...   node scripts/restore-backup.js --date 2026-10-22 --dry-run
+
+# 真恢复（默认跳过已存在 _id，不覆盖线上新数据）
+node scripts/restore-backup.js --date 2026-10-22 --yes
+```
+
+详见 [`docs/OPERATIONS.md` §5.5.4 恢复演练](./docs/OPERATIONS.md)。
 
 ### 本地演示模式
 

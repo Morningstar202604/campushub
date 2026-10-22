@@ -49,3 +49,6 @@ out/plan.md
 android/app/src/main/assets/www/
 android/.v2c/
 out/
+# 测试专用转发桩（由 tests/bootstrap-source-shims 逻辑生成）
+cloudfunctions/*/handlers/common-bundle.js
+cloudfunctions/*/handlers/common-subscribe.js

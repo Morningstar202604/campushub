@@ -24,7 +24,10 @@ function stubSdk({ openid = '' } = {}) {
       or: (a) => ({ $or: a })
     },
     collection: () => ({
-      doc: () => ({ get: async () => ({ data: null }), update: async () => ({ stats: { updated: 0 } }) }),
+      doc: () => ({
+        get: async () => ({ data: null }),
+        update: async () => ({ stats: { updated: 0 } })
+      }),
       where: () => ({ get: async () => ({ data: [] }), count: async () => ({ total: 0 }) }),
       add: async () => ({ _id: 'x' })
     })
@@ -45,7 +48,10 @@ function stubSdk({ openid = '' } = {}) {
 
 function loadGateway(gw) {
   const file = path.join(DIST, gw, 'index.js')
-  assert.ok(fs.existsSync(file), `产物不存在：dist/cloudfunctions/${gw}/index.js（先跑 npm run build:functions）`)
+  assert.ok(
+    fs.existsSync(file),
+    `产物不存在：dist/cloudfunctions/${gw}/index.js（先跑 npm run build:functions）`
+  )
   delete require.cache[require.resolve(file)]
   const mod = require(file)
   Module._load = originalLoad
@@ -77,7 +83,11 @@ test('登记过的 fn 必须真正进入对应 handler（而不是被网关吞�
   const gw = loadGateway('api-post')
   const r = await gw.main({ fn: 'post-create', title: 't', content: 'c' }, {})
   assert.equal(r.success, false)
-  assert.equal(r.code, 'AUTH_REQUIRED', `期望走到 handler（AUTH_REQUIRED），实际：${JSON.stringify(r)}`)
+  assert.equal(
+    r.code,
+    'AUTH_REQUIRED',
+    `期望走到 handler（AUTH_REQUIRED），实际：${JSON.stringify(r)}`
+  )
 })
 
 test('跨网关不可越权：api-post 不认得 admin 的入口', async () => {
