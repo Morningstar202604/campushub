@@ -80,7 +80,9 @@ module.exports = wrap(async (event) => {
           }
         })
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[like] 点赞通知写入失败:', e && (e.errMsg || e.message))
+    }
 
     return ok({ liked: true })
   } else {

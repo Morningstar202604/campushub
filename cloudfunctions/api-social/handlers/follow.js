@@ -73,7 +73,9 @@ module.exports = wrap(async (event) => {
             createdAt: new Date()
           }
         })
-      } catch {}
+      } catch (e) {
+        console.warn('[follow] 关注通知写入失败:', e && (e.errMsg || e.message))
+      }
 
       return ok({ following: true })
     } else {

@@ -118,7 +118,10 @@ module.exports = wrap(async (event) => {
         }
       })
     }
-  } catch {}
+  } catch (e) {
+    // 通知写入失败不影响评论本身，但必须留痕：否则「评论成功但对方没收到通知」无法排查
+    console.warn('[comment-create] 站内通知写入失败:', e && (e.errMsg || e.message))
+  }
 
   // 订阅消息推送（best-effort：未配置模板/用户未订阅均静默）
   try {
@@ -129,7 +132,10 @@ module.exports = wrap(async (event) => {
         value: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })
       }
     })
-  } catch {}
+  } catch (e) {
+    // 订阅消息是增值能力，失败不能影响评论；留痕便于确认「模板是否配好」
+    console.warn('[comment-create] 订阅消息推送失败:', e && (e.errMsg || e.message))
+  }
 
   return ok({ commentId: addRes._id, comment })
 })

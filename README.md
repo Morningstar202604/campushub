@@ -18,6 +18,7 @@
   📖 <a href="./docs/USER_GUIDE.md">使用说明书</a> ｜
   🚀 <a href="./docs/DEPLOY.md">部署上线指南</a> ｜
   ✅ <a href="./docs/LAUNCH_CHECKLIST.md">上线检查清单</a> ｜
+  🔍 <a href="./docs/AUDIT_REPORT_2026-10-22.md">全维度审查报告</a> ｜
   💰 <a href="./docs/COST.md">成本方案</a> ｜
   ⚖️ <a href="./docs/COMPLIANCE.md">合规要点</a> ｜
   🇨🇳 <a href="./docs/README.zh-CN.md">中文文档</a> ｜
