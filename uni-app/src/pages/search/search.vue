@@ -336,7 +336,13 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .sr-page {
+  /* H5：100vh 含导航栏会多出 44px 整页滚动条 */
+  /* #ifdef H5 */
+  min-height: calc(100vh - var(--window-top));
+  /* #endif */
+  /* #ifndef H5 */
   min-height: 100vh;
+  /* #endif */
   background: var(--bg-page);
   color: var(--text-body);
   padding-bottom: 40rpx;

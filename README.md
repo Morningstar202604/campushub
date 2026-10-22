@@ -29,7 +29,7 @@
 
 ## 📸 Screenshots / 截图
 
-> 下表为当前「墨荧 · Acid Campus」深色设计的真实运行截图，由 `docs/screenshots/v1/` 直接产出（390×844，H5 构建产物实机渲染）。
+> 以下 24 张为当前「墨荧 · Acid Campus」深色设计的**真实运行截图**（H5 构建产物、390×844 实机渲染、逐页实测无溢出/无报错）。
 
 <p align="center">
   <img src="docs/screenshots/v1/index.png" alt="首页" width="150" />
@@ -39,22 +39,34 @@
   <img src="docs/screenshots/v1/post-detail.png" alt="帖子详情" width="150" />
 </p>
 <p align="center">
+  <img src="docs/screenshots/v1/product-detail.png" alt="商品详情" width="150" />
+  <img src="docs/screenshots/v1/post-create.png" alt="发布" width="150" />
   <img src="docs/screenshots/v1/my-list.png" alt="我的内容" width="150" />
   <img src="docs/screenshots/v1/points.png" alt="积分商城" width="150" />
   <img src="docs/screenshots/v1/checkin.png" alt="签到" width="150" />
-  <img src="docs/screenshots/v1/search.png" alt="搜索" width="150" />
-  <img src="docs/screenshots/v1/notification.png" alt="通知" width="150" />
 </p>
 
 <p align="center">
-  <a href="./docs/screenshots/overview-v1.png"><b>查看 13 页总览长图</b></a> ｜
-  <a href="./docs/screenshots/v1/index.png"><b>查看单页大图</b></a>
+  <a href="./docs/screenshots/overview-v1.png"><b>查看 24 页总览长图</b></a> ｜
+  <a href="./docs/screenshots/v1/">逐页查看</a>
 </p>
 
-- 📁 **13 张单页截图（390×844）**：[`docs/screenshots/v1/`](./docs/screenshots/v1/)
-- ⚠️ `docs/screenshots/` 下 rest 的旧图（`index.png` / `profile.png` / `overview.png` 等）是 v0.8.1 白蓝主题历史版本，**不代表当前界面**；`docs/preview.html` 同理（已在页面顶部标注历史版本）
+| 页面 | 文件 | 页面 | 文件 |
+|---|---|---|---|
+| 首页 | `v1/index.png` | 通知 | `v1/notification.png` |
+| 二手市集 | `v1/market.png` | 搜索 | `v1/search.png` |
+| 表白墙 | `v1/wall.png` | 关注 | `v1/follow.png` |
+| 失物招领 | `v1/lost-found.png` | 签到 | `v1/checkin.png` |
+| 帖子详情 | `v1/post-detail.png` | 积分商城 | `v1/points.png` |
+| 商品详情 | `v1/product-detail.png` | 反馈 | `v1/feedback.png` |
+| 发布 | `v1/post-create.png` | 举报 | `v1/report.png` |
+| 发布好物 | `v1/product-create.png` | 校园认证 | `v1/verify.png` |
+| 我的内容 | `v1/my-list.png` | 管理台 | `v1/admin.png` |
+| 个人主页 | `v1/user-profile.png` | 公告管理 | `v1/announcements.png` |
+| 编辑资料 | `v1/user-update.png` | 类目管理 | `v1/categories.png` |
+| 校园指南 | `v1/guide-list.png` | 指南详情 | `v1/guide-detail.png` |
 
----
+> ⚠️ `docs/screenshots/` 根目录的旧图（`index.png` / `profile.png` / `overview.png` 等）与 `docs/preview.html` 是 v0.8.1 白蓝主题历史版本，**不代表当前界面**。
 
 ## 🎯 Overview / 项目简介
 

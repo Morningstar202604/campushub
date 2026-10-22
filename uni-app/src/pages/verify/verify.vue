@@ -225,7 +225,14 @@ onLoad(() => {
 
 <style lang="scss" scoped>
 .vf-page {
+  /* H5：100vh 含浏览器/应用导航栏，会多出 44px 造成整页滚动条；
+     小程序/App 无 --window-top，100vh 即可视区。 */
+  /* #ifdef H5 */
+  min-height: calc(100vh - var(--window-top));
+  /* #endif */
+  /* #ifndef H5 */
   min-height: 100vh;
+  /* #endif */
   background: var(--bg-page);
   color: var(--text-body);
   padding-bottom: 60rpx;

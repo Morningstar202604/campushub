@@ -307,21 +307,20 @@ async function queryList(page: number, size: number) {
   loading.value = true
   error.value = ''
   try {
-    const payload: Record<string, any> = { action: tab.value, page, pageSize: size }
-    const kw = keyword.value.trim()
-    if (tab.value === 'list-users' && kw) payload.keyword = kw.slice(0, 20)
-    if (tab.value === 'list-verifies') payload.status = verifyStatus.value
-    const res: any = await callFunction('admin', payload)
-    let rows: any[] = res?.list ?? []
-    // 内容运营 Tab 用普通 post-list 拉数据（admin 云函数没有列表动作），
-    // 拿到后再用 admin 的 pin/essence/delete 操作。
+    let rows: any[] = []
     if (tab.value === 'list-posts') {
-      const pr: any = await callFunction('post-list', {
-        tab: 'latest',
-        page,
-        pageSize: size
-      })
+      // 内容运营 Tab 用普通 post-list 拉数据。
+      // ⚠️ 必须先判断再决定是否调 admin：admin 云函数没有 list-posts 动作，
+      // 先发 admin 请求会直接抛「未知管理操作」，后面的 post-list 分支根本到不了。
+      const pr: any = await callFunction('post-list', { tab: 'latest', page, pageSize: size })
       rows = pr?.list ?? []
+    } else {
+      const payload: Record<string, any> = { action: tab.value, page, pageSize: size }
+      const kw = keyword.value.trim()
+      if (tab.value === 'list-users' && kw) payload.keyword = kw.slice(0, 20)
+      if (tab.value === 'list-verifies') payload.status = verifyStatus.value
+      const res: any = await callFunction('admin', payload)
+      rows = res?.list ?? []
     }
     // 认证证件图：cloud:// fileID 异步转临时 URL（失败静默，行内显示占位文案）
     if (tab.value === 'list-verifies') {
@@ -631,11 +630,19 @@ async function onResolveFeedback(f: any) {
 .tab-row {
   display: flex;
   padding: 0 32rpx 16rpx;
-  gap: 16rpx;
+  gap: 12rpx;
+  /* 6 个 tab 在 390px 屏放下不：改横向滚动而不是把它挤出屏幕外。
+     flex-shrink:0 + nowrap 保证每个 tab 不被压扁，overflow-x:auto 提供滚动。 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 .adm-tab {
   flex-shrink: 0;
-  padding: 10rpx 30rpx;
+  white-space: nowrap;
+  padding: 10rpx 24rpx;
   font-size: 26rpx;
   color: var(--text-secondary);
   background: var(--bg-card);

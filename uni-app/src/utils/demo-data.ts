@@ -22,6 +22,15 @@ export interface DemoResult {
 }
 
 const STORE_KEY = 'campushub.demo.v1'
+/**
+ * 演示数据版本号。**改动种子结构时必须 +1**。
+ *
+ * 为什么需要：演示数据会被持久化到 localStorage。旧版本存下的对象缺少新字段
+ * （例如 products 里的 images），新版代码用 `{...seed(), ...raw}` 合并时，
+ * 旧值会覆盖新种子 —— 页面就出现「商品无图」「分类显示英文枚举」这类残缺状态，
+ * 且刷新不消失（因为坏数据一直在存储里）。加版本号后旧数据直接丢弃重播。
+ */
+const STORE_VERSION = 2
 
 /* ---------------------------------- 种子数据 --------------------------------- */
 
@@ -580,23 +589,40 @@ let state: DemoState | null = null
 function load(): DemoState {
   if (state) return state
   try {
-    const raw = uni.getStorageSync(STORE_KEY)
-    if (raw && typeof raw === 'object' && Array.isArray(raw.posts)) {
-      const merged: DemoState = { ...seed(), ...raw }
-      state = merged
-      return merged
+    // ⚠️ uni.setStorageSync 会把对象包装成 { type, data } 再存；getStorageSync 返回的
+    // 也是这个包装对象。早期代码直接读 raw.posts 因此恒为 undefined —— 演示数据
+    // 一直是「每次启动重新播种、写不进存储」的状态。这里统一解包。
+    const stored: any = uni.getStorageSync(STORE_KEY)
+    const raw: any = stored && stored.data !== undefined ? stored.data : stored
+    // 版本不符 → 丢弃旧数据（旧结构缺字段，合并后会产出残缺页面）
+    const versionOk = raw && raw.__v === STORE_VERSION
+    const shapeOk =
+      raw &&
+      Array.isArray(raw.posts) &&
+      Array.isArray(raw.products) &&
+      raw.products.length > 0 &&
+      raw.products.every((p: any) => Array.isArray(p.images))
+    if (versionOk && shapeOk) {
+      state = raw as DemoState
+      return state
+    }
+    if (raw) {
+      // 明确告知而不是静默：排查「为什么页面数据不对」时这条日志是关键线索
+      console.info('[demo] 演示数据版本或结构已变化，重置为新种子')
     }
   } catch {
     /* 存储不可用则纯内存 */
   }
   state = seed()
+  save()
   return state
 }
 
 function save() {
   if (!state) return
   try {
-    uni.setStorageSync(STORE_KEY, state)
+    // 写入时带版本标记，供 load() 判断是否需要重置
+    uni.setStorageSync(STORE_KEY, { ...state, __v: STORE_VERSION })
   } catch {
     /* 存储满/不可用：退化为纯内存，不影响本次会话 */
   }
@@ -1353,6 +1379,11 @@ const handlers: Record<string, Handler> = {
     }
     if (e.action === 'list-logs') return { list: [], total: 0, page: 1, pageSize: 20 }
     if (e.action === 'verify-review') return { reviewed: true }
+    // 内容运营：前端已改为走 post-list，这里保留兜底以免旧版本调用报「未知管理操作」
+    if (e.action === 'list-posts') {
+      const rows = s.posts.filter((p) => p.status !== 'deleted')
+      return { list: rows, total: rows.length, page: 1, pageSize: 20 }
+    }
 
     // 处置动作要真的改本地数据，不能一律返回 {ok:true} 让 UI 假装成功
     if (e.action === 'delete') {

@@ -200,7 +200,14 @@ onLoad((opts) => {
 /* token 经 App.vue 的全局 :root 继承，任何组件样式表都能直接用 var(--*)，
    与是否 scoped / 是否 lang="scss" 无关；此处保留 scoped 做样式隔离，且不 @import tokens（避免重复定义）。 */
 .gd-page {
+  /* H5：100vh 含浏览器/应用导航栏，会多出 44px 造成整页滚动条；
+     小程序/App 无 --window-top，100vh 即可视区。 */
+  /* #ifdef H5 */
+  min-height: calc(100vh - var(--window-top));
+  /* #endif */
+  /* #ifndef H5 */
   min-height: 100vh;
+  /* #endif */
   background: var(--bg-page);
   color: var(--text-body);
   padding-bottom: 40rpx;
