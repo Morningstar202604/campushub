@@ -32,7 +32,8 @@
 
 ## 📸 Screenshots / 截图
 
-> 以下 24 张为当前「墨荧 · Acid Campus」深色设计的**真实运行截图**（H5 构建产物、390×844 实机渲染、逐页实测无溢出/无报错）。
+> 以下 27 张为当前「墨荧 · Acid Campus」设计的**真实运行截图**（H5 构建产物、390×844 实机渲染、逐页实测无溢出/无报错）。
+> 深色为默认主题，浅色主题可在「设置 → 主题」切换（导航栏与 tabBar 同步跟随）。
 
 <p align="center">
   <img src="docs/screenshots/v1/index.png" alt="首页" width="150" />
@@ -50,7 +51,7 @@
 </p>
 
 <p align="center">
-  <a href="./docs/screenshots/overview-v1.png"><b>查看 24 页总览长图</b></a> ｜
+  <a href="./docs/screenshots/overview-v1.png"><b>查看 27 页总览长图</b></a> ｜
   <a href="./docs/screenshots/v1/">逐页查看</a>
 </p>
 
