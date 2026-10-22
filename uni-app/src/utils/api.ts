@@ -49,6 +49,43 @@ function getPlatform(): Platform {
   return 'h5'
 }
 
+// ---------------------------------------------------------------------------
+// 设备身份令牌（H5 / App 端）
+//
+// 小程序端不需要：身份由 wx.cloud 的平台上下文提供 OPENID。
+// H5/App 走 REST 没有 OPENID，login 云函数会签发一个 HMAC 签名的设备令牌，
+// 之后每次请求放进 body.__identity，服务端校验签名后还原身份。
+// ---------------------------------------------------------------------------
+const IDENTITY_KEY = 'campushub.identity'
+
+export function getIdentityToken(): string {
+  try {
+    const raw: any = uni.getStorageSync(IDENTITY_KEY)
+    // uni.setStorageSync 会把字符串包成 {type:'string', data:'...'}
+    const v = raw && typeof raw === 'object' && 'data' in raw ? raw.data : raw
+    return typeof v === 'string' ? v : ''
+  } catch {
+    return ''
+  }
+}
+
+export function setIdentityToken(token: string): void {
+  if (!token) return
+  try {
+    uni.setStorageSync(IDENTITY_KEY, token)
+  } catch {
+    /* 存不下则本次会话仍可用（令牌在内存里随请求发出） */
+  }
+}
+
+export function clearIdentityToken(): void {
+  try {
+    uni.removeStorageSync(IDENTITY_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * REST 网关 token 注入点。
  * 部署前把「真实 Token」配置进 school.config.js（与 envId 同文件，保持单点注入约定）。
@@ -187,7 +224,7 @@ async function callViaRest(
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
-      body: JSON.stringify(data ?? {}),
+      body: JSON.stringify(withIdentity(data)),
       ...(controller ? { signal: controller.signal } : {})
     })
   } catch (e: any) {
@@ -227,6 +264,16 @@ async function callViaRest(
 }
 
 /**
+ * 给 REST 请求体附加设备身份令牌。
+ * 只对对象体生效；数组体（极少数直接传数组的调用）原样透传。
+ */
+function withIdentity(data: Record<string, any>): Record<string, any> {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return data
+  const t = getIdentityToken()
+  return t ? { ...data, __identity: t } : data
+}
+
+/**
  * 统一入口。三端同一调用契约：
  *   const res = await callFunction<{ list: Post[]; hasMore: boolean }>('post-list', { page: 1 })
  */
@@ -248,21 +295,33 @@ export function callFunction<T = any>(name: string, data: Record<string, any> = 
   // 即可在不启动 uni-app 运行时的情况下验证 composables 的真实调用行为。
   // 生产构建里该全局变量不存在，分支恒为 false，无运行时开销。
   const stub = (globalThis as any).__CALL_STUB__
+
+  // 三条分支先各自拿到 Promise，再统一做令牌落盘：
+  // 早期写法在每个分支里 return，导致新增分支时漏掉令牌捕获（login 走了短路就永远不落盘）。
+  let p: Promise<T>
   if (typeof stub === 'function') {
-    return stub(name, data) as Promise<T>
+    p = stub(name, data) as Promise<T>
+  } else if (shouldUseDemo()) {
+    // 演示模式：未接入 CloudBase 环境时用本地数据层，保证页面可浏览、可操作。
+    // 判定条件集中在 shouldUseDemo()，填了 envId 就自动回到真实云端（见该函数注释）。
+    p = callDemo(name, data) as Promise<T>
+  } else {
+    const platform = getPlatform()
+    p =
+      platform === 'miniprogram'
+        ? (callViaWxCloud(target, payload, name) as Promise<T>)
+        : (callViaRest(target, payload, name) as Promise<T>)
   }
 
-  // 演示模式：未接入 CloudBase 环境时用本地数据层，保证页面可浏览、可操作。
-  // 判定条件集中在 shouldUseDemo()，填了 envId 就自动回到真实云端（见该函数注释）。
-  if (shouldUseDemo()) {
-    return callDemo(name, data) as Promise<T>
+  // login 是身份建立点：服务端会下发设备令牌（仅 H5/App），必须立刻持久化，
+  // 否则后续请求没有令牌 → 每个写接口都 AUTH_REQUIRED。
+  if (name === 'login') {
+    return p.then((res: any) => {
+      if (res && res.identityToken) setIdentityToken(res.identityToken)
+      return res as T
+    }) as Promise<T>
   }
-
-  const platform = getPlatform()
-  if (platform === 'miniprogram') {
-    return callViaWxCloud(target, payload, name) as Promise<T>
-  }
-  return callViaRest(target, payload, name) as Promise<T>
+  return p
 }
 
 // ---------------------------------------------------------------------------

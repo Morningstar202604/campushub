@@ -37,9 +37,17 @@ function loadContext(wxContext, userDoc) {
     if (request === 'wx-server-sdk') return fakeSdk
     return originalLoad.apply(this, arguments)
   }
-  delete require.cache[path.join(COMMON_DIR, 'common-db.js')]
-  delete require.cache[path.join(COMMON_DIR, 'common-context.js')]
-  delete require.cache[path.join(COMMON_DIR, 'common-error.js')]
+  // 必须连 common-identity 一起清：它在模块加载时就把 cloud 捕获下来了，
+  // 少清一个会让下一个用例继续用上一个用例的 wxContext（该拒的没拒）。
+  for (const f of [
+    'common-db.js',
+    'common-context.js',
+    'common-error.js',
+    'common-identity.js',
+    'common-scope.js'
+  ]) {
+    delete require.cache[path.join(COMMON_DIR, f)]
+  }
   const ctx = require(path.join(COMMON_DIR, 'common-context.js'))
   Module._load = originalLoad
   return ctx

@@ -55,11 +55,13 @@
       </view>
     </view>
 
-    <!-- z-paging：五 tab 共用一个列表容器，切 tab 时 reload（notification 模式） -->
+    <!-- z-paging：五 tab 共用一个列表容器，切 tab 时 reload（notification 模式）
+         不能用 :auto="isAdmin"：z-paging 只在挂载时读一次 auto，之后 isAdmin 由 false 变 true
+         不会补发查询 —— 管理台会永远停在空白页。改为常开，由守卫通过 reload 触发。 -->
     <z-paging
       ref="pagingRef"
       v-model="list"
-      :auto="isAdmin"
+      :auto="true"
       :fixed="false"
       :default-page-size="20"
       safe-area-inset-bottom
@@ -241,6 +243,9 @@ onLoad(async () => {
   // role 是服务端权威字段且 persist 时被 omit，冷启动时 restore() 尚未完成 → 交给共享守卫
   // （它会先等一次 restore 再判定），否则真管理员也会被误踢。
   isAdmin.value = await ensureAdmin()
+  // z-paging 的首次查询在挂载时就发出了（此时登录态还没 restore 完，请求会被后端拒）。
+  // 守卫通过后必须重发一次，否则页面停在错误态/空白。
+  if (isAdmin.value) pagingRef.value?.reload?.()
 })
 
 function go(url: string) {

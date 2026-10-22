@@ -7,6 +7,7 @@ const security = require('./common-security')
 const rate = require('./common-rate')
 const content = require('./common-content')
 const subscribe = require('./common-subscribe')
+const identity = require('./common-identity')
 
 module.exports = {
   ...db,
@@ -15,5 +16,6 @@ module.exports = {
   ...security,
   ...rate,
   ...content,
-  ...subscribe
+  ...subscribe,
+  ...identity
 }

@@ -5,7 +5,9 @@
 // 网关只做三件事：按 event.fn 分发、拒绝未登记的 fn、把请求原样交给 handler。
 // 鉴权 / 限频 / 内容安全全部留在各 handler 内部 —— 收敛部署单元不等于收敛校验点。
 // 客户端直连网关，getWXContext().OPENID 仍是真实用户身份（不经云函数转发，不存在身份丢失）。
-const { fail } = require('./common-bundle')
+// 跨端身份：H5/App 走 REST 时没有 OPENID，由 common-identity 用 HMAC 设备令牌解析；
+// 网关负责在调用 handler 前把当前 event 绑定到身份上下文。
+const { fail, bindEvent } = require('./common-bundle')
 
 const HANDLERS = {
   checkin: require('./handlers/checkin'),
@@ -23,5 +25,7 @@ exports.main = async (event, context) => {
     // 明确错误码：前端可据此区分"调用方传错"与"服务异常"
     return fail('不支持的操作', 'UNKNOWN_FUNCTION')
   }
+  // 绑定当前请求：common-context 据此解析小程序 OPENID 或 H5/App 设备令牌
+  bindEvent(event)
   return handler(event, context)
 }

@@ -50,6 +50,9 @@
 | 31 | 集合与索引初始化 | ⚠️ **待执行** | 部署后调用一次 `init-db`；索引按 `docs/INDEXES.md` 建 | 运营 |
 | 32 | 定时触发器 | ⚠️ **待上传** | `task-expire`（每 6h）+ `backup-db`（每天 03:00），需单独上传触发器 | 运营 |
 | 33 | 云函数部署 | ⚠️ **待执行** | `npm run deploy -- --env prod` 或微信开发者工具上传 | 运营 |
+| 33a | **`IDENTITY_SECRET` 环境变量** | ⚠️ **待填（阻塞）** | 每个云函数目录的环境变量里配置 ≥16 位随机串（`openssl rand -hex 32`）。**不配则退化为 envId 派生盐，知道 envId 的人可伪造任意设备身份**。配好后 `login` 应能返回 `identityToken`；改密钥会让所有 H5/APK 已有令牌失效（用户重新登录即可） | 运营 |
+| 33b | H5/网站静态部署 | ⚠️ **待执行** | 见 `docs/DEPLOY_H5_ANDROID.md`：`cd uni-app && npm run build:h5` → 上传 `dist/build/h5` 到任意静态托管；hash 路由无需 nginx 重写 | 运营 |
+| 33c | 安卓 APK 构建与签名 | ⚠️ **待执行** | `npm run build:apk` 产出 `out/campushub-<date>.apk`。正式发布须用自有 keystore 重新签名（模板默认 debug 签名，不可上架） | 运营 |
 
 > ⚠️ **未配置 envId 时应用进入演示模式**：全站可浏览、可操作，但数据只存本机，不连云端。
 > 演示模式不是上线状态，必须在 ### 三 全部完成后才算真正上线。
@@ -73,6 +76,6 @@
 | 项 | 说明 |
 |---|---|
 | 小程序端主题 | 导航栏是原生组件，`setNavigationBarColor` 在页面级不生效；**页面内容**会跟随主题，导航栏保持深色 |
-| H5/App 端身份 | REST 请求没有 `OPENID`，需在 CloudBase 侧配置自定义登录或 uid→openid 映射，否则需登录接口会 `AUTH_REQUIRED`（**这是上线的最大阻塞项**） |
+| H5/App 端身份 | 已用 HMAC 设备令牌解决（`common-identity.js`）。REST 请求没有 `OPENID` 时，`login` 签发 30 天设备令牌，客户端存本地并回传。**前提是配置 `IDENTITY_SECRET`**，否则退化为 envId 派生盐（弱） |
 | APK 原生能力 | WebView 壳拿不到相机/推送/微信登录，退化为浏览器 API；完整能力需 HBuilderX 云打包 |
 | 搜索 | 正则全表扫描，内容超过约 1 万条后性能下降，需接外部检索 |

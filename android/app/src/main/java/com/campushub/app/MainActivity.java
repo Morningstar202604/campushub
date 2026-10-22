@@ -7,6 +7,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -53,9 +54,14 @@ public class MainActivity extends AppCompatActivity {
      *   1) 先看 WebView 自身历史（真页面跳转时有效）；
      *   2) 再看 uni-app 的 hash 路由栈 —— hash 变化不会让 canGoBack() 变 true，
      *      所以要问页面：uni 的页面栈是否还有上一页；
-     *   3) 都没有才退出。
-     * 不这么做的话，从首页进详情后按返回键会直接退出应用（实测踩到）。
+     *   3) 已在根页面则「再按一次退出」，避免误触直接杀掉应用。
+     *
+     * 注意：不能再判断 window.__uniConfig.router —— 它在所有页面都恒为真，
+     * 会让根页面也走「返回」分支，而 navigateBack 在根页面静默失败，
+     * 表现为返回键完全没反应、用户退不出应用（实测踩到）。
      */
+    private long lastBackAt = 0L;
+
     @Override
     public void onBackPressed() {
         if (webView == null) {
@@ -66,10 +72,8 @@ public class MainActivity extends AppCompatActivity {
             webView.goBack();
             return;
         }
-        // 询问页面栈：getCurrentPages().length > 1 表示还能返回
         webView.evaluateJavascript(
             "(function(){try{if(window.getCurrentPages&&window.getCurrentPages().length>1){return 'back'}" +
-                "if(window.__uniConfig&&window.__uniConfig.router){return 'back'}" +
                 "return 'exit'}catch(e){return 'exit'}})()",
             value -> {
                 if (value != null && value.contains("back")) {
@@ -79,7 +83,13 @@ public class MainActivity extends AppCompatActivity {
                         null
                     );
                 } else {
-                    finish();
+                    long now = System.currentTimeMillis();
+                    if (now - lastBackAt < 2000L) {
+                        finish();
+                    } else {
+                        lastBackAt = now;
+                        Toast.makeText(this, "再按一次退出应用", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         );

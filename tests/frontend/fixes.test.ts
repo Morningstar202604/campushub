@@ -43,10 +43,7 @@ test('匿名帖：详情与列表都不得下发真实 userId', () => {
     detail.includes('maskAnonymous(post)'),
     'post-detail 必须对匿名帖脱敏，否则 userId 可反查作者'
   )
-  assert.ok(
-    list.includes('res.data.map(maskAnonymous)'),
-    'post-list 必须对匿名帖脱敏'
-  )
+  assert.ok(list.includes('res.data.map(maskAnonymous)'), 'post-list 必须对匿名帖脱敏')
   // 两个脱敏函数都必须真的移除 userId
   assert.match(detail, /const \{[^}]*userId: _userId/, 'post-detail 脱敏需解构掉 userId')
   assert.match(list, /const \{[^}]*userId: _userId/, 'post-list 脱敏需解构掉 userId')
@@ -79,10 +76,7 @@ test('举报：管理台删除内容后必须把 pending 举报置为 resolved',
     src.includes("status: 'resolved'"),
     '删除被举报内容时需同步 resolve 举报记录，否则审核队列永远清不掉'
   )
-  assert.ok(
-    src.includes('reportsResolved'),
-    '应返回处理条数，便于前端/日志核对'
-  )
+  assert.ok(src.includes('reportsResolved'), '应返回处理条数，便于前端/日志核对')
 })
 
 test('举报：详情页必须存在举报入口（此前 report 页全站不可达）', () => {
@@ -99,10 +93,7 @@ test('举报：详情页必须存在举报入口（此前 report 页全站不可
     ['product-detail', product]
   ]) {
     assert.ok(src.includes('onReport'), `${name} 需要举报入口`)
-    assert.ok(
-      src.includes('/pages/report/report?targetId='),
-      `${name} 举报需带 targetId 跳转`
-    )
+    assert.ok(src.includes('/pages/report/report?targetId='), `${name} 举报需带 targetId 跳转`)
   }
 })
 

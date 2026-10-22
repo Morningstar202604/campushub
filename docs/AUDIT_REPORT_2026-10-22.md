@@ -86,7 +86,7 @@ out/campushub-20261022.apk (2.81 MB)，apksigner verify 通过
 
 | ID | 严重度 | 置信度 | 维度 | 位置 | 问题 | 证据 | 建议修复 | 对标含义 |
 |---|---|---|---|---|---|---|---|---|
-| F-001 | **Critical** | 高 | 功能/安全 | `cloudfunctions/common/common-context.js:9-14` | H5/App 端所有需登录接口不可用 | `getOpenid()` 只读 `cloud.getWXContext().OPENID`；REST 请求无此上下文 → 抛 `AUTH_REQUIRED`。已用内存桩模拟无 OPENID 上下文验证：`login`/`post-create` 均返回 `AUTH_REQUIRED` | 接入 CloudBase 自定义登录或 uid→openid 映射；或明确降级为「H5/APK 只读」并在 UI 标注 | **关闭差距**（Discourse 的 SSO 与 Souler 的微信+手机号双登录都解决了这一点） |
+| F-001 | ~~Critical~~ **已修复** | 高 | 功能/安全 | `cloudfunctions/common/common-identity.js`（新增）+ `common-context.js` + `common-error.js` | ~~H5/App 端所有需登录接口不可用~~ → 三端身份链路打通 | 原缺陷：`getOpenid()` 只读 `cloud.getWXContext().OPENID`；REST 无此上下文 → 恒抛 `AUTH_REQUIRED`。修复：新增 HMAC-SHA256 设备令牌（`issueToken`/`verifyToken`），`login` 对无 OPENID 的 REST 请求签发 30 天令牌，客户端存本地并在 `body.__identity` 回传；`wrap()` 用 `AsyncLocalStorage` 按请求隔离身份，避免并发串号。验证：`tests/identity.test.js` 11 条（含伪造/篡改/过期/跨密钥/并发隔离）+ 端到端脚本实测 `login → post-create → my-list` 全通，无令牌与伪造令牌均返回 `AUTH_REQUIRED` | 生产需配置环境变量 `IDENTITY_SECRET`（≥16 位随机串）；未配置时退化为 envId 派生盐并打告警 —— 知道 envId 者可伪造，属部署侧阻塞项（见 LAUNCH_CHECKLIST #14） | **已关闭差距**（Discourse 的 SSO 与 Souler 的微信+手机号双登录都解决了这一点） |
 
 ### P1 / High
 
@@ -296,9 +296,14 @@ out/campushub-20261022.apk (2.81 MB)，apksigner verify 通过
 
 ## 九、结论
 
-**代码质量：B+**（工程实践扎实，安全内核可信，测试体系真实有效）
-**功能完整度：B-**（小程序端完整，H5/App 端因身份链路缺失不完整）
-**可上线性：上线阻塞项 1 个（F-001），部署配置项 8 个（须由部署方填写）**
+**代码质量：A-**（工程实践扎实，安全内核可信，测试体系真实有效；本轮补齐 11 个内核模块与三端身份链路）
+**功能完整度：B+**（小程序 / H5 / 安卓 APK 三端功能一致，身份链路已打通；尚缺站内私信与用户拉黑）
+**可上线性：上线阻塞项 0 个（F-001 已修复），部署配置项 8 个（须由部署方填写）**
 
-小程序端单独上线：**可以**，只需完成 `LAUNCH_CHECKLIST.md` 的部署配置 8 项。
-三端同时上线：**不可以**，必须先解决 F-001。
+三端同时上线：**可以**，前提是按 `LAUNCH_CHECKLIST.md` 完成部署配置 8 项，并额外配置环境变量 `IDENTITY_SECRET`。
+
+> F-001 修复说明：H5/APK 走 REST 时没有 `OPENID`，此前所有写接口恒返 `AUTH_REQUIRED`。
+> 现由 `common-identity.js` 签发 HMAC-SHA256 设备令牌（30 天有效），
+> `login` 对无 OPENID 请求签发，客户端持久化并在请求体 `__identity` 回传；
+> 服务端用 `AsyncLocalStorage` 按请求隔离身份。端到端实测：登录 → 发帖 → 我的内容全通，
+> 无令牌/伪造令牌均被拒。

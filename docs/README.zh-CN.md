@@ -71,6 +71,7 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 | [交付手册 HANDOVER](./HANDOVER.md) | ★ 企业交接入口：交付物 / 环境 / 部署 / 验收 |
 | [验收报告 ACCEPTANCE](./ACCEPTANCE.md) | ★ 验收结论 + 买家可复跑命令 |
 | [部署指南 DEPLOY](./DEPLOY.md) | 从 AppID 到上线的 10 步 |
+| [H5 / 安卓部署](./DEPLOY_H5_ANDROID.md) | 网站静态托管、APK 构建签名与三端一致性自检 |
 | [索引清单 INDEXES](./INDEXES.md) | 46 条索引控制台建卡步骤 |
 | [成本方案 COST](./COST.md) | 免费额度 → 生产 19.9 元/月 |
 | [合规要点 COMPLIANCE](./COMPLIANCE.md) | 个人主体 UGC 合规路径 |

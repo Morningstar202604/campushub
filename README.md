@@ -17,6 +17,7 @@
 <p align="center">
   📖 <a href="./docs/USER_GUIDE.md">使用说明书</a> ｜
   🚀 <a href="./docs/DEPLOY.md">部署上线指南</a> ｜
+  📱 <a href="./docs/DEPLOY_H5_ANDROID.md">H5 / 安卓部署</a> ｜
   ✅ <a href="./docs/LAUNCH_CHECKLIST.md">上线检查清单</a> ｜
   🔍 <a href="./docs/AUDIT_REPORT_2026-10-22.md">全维度审查报告</a> ｜
   💰 <a href="./docs/COST.md">成本方案</a> ｜
@@ -105,7 +106,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 - **前端**：uni-app（Vue 3 + Vite），26 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 37 个业务入口复用（部署在 10 个云函数上）
 - **API 层**：37 个业务入口收敛为 **7 个资源型网关**（auth / post / product / comment / social / admin / content）+ 3 个独立函数（2 个定时器 + init-db）；入口按 `event.fn` 分发，鉴权/限频/审核仍在各入口内部执行。寻址表见 `gateway-routes.json`，说明见 [docs/GATEWAYS.md](docs/GATEWAYS.md)
-- **共享内核**：`cloudfunctions/common/` 下 9 个模块（context / security / rate / db / content / indexes / error / bundle / subscribe）只保留一份源码，由 `build:functions`（esbuild）在构建期内联进每个函数产物 —— 部署物永远等于当前源码，副本漂移在结构上不可能（详见 [docs/SYNC.md](docs/SYNC.md)）
+- **共享内核**：`cloudfunctions/common/` 下 11 个模块（context / identity / scope / security / rate / db / content / indexes / error / bundle / subscribe）只保留一份源码，由 `build:functions`（esbuild）在构建期内联进每个函数产物 —— 部署物永远等于当前源码，副本漂移在结构上不可能（详见 [docs/SYNC.md](docs/SYNC.md)）
 - **后端**：CloudBase 云数据库（23 集合 / 46 索引）、云存储、云调用（内容安全）、定时触发器（03:00 自动备份 · 6h 任务归档 + 日志清理）
 - **v0.9.2 加固**：限频原子化（`rate_limits` 确定性 _id 占位 + 原子自增，杜绝并发绕过）、读侧查询白名单（`sanitizeQuery`）、定时函数管理员守卫（fail-closed）
 
@@ -162,7 +163,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 数据存储 | 微信云数据库（23 集合 / 46 索引）+ 云存储 |
 | 开放能力 | 微信登录、内容安全 `msgSecCheck` / `imgSecCheck`、Canvas 海报 |
 | 质量工具链 | `npm run gate`（网关生成校验 → 构建内联 → 契约 → ESLint → Prettier → 测试）· ESLint/Prettier 已入库强制 · CI 见 `.github/workflows` |
-| 构建脚本 | `scripts/build-functions.js`（9 个内核模块构建期内联到各云函数产物）· `scripts/gen-gateways.js`（由路由表生成网关） |
+| 构建脚本 | `scripts/build-functions.js`（11 个内核模块构建期内联到各云函数产物）· `scripts/gen-gateways.js`（由路由表生成网关） |
 
 ---
 

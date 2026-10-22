@@ -1,16 +1,19 @@
 // common-context.js — 用户上下文与鉴权（单一事实来源）
 // 根本性解决：所有写操作统一经 getCurrentUser/requireActiveUser，
 // 封禁判断不再散落各处、也不再出现"只检查商品不检查帖子"的遗漏。
-const { cloud, getDB } = require('./common-db')
+const { getDB } = require('./common-db')
 const { AppError } = require('./common-error')
+const { resolveIdentity, requireOpenid } = require('./common-identity')
+const { runWithEvent, bindEvent, getCurrentEvent } = require('./common-scope')
 
-// 取得调用者 openid（云端可信，不可伪造）
+/**
+ * 取得调用者 openid（服务端可信，不可伪造）。
+ *   - 小程序：来自 cloud.getWXContext().OPENID（平台注入）
+ *   - H5/App：来自 HMAC 签名设备令牌（见 common-identity.js）
+ *   - 都没有：抛 AUTH_REQUIRED
+ */
 async function getOpenid() {
-  const wxContext = cloud.getWXContext()
-  if (!wxContext || !wxContext.OPENID) {
-    throw new AppError('未登录或登录态失效', 'AUTH_REQUIRED')
-  }
-  return wxContext.OPENID
+  return requireOpenid(getCurrentEvent())
 }
 
 // 取得当前登录用户文档；不存在则抛错（前置所有业务的前提）
@@ -74,4 +77,12 @@ async function requireActiveUser() {
   return requireActive(await getCurrentUser())
 }
 
-module.exports = { getOpenid, getCurrentUser, requireActive, requireActiveUser }
+module.exports = {
+  bindEvent,
+  runWithEvent,
+  getOpenid,
+  getCurrentUser,
+  requireActive,
+  requireActiveUser,
+  resolveIdentity
+}

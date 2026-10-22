@@ -27,7 +27,61 @@ const NAV_COLORS: Record<ThemeName, { bg: string; fg: 'white' | 'black' }> = {
   light: { bg: '#F4F2EA', fg: 'black' }
 }
 
+/**
+ * 底部 tabBar 配色。pages.json 里写死的是深色，切浅色后底部还是一条黑带，
+ * 与页面割裂。H5 端 tabBar 是 uni-h5 渲染的 DOM（内联背景色 + 黑色 border），
+ * 只能运行时改写；文字/图标颜色通过 uni.setTabBarStyle 改（该 API H5 支持）。
+ */
+const TAB_COLORS: Record<ThemeName, { bg: string; border: string; color: string; selected: string }> =
+  {
+    dark: { bg: '#0D110E', border: 'rgba(0,0,0,0.33)', color: '#9AA39A', selected: '#C8F135' },
+    light: { bg: '#F4F2EA', border: 'rgba(0,0,0,0.10)', color: '#6B7268', selected: '#5E7A10' }
+  }
+
+/**
+ * 当前生效主题（供 H5 导航栏重绘读取）。
+ * 必须放模块级而不是闭包捕获：hashchange 监听器只注册一次，
+ * 若它闭包捕获首次的 paint，切到浅色后每次路由跳转都会被旧的深色重绘覆盖回去
+ * （实测现象：设置页切浅色 → 回首页，导航栏又变黑）。
+ */
+let activeTheme: ThemeName = 'dark'
+
+function paintNavH5() {
+  const c = NAV_COLORS[activeTheme]
+  const heads = document.querySelectorAll('.uni-page-head')
+  heads.forEach((el: any) => {
+    el.style.backgroundColor = c.bg
+    el.style.color = c.fg === 'white' ? '#ffffff' : '#000000'
+    el.querySelectorAll('.uni-page-head__title, .uni-page-head-btn').forEach((t: any) => {
+      t.style.color = c.fg === 'white' ? '#ffffff' : '#000000'
+    })
+    // 返回箭头是 svg，用 currentColor 时跟随父级
+    el.querySelectorAll('svg').forEach((svg: any) => {
+      svg.style.color = c.fg === 'white' ? '#ffffff' : '#000000'
+      svg.querySelectorAll('path').forEach((pth: any) => {
+        pth.setAttribute('fill', c.fg === 'white' ? '#ffffff' : '#000000')
+      })
+    })
+  })
+}
+
+function paintTabBarH5() {
+  if (typeof document === 'undefined') return
+  const t = TAB_COLORS[activeTheme]
+  const bar = document.querySelector('.uni-tabbar')
+  if (!bar) return
+  ;(bar as any).style.backgroundColor = t.bg
+  const border = bar.querySelector('.uni-tabbar-border')
+  if (border) (border as any).style.backgroundColor = t.border
+  // 文字色：uni-h5 把颜色内联在 .uni-tabbar__label 上
+  bar.querySelectorAll('.uni-tabbar__label').forEach((el: any) => {
+    const isOn = el.closest('.uni-tabbar__item')?.classList.contains('uni-tabbar__item--active')
+    el.style.color = isOn ? t.selected : t.color
+  })
+}
+
 function applyToDom(name: ThemeName) {
+  activeTheme = name
   // #ifdef H5
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('data-theme', name)
@@ -35,7 +89,6 @@ function applyToDom(name: ThemeName) {
     document.documentElement.style.colorScheme = name
   }
   // #endif
-  const c = NAV_COLORS[name]
 
   // 原生导航栏：pages.json 里是编译期常量，切主题后必须运行时改写，
   // 否则浅色主题下顶部仍是黑条（实测踩到）。
@@ -43,42 +96,50 @@ function applyToDom(name: ThemeName) {
   // 所以 H5 直接改 DOM；小程序/App 走官方 API。
   // #ifdef H5
   if (typeof document !== 'undefined') {
-    const paint = () => {
-      const heads = document.querySelectorAll('.uni-page-head')
-      heads.forEach((el: any) => {
-        el.style.backgroundColor = c.bg
-        el.style.color = c.fg === 'white' ? '#ffffff' : '#000000'
-        el.querySelectorAll('.uni-page-head__title, .uni-page-head-btn').forEach((t: any) => {
-          t.style.color = c.fg === 'white' ? '#ffffff' : '#000000'
-        })
-        // 返回箭头是 svg，用 currentColor 时跟随父级
-        el.querySelectorAll('svg').forEach((svg: any) => {
-          svg.style.color = c.fg === 'white' ? '#ffffff' : '#000000'
-          svg.querySelectorAll('path').forEach((pth: any) => {
-            pth.setAttribute('fill', c.fg === 'white' ? '#ffffff' : '#000000')
-          })
-        })
-      })
-    }
-    paint()
+    paintNavH5()
+    paintTabBarH5()
     // 新页面挂载后再刷一次（导航栏是每次页面创建时渲染的）
-    setTimeout(paint, 60)
-    setTimeout(paint, 320)
-    // 路由切换时重绘
+    setTimeout(() => {
+      paintNavH5()
+      paintTabBarH5()
+    }, 60)
+    setTimeout(() => {
+      paintNavH5()
+      paintTabBarH5()
+    }, 320)
+    // 路由切换时重绘（两个 paint 都读模块级 activeTheme，永远用最新主题）
     if (!(globalThis as any).__themeNavHooked) {
       ;(globalThis as any).__themeNavHooked = true
-      window.addEventListener('hashchange', () => setTimeout(paint, 80))
+      window.addEventListener('hashchange', () =>
+        setTimeout(() => {
+          paintNavH5()
+          paintTabBarH5()
+        }, 80)
+      )
     }
   }
   // #endif
   // #ifndef H5
-  uni.setNavigationBarColor({
-    frontColor: c.fg === 'white' ? '#ffffff' : '#000000',
-    backgroundColor: c.bg,
-    fail: () => {
-      /* 页面未就绪时忽略 */
-    }
-  })
+  {
+    const c = NAV_COLORS[name]
+    uni.setNavigationBarColor({
+      frontColor: c.fg === 'white' ? '#ffffff' : '#000000',
+      backgroundColor: c.bg,
+      fail: () => {
+        /* 页面未就绪时忽略 */
+      }
+    })
+    const t = TAB_COLORS[name]
+    uni.setTabBarStyle({
+      backgroundColor: t.bg,
+      color: t.color,
+      selectedColor: t.selected,
+      borderStyle: name === 'dark' ? 'black' : 'white',
+      fail: () => {
+        /* 非 tabBar 页面调用会失败，忽略 */
+      }
+    })
+  }
   // #endif
 }
 

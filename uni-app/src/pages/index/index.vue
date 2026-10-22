@@ -95,6 +95,11 @@
       </view>
     </view>
 
+    <!-- 为悬浮按钮留出底部空间：必须放在列表外层，
+         早先误放在 #empty 插槽里，只有空列表时才有这段留白，
+         有内容时最后一张卡片会被 FAB 压住（实测截图中正文被「发布」遮住）。 -->
+    <view class="feed-list-tail"></view>
+
     <template #empty="{ isLoadFailed }">
       <view v-if="!isLoadFailed" class="empty-state">
         <text class="empty-kicker">CAMPUS</text>
@@ -105,8 +110,6 @@
           <text>发布第一条内容</text>
         </view>
       </view>
-      <!-- 为悬浮按钮留出底部空间，避免最后一张卡片被遮挡 -->
-      <view class="feed-list-tail"></view>
     </template>
   </z-paging>
 

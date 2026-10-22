@@ -19,10 +19,13 @@ function fail(message = '操作失败', code = 'ERROR', extra = {}) {
 }
 
 // 包裹 handler：所有云函数入口统一走这里，异常自动收敛为 { success:false }
+// 同时在独立的 AsyncLocalStorage 作用域内执行：身份上下文按请求隔离，
+// 并发请求之间不会串号（详见 common-scope.js，零依赖，不会拖入数据库链）。
 function wrap(handler) {
   return async (event, context) => {
     try {
-      return await handler(event, context)
+      const { runWithEvent } = require('./common-scope')
+      return await runWithEvent(event, () => handler(event, context))
     } catch (err) {
       if (err instanceof AppError) {
         return fail(err.message, err.code)
