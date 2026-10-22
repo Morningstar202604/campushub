@@ -67,8 +67,10 @@
       <view v-if="!isLoadFailed" class="empty-state">
         <view class="empty-shape"></view>
         <text class="empty-kicker">Market</text>
-        <text class="empty-title">市集还没开张</text>
-        <text class="empty-sub">第一件好物等你上架</text>
+        <text class="empty-title">{{ activeCategory === 'all' ? '市集还没开张' : '这个分类还没有好物' }}</text>
+        <text class="empty-sub">
+          {{ activeCategory === 'all' ? '第一件好物等你上架' : '换个分类看看，或成为第一个上架的人' }}
+        </text>
         <view class="empty-cta press" @click="goCreate">
           <text>上架好物</text>
         </view>
