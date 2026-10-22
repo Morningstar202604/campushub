@@ -14,6 +14,9 @@ import { onErrorCaptured, ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useSchoolStore } from '@/stores/school'
 import { initCloudSdk } from '@/utils/api'
+import { useTheme } from '@/composables/use-theme'
+import { initNetworkWatcher } from '@/composables/use-network'
+import { initUpdateCheck, initPrivacyGuard } from '@/composables/use-app-guard'
 
 // 全局错误捕获 — 避免白屏
 onErrorCaptured((err, instance, info) => {
@@ -38,6 +41,13 @@ onMounted(async () => {
 onLaunch(() => {
   const userStore = useUserStore()
   const schoolStore = useSchoolStore()
+  // 主题：必须在首屏渲染前应用，否则浅色用户会先看到一帧深色
+  useTheme()
+  // 网络状态：全局只提示一次，避免每个页面各弹一个「网络失败」
+  initNetworkWatcher()
+  // 小程序：版本更新提示 + 隐私授权弹窗（合规必需，缺了真机会被拒接口）
+  initUpdateCheck()
+  initPrivacyGuard()
   // 同步加载多校配置（envId/restToken）—— 必须早于 restore()，login 云函数依赖 envId。
   schoolStore.load()
   // 恢复登录态：内部 catch 全部异常并静默降级，不阻塞首屏渲染（无需 await）

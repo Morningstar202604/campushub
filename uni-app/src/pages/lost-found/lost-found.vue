@@ -71,6 +71,7 @@
 </template>
 
 <script setup lang="ts">
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { ref, computed } from 'vue'
 import { usePagedList } from '@/composables/use-paged-list'
 import { adaptLostFound } from '@/adapters'
@@ -114,6 +115,12 @@ function goCreate() {
   // @ts-ignore
   uni.navigateTo({ url: '/pages/post-create/post-create' })
 }
+
+// 分享给好友（小程序端生效；H5/App 无害）
+onShareAppMessage(() => ({
+  title: 'CampusHub 失物招领 · 互帮互助',
+  path: '/pages/lost-found/lost-found'
+}))
 </script>
 
 <style lang="scss" scoped>

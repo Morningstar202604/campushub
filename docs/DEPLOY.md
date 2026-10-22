@@ -460,7 +460,7 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 
 ```
 CampusHub/
-├── uni-app/               # 前端（uni-app Vue 3 三端：微信小程序 / H5 / 安卓 APK，24 个页面）
+├── uni-app/               # 前端（uni-app Vue 3 三端：微信小程序 / H5 / 安卓 APK，26 个页面）
 │   └── miniprogram_npm/   # npm 构建产物（已入库，标准结构，勿手动改动）
 ├── cloudfunctions/        # 云函数（37 个）
 │   └── common/            # 共享内核层（单一事实来源）

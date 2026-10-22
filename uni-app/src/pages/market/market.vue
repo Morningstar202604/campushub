@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { ref, computed } from 'vue'
 import { usePagedList } from '@/composables/use-paged-list'
 import { adaptMarket } from '@/adapters'
@@ -138,6 +139,9 @@ function goCreate() {
   // @ts-ignore
   uni.navigateTo({ url: '/pages/product-create/product-create' })
 }
+
+// 分享给好友（小程序端生效；H5/App 无害）
+onShareAppMessage(() => ({ title: 'CampusHub 二手市集 · 校内好物', path: '/pages/market/market' }))
 </script>
 
 <style lang="scss" scoped>

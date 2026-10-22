@@ -61,6 +61,7 @@
 </template>
 
 <script setup lang="ts">
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { usePagedList } from '@/composables/use-paged-list'
 import { adaptWall } from '@/adapters'
 
@@ -83,6 +84,9 @@ function goCreate() {
   // @ts-ignore
   uni.navigateTo({ url: '/pages/post-create/post-create' })
 }
+
+// 分享给好友（小程序端生效；H5/App 无害）
+onShareAppMessage(() => ({ title: 'CampusHub 表白墙 · 校园夜场', path: '/pages/wall/wall' }))
 </script>
 
 <style lang="scss" scoped>

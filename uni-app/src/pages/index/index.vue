@@ -17,7 +17,13 @@
       <!-- 页头 -->
       <view class="page-header">
         <text class="title-900 page-title">{{ schoolName }}</text>
-        <view class="clip-tag sticker"><text class="page-badge">墨荧</text></view>
+        <view class="header-right">
+          <view class="clip-tag sticker"><text class="page-badge">墨荧</text></view>
+          <!-- 设置入口：「设置」是应用的必备基础设施（主题/隐私协议/退出登录/清缓存） -->
+          <view class="header-gear press" @click="goPage('/pages/settings/settings')">
+            <text class="header-gear-text">设置</text>
+          </view>
+        </view>
       </view>
 
       <!-- 功能入口排：搜索 / 通知(未读角标) / 签到 / 积分 / 我的内容 -->
@@ -116,6 +122,7 @@
 </template>
 
 <script setup lang="ts">
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { ref, computed, onMounted } from 'vue'
 import { usePagedList } from '@/composables/use-paged-list'
 import { adaptWall, loadAnnouncements } from '@/adapters'
@@ -201,6 +208,9 @@ function goPage(url: string) {
   // @ts-ignore
   uni.navigateTo({ url })
 }
+
+// 分享给好友（小程序端生效；H5/App 无害）
+onShareAppMessage(() => ({ title: 'CampusHub · {school}', path: '/pages/index/index' }))
 </script>
 
 <style lang="scss" scoped>

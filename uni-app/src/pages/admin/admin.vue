@@ -637,7 +637,9 @@ async function onResolveFeedback(f: any) {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 .adm-tab {
   flex-shrink: 0;

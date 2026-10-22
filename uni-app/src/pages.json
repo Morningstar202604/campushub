@@ -7,30 +7,162 @@
     }
   },
   "pages": [
-    { "path": "pages/index/index", "style": { "navigationBarTitleText": "CampusHub" } },
-    { "path": "pages/market/market", "style": { "navigationBarTitleText": "二手市集" } },
-    { "path": "pages/wall/wall", "style": { "navigationBarTitleText": "表白墙" } },
-    { "path": "pages/lost-found/lost-found", "style": { "navigationBarTitleText": "失物招领" } },
-    { "path": "pages/post-detail/post-detail", "style": { "navigationBarTitleText": "帖子详情" } },
-    { "path": "pages/product-detail/product-detail", "style": { "navigationBarTitleText": "商品详情" } },
-    { "path": "pages/post-create/post-create", "style": { "navigationBarTitleText": "发布" } },
-    { "path": "pages/product-create/product-create", "style": { "navigationBarTitleText": "发布好物" } },
-    { "path": "pages/my-list/my-list", "style": { "navigationBarTitleText": "我的内容" } },
-    { "path": "pages/user-profile/user-profile", "style": { "navigationBarTitleText": "主页" } },
-    { "path": "pages/user-update/user-update", "style": { "navigationBarTitleText": "编辑资料" } },
-    { "path": "pages/guide-list/guide-list", "style": { "navigationBarTitleText": "校园指南" } },
-    { "path": "pages/guide-detail/guide-detail", "style": { "navigationBarTitleText": "指南" } },
-    { "path": "pages/notification/notification", "style": { "navigationBarTitleText": "通知" } },
-    { "path": "pages/search/search", "style": { "navigationBarTitleText": "搜索" } },
-    { "path": "pages/follow/follow", "style": { "navigationBarTitleText": "关注" } },
-    { "path": "pages/checkin/checkin", "style": { "navigationBarTitleText": "签到" } },
-    { "path": "pages/points/points", "style": { "navigationBarTitleText": "积分商城" } },
-    { "path": "pages/feedback/feedback", "style": { "navigationBarTitleText": "反馈" } },
-    { "path": "pages/report/report", "style": { "navigationBarTitleText": "举报" } },
-    { "path": "pages/verify/verify", "style": { "navigationBarTitleText": "校园认证" } },
-    { "path": "pages/admin/admin", "style": { "navigationBarTitleText": "管理台" } },
-    { "path": "pages/admin/announcements", "style": { "navigationBarTitleText": "公告管理" } },
-    { "path": "pages/admin/categories", "style": { "navigationBarTitleText": "类目管理" } }
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "CampusHub"
+      }
+    },
+    {
+      "path": "pages/market/market",
+      "style": {
+        "navigationBarTitleText": "二手市集"
+      }
+    },
+    {
+      "path": "pages/wall/wall",
+      "style": {
+        "navigationBarTitleText": "表白墙"
+      }
+    },
+    {
+      "path": "pages/lost-found/lost-found",
+      "style": {
+        "navigationBarTitleText": "失物招领"
+      }
+    },
+    {
+      "path": "pages/post-detail/post-detail",
+      "style": {
+        "navigationBarTitleText": "帖子详情"
+      }
+    },
+    {
+      "path": "pages/product-detail/product-detail",
+      "style": {
+        "navigationBarTitleText": "商品详情"
+      }
+    },
+    {
+      "path": "pages/post-create/post-create",
+      "style": {
+        "navigationBarTitleText": "发布"
+      }
+    },
+    {
+      "path": "pages/product-create/product-create",
+      "style": {
+        "navigationBarTitleText": "发布好物"
+      }
+    },
+    {
+      "path": "pages/my-list/my-list",
+      "style": {
+        "navigationBarTitleText": "我的内容"
+      }
+    },
+    {
+      "path": "pages/user-profile/user-profile",
+      "style": {
+        "navigationBarTitleText": "主页"
+      }
+    },
+    {
+      "path": "pages/user-update/user-update",
+      "style": {
+        "navigationBarTitleText": "编辑资料"
+      }
+    },
+    {
+      "path": "pages/guide-list/guide-list",
+      "style": {
+        "navigationBarTitleText": "校园指南"
+      }
+    },
+    {
+      "path": "pages/guide-detail/guide-detail",
+      "style": {
+        "navigationBarTitleText": "指南"
+      }
+    },
+    {
+      "path": "pages/notification/notification",
+      "style": {
+        "navigationBarTitleText": "通知"
+      }
+    },
+    {
+      "path": "pages/search/search",
+      "style": {
+        "navigationBarTitleText": "搜索"
+      }
+    },
+    {
+      "path": "pages/follow/follow",
+      "style": {
+        "navigationBarTitleText": "关注"
+      }
+    },
+    {
+      "path": "pages/checkin/checkin",
+      "style": {
+        "navigationBarTitleText": "签到"
+      }
+    },
+    {
+      "path": "pages/points/points",
+      "style": {
+        "navigationBarTitleText": "积分商城"
+      }
+    },
+    {
+      "path": "pages/feedback/feedback",
+      "style": {
+        "navigationBarTitleText": "反馈"
+      }
+    },
+    {
+      "path": "pages/report/report",
+      "style": {
+        "navigationBarTitleText": "举报"
+      }
+    },
+    {
+      "path": "pages/verify/verify",
+      "style": {
+        "navigationBarTitleText": "校园认证"
+      }
+    },
+    {
+      "path": "pages/admin/admin",
+      "style": {
+        "navigationBarTitleText": "管理台"
+      }
+    },
+    {
+      "path": "pages/admin/announcements",
+      "style": {
+        "navigationBarTitleText": "公告管理"
+      }
+    },
+    {
+      "path": "pages/admin/categories",
+      "style": {
+        "navigationBarTitleText": "类目管理"
+      }
+    },
+    {
+      "path": "pages/settings/settings",
+      "style": {
+        "navigationBarTitleText": "设置"
+      }
+    },
+    {
+      "path": "pages/legal/legal",
+      "style": {
+        "navigationBarTitleText": "用户协议"
+      }
+    }
   ],
   "globalStyle": {
     "navigationBarBackgroundColor": "#0D110E",
@@ -45,10 +177,30 @@
     "backgroundColor": "#0D110E",
     "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/index/index", "text": "首页", "iconPath": "static/tabbar/home.png", "selectedIconPath": "static/tabbar/home-active.png" },
-      { "pagePath": "pages/market/market", "text": "市集", "iconPath": "static/tabbar/market.png", "selectedIconPath": "static/tabbar/market-active.png" },
-      { "pagePath": "pages/wall/wall", "text": "表白墙", "iconPath": "static/tabbar/wall.png", "selectedIconPath": "static/tabbar/wall-active.png" },
-      { "pagePath": "pages/lost-found/lost-found", "text": "失物", "iconPath": "static/tabbar/lost.png", "selectedIconPath": "static/tabbar/lost-active.png" }
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/market/market",
+        "text": "市集",
+        "iconPath": "static/tabbar/market.png",
+        "selectedIconPath": "static/tabbar/market-active.png"
+      },
+      {
+        "pagePath": "pages/wall/wall",
+        "text": "表白墙",
+        "iconPath": "static/tabbar/wall.png",
+        "selectedIconPath": "static/tabbar/wall-active.png"
+      },
+      {
+        "pagePath": "pages/lost-found/lost-found",
+        "text": "失物",
+        "iconPath": "static/tabbar/lost.png",
+        "selectedIconPath": "static/tabbar/lost-active.png"
+      }
     ]
   }
 }

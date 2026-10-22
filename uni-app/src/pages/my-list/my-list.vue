@@ -550,19 +550,53 @@ onShow(() => {
 
 /* 个人资料条 */
 .me-bar {
-  display: flex; align-items: center; gap: 20rpx;
-  margin: 0 32rpx 20rpx; padding: 20rpx 24rpx;
-  background: var(--bg-card); border: 1rpx solid var(--border); border-radius: var(--radius-sharp);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 0 32rpx 20rpx;
+  padding: 20rpx 24rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-sharp);
 }
 .me-avatar {
-  width: 88rpx; height: 88rpx; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg-elevated); border-radius: var(--radius-sharp); overflow: hidden;
+  width: 88rpx;
+  height: 88rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sharp);
+  overflow: hidden;
 }
-.me-avatar-img { width: 88rpx; height: 88rpx; }
-.me-avatar-ph { font-size: 36rpx; font-weight: var(--fw-title); color: var(--accent); }
-.me-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
-.me-name { font-size: 32rpx; color: var(--text-primary); }
-.me-sub { font-size: 22rpx; color: var(--text-tertiary); }
-.me-arrow { font-size: 28rpx; color: var(--accent); font-weight: var(--fw-title); }
+.me-avatar-img {
+  width: 88rpx;
+  height: 88rpx;
+}
+.me-avatar-ph {
+  font-size: 36rpx;
+  font-weight: var(--fw-title);
+  color: var(--accent);
+}
+.me-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.me-name {
+  font-size: 32rpx;
+  color: var(--text-primary);
+}
+.me-sub {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+.me-arrow {
+  font-size: 28rpx;
+  color: var(--accent);
+  font-weight: var(--fw-title);
+}
 </style>

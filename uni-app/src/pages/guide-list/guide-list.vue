@@ -54,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { callFunction } from '@/utils/api'
 import { adaptGuide } from '@/adapters'
@@ -107,6 +108,12 @@ function openDetail(g: GuideCard) {
   // @ts-ignore
   uni.navigateTo({ url: `/pages/guide-detail/guide-detail?id=${g.id}` })
 }
+
+// 分享给好友（小程序端生效；H5/App 无害）
+onShareAppMessage(() => ({
+  title: 'CampusHub 校园指南 · 新生必读',
+  path: '/pages/guide-list/guide-list'
+}))
 </script>
 
 <style lang="scss" scoped>

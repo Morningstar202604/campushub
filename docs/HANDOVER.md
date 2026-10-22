@@ -14,7 +14,7 @@ campushub/
 ├── cloudfunctions/     # 后端：37 个 CloudBase 云函数（唯一事实源）
 │   └── common/         # 共享库（ok()/fail()/鉴权/内容安全），随各函数打包
 ├── uni-app/            # 前端：uni-app(Vue3+Vite) 三端，微信小程序 / H5 / 安卓 APK
-│   ├── src/            #   24 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
+│   ├── src/            #   26 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
 │   ├── scripts/        #   可复跑校验脚本（纯 Python 标准库，无需装包）
 │   └── docs/           #   安卓打包手册 / 设计系统 / 版本基线
 ├── docs/               # 产品级文档：DEPLOY / COST / COMPLIANCE / INDEXES / USER_GUIDE …
