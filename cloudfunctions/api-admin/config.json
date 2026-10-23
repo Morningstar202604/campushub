@@ -3,5 +3,6 @@
     "openapi": [
       "security.msgSecCheck"
     ]
-  }
+  },
+  "timeout": 20
 }

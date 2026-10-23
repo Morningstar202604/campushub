@@ -1,5 +1,12 @@
 // cloudfunctions/product-list/index.js
-const { getDB, ok, wrap, sanitizeQuery } = require('./common-bundle')
+const {
+  getDB,
+  ok,
+  wrap,
+  sanitizeQuery,
+  getOptionalUser,
+  blockedUserIds
+} = require('./common-bundle')
 
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -23,6 +30,11 @@ module.exports = wrap(async (event) => {
     const kw = String(keyword).trim().slice(0, 20)
     where.title = db.RegExp({ regexp: escapeRegExp(kw), options: 'i' })
   }
+
+  // 黑名单过滤（读侧）：登录用户看不到自己拉黑的人的商品；游客无黑名单，不加条件。
+  const viewer = await getOptionalUser()
+  const blocked = await blockedUserIds(viewer && viewer._id)
+  if (blocked.length) where.userId = db.command.nin(blocked)
 
   const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
   const size = Math.min(100, Math.max(1, Number(pageSize)))

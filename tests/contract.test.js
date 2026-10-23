@@ -230,8 +230,10 @@ test('DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止漏
     assert.ok(srcNames.has(n), `DEPLOY.md 出现未知索引 ${n}`)
   }
   // v0.9.3 审计加固：46 = 45 + idx_verify_requests_status_created（M8: verify_requests 集合补索引）
-  assert.strictEqual(srcNames.size, 46, 'common-indexes.js 应为 46 个索引')
-  assert.strictEqual(depNames.size, 46, 'DEPLOY.md 应列出全部 46 个索引')
+  // v0.11.0 用户拉黑：48 = 46 + idx_blocks_blocker_created + idx_blocks_blocker_blocked；
+  // v0.11.0 站内私信：51 = 48 + 3 个 messages 索引（会话线程 + 收发两侧窗口）
+  assert.strictEqual(srcNames.size, 51, 'common-indexes.js 应为 51 个索引')
+  assert.strictEqual(depNames.size, 51, 'DEPLOY.md 应列出全部 51 个索引')
 })
 
 test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/积分闭环/深分页/海报）', () => {
@@ -325,6 +327,86 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   const readme = read('README.md')
   assert.ok(!readme.includes('nationwide by default'), 'README 不应残留 nationwide 定位')
   assert.ok(!read('docs/README.zh-CN.md').includes('开源贴吧'), 'zh-CN 不应残留「贴吧」定位')
+})
+
+test('站内私信：messages 集合/索引/路由/handler 齐备，发送链路接审核与拉黑（v0.11.0）', () => {
+  // ① 集合登记
+  const init = read('cloudfunctions/init-db/index.js')
+  assert.ok(init.includes("'messages'"), 'init-db 应登记 messages 集合')
+
+  // ② 三个索引：会话线程 / 收发两侧的会话列表窗口
+  const idx = read('cloudfunctions/common/common-indexes.js')
+  for (const n of [
+    'idx_messages_conversation_created',
+    'idx_messages_from_created',
+    'idx_messages_to_created'
+  ]) {
+    assert.ok(idx.includes(`name: '${n}'`), `messages 索引 ${n} 未定义`)
+  }
+
+  // ③ 路由 + handler
+  const routes = JSON.parse(read('gateway-routes.json'))
+  assert.equal(routes.routes.message, 'api-social', 'message 应登记到 api-social 网关')
+  assert.ok(
+    fs.existsSync(path.join(ROOT, 'cloudfunctions/api-social/handlers/message.js')),
+    'message handler 源码存在'
+  )
+
+  // ④ 发送链路的安全三件套：审核（fail-closed）+ 限频 + 双向拉黑检查
+  const src = read('cloudfunctions/message/index.js')
+  assert.ok(src.includes('checkContents'), '私信发送必须过内容审核（fail-closed）')
+  assert.ok(src.includes('rateLimit'), '私信发送必须限频')
+  assert.ok(src.includes("collection('blocks')"), '发送前必须做双向拉黑检查（拉黑闭环）')
+})
+
+test('用户拉黑：blocks 集合/唯一索引/路由/handler/读侧过滤五要素齐备（v0.11.0）', () => {
+  // ① 集合登记：init-db 不建集合，线上查询直接报错
+  const init = read('cloudfunctions/init-db/index.js')
+  assert.ok(init.includes("'blocks'"), 'init-db 应登记 blocks 集合')
+
+  // ② 唯一索引：insertIdempotent 的幂等靠它，缺了并发双点会撞唯一键抛 500
+  const idx = read('cloudfunctions/common/common-indexes.js')
+  assert.ok(idx.includes("name: 'idx_blocks_blocker_blocked'"), 'blocks 唯一索引未定义')
+  assert.match(idx, /collection: 'blocks'[\s\S]*?unique: true/, 'blocks 必须定义唯一索引')
+
+  // ③ 路由：callFunction 有白名单，未登记的入口前端直接抛错
+  const routes = JSON.parse(read('gateway-routes.json'))
+  assert.equal(routes.routes.block, 'api-social', 'block 应登记到 api-social 网关')
+
+  // ④ handler 源码存在（网关分发表由路由表生成，缺文件 gen:gateways --check 会拦）
+  assert.ok(
+    fs.existsSync(path.join(ROOT, 'cloudfunctions/api-social/handlers/block.js')),
+    'block handler 源码存在'
+  )
+
+  // ⑤ 读侧过滤：拉黑的语义是"拉黑方看不到内容"，三个列表入口都必须接
+  for (const fn of ['post-list', 'product-list', 'comment-list']) {
+    const src = read(`cloudfunctions/${fn}/index.js`)
+    assert.ok(src.includes('blockedUserIds'), `${fn} 必须做黑名单读侧过滤（common-blocklist）`)
+  }
+})
+
+test('云函数超时必须显式声明（F-011：平台默认 3s，带图发布链路会超时）', () => {
+  const offenders = []
+  for (const deploy of UNITS.deployNames()) {
+    const cfgPath = path.join(ROOT, 'cloudfunctions', deploy, 'config.json')
+    let cfg = null
+    try {
+      cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'))
+    } catch {
+      offenders.push(`${deploy}(无 config.json)`)
+      continue
+    }
+    const t = cfg.timeout
+    if (typeof t !== 'number' || !Number.isInteger(t) || t < 1 || t > 60) {
+      offenders.push(`${deploy}(timeout=${JSON.stringify(t)})`)
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `全部部署单元都应在 config.json 声明 1-60s 超时：${offenders.join(', ')}`
+  )
 })
 
 test('开源治理：运营方信息外置、无未使用依赖、归档索引存在（v0.10.0）', () => {

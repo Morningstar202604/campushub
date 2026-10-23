@@ -1,11 +1,43 @@
 // cloudfunctions/comment-list/index.js
 // 评论列表：分页 + 楼中楼（parentId 为 null 的是主楼层，有 parentId 的是子回复）
 // 回填当前用户对楼层/子回复的点赞状态（liked），前端据此渲染与取消点赞。
-const { getDB, getCmd, AppError, ok, wrap, cloud } = require('./common-bundle')
+// 黑名单：登录用户看不到自己拉黑的人发的楼层与回复（读侧过滤，见 common-blocklist）。
+const {
+  getDB,
+  getCmd,
+  AppError,
+  ok,
+  wrap,
+  cloud,
+  getOptionalUser,
+  blockedUserIds
+} = require('./common-bundle')
 
 function toInt(v, def) {
   const n = Number(v)
   return Number.isFinite(n) ? n : def
+}
+
+/** 当前用户在本页评论上的点赞 id 集合；未登录/查不到用户 → null（全部视为未赞） */
+async function backfillLikedSet(db, floorIds, replies) {
+  try {
+    const wxContext = cloud.getWXContext()
+    const openid = wxContext && wxContext.OPENID
+    if (!openid) return null
+    const u = await db.collection('users').where({ openid }).field({ _id: true }).limit(1).get()
+    if (!u.data || !u.data[0]) return null
+    const viewerId = u.data[0]._id
+    const allIds = [...floorIds, ...replies.map((r) => r._id)]
+    const likedRes = await db
+      .collection('likes')
+      .where({ userId: viewerId, targetId: getCmd().in(allIds), type: 'comment' })
+      .field({ targetId: true })
+      .get()
+    return new Set((likedRes.data || []).map((l) => l.targetId))
+  } catch {
+    // 未登录等场景静默降级：全部视为未赞
+    return null
+  }
 }
 
 module.exports = wrap(async (event) => {
@@ -53,33 +85,19 @@ module.exports = wrap(async (event) => {
   }
 
   // 点赞状态回填：查出当前用户在本页全部评论上的点赞记录
-  let likedSet = null
-  try {
-    const wxContext = cloud.getWXContext()
-    const openid = wxContext && wxContext.OPENID
-    if (openid) {
-      const u = await db.collection('users').where({ openid }).field({ _id: true }).limit(1).get()
-      if (u.data && u.data[0]) {
-        const viewerId = u.data[0]._id
-        const allIds = [...floorIds, ...replies.map((r) => r._id)]
-        const likedRes = await db
-          .collection('likes')
-          .where({ userId: viewerId, targetId: _.in(allIds), type: 'comment' })
-          .field({ targetId: true })
-          .get()
-        likedSet = new Set((likedRes.data || []).map((l) => l.targetId))
-      }
-    }
-  } catch {
-    // 未登录等场景静默降级：全部视为未赞
-    likedSet = null
-  }
+  const likedSet = await backfillLikedSet(db, floorIds, replies)
+
+  // 黑名单过滤：拉黑的人发的楼层与整条回复串都不展示（读侧，拉黑方视角）。
+  // 在挂载完成后过滤，父楼层被滤掉时其子回复随之消失，不会留孤儿楼层。
+  const viewer = await getOptionalUser()
+  const blocked = new Set(await blockedUserIds(viewer && viewer._id))
+  const visible = (c) => !blocked.has(c.userId)
 
   const markLiked = (c) => ({ ...c, liked: likedSet ? likedSet.has(c._id) : false })
 
-  const list = floors.map((f) => ({
+  const list = floors.filter(visible).map((f) => ({
     ...markLiked(f),
-    replies: (replyMap[f._id] || []).map(markLiked)
+    replies: (replyMap[f._id] || []).filter(visible).map(markLiked)
   }))
 
   return ok({ list, hasMore: floors.length === size })

@@ -4,7 +4,14 @@
 // 降本 C3（惰性过期）：normal 流在读侧排除「已过时未解决的任务帖」，
 // 即使 task-expire cron 尚未执行，过期任务也不会出现在信息流；
 // cron 降频为每 6 小时兜底归档（config.json）。
-const { getDB, ok, wrap, sanitizeQuery } = require('./common-bundle')
+const {
+  getDB,
+  ok,
+  wrap,
+  sanitizeQuery,
+  getOptionalUser,
+  blockedUserIds
+} = require('./common-bundle')
 
 module.exports = wrap(async (event) => {
   const db = getDB()
@@ -44,6 +51,12 @@ module.exports = wrap(async (event) => {
   }
   // 分类筛选：categoryPath 为数组，直接按元素包含匹配（前端传所选节点 id）
   if (categoryId) where.categoryPath = categoryId
+
+  // 黑名单过滤（读侧）：登录用户看不到自己拉黑的人的内容；游客无黑名单，不加条件。
+  // 注意必须加在 _.and 包装之前——包装后 where 是命令对象，再挂字段无效。
+  const viewer = await getOptionalUser()
+  const blocked = await blockedUserIds(viewer && viewer._id)
+  if (blocked.length) where.userId = _.nin(blocked)
 
   // 惰性过期：仅作用于 normal 流。语义与 task-expire cron 一致：
   // 任务帖(kind=task)一旦 expireAt 过去且未 resolved 就不再展示。

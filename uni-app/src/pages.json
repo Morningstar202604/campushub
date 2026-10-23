@@ -103,6 +103,24 @@
       }
     },
     {
+      "path": "pages/block-list/block-list",
+      "style": {
+        "navigationBarTitleText": "黑名单"
+      }
+    },
+    {
+      "path": "pages/message-list/message-list",
+      "style": {
+        "navigationBarTitleText": "私信"
+      }
+    },
+    {
+      "path": "pages/chat/chat",
+      "style": {
+        "navigationBarTitleText": "私信"
+      }
+    },
+    {
       "path": "pages/checkin/checkin",
       "style": {
         "navigationBarTitleText": "签到"

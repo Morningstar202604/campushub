@@ -29,6 +29,8 @@
     "like": "api-social",
     "collect": "api-social",
     "follow": "api-social",
+    "block": "api-social",
+    "message": "api-social",
     "notification": "api-social",
     "checkin": "api-social",
     "points": "api-social",

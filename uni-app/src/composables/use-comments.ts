@@ -9,6 +9,9 @@
 //   但 targetId 要等 onLoad(options) 之后才知道。旧签名只收 string，页面只能传一个当时的
 //   空串或 Ref 对象——前者永远查不到评论，后者会被原样塞进请求体（后端报「缺少目标ID」）。
 //   现在统一支持 string | Ref<string> | (() => string)，与 useAction 的入参风格一致。
+//
+// 结构：组合器本体只留四个动作；楼层拼装、落位、局部删除、点赞回滚是纯函数，
+// 独立成模块级 helper——它们不碰响应式之外的状态，抽出来后可单测（见 tests/frontend）。
 import { ref, isRef, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { callFunction } from '@/utils/api'
@@ -35,6 +38,71 @@ function resolveSource<T>(v: Source<T>, fallback: T): T {
   if (typeof v === 'function') return ((v as () => T)() ?? fallback) as T
   if (v && isRef(v)) return ((v as Ref<T>).value ?? fallback) as T
   return (v ?? fallback) as T
+}
+
+/**
+ * 用后端回包拼本地楼层（乐观插入用）。
+ * 必须读 commentId：后端返回 ok({ commentId, comment })，从不返回 _id 字段——
+ * 旧实现读 res._id，落地评论的本地 _id 恒为临时值，后续点赞/删除都会拿错误 id
+ * 打后端（赞到不存在的评论、删除永远 404）。
+ */
+function buildLocalComment(
+  res: any,
+  content: string,
+  parentId: string | undefined,
+  replyTo: { userId: string; nickname: string } | undefined,
+  currentUser: { _id?: string; nickname?: string; avatar?: string } | null
+): CommentNode {
+  return {
+    _id: res?.commentId || res?.comment?._id || `temp-${Date.now()}`,
+    userNickname: currentUser?.nickname || '我',
+    userAvatar: currentUser?.avatar || '',
+    content,
+    createdAt: Date.now(),
+    liked: false,
+    likeCount: 0,
+    userId: currentUser?._id || '',
+    parentId: parentId || null,
+    replyToNickname: replyTo?.nickname,
+    replies: [] as CommentNode[]
+  }
+}
+
+/**
+ * 把新评论放进楼层结构。
+ * 楼中楼：有 parentId 时必须挂到对应楼层下，否则回复会跑到顶层、楼层的 replies 永远为空；
+ * 父楼层不在当前页（理论不该发生）时回退为顶层展示，至少不丢内容。
+ * 顶层：楼层按时间正序（后端 comment-list 是 createdAt asc）——新楼层追加到末尾，
+ * 用 unshift 会让最新评论排到最上面，与列表首屏之后的顺序不一致。
+ */
+function placeCreated(floors: CommentNode[], created: CommentNode, parentId?: string) {
+  if (parentId) {
+    const floor = floors.find((f) => f._id === parentId)
+    if (floor) {
+      if (!floor.replies) floor.replies = []
+      floor.replies.push(created)
+    } else {
+      floors.unshift(created)
+    }
+  } else {
+    floors.push(created)
+  }
+}
+
+/** 局部删除：先找顶层楼层，再找其楼中楼（子回复此前漏处理，删完仍留在页面上） */
+function removeFromFloors(floors: CommentNode[], commentId: string) {
+  const index = floors.findIndex((f) => f._id === commentId)
+  if (index !== -1) {
+    floors.splice(index, 1)
+    return
+  }
+  for (const f of floors) {
+    const ri = (f.replies || []).findIndex((r) => r._id === commentId)
+    if (ri !== -1) {
+      f.replies!.splice(ri, 1)
+      break
+    }
+  }
 }
 
 export interface UseCommentsOptions {
@@ -104,37 +172,8 @@ export function useComments(opts: UseCommentsOptions) {
         replyToNickname: replyTo?.nickname
       })
       draft.value = ''
-      // 后端返回 ok({ commentId, comment }) —— 必须读 commentId。
-      // 旧实现读 res._id（后端从不返回该字段）→ 落地评论的本地 _id 恒为临时值，
-      // 后续点赞/删除都会拿错误 id 打后端（赞到不存在的评论、删除永远 404）。
-      const created = {
-        _id: res?.commentId || res?.comment?._id || `temp-${Date.now()}`,
-        userNickname: currentUser.value?.nickname || '我',
-        userAvatar: currentUser.value?.avatar || '',
-        content,
-        createdAt: Date.now(),
-        liked: false,
-        likeCount: 0,
-        userId: currentUser.value?._id || '',
-        parentId: parentId || null,
-        replyToNickname: replyTo?.nickname,
-        replies: [] as CommentNode[]
-      }
-      // 楼中楼：有 parentId 时必须挂到对应楼层下，否则回复会跑到顶层、楼层的 replies 永远为空。
-      if (parentId) {
-        const floor = floors.value.find((f) => f._id === parentId)
-        if (floor) {
-          if (!floor.replies) floor.replies = []
-          floor.replies.push(created)
-        } else {
-          // 父楼层不在当前页（理论不该发生）：回退为顶层展示，至少不丢内容
-          floors.value.unshift(created)
-        }
-      } else {
-        // 楼层按时间正序（后端 comment-list 是 createdAt asc）——新楼层追加到末尾，
-        // 用 unshift 会让最新评论排到最上面，与列表首屏之后的顺序不一致。
-        floors.value.push(created)
-      }
+      const created = buildLocalComment(res, content, parentId, replyTo, currentUser.value)
+      placeCreated(floors.value, created, parentId)
       uni.showToast({ title: '评论成功', icon: 'none', duration: 2000 })
       return created
     } catch (e: any) {
@@ -150,19 +189,7 @@ export function useComments(opts: UseCommentsOptions) {
   async function remove(commentId: string) {
     try {
       await callFunction('comment-delete', { commentId })
-      // 局部删除：先找顶层楼层，再找其楼中楼（子回复此前漏处理，删完仍留在页面上）
-      const index = floors.value.findIndex((f) => f._id === commentId)
-      if (index !== -1) {
-        floors.value.splice(index, 1)
-      } else {
-        for (const f of floors.value) {
-          const ri = (f.replies || []).findIndex((r) => r._id === commentId)
-          if (ri !== -1) {
-            f.replies!.splice(ri, 1)
-            break
-          }
-        }
-      }
+      removeFromFloors(floors.value, commentId)
       uni.showToast({ title: '已删除', icon: 'none', duration: 2000 })
       return true
     } catch (e: any) {

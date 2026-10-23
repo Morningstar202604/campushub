@@ -8,6 +8,7 @@ const rate = require('./common-rate')
 const content = require('./common-content')
 const subscribe = require('./common-subscribe')
 const identity = require('./common-identity')
+const blocklist = require('./common-blocklist')
 
 module.exports = {
   ...db,
@@ -17,5 +18,6 @@ module.exports = {
   ...rate,
   ...content,
   ...subscribe,
-  ...identity
+  ...identity,
+  ...blocklist
 }

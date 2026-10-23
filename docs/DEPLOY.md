@@ -153,6 +153,10 @@ npm run doctor            # 校验产物新鲜度与权限声明
 
 > cron 格式为 6 字段：秒 分 时 日 月 周
 
+### 4.3 函数超时（已显式声明，随代码上传）
+
+10 个部署单元的 `config.json` 均已声明 `timeout`（秒）：7 个网关 20s、`task-expire` 20s、`init-db` 20s、`backup-db` 60s（平台上限）。**平台默认 3s 不够用**：发布链路含「下载图片 → `imgSecCheck`」同步审核，弱网下 3s 必超时，表现为带图发布随机失败。网关配置由 `npm run gen:gateways` 生成，不要手改；独立函数的 `timeout` 与 `triggers` 并列在同一份 `config.json` 里。
+
 ---
 
 ## 第五步：配置云函数环境变量
@@ -305,6 +309,19 @@ npm run doctor            # 校验产物新鲜度与权限声明
 | idx_follows_follower_created | followerId(升), createdAt(降) | 否 |
 | idx_follows_following_created | followingId(升), createdAt(降) | 否 |
 | idx_follows_follower_following | followerId(升), followingId(升) | 是 |
+
+**blocks**（2个）
+| 索引名 | 字段 | 唯一 |
+|--------|------|------|
+| idx_blocks_blocker_created | blockerId(升), createdAt(降) | 否 |
+| idx_blocks_blocker_blocked | blockerId(升), blockedId(升) | 是 |
+
+**messages**（3个）
+| 索引名 | 字段 | 唯一 |
+|--------|------|------|
+| idx_messages_conversation_created | conversationId(升), createdAt(升) | 否 |
+| idx_messages_from_created | fromUserId(升), createdAt(降) | 否 |
+| idx_messages_to_created | toUserId(升), createdAt(降) | 否 |
 
 **checkins**（1个）
 | 索引名 | 字段 |

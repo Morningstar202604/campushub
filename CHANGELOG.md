@@ -5,6 +5,25 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.11.0] - 2026-10-23
+
+审计路线图收口 + 两个对标差距功能（用户拉黑 / 站内私信）。全部先写失败测试再实现，`npm run gate` 全绿（后端 228 → 235 条，前端 36 → 37 条），vue-tsc 无错误。
+
+### Added
+- **用户拉黑（`block`，api-social）**：他人主页「拉黑」按钮（二次确认防误触）+ 设置 → 黑名单管理页。拉黑是**单向**的：对方无感知、内容不删，`common-blocklist` 内核在 post-list / product-list / comment-list 读侧统一过滤；不写任何通知。幂等靠 `idx_blocks_blocker_blocked` 唯一索引。
+- **站内私信（`message`，api-social）**：他人主页「私信」直达聊天页，设置 → 查看私信为会话列表（未读红点 / 最新预览 / 「我：」前缀）。会话按 `conversationId`（双方 userId 排序拼接）组织，无需会话表。发送链路：限频（10s/10 条）→ `msgSecCheck` 审核（fail-closed，与评论同级）→ **双向拉黑检查**（我拉黑的拒发并引导解除；被拉黑的拒收，不泄露可判定状态）→ 落库 → 站内通知（best-effort）。已读标记按属主过滤防 IDOR。演示模式同契约实现。
+- **`getOptionalUser`（common-context）**：读接口的「有则用、无则跳过」版身份获取——游客不拒绝，只为黑名单过滤取身份；仅吞 `AUTH_REQUIRED` / `USER_NOT_FOUND`，基础设施异常照旧上抛。
+- **契约测试**：拉黑五要素（集合/唯一索引/路由/handler/读侧过滤接线）、私信四要素 + 安全三件套（审核/限频/拉黑检查）、全部部署单元 `timeout` 显式声明；demo 层拉黑与私信的行为测试（含读侧过滤实证）。
+
+### Changed
+- **云函数超时显式化（F-011）**：`gen-gateways.js` 生成的 7 个网关 `config.json` 带 `timeout: 20`（平台默认 3s 不够带图发布链路：下载图片 → imgSecCheck 同步审核）；`backup-db` 60s（15 集合全量备份，平台上限）、`task-expire` / `init-db` 20s。`npm run doctor` 新增超时检查（警告级，硬门禁在契约测试）。
+- **拆分 4 个 CC>15 函数（F-007/008/009/014）**：`deploy.js` main（CC 38）拆为 prebuild / resolveCredentials / enumerateFunctions / assertNoKernelLeftovers / deployAll / reportResults 六段，凭据解析再细分为 loadFileConfig / firstDefined / resolvePrivateKey / assertCredentials；`user-profile.js` handler（CC 35）拆出 fullProfile / publicProfile / resolveViewerRole / fetchIsFollowing / fetchIsBlocked / fetchRecentPosts，兜底表达式收敛到 `orDefault`；`use-comments.ts`（useComments 整体 CC 29）拆出 buildLocalComment / placeCreated / removeFromFloors 纯函数；demo-data.ts 的 admin handler（CC 31）由 if 链改为动作表分发，列表/处置拆为 demoListReports / demoDeleteTarget / demoResolveReport / demoBanUser / demoModeratePost。行为不变，全部既有测试全绿。
+- **comment-list 点赞回填抽为 `backfillLikedSet`**：为黑名单过滤腾出复杂度空间的同时，让这段既有逻辑可独立单测。
+- **数字同步（由源码推导，契约测试强制）**：业务入口 37 → 39、集合 23 → 25、索引 46 → 51、前端页面 26 → 29、共享内核 11 → 12；README / README.zh-CN / 落地页 / USER_GUIDE / DEPLOY / INDEXES 全部同步，USER_GUIDE 目录编号重排。
+
+### Fixed
+- **私信通知直达聊天页**：通知中心 `type=message` 的条目点击后进入会话而非主页（原 targetType=user 会进主页，要多点一次）。
+
 ## [0.10.0] - 2026-10-23
 
 开源治理与审计收口（对应 `docs/AUDIT_REPORT_2026-10-22.md` 未关闭项 F-003 / F-004 / F-010 / F-012 / F-017）：

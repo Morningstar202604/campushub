@@ -332,6 +332,59 @@ const EXPECTED_INDEXES = [
     unique: true
   },
 
+  // ===== blocks =====
+  // 黑名单（v0.11.0）：拉黑是单向读侧过滤，blockerId 是所有查询的等值前缀
+  {
+    collection: 'blocks',
+    name: 'idx_blocks_blocker_created',
+    fields: [
+      { key: 'blockerId', direction: 1 },
+      { key: 'createdAt', direction: -1 }
+    ],
+    unique: false
+  },
+  // unique:true —— 同一用户对同一目标只能拉黑一次（insertIdempotent 依赖它做幂等）
+  {
+    collection: 'blocks',
+    name: 'idx_blocks_blocker_blocked',
+    fields: [
+      { key: 'blockerId', direction: 1 },
+      { key: 'blockedId', direction: 1 }
+    ],
+    unique: true
+  },
+
+  // ===== messages =====
+  // 站内私信（v0.11.0）：会话 id = 双方 userId 排序拼接，同一对用户只有一个会话
+  {
+    collection: 'messages',
+    name: 'idx_messages_conversation_created',
+    fields: [
+      { key: 'conversationId', direction: 1 },
+      { key: 'createdAt', direction: 1 }
+    ],
+    unique: false
+  },
+  // 会话列表：收发两侧各按「我的 id + 时间倒序」取最近窗口，不需要全表扫描
+  {
+    collection: 'messages',
+    name: 'idx_messages_from_created',
+    fields: [
+      { key: 'fromUserId', direction: 1 },
+      { key: 'createdAt', direction: -1 }
+    ],
+    unique: false
+  },
+  {
+    collection: 'messages',
+    name: 'idx_messages_to_created',
+    fields: [
+      { key: 'toUserId', direction: 1 },
+      { key: 'createdAt', direction: -1 }
+    ],
+    unique: false
+  },
+
   // ===== checkins =====
   // unique:true —— 同一用户同一天只能有一条签到记录（防并发双签双积分）
   {

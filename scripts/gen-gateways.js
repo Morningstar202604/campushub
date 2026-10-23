@@ -24,6 +24,10 @@ const CHECK_ONLY = process.argv.includes('--check')
 
 const routes = JSON.parse(fs.readFileSync(ROUTE_FILE, 'utf8')).routes
 const SDK_DEP = { 'wx-server-sdk': '~2.6.3' }
+// 网关函数显式超时（秒，F-011）：平台默认 3s，而发布链路含「下载图片 → imgSecCheck」
+// 同步审核，弱网下 3s 不够用，表现为发布随机失败。请求面函数统一 20s；
+// 备份类长任务（backup-db）不在此列——它是独立函数，在各自 config.json 里单独声明。
+const GW_TIMEOUT = 20
 
 function members(gw) {
   return Object.keys(routes)
@@ -183,7 +187,11 @@ async function main() {
     await writeIfChanged(path.join(CF, gw, 'index.js'), routerSource(gw, members(gw)))
     await writeIfChanged(
       path.join(CF, gw, 'config.json'),
-      JSON.stringify({ permissions: { openapi: [...union].sort() } }, null, 2) + '\n'
+      JSON.stringify(
+        { permissions: { openapi: [...union].sort() }, timeout: GW_TIMEOUT },
+        null,
+        2
+      ) + '\n'
     )
     await writeIfChanged(
       path.join(CF, gw, 'package.json'),

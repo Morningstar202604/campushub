@@ -77,11 +77,30 @@ async function requireActiveUser() {
   return requireActive(await getCurrentUser())
 }
 
+/**
+ * 取当前登录用户；游客（未登录/登录态失效/用户记录不存在）返回 null 而不抛错。
+ *
+ * 为什么需要它：读接口（信息流/市集/评论）对游客开放，按设计不能把游客拒之门外，
+ * 但又要按登录态做个性化过滤（如黑名单：拉黑方看不到被拉黑者的内容）。
+ * requireActiveUser 是写接口的门槛；这是读接口的"有则用、无则跳过"版本。
+ * 注意：仅吞 AUTH_REQUIRED / USER_NOT_FOUND 两类"没有登录态"的错误，
+ * 数据库真异常照旧上抛——静默吞掉基础设施错误会让故障伪装成"游客"。
+ */
+async function getOptionalUser() {
+  try {
+    return await getCurrentUser()
+  } catch (e) {
+    if (e && (e.code === 'AUTH_REQUIRED' || e.code === 'USER_NOT_FOUND')) return null
+    throw e
+  }
+}
+
 module.exports = {
   bindEvent,
   runWithEvent,
   getOpenid,
   getCurrentUser,
+  getOptionalUser,
   requireActive,
   requireActiveUser,
   resolveIdentity

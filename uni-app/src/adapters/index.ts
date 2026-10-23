@@ -303,6 +303,8 @@ export interface UserProfile {
   followingCount: number
   isSelf: boolean
   isFollowing: boolean
+  /** 我是否已拉黑该用户（后端 user-profile 回传；本人页恒 false） */
+  isBlocked: boolean
   posts: any[]
 }
 
@@ -323,6 +325,7 @@ export function adaptProfile(res: any, currentUserId = ''): UserProfile {
     followingCount: u.followingCount ?? 0,
     isSelf: Boolean(res?.isSelf) || (!!currentUserId && id === currentUserId),
     isFollowing: Boolean(res?.isFollowing),
+    isBlocked: Boolean(res?.isBlocked),
     posts: res?.posts ?? res?.userPosts ?? []
   }
 }

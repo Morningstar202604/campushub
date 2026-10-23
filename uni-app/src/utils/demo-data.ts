@@ -53,6 +53,8 @@ interface DemoState {
   likes: Record<string, boolean>
   collects: Record<string, boolean>
   follows: Record<string, boolean>
+  blocks: { blockedId: string; createdAt: string }[]
+  messages: any[]
   checkin: { dates: string[]; streak: number; points: number }
   user: any
   feedbacks: any[]
@@ -548,6 +550,8 @@ function seed(): DemoState {
     likes: {},
     collects: { p3: true },
     follows: { 'u-2': true },
+    blocks: [],
+    messages: [],
     checkin: { dates: [], streak: 0, points: 100 },
     user: {
       _id: 'u-me',
@@ -674,6 +678,95 @@ function newCommentId() {
   return nextId('cm')
 }
 
+/**
+ * 黑名单读侧过滤（与真后端 common-blocklist 对齐）：
+ * 演示态同样看不到自己拉黑的人的内容，避免「演示能跑、联清崩」的两套语义。
+ */
+function notBlocked<T extends { userId?: string }>(s: DemoState, list: T[]): T[] {
+  if (!s.blocks.length) return list
+  const blocked = new Set(s.blocks.map((b) => b.blockedId))
+  // userId 缺失的内容无法归属到任何人，不过滤（与后端「无 userId 不参与匹配」一致）
+  return list.filter((x) => !x.userId || !blocked.has(x.userId))
+}
+
+/* ------------------------------ 管理台（演示） ------------------------------ */
+
+/**
+ * 演示管理台的列表/处置 helper。行结构与真实 admin.js 对齐——
+ * 演示模式的意义是「克隆即可预览」，管理台点下去不能全是假成功。
+ */
+
+/** list-reports：主键是 reportId 且带 target 摘要对象（真实 admin.js 的行结构）。
+ *  旧版直接回传原始报告文档（_id、无 target），管理台按 reportId 取键会拿到
+ *  undefined，点「忽略/删除」会把整个列表过滤空。 */
+function demoListReports(s: DemoState) {
+  const list = s.reports.map((r) => {
+    const target =
+      r.targetType === 'post'
+        ? s.posts.find((x) => x._id === r.targetId)
+        : s.products.find((x) => x._id === r.targetId)
+    return {
+      reportId: r._id,
+      targetType: r.targetType,
+      targetId: r.targetId,
+      reason: r.reason,
+      description: r.description,
+      createdAt: r.createdAt,
+      target: target
+        ? {
+            _id: target._id,
+            status: target.status,
+            ownerId: target.userId,
+            ownerNickname: target.userNickname || '',
+            snippet: String(target.title || target.content || '').slice(0, 80)
+          }
+        : { _id: r.targetId, status: 'deleted', snippet: '(已删除)' }
+    }
+  })
+  return { list, total: list.length, page: 1, pageSize: 20 }
+}
+
+/** 处置动作要真的改本地数据，不能一律返回 {ok:true} 让 UI 假装成功 */
+function demoDeleteTarget(s: DemoState, e: any) {
+  const col = e.targetType === 'product' ? s.products : s.posts
+  const doc = col.find((x) => x._id === e.targetId)
+  if (doc) doc.status = 'deleted'
+  for (const r of s.reports) {
+    if (r.targetId === e.targetId && r.status === 'pending') r.status = 'resolved'
+  }
+  save()
+  return { deleted: true }
+}
+
+function demoResolveReport(s: DemoState, e: any) {
+  const r = s.reports.find((x) => x._id === e.reportId)
+  if (r) r.status = 'resolved'
+  save()
+  return { resolved: true }
+}
+
+/** 封禁/解封只对演示用户本人生效（演示态只有一个用户） */
+function demoBanUser(s: DemoState, e: any, action: 'ban' | 'unban') {
+  if (String(e.targetUserId || '') === s.user._id) {
+    s.user.verifyStatus = action === 'ban' ? 'banned' : 'unverified'
+    save()
+  }
+  return { action, updated: 1 }
+}
+
+/** 置顶/加精：pin/unpin/essence/unessence 四动作同构，合并且必须落盘 */
+function demoModeratePost(s: DemoState, e: any, action: 'pin' | 'unpin' | 'essence' | 'unessence') {
+  const post = s.posts.find((x) => x._id === e.postId)
+  if (post) {
+    if (action === 'pin') post.isPinned = true
+    if (action === 'unpin') post.isPinned = false
+    if (action === 'essence') post.isEssence = true
+    if (action === 'unessence') post.isEssence = false
+    save()
+  }
+  return { action, postId: e.postId }
+}
+
 /* ---------------------------------- 路由 ---------------------------------- */
 
 type Handler = (event: any) => any
@@ -743,6 +836,7 @@ const handlers: Record<string, Handler> = {
     return {
       profile: isSelf ? clone(publicProfile) : publicProfile,
       isFollowing: !!s.follows[id],
+      isBlocked: s.blocks.some((b) => b.blockedId === id),
       posts
     }
   },
@@ -800,6 +894,8 @@ const handlers: Record<string, Handler> = {
     }
     // 校区筛选
     if (e.schoolId) list = list.filter((p) => p.schoolId === e.schoolId)
+    // 黑名单读侧过滤（与真后端一致）
+    list = notBlocked(s, list)
     if (tab === 'hot') list = [...list].sort((a, b) => b.likeCount - a.likeCount)
     else if (tab === 'latest')
       list = [...list].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
@@ -905,6 +1001,8 @@ const handlers: Record<string, Handler> = {
     if (cat && cat !== 'all') list = list.filter((p) => p.category === cat)
     const kw = String(e.keyword || '').trim()
     if (kw) list = list.filter((p) => String(p.title || '').includes(kw))
+    // 黑名单读侧过滤（与真后端一致）
+    list = notBlocked(s, list)
     list = [...list].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
     return paginate(list, e.page, e.pageSize)
   },
@@ -1071,16 +1169,155 @@ const handlers: Record<string, Handler> = {
     return { following: want }
   },
 
+  block: (e) => {
+    const s = load()
+    const id = String(e.targetUserId || '')
+    if (e.action === 'check') return { isBlocked: s.blocks.some((b) => b.blockedId === id) }
+    if (e.action === 'list') {
+      const list = s.blocks.map((b) => ({
+        _id: b.blockedId,
+        nickname: b.blockedId === 'u-2' ? '计算机协会' : '演示用户',
+        avatar: '',
+        school: '示例大学',
+        bio: ''
+      }))
+      return { list, total: list.length, page: 1, pageSize: 20 }
+    }
+    const want = e.action !== 'unblock'
+    if (want) {
+      if (!id) throw new Error('缺少目标用户ID')
+      if (id === s.user._id) throw new Error('不能拉黑自己')
+      const exists = s.blocks.some((b) => b.blockedId === id)
+      if (!exists) {
+        s.blocks.push({ blockedId: id, createdAt: new Date().toISOString() })
+        save()
+      }
+      return { blocked: true, already: exists }
+    }
+    s.blocks = s.blocks.filter((b) => b.blockedId !== id)
+    save()
+    return { blocked: false }
+  },
+
+  message: (e) => {
+    const s = load()
+    const action = e.action || 'conversations'
+    const convId = (a: string, b: string) => [a, b].sort().join('__')
+    const partnerName = (id: string) => (id === 'u-2' ? '计算机协会' : '演示用户')
+
+    if (action === 'send') {
+      const to = String(e.toUserId || '')
+      const text = String(e.content || '').trim()
+      if (!to) throw new Error('缺少接收人ID')
+      if (to === s.user._id) throw new Error('不能给自己发私信')
+      if (!text) throw new Error('请输入私信内容')
+      if (text.length > 500) throw new Error('私信不能超过500字')
+      const id = nextId('msg')
+      const now = new Date().toISOString()
+      s.messages.push({
+        _id: id,
+        conversationId: convId(s.user._id, to),
+        fromUserId: s.user._id,
+        toUserId: to,
+        content: text,
+        isRead: false,
+        createdAt: now
+      })
+      s.notifications.unshift({
+        _id: nextId('nt'),
+        userId: to,
+        type: 'message',
+        targetType: 'user',
+        content: `${s.user.nickname} 给你发了一条私信`,
+        targetId: s.user._id,
+        isRead: false,
+        createdAt: now
+      })
+      save()
+      return { sent: true, messageId: id }
+    }
+
+    if (action === 'conversations') {
+      // 与真后端同构：收发合并 → 按时间去重 → 回填对方资料与未读数
+      const mine = s.messages.filter((m) => m.fromUserId === s.user._id || m.toUserId === s.user._id)
+      const sorted = [...mine].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+      const seen = new Set<string>()
+      const latest: any[] = []
+      for (const m of sorted) {
+        if (seen.has(m.conversationId)) continue
+        seen.add(m.conversationId)
+        latest.push(m)
+      }
+      const list = latest.map((m) => {
+        const otherId = m.fromUserId === s.user._id ? m.toUserId : m.fromUserId
+        return {
+          conversationId: m.conversationId,
+          user: { _id: otherId, nickname: partnerName(otherId), avatar: '', school: '示例大学' },
+          lastMessage: {
+            content: m.content,
+            isMine: m.fromUserId === s.user._id,
+            createdAt: m.createdAt
+          },
+          unread: s.messages.filter(
+            (x) => x.conversationId === m.conversationId && x.toUserId === s.user._id && !x.isRead
+          ).length
+        }
+      })
+      return { list, total: list.length, hasMore: false }
+    }
+
+    if (action === 'thread') {
+      const to = String(e.withUserId || '')
+      const list = s.messages
+        .filter((m) => m.conversationId === convId(s.user._id, to))
+        .sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt))
+        .map((m) => ({ ...clone(m), isMine: m.fromUserId === s.user._id }))
+      return { list, hasMore: false }
+    }
+
+    if (action === 'read') {
+      const to = String(e.withUserId || '')
+      let updated = 0
+      for (const m of s.messages) {
+        if (
+          m.conversationId === convId(s.user._id, to) &&
+          m.toUserId === s.user._id &&
+          !m.isRead
+        ) {
+          m.isRead = true
+          updated++
+        }
+      }
+      if (updated) save()
+      return { read: true, updated }
+    }
+
+    if (action === 'unreadCount') {
+      return {
+        unreadCount: s.messages.filter((m) => m.toUserId === s.user._id && !m.isRead).length
+      }
+    }
+
+    throw new Error('未知操作')
+  },
+
   'comment-list': (e) => {
     const s = load()
+    const blocked = new Set(s.blocks.map((b) => b.blockedId))
     const floors = s.comments.filter(
-      (c) => c.targetId === e.targetId && c.status === 'normal' && !c.parentId
+      (c) =>
+        c.targetId === e.targetId &&
+        c.status === 'normal' &&
+        !c.parentId &&
+        !blocked.has(c.userId)
     )
     const list = floors.map((f) => ({
       ...clone(f),
       liked: !!s.likes[f._id],
       replies: s.comments
-        .filter((c) => c.parentId === f._id && c.status === 'normal')
+        .filter(
+          (c) => c.parentId === f._id && c.status === 'normal' && !blocked.has(c.userId)
+        )
         .map((r) => ({ ...clone(r), liked: !!s.likes[r._id] }))
     }))
     return { list, hasMore: false }
@@ -1341,91 +1578,37 @@ const handlers: Record<string, Handler> = {
     const s = load()
     if (e.action === 'check') return { isAdmin: s.user.role === 'admin' }
 
-    // 行结构与真实 admin.js 对齐：主键是 reportId，且带 target 摘要对象。
-    // 旧版直接回传原始报告文档（_id、无 target），管理台按 reportId 取键会拿到
-    // undefined，点「忽略/删除」会把整个列表过滤空。
-    if (e.action === 'list-reports') {
-      const list = s.reports.map((r) => {
-        const target =
-          r.targetType === 'post'
-            ? s.posts.find((x) => x._id === r.targetId)
-            : s.products.find((x) => x._id === r.targetId)
-        return {
-          reportId: r._id,
-          targetType: r.targetType,
-          targetId: r.targetId,
-          reason: r.reason,
-          description: r.description,
-          createdAt: r.createdAt,
-          target: target
-            ? {
-                _id: target._id,
-                status: target.status,
-                ownerId: target.userId,
-                ownerNickname: target.userNickname || '',
-                snippet: String(target.title || target.content || '').slice(0, 80)
-              }
-            : { _id: r.targetId, status: 'deleted', snippet: '(已删除)' }
-        }
-      })
-      return { list, total: list.length, page: 1, pageSize: 20 }
+    // 动作表替代 if 链：新增管理动作只加一行，未知动作统一走 throw
+    // （与真实 admin.js 的「未知管理操作」一致）。
+    const actions: Record<string, () => any> = {
+      'list-reports': () => demoListReports(s),
+      'list-users': () => ({ list: [clone(s.user)], total: 1, page: 1, pageSize: 20 }),
+      'list-verifies': () => ({ list: [], total: 0, page: 1, pageSize: 20 }),
+      'list-feedbacks': () => ({
+        list: clone(s.feedbacks),
+        total: s.feedbacks.length,
+        page: 1,
+        pageSize: 20
+      }),
+      'list-logs': () => ({ list: [], total: 0, page: 1, pageSize: 20 }),
+      'verify-review': () => ({ reviewed: true }),
+      // 内容运营：前端已改为走 post-list，这里保留兜底以免旧版本调用报「未知管理操作」
+      'list-posts': () => {
+        const rows = s.posts.filter((p) => p.status !== 'deleted')
+        return { list: rows, total: rows.length, page: 1, pageSize: 20 }
+      },
+      delete: () => demoDeleteTarget(s, e),
+      resolve: () => demoResolveReport(s, e),
+      ban: () => demoBanUser(s, e, 'ban'),
+      unban: () => demoBanUser(s, e, 'unban'),
+      pin: () => demoModeratePost(s, e, 'pin'),
+      unpin: () => demoModeratePost(s, e, 'unpin'),
+      essence: () => demoModeratePost(s, e, 'essence'),
+      unessence: () => demoModeratePost(s, e, 'unessence')
     }
-    if (e.action === 'list-users') {
-      return { list: [clone(s.user)], total: 1, page: 1, pageSize: 20 }
-    }
-    if (e.action === 'list-verifies') return { list: [], total: 0, page: 1, pageSize: 20 }
-    if (e.action === 'list-feedbacks') {
-      return { list: clone(s.feedbacks), total: s.feedbacks.length, page: 1, pageSize: 20 }
-    }
-    if (e.action === 'list-logs') return { list: [], total: 0, page: 1, pageSize: 20 }
-    if (e.action === 'verify-review') return { reviewed: true }
-    // 内容运营：前端已改为走 post-list，这里保留兜底以免旧版本调用报「未知管理操作」
-    if (e.action === 'list-posts') {
-      const rows = s.posts.filter((p) => p.status !== 'deleted')
-      return { list: rows, total: rows.length, page: 1, pageSize: 20 }
-    }
-
-    // 处置动作要真的改本地数据，不能一律返回 {ok:true} 让 UI 假装成功
-    if (e.action === 'delete') {
-      const col = e.targetType === 'product' ? s.products : s.posts
-      const doc = col.find((x) => x._id === e.targetId)
-      if (doc) doc.status = 'deleted'
-      for (const r of s.reports) {
-        if (r.targetId === e.targetId && r.status === 'pending') r.status = 'resolved'
-      }
-      save()
-      return { deleted: true }
-    }
-    if (e.action === 'resolve') {
-      const r = s.reports.find((x) => x._id === e.reportId)
-      if (r) r.status = 'resolved'
-      save()
-      return { resolved: true }
-    }
-    if (e.action === 'ban' || e.action === 'unban') {
-      if (String(e.targetUserId || '') === s.user._id) {
-        s.user.verifyStatus = e.action === 'ban' ? 'banned' : 'unverified'
-        save()
-      }
-      return { action: e.action, updated: 1 }
-    }
-    if (
-      e.action === 'pin' ||
-      e.action === 'unpin' ||
-      e.action === 'essence' ||
-      e.action === 'unessence'
-    ) {
-      const post = s.posts.find((x) => x._id === e.postId)
-      if (post) {
-        if (e.action === 'pin') post.isPinned = true
-        if (e.action === 'unpin') post.isPinned = false
-        if (e.action === 'essence') post.isEssence = true
-        if (e.action === 'unessence') post.isEssence = false
-        save()
-      }
-      return { action: e.action, postId: e.postId }
-    }
-    throw new Error('未知管理操作')
+    const run = actions[e.action]
+    if (!run) throw new Error('未知管理操作')
+    return run()
   },
 
   'feedback-create': (e) => {

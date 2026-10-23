@@ -21,6 +21,14 @@
           <text class="st-row-value">{{ verifyLabel }}</text>
           <text class="st-arrow">→</text>
         </view>
+        <view class="st-divider"></view>
+        <view class="st-row press" @click="goBlocklist">
+          <text class="st-row-main">
+            <text class="st-row-label">黑名单</text>
+            <text class="st-row-sub">被拉黑的人的内容不会出现在你的信息流</text>
+          </text>
+          <text class="st-arrow">→</text>
+        </view>
       </view>
     </view>
 
@@ -65,6 +73,14 @@
         <view class="st-divider"></view>
         <view class="st-row press" @click="goNotification">
           <text class="st-row-label">查看通知</text>
+          <text class="st-arrow">→</text>
+        </view>
+        <view class="st-divider"></view>
+        <view class="st-row press" @click="goMessages">
+          <text class="st-row-main">
+            <text class="st-row-label">查看私信</text>
+            <text class="st-row-sub">与同学的私信会话列表</text>
+          </text>
           <text class="st-arrow">→</text>
         </view>
       </view>
@@ -182,6 +198,12 @@ function goProfile() {
 }
 function goVerify() {
   uni.navigateTo({ url: '/pages/verify/verify' })
+}
+function goBlocklist() {
+  uni.navigateTo({ url: '/pages/block-list/block-list' })
+}
+function goMessages() {
+  uni.navigateTo({ url: '/pages/message-list/message-list' })
 }
 function goNotification() {
   uni.navigateTo({ url: '/pages/notification/notification' })

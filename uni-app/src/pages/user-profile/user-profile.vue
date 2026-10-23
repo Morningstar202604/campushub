@@ -33,6 +33,24 @@
             >
               <text>{{ profile.isFollowing ? '已关注' : '关注' }}</text>
             </view>
+            <!-- 私信：直达聊天线程。本人页不显示；已拉黑对方时隐藏（发送会被服务端拒绝，不给无效入口） -->
+            <view
+              v-if="!profile.isSelf && !profile.isBlocked"
+              class="head-btn head-btn--msg clip-tag press"
+              @click="openChat"
+            >
+              <text>私信</text>
+            </view>
+            <!-- 拉黑：与关注并列的第二个动作。已拉黑态点击即解除（无需确认），
+                 未拉黑态点击有二次确认——误点会让对方内容从信息流消失。 -->
+            <view
+              v-if="!profile.isSelf"
+              class="head-btn head-btn--block clip-tag press"
+              :class="{ blocked: profile.isBlocked, busy: blockLoading }"
+              @click="onBlock"
+            >
+              <text>{{ profile.isBlocked ? '已拉黑' : '拉黑' }}</text>
+            </view>
           </view>
           <text v-if="profile.bio" class="bio">{{ profile.bio }}</text>
           <text v-if="metaLine" class="meta">{{ metaLine }}</text>
@@ -108,6 +126,7 @@ const myId = ref('') // 当前登录用户 _id（用于推断 isSelf）
 const loading = ref(true)
 const loadingMore = ref(false)
 const followLoading = ref(false)
+const blockLoading = ref(false)
 const loadError = ref('')
 const page = ref(1)
 const hasMore = ref(false)
@@ -248,6 +267,52 @@ function editProfile() {
   uni.navigateTo({ url: '/pages/user-update/user-update' })
 }
 
+/** 私信：带上对方昵称进聊天页，省掉一次资料查询 */
+function openChat() {
+  const p = profile.value
+  if (!p || p.isSelf || !p.id) return
+  // @ts-ignore
+  uni.navigateTo({
+    url: `/pages/chat/chat?withUserId=${p.id}&withNickname=${encodeURIComponent(p.nickname)}`
+  })
+}
+
+/**
+ * 拉黑 / 解除拉黑。
+ * 拉黑前二次确认：误点会让对方内容从信息流消失，且对方无感知，找回要点回这个页面；
+ * 解除不确认（低风险操作，多一步确认反而是折磨）。
+ */
+async function onBlock() {
+  const p = profile.value
+  if (!p || p.isSelf || !p.id || blockLoading.value) return
+  if (!p.isBlocked) {
+    const confirm = await new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '拉黑',
+        content: '拉黑后，对方的内容将不再出现在你的信息流里。随时可以在这里解除。',
+        confirmText: '拉黑',
+        cancelText: '取消',
+        success: (r: any) => resolve(Boolean(r.confirm)),
+        fail: () => resolve(false)
+      })
+    })
+    if (!confirm) return
+  }
+  blockLoading.value = true
+  try {
+    const res: any = await callFunction('block', {
+      action: p.isBlocked ? 'unblock' : 'block',
+      targetUserId: p.id
+    })
+    p.isBlocked = Boolean(res?.blocked)
+    uni.showToast({ title: p.isBlocked ? '已拉黑' : '已解除拉黑', icon: 'none' })
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
+  } finally {
+    blockLoading.value = false
+  }
+}
+
 function openPost(p: any) {
   if (!p?._id) return
   // @ts-ignore
@@ -356,6 +421,18 @@ onLoad((q) => {
   &.busy {
     opacity: 0.6;
   }
+}
+/* 拉黑按钮：跟在关注后面（margin-left:auto 由关注按钮吃掉），
+   已拉黑态用危险色文案，与「已关注」的灰态区分——一个是状态，一个是待解除的动作 */
+.head-btn--block {
+  margin-left: 0;
+  &.blocked {
+    color: var(--danger);
+  }
+}
+/* 私信按钮：与拉黑并列，同为次级动作，去掉 auto 边距 */
+.head-btn--msg {
+  margin-left: 0;
 }
 .bio {
   display: block;

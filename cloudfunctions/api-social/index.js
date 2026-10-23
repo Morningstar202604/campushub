@@ -10,10 +10,12 @@
 const { fail, bindEvent } = require('./common-bundle')
 
 const HANDLERS = {
+  block: require('./handlers/block'),
   checkin: require('./handlers/checkin'),
   collect: require('./handlers/collect'),
   follow: require('./handlers/follow'),
   like: require('./handlers/like'),
+  message: require('./handlers/message'),
   notification: require('./handlers/notification'),
   points: require('./handlers/points')
 }

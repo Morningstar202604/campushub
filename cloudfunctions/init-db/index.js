@@ -51,6 +51,10 @@ exports.main = wrap(async (event = {}) => {
     'reports',
     'feedbacks',
     'follows',
+    // 黑名单（v0.11.0 用户拉黑：单向，拉黑方读接口过滤对方内容）
+    'blocks',
+    // 站内私信（v0.11.0）：messages 按 conversationId（双方 id 排序拼接）组织会话
+    'messages',
     'checkins',
     'notifications',
     'view_logs',

@@ -81,6 +81,21 @@
 | follows | idx_follows_follower_created | followerId(升), createdAt(降) | 否 |
 | follows | idx_follows_following_created | followingId(升), createdAt(降) | 否 |
 | follows | idx_follows_follower_following | followerId(升), followingId(升) | **是** |
+
+### blocks
+> ⚠️ `idx_blocks_blocker_blocked` 为**唯一索引**——拉黑操作依赖它做幂等（`insertIdempotent`），并发双点拉黑不会产生重复记录。
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| blocks | idx_blocks_blocker_created | blockerId(升), createdAt(降) | 否 |
+| blocks | idx_blocks_blocker_blocked | blockerId(升), blockedId(升) | **是** |
+
+### messages
+> 会话 id = 双方 userId 排序拼接（`conversationIdOf`），同一对用户只有一个会话；`idx_messages_from/to_created` 支撑会话列表的「收发各取最近窗口」查询。
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| messages | idx_messages_conversation_created | conversationId(升), createdAt(升) | 否 |
+| messages | idx_messages_from_created | fromUserId(升), createdAt(降) | 否 |
+| messages | idx_messages_to_created | toUserId(升), createdAt(降) | 否 |
 ### notifications
 | 集合 | 索引名称 | 字段（方向） | 唯一 |
 |---|---|---|---|

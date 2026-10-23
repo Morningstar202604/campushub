@@ -73,7 +73,8 @@ function typeLabel(type: string): string {
     follow: '关注',
     system: '系统',
     reply: '回复',
-    mention: '提醒'
+    mention: '提醒',
+    message: '私信'
   }
   return m[type] || '通知'
 }
@@ -131,9 +132,12 @@ async function onOpen(n: NoticeCard) {
       console.warn('[notification] markRead 失败', e?.message || e)
     }
   }
-  // 2) 按 targetType 跳转（post → 帖子详情；product → 商品详情；user → 他人主页；其余忽略）
+  // 2) 按 targetType 跳转（post → 帖子详情；product → 商品详情；user → 他人主页；message → 私信会话；其余忽略）
   if (!n.targetId) return
-  if (n.targetType === 'post') {
+  if (n.type === 'message') {
+    // 私信通知直达聊天线程：targetId 是发送方 userId（比先进主页再点「私信」少一步）
+    uni.navigateTo({ url: `/pages/chat/chat?withUserId=${n.targetId}` })
+  } else if (n.targetType === 'post') {
     uni.navigateTo({ url: `/pages/post-detail/post-detail?id=${n.targetId}` })
   } else if (n.targetType === 'product') {
     uni.navigateTo({ url: `/pages/product-detail/product-detail?id=${n.targetId}` })

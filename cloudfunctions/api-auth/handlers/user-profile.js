@@ -2,6 +2,9 @@
 // 查看他人主页：公开资料 + 统计 + 最近帖子 + 关注状态
 // 安全：仅登录态用户可访问（requireActiveUser），限流 60s 内最多 20 次
 // 隐私：查看他人主页时不回传 creditScore/checkinStreak/followerCount 等敏感统计
+//
+// 结构：handler 只做编排；两份资料投影（完整/脱敏）、关注状态、最近帖子各自独立成函数，
+// 单函数可目读、可单测。新增字段时改对应投影函数，不要往 handler 里堆兜底表达式。
 const {
   getDB,
   getCmd,
@@ -12,6 +15,97 @@ const {
   rateLimit,
   checkAdmin
 } = require('./common-bundle')
+/** 兜底读取：与原 `x || d` 等价（null/undefined/''/0/false 都落默认值） */
+function orDefault(v, d = '') {
+  return v || d
+}
+
+/** 本人/管理员可见：完整资料 */
+function fullProfile(u) {
+  return {
+    _id: u._id,
+    nickname: u.nickname,
+    avatar: orDefault(u.avatar),
+    school: orDefault(u.school),
+    college: orDefault(u.college),
+    major: orDefault(u.major),
+    grade: orDefault(u.grade),
+    bio: orDefault(u.bio),
+    tags: orDefault(u.tags, []),
+    gender: orDefault(u.gender, 0),
+    postCount: orDefault(u.postCount, 0),
+    productCount: orDefault(u.productCount, 0),
+    followerCount: orDefault(u.followerCount, 0),
+    followingCount: orDefault(u.followingCount, 0),
+    creditScore: orDefault(u.creditScore, 100),
+    checkinStreak: orDefault(u.checkinStreak, 0),
+    createdAt: u.createdAt
+  }
+}
+
+/** 他人可见：脱敏版，仅保留公开基础信息（昵称/头像/学校/学院/专业/年级/bio/tags/性别/帖子数） */
+function publicProfile(u) {
+  return {
+    _id: u._id,
+    nickname: u.nickname,
+    avatar: orDefault(u.avatar),
+    school: orDefault(u.school),
+    college: orDefault(u.college),
+    major: orDefault(u.major),
+    grade: orDefault(u.grade),
+    bio: orDefault(u.bio),
+    tags: orDefault(u.tags, []),
+    gender: orDefault(u.gender, 0),
+    postCount: orDefault(u.postCount, 0),
+    productCount: orDefault(u.productCount, 0),
+    createdAt: u.createdAt
+  }
+}
+
+/** 本人/管理员判定：管理员要查库，仅非本人且带 openid 时才做（本人不需要，游客没有 openid） */
+async function resolveViewerRole(db, me, userId) {
+  const isSelf = me._id === userId
+  const isAdmin = !isSelf && me.openid ? await checkAdmin(db, me.openid) : false
+  return { isSelf, isAdmin }
+}
+
+/** 当前用户对目标用户的关注状态（复用 me.openid，不再重复 getOpenid；本人不查） */
+async function fetchIsFollowing(db, me, userId) {
+  if (!me.openid || me._id === userId) return false
+  const followRes = await db
+    .collection('follows')
+    .where({ followerId: me._id, followingId: userId })
+    .count()
+  return followRes.total > 0
+}
+
+/** 最近帖子（非匿名，未删除），分页参数由调用方收敛过界 */
+function fetchRecentPosts(db, userId, skip, pSize, _) {
+  return db
+    .collection('posts')
+    .where({ userId, status: _.neq('deleted'), isAnonymous: false })
+    .orderBy('createdAt', 'desc')
+    .skip(skip)
+    .limit(pSize)
+    .field({
+      title: true,
+      images: true,
+      likeCount: true,
+      commentCount: true,
+      createdAt: true,
+      kind: true,
+      resolved: true,
+      status: true
+    })
+    .get()
+}
+
+/** 我是否已拉黑该用户（他人主页据此显示「已拉黑 · 解除」；本人页恒 false） */
+async function fetchIsBlocked(db, me, userId) {
+  if (me._id === userId) return false
+  const res = await db.collection('blocks').where({ blockerId: me._id, blockedId: userId }).count()
+  return res.total > 0
+}
 
 module.exports = wrap(async (event) => {
   const db = getDB()
@@ -46,82 +140,12 @@ module.exports = wrap(async (event) => {
 
   const u = userRes.data
 
-  // 判断是否本人或管理员（完整 profile 只给本人/管理员）
-  const isSelf = me._id === userId
-  let isAdmin = false
-  if (!isSelf && me.openid) {
-    isAdmin = await checkAdmin(db, me.openid)
-  }
+  const { isSelf, isAdmin } = await resolveViewerRole(db, me, userId)
+  const profile = isSelf || isAdmin ? fullProfile(u) : publicProfile(u)
 
-  let profile
-  if (isSelf || isAdmin) {
-    // 本人/管理员：返回完整资料
-    profile = {
-      _id: u._id,
-      nickname: u.nickname,
-      avatar: u.avatar || '',
-      school: u.school || '',
-      college: u.college || '',
-      major: u.major || '',
-      grade: u.grade || '',
-      bio: u.bio || '',
-      tags: u.tags || [],
-      gender: u.gender || 0,
-      postCount: u.postCount || 0,
-      productCount: u.productCount || 0,
-      followerCount: u.followerCount || 0,
-      followingCount: u.followingCount || 0,
-      creditScore: u.creditScore || 100,
-      checkinStreak: u.checkinStreak || 0,
-      createdAt: u.createdAt
-    }
-  } else {
-    // 他人：脱敏版，仅保留公开基础信息（昵称/头像/学校/学院/专业/年级/bio/tags/性别/帖子数）
-    profile = {
-      _id: u._id,
-      nickname: u.nickname,
-      avatar: u.avatar || '',
-      school: u.school || '',
-      college: u.college || '',
-      major: u.major || '',
-      grade: u.grade || '',
-      bio: u.bio || '',
-      tags: u.tags || [],
-      gender: u.gender || 0,
-      postCount: u.postCount || 0,
-      productCount: u.productCount || 0,
-      createdAt: u.createdAt
-    }
-  }
+  const isFollowing = await fetchIsFollowing(db, me, userId)
+  const isBlocked = await fetchIsBlocked(db, me, userId)
+  const postRes = await fetchRecentPosts(db, userId, skip, pSize, _)
 
-  // 当前用户的关注状态（复用 me.openid，不再重复 getOpenid）
-  let isFollowing = false
-  if (me.openid && me._id !== userId) {
-    const followRes = await db
-      .collection('follows')
-      .where({ followerId: me._id, followingId: userId })
-      .count()
-    isFollowing = followRes.total > 0
-  }
-
-  // 最近帖子（非匿名，未删除）
-  const postRes = await db
-    .collection('posts')
-    .where({ userId, status: _.neq('deleted'), isAnonymous: false })
-    .orderBy('createdAt', 'desc')
-    .skip(skip)
-    .limit(pSize)
-    .field({
-      title: true,
-      images: true,
-      likeCount: true,
-      commentCount: true,
-      createdAt: true,
-      kind: true,
-      resolved: true,
-      status: true
-    })
-    .get()
-
-  return ok({ profile, isFollowing, posts: postRes.data || [] })
+  return ok({ profile, isFollowing, isBlocked, posts: postRes.data || [] })
 })

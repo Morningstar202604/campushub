@@ -4,5 +4,6 @@
       "security.msgSecCheck",
       "subscribeMessage.send"
     ]
-  }
+  },
+  "timeout": 20
 }

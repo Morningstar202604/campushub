@@ -520,6 +520,250 @@ test('follow：check 返回关注态', async () => {
   assert.equal(res.isFollowing, true)
 })
 
+/* ------------------------------ block ------------------------------ */
+
+test('block：拉黑/取消/幂等，不能拉黑自己，目标必须存在', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2' })
+  mem.setUnique('blocks', ['blockerId', 'blockedId'])
+
+  const { main } = loadUnit('api-social', 'block')
+
+  const self = await main({ action: 'block', targetUserId: 'u1' })
+  assert.equal(self.success, false, '不能拉黑自己')
+  assert.equal(self.code, 'INVALID_PARAM')
+
+  const ghost = await main({ action: 'block', targetUserId: 'u-nope' })
+  assert.equal(ghost.success, false, '目标用户不存在必须拒绝')
+  assert.equal(ghost.code, 'NOT_FOUND')
+
+  const r1 = await main({ action: 'block', targetUserId: 'u2' })
+  assert.equal(r1.success, true)
+  assert.equal(r1.blocked, true)
+  assert.equal(r1.already, false)
+  assert.equal(mem.coll('blocks').size, 1, '拉黑必须落库')
+
+  const r2 = await main({ action: 'block', targetUserId: 'u2' })
+  assert.equal(r2.already, true, '重复拉黑按幂等处理，不是错误')
+  assert.equal(mem.coll('blocks').size, 1, '重复拉黑不得产生第二条记录')
+
+  const chk = await main({ action: 'check', targetUserId: 'u2' })
+  assert.equal(chk.isBlocked, true)
+
+  const un = await main({ action: 'unblock', targetUserId: 'u2' })
+  assert.equal(un.blocked, false)
+  assert.equal(mem.coll('blocks').size, 0, '取消拉黑必须真的删除')
+  const chk2 = await main({ action: 'check', targetUserId: 'u2' })
+  assert.equal(chk2.isBlocked, false)
+})
+
+test('block：list 返回黑名单用户资料', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2', nickname: '被拉黑' })
+  mem.coll('blocks').set('b1', { _id: 'b1', blockerId: 'u1', blockedId: 'u2' })
+  const { main } = loadUnit('api-social', 'block')
+  const res = await main({ action: 'list' })
+  assert.equal(res.total, 1)
+  assert.equal(res.list[0]._id, 'u2')
+  assert.equal(res.list[0].nickname, '被拉黑')
+})
+
+test('block：未知动作拒绝', async () => {
+  const { main } = loadUnit('api-social', 'block')
+  const r = await main({ action: 'no-such' })
+  assert.equal(r.success, false)
+  assert.equal(r.code, 'INVALID_PARAM')
+})
+
+test('黑名单读侧过滤：post-list 对拉黑方隐藏对方内容，他人与游客不受影响', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2' })
+  seedUser({ _id: 'u3', openid: 'openid-3' })
+  mem.coll('posts').set('p1', { _id: 'p1', userId: 'u1', status: 'normal', kind: 'post', createdAt: 3 })
+  mem.coll('posts').set('p2', { _id: 'p2', userId: 'u2', status: 'normal', kind: 'post', createdAt: 2 })
+  mem.coll('posts').set('p3', { _id: 'p3', userId: 'u3', status: 'normal', kind: 'post', createdAt: 1 })
+
+  const { main: blockMain } = loadUnit('api-social', 'block')
+  await blockMain({ action: 'block', targetUserId: 'u2' })
+
+  const { main: postList } = loadUnit('api-post', 'post-list')
+  const mine = await postList({})
+  const ids = (mine.list || []).map((p) => p._id)
+  assert.ok(ids.includes('p1') && ids.includes('p3'), '自己与无关用户的内容应在')
+  assert.ok(!ids.includes('p2'), '被拉黑用户的内容必须被过滤掉')
+
+  // 换身份必须重新 loadUnit：handler 的 require 闭包绑在加载时的那份内核/桩上
+  actAs('openid-3')
+  const { main: postListOther } = loadUnit('api-post', 'post-list')
+  const others = await postListOther({})
+  assert.ok((others.list || []).some((p) => p._id === 'p2'), '拉黑是单向的：他人视角应仍能看到')
+
+  actAs('') // 游客：无黑名单，不加过滤条件
+  const { main: postListGuest } = loadUnit('api-post', 'post-list')
+  const guest = await postListGuest({})
+  assert.ok((guest.list || []).some((p) => p._id === 'p2'), '游客视角应看到全部内容')
+})
+
+test('黑名单读侧过滤：product-list 对拉黑方隐藏对方商品', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2' })
+  mem.coll('products').set('pr1', { _id: 'pr1', userId: 'u1', status: 'on_sale', createdAt: 2 })
+  mem.coll('products').set('pr2', { _id: 'pr2', userId: 'u2', status: 'on_sale', createdAt: 1 })
+
+  const { main: blockMain } = loadUnit('api-social', 'block')
+  await blockMain({ action: 'block', targetUserId: 'u2' })
+
+  const { main: productList } = loadUnit('api-product', 'product-list')
+  const res = await productList({})
+  const ids = (res.list || []).map((p) => p._id)
+  assert.ok(ids.includes('pr1'))
+  assert.ok(!ids.includes('pr2'), '被拉黑用户的商品必须被过滤掉')
+})
+
+test('黑名单读侧过滤：comment-list 隐藏对方楼层与回复，且不留孤儿楼层', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2' })
+  mem.coll('comments').set('f1', { _id: 'f1', targetId: 'p1', userId: 'u1', status: 'normal', parentId: null, createdAt: 1 })
+  mem.coll('comments').set('f2', { _id: 'f2', targetId: 'p1', userId: 'u2', status: 'normal', parentId: null, createdAt: 2 })
+  mem.coll('comments').set('r1', { _id: 'r1', targetId: 'p1', userId: 'u2', status: 'normal', parentId: 'f1', createdAt: 3 })
+  mem.coll('comments').set('r2', { _id: 'r2', targetId: 'p1', userId: 'u1', status: 'normal', parentId: 'f2', createdAt: 4 })
+
+  const { main: blockMain } = loadUnit('api-social', 'block')
+  await blockMain({ action: 'block', targetUserId: 'u2' })
+
+  const { main: commentList } = loadUnit('api-comment', 'comment-list')
+  const res = await commentList({ targetId: 'p1' })
+  const floorIds = (res.list || []).map((f) => f._id)
+  assert.deepEqual(floorIds, ['f1'], '被拉黑用户的楼层必须消失')
+  const replyIds = (res.list[0].replies || []).map((r) => r._id)
+  assert.deepEqual(replyIds, [], '被拉黑用户在我的楼层下的回复也必须消失')
+  // 未拉黑时两层都在（对照：证明上面的过滤来自黑名单而非查询写错）
+  const { main: blockOff } = loadUnit('api-social', 'block')
+  await blockOff({ action: 'unblock', targetUserId: 'u2' })
+  const res2 = await commentList({ targetId: 'p1' })
+  assert.equal(res2.list.length, 2, '取消拉黑后双方内容都应恢复')
+})
+
+test('user-profile：isBlocked 随拉黑状态变化，本人页恒 false', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2' })
+  const { main: blockMain } = loadUnit('api-social', 'block')
+  const { main: profile } = loadUnit('api-auth', 'user-profile')
+
+  const before = await profile({ userId: 'u2' })
+  assert.equal(before.success, true)
+  assert.equal(before.isBlocked, false)
+
+  await blockMain({ action: 'block', targetUserId: 'u2' })
+  const after = await profile({ userId: 'u2' })
+  assert.equal(after.isBlocked, true, '拉黑后他人主页应带回拉黑态（前端显示「已拉黑」）')
+
+  const mine = await profile({ userId: 'u1' })
+  assert.equal(mine.isBlocked, false, '本人主页不显示拉黑态')
+})
+
+/* ------------------------------ message ------------------------------ */
+
+test('message：发送落库 + 对方收到通知；空内容/超长/自发/不存在目标一律拒绝', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2', nickname: '接收方' })
+  const { main } = loadUnit('api-social', 'message')
+
+  const empty = await main({ action: 'send', toUserId: 'u2', content: '   ' })
+  assert.equal(empty.success, false, '空白内容必须拒绝')
+
+  const tooLong = await main({ action: 'send', toUserId: 'u2', content: 'x'.repeat(501) })
+  assert.equal(tooLong.success, false, '超 500 字必须拒绝')
+
+  const self = await main({ action: 'send', toUserId: 'u1', content: 'hi' })
+  assert.equal(self.success, false, '不能给自己发私信')
+
+  const ghost = await main({ action: 'send', toUserId: 'u-nope', content: 'hi' })
+  assert.equal(ghost.success, false, '目标不存在必须拒绝')
+  assert.equal(ghost.code, 'NOT_FOUND')
+
+  const r = await main({ action: 'send', toUserId: 'u2', content: '你好' })
+  assert.equal(r.success, true)
+  assert.ok(r.messageId, '必须回传 messageId')
+  assert.equal(mem.coll('messages').size, 1, '私信必须落库')
+  const doc = [...mem.coll('messages').values()][0]
+  assert.equal(doc.conversationId, 'u1__u2', '会话 id 必须是双方 id 的排序拼接')
+  assert.equal(doc.isRead, false)
+
+  const notices = [...mem.coll('notifications').values()]
+  assert.equal(notices.length, 1, '接收方应收到一条站内通知')
+  assert.equal(notices[0].type, 'message')
+  assert.equal(notices[0].userId, 'u2')
+})
+
+test('message：会话列表回填对方资料与未读数，thread 带 isMine 且按时间正序', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2', nickname: '接收方' })
+  const { main } = loadUnit('api-social', 'message')
+
+  await main({ action: 'send', toUserId: 'u2', content: '第一条' })
+  await new Promise((r) => setTimeout(r, 5)) // 让两条消息的 createdAt 可区分（同毫秒并列时预览取哪条是边缘态）
+  await main({ action: 'send', toUserId: 'u2', content: '第二条' })
+
+  const conv = await main({ action: 'conversations' })
+  assert.equal(conv.total, 1)
+  assert.equal(conv.list[0].user._id, 'u2')
+  assert.equal(conv.list[0].user.nickname, '接收方')
+  assert.equal(conv.list[0].lastMessage.content, '第二条', '列表应展示最新一条')
+  assert.equal(conv.list[0].lastMessage.isMine, true)
+  assert.equal(conv.list[0].unread, 0, '我发的消息不算我的未读')
+
+  const thread = await main({ action: 'thread', withUserId: 'u2' })
+  assert.equal(thread.list.length, 2)
+  assert.equal(thread.list[0].content, '第一条', '聊天流按时间正序')
+  assert.equal(thread.list[0].isMine, true)
+
+  // 对方视角：收到未读 + 已读标记只清自己的
+  actAs('openid-2')
+  const { main: msg2 } = loadUnit('api-social', 'message')
+  const conv2 = await msg2({ action: 'conversations' })
+  assert.equal(conv2.list[0].unread, 2, '接收方应看到 2 条未读')
+  assert.equal(conv2.list[0].lastMessage.isMine, false)
+  const unread = await msg2({ action: 'unreadCount' })
+  assert.equal(unread.unreadCount, 2)
+
+  const read = await msg2({ action: 'read', withUserId: 'u1' })
+  assert.equal(read.success, true)
+  const unread2 = await msg2({ action: 'unreadCount' })
+  assert.equal(unread2.unreadCount, 0, '标记已读后未读清零')
+
+  // 发送方视角未读不受影响（没有发给我的消息）
+  actAs(USER_OPENID)
+  const { main: msg3 } = loadUnit('api-social', 'message')
+  const unread3 = await msg3({ action: 'unreadCount' })
+  assert.equal(unread3.unreadCount, 0)
+})
+
+test('message：拉黑双向拦截——我拉黑的拒发（BLOCKED_BY_ME），被拉黑的拒收（MESSAGE_BLOCKED）', async () => {
+  seedUser({ _id: 'u2', openid: 'openid-2' })
+  seedUser({ _id: 'u3', openid: 'openid-3' })
+  const { main: block } = loadUnit('api-social', 'block')
+  const { main: msg } = loadUnit('api-social', 'message')
+
+  // 我拉黑了 u2 → 我发不出去
+  await block({ action: 'block', targetUserId: 'u2' })
+  const mine = await msg({ action: 'send', toUserId: 'u2', content: 'hi' })
+  assert.equal(mine.success, false)
+  assert.equal(mine.code, 'BLOCKED_BY_ME', '我拉黑的人，错误码要让前端能引导去解除')
+  assert.equal(mem.coll('messages').size, 0, '被拦截的消息不得落库')
+
+  // u3 拉黑了我 → 我发不出去，且不泄露"你被拉黑了"的可判定状态
+  await block({ action: 'unblock', targetUserId: 'u2' })
+  actAs('openid-3')
+  const { main: block3 } = loadUnit('api-social', 'block')
+  await block3({ action: 'block', targetUserId: 'u1' })
+  actAs(USER_OPENID)
+  const { main: msg2 } = loadUnit('api-social', 'message')
+  const theirs = await msg2({ action: 'send', toUserId: 'u3', content: 'hi' })
+  assert.equal(theirs.success, false)
+  assert.equal(theirs.code, 'MESSAGE_BLOCKED')
+  assert.equal(mem.coll('messages').size, 0, '被拦截的消息不得落库')
+})
+
+test('message：未知动作拒绝', async () => {
+  const { main } = loadUnit('api-social', 'message')
+  const r = await main({ action: 'no-such' })
+  assert.equal(r.success, false)
+  assert.equal(r.code, 'INVALID_PARAM')
+})
+
 /* ------------------------------ checkin / points ------------------------------ */
 
 test('checkin：签到成功、积分回读真实余额、重复签到拒绝', async () => {

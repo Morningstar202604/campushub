@@ -14,6 +14,7 @@
  *  5. tdesign-miniprogram 已安装、miniprogram_npm 已构建
  *  6. deploy.config.json 是否存在（可选，部署自动化用）
  *  7. wx-server-sdk 版本基线：各函数声明 === common/package-lock.json 锁定版本
+ *  8. 云函数超时是否显式声明（平台默认 3s，发布链路含图片审核会超时）
  */
 const fs = require('fs')
 const path = require('path')
@@ -198,6 +199,35 @@ function checkOpenapiPermissions() {
   }
 }
 
+// ---------- 4.5 云函数超时（F-011）----------
+// 平台默认 3s：发布链路含「下载图片 → imgSecCheck」同步审核，弱网下必然超时，
+// 症状是发布随机失败且日志里只有一句超时，极难归因。超时不阻断部署（有默认值兜底），
+// 但属于已知陷阱，按警告处理；硬门禁在 tests/contract.test.js。
+function checkTimeouts() {
+  const offenders = []
+  for (const deploy of ROUTE.deployNames()) {
+    const cfgPath = path.join(ROOT, 'cloudfunctions', deploy, 'config.json')
+    let cfg = null
+    try {
+      cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'))
+    } catch {
+      offenders.push(`${deploy}(无 config.json)`)
+      continue
+    }
+    const t = cfg.timeout
+    if (typeof t !== 'number' || !Number.isInteger(t) || t < 1 || t > 60) {
+      offenders.push(`${deploy}(timeout=${JSON.stringify(t)})`)
+    }
+  }
+  if (offenders.length) {
+    warn(
+      `云函数未显式声明合法超时（1-60s）：${offenders.join(', ')} → 平台默认 3s 会让带图发布随机失败`
+    )
+  } else {
+    ok(`全部 ${ROUTE.deployNames().length} 个部署单元已显式声明超时（网关 20s / 备份 60s）`)
+  }
+}
+
 // ---------- 5. 依赖与构建 ----------
 // 旧客户端（miniprogram/）已被 uni-app 取代：目录不存在时相关检查跳过，不再误报。
 function checkDeps() {
@@ -372,6 +402,7 @@ checkAppid()
 checkEnvId()
 checkFunctions()
 checkOpenapiPermissions()
+checkTimeouts()
 checkNewFns()
 checkSchoolConfig()
 checkDeps()
