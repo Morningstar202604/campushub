@@ -259,41 +259,6 @@ onShareAppMessage(() => ({ title: 'CampusHub 二手市集 · 校内好物', path
   }
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 80rpx 0;
-  .empty-shape {
-    width: 64rpx;
-    height: 64rpx;
-    background: var(--accent);
-    opacity: 0.15;
-    clip-path: var(--clip-diamond);
-    margin-bottom: 24rpx;
-  }
-  .empty-title {
-    font-size: 32rpx;
-    font-weight: var(--fw-title);
-    color: var(--text-primary);
-  }
-  .empty-sub {
-    margin-top: 8rpx;
-    font-size: 24rpx;
-    color: var(--text-secondary);
-  }
-  .empty-cta {
-    margin-top: 28rpx;
-    padding: 14rpx 40rpx;
-    background: var(--accent);
-    text {
-      font-size: 26rpx;
-      font-weight: var(--fw-title);
-      color: #0d110e;
-    }
-  }
-}
-
 .error-banner {
   display: flex;
   justify-content: space-between;

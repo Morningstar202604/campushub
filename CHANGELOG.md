@@ -5,6 +5,34 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.10.0] - 2026-10-23
+
+开源治理与审计收口（对应 `docs/AUDIT_REPORT_2026-10-22.md` 未关闭项 F-003 / F-004 / F-010 / F-012 / F-017）：
+
+### Added
+- **空态原子类**：`.empty-cta` 提到 `global.scss`，6 个页面的重复样式块（9 处副本）删除，重复率主要来源消除。
+- **运营方信息配置化**：`school.config.js` 新增 `operator` 段（name / contact / region），协议与隐私政策正文改为读配置；未配置时显式显示「未配置（部署方需在 school.config.js 填写）」，不再用假主体名充当真实运营方。
+- **SRE 职责与升级路径**：`docs/OPERATIONS.md` §5.5.2b 定义 Owner / Moderator / Maintainer 三角色、30 分钟逐级上报与 4 条升级分支。
+- **契约测试**：`tests/contract.test.js` 新增运营方信息外置断言；`tests/image-upload.test.js` 改为盯住真正的压缩实现。
+
+### Changed
+- **`uploadImage` 拆分**：135 行 / CC 33 的单函数拆为 `assertImageExt` / `mpFileSize` / `mpCompressOnce` / `compressMpImage` / `uploadMpImage` / `compressH5Image` / `uploadH5Image`，`uploadImage` 只做校验与平台分发（F-004）。
+- **`use-theme` 注释与设置页提示修正**：小程序端实际已通过 `uni.setNavigationBarColor` / `setTabBarStyle` 跟随主题，原注释「记住选择但不改变外观」与代码不符；设置页补平台差异说明。
+- **`CONTRIBUTING.md` / `SECURITY.md` / `NOTICE` 口径统一**：去掉「GitCode 是主仓 / GitHub 是 canonical」的自相矛盾表述，四个镜像平台并列；安全报告首选 GitHub Security Advisories。
+- **依赖收敛**：移除未使用的 `wot-design-uni` 与 `dayjs`（`uni-app/package.json` + lockfile），easycom 规则同步删除；`docs/DEPLOY.md`、`docs/DESIGN_SYSTEM.md`、`docs/AUDIT_REPORT_2026-10-22.md` 中相关表述同步更正。
+- **`deploy.yml` 的 Actions 版本**：`actions/checkout@v7` / `setup-node@v7` 不存在（v4 为当前稳定版），改为 v4；Node 20 → 22，与 `test:frontend` 的 `--experimental-strip-types` 要求一致。
+
+### Removed
+- **未使用的运行时依赖**：`wot-design-uni`（源码零 `wd-*` 组件引用）与 `dayjs`（仅注释提及，`fmtTime` 用原生 `Date`）从 `uni-app/package.json` 与 lockfile 移除，easycom 中对应规则同步删除。二者此前只增加安装体积与审计面，不进入产物。
+- **历史展示物料**：`docs/screenshots/` 根目录 26 张 v0.8.1 白蓝主题截图、`overview.png`、`demo.mp4`、`docs/preview.html`、`docs/screenshots/audit/` 全部删除（当前界面以 `v1/` 27 张为准）。
+- **过期报告移入 `docs/archive/`**：`AUDIT_REPORT.md`（v0.8.1）、`docs/CHANGES.md`、`OPTIMIZATION_PLAN.md`、`architect-and-debt-review.md`、`EXPERT_REVIEW_AND_ROADMAP.md`、`NPM_TRIM.md`、`ANDROID_MIGRATION.md`，并新增归档索引说明各自基线。
+
+### Fixed
+- **`scripts/verify-release.js` 在新架构下必红**：旧脚本按原生小程序规则检查 `pages/**/*.wxml` 四件套与 `miniprogram_npm`，在 uni-app 工程上报 72 个假错误 —— 永红的门禁等于没有门禁。重写为校验 pages.json↔.vue 映射 / tabBar 图标 / JS 语法 / 业务 require / 云函数结构 / 旧架构残留 / 版本徽章一致性 / 12 个开源治理文件，当前 9 项全绿。
+- **`scripts/ui-lint.js` 是空壳**：原实现只打印「已迁移」并 `exit 0`，`docs/COMPLIANCE.md` 却声称它能扫隐私接口。改为真实扫描：隐私接口清单（提审勾选用）、全局原子类重定义（防 F-003 复发）、空态 emoji（设计系统铁律），违规即 exit 1。
+- **`SECURITY.md` 死链**：`./OPERATIONS.md` → `docs/OPERATIONS.md`。
+- **`docs/LAUNCH_CHECKLIST.md` 已知限制过期**：小程序端主题一条由「导航栏保持深色」改为实际行为 + 真机复核提示。
+
 ## [0.9.5] - 2026-10-16
 
 云函数收敛（分支 `feat/gateway-consolidation`，**需 dev 环境验证后再合入**）：
@@ -31,7 +59,7 @@
 - **补齐云调用 openapi 权限声明**：全仓此前只有 2 个 `config.json` 且无任何 `permissions.openapi`，10 个调用审核/订阅接口的函数按最小权限补齐声明（漏声明即 `api unauthorized` → 发布全拒）。
 - **门禁真正可用**：新增 `npm run gate`（构建 + 契约 + ESLint + Prettier + 测试）；`npm test` 改为 glob 自动发现；`doctor` 改为校验"零副本 + 产物新鲜度 + 权限声明"；全量 Prettier 落库（此前 264 个文件不合规且从未进 CI）；`husky pre-commit` 拒绝提交内核副本。
 - **回归防护**：新增 5 个测试文件共 35 条用例（副本/产物、分类链、限频与顺序、图片审核、上传约束、openapi 权限），测试数 48 → 83，全绿。
-- 文档：`docs/SYNC.md` 重写为构建期内联说明；README / CONTRIBUTING / DEPLOY / OPERATIONS 同步更新；`AUDIT_REPORT.md` 加时效横幅；版本号统一为 0.9.4（上一提交自称 v0.9.3 但未落 package.json / CHANGELOG / tag）。
+- 文档：`docs/SYNC.md` 重写为构建期内联说明；README / CONTRIBUTING / DEPLOY / OPERATIONS 同步更新；`AUDIT_REPORT.md` 加时效横幅（该报告已于 v0.10.0 归档到 `docs/archive/`）；版本号统一为 0.9.4（上一提交自称 v0.9.3 但未落 package.json / CHANGELOG / tag）。
 
 已知边界（需真实云环境验证，本仓无法证伪）：`imgSecCheck` 实返回、`rate_limits` 集合与索引是否已在目标环境创建、H5 REST 网关鉴权、数据模型/CMS 相关控制台操作。
 

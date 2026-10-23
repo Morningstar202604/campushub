@@ -484,6 +484,132 @@ const COMPRESS_QUALITY_LADDER = [80, 60, 40, 20]
 
 const mb = (n: number) => (n / 1024 / 1024).toFixed(2)
 
+/** 图片格式白名单（前后端一致：JPG/PNG/GIF/BMP/WEBP） */
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|bmp|webp)$/i
+
+function assertImageExt(p: string): void {
+  if (!IMAGE_EXT_RE.test(p || '')) throw new Error('仅支持 JPG/PNG/GIF/BMP/WEBP 图片')
+}
+
+/** 读取本地临时文件大小；API 不可用时返回 null（调用方按"未知"处理，不阻断上传） */
+function mpFileSize(p: string): Promise<number | null> {
+  return new Promise((res) => {
+    // @ts-ignore wx 由小程序运行时注入
+    if (typeof wx.getFileInfo !== 'function') return res(null)
+    // @ts-ignore
+    wx.getFileInfo({ filePath: p, success: (i: any) => res(i.size), fail: () => res(null) })
+  })
+}
+
+/** 微信单次压缩；不可用或失败返回 null（调用方保留上一档结果） */
+function mpCompressOnce(p: string, quality: number): Promise<string | null> {
+  return new Promise((res) => {
+    // @ts-ignore
+    if (typeof wx.compressImage !== 'function') return res(null)
+    // @ts-ignore 微信仅支持 jpeg/png 压缩
+    wx.compressImage({
+      src: p,
+      quality,
+      success: (c: any) => res(c.tempFilePath),
+      fail: () => res(null)
+    })
+  })
+}
+
+/**
+ * 小程序端压缩：按质量阶梯逐档压，直到 ≤1MB。
+ * gif/bmp/webp 无法压缩，超限时直接拒绝——绝不静默上传让后端审核失败。
+ */
+async function compressMpImage(localPath: string): Promise<string> {
+  let current = localPath
+  let size = await mpFileSize(current)
+  if (!size || size <= IMAGE_AUDIT_MAX_BYTES) return current
+  if (!/\.(jpe?g|png)$/i.test(localPath)) {
+    throw new Error(`图片过大（${mb(size)}MB）且该格式不支持压缩，请改用 JPG/PNG 或先缩小尺寸`)
+  }
+  for (const quality of COMPRESS_QUALITY_LADDER) {
+    const out = await mpCompressOnce(current, quality)
+    if (!out) break
+    current = out
+    size = await mpFileSize(current)
+    if (size === null || size <= IMAGE_AUDIT_MAX_BYTES) break
+  }
+  if (size && size > IMAGE_AUDIT_MAX_BYTES) {
+    throw new Error(`图片过大：压缩后仍 ${mb(size)}MB，超过审核上限 1MB，请缩小后重试`)
+  }
+  return current
+}
+
+/** 小程序端上传：压缩 → wx.cloud.uploadFile → fileID */
+async function uploadMpImage(localPath: string, fileName: string): Promise<string> {
+  const compressed = await compressMpImage(localPath)
+  return new Promise((resolve, reject) => {
+    // @ts-ignore wx 由小程序运行时注入
+    wx.cloud.uploadFile({
+      cloudPath: fileName,
+      filePath: compressed,
+      success: (r: any) => resolve(r.fileID),
+      fail: (e: any) => reject(new Error(e.errMsg || '图片上传失败'))
+    })
+  })
+}
+
+/** H5/App 端压缩：优先 uni.compressImage（App），否则 canvas 重编码（H5） */
+async function compressH5Image(localPath: string, blob: Blob): Promise<Blob> {
+  if (blob.size <= IMAGE_AUDIT_MAX_BYTES) return blob
+  // @ts-ignore uni 在 H5/App 运行时可用
+  if (typeof uni !== 'undefined' && typeof uni.compressImage === 'function') {
+    const viaUni = await new Promise<Blob | null>((res) => {
+      // @ts-ignore
+      uni.compressImage({
+        src: localPath,
+        quality: COMPRESS_QUALITY_LADDER[0],
+        success: async (r: any) => {
+          try {
+            res(await (await fetch(r.tempFilePath)).blob())
+          } catch {
+            res(null)
+          }
+        },
+        fail: () => res(null)
+      })
+    })
+    if (viaUni && viaUni.size <= IMAGE_AUDIT_MAX_BYTES) return viaUni
+    if (viaUni) blob = viaUni
+  }
+  if (blob.size > IMAGE_AUDIT_MAX_BYTES) blob = await compressBlobForAudit(blob)
+  if (blob.size > IMAGE_AUDIT_MAX_BYTES) {
+    throw new Error(`图片过大：压缩后仍 ${mb(blob.size)}MB，超过审核上限 1MB，请缩小后重试`)
+  }
+  return blob
+}
+
+/** H5/App 端上传：取回 blob → 压缩 → 包成 File → SDK uploadFile → fileID */
+async function uploadH5Image(localPath: string, fileName: string): Promise<string> {
+  try {
+    const cb = await ensureCloudbase()
+    // uni.chooseImage 给的是 blob:/file: 地址，需取回为 File 才能交给 SDK
+    const blob = await compressH5Image(localPath, await (await fetch(localPath)).blob())
+    const file =
+      typeof File !== 'undefined'
+        ? new File([blob], fileName.split('/').pop() as string, {
+            type: blob.type || 'image/jpeg'
+          })
+        : blob
+    assertImageExt((file as File).name || '')
+    // v2 web SDK：app.uploadFile（官方形态）。以返回的 fileID 为准，勿手工拼接 cloud:// 地址
+    const upRes: any = await cb.uploadFile({ cloudPath: fileName, filePath: file })
+    if (!upRes?.fileID) throw new Error('上传完成但未返回 fileID')
+    return upRes.fileID as string
+  } catch (e: any) {
+    console.error('[CampusHub] H5/App 图片上传失败', e?.message || e)
+    // 带上真实原因：SDK 已随包安装，失败常见于「未填 envId / 未开匿名登录 / 网络异常」
+    throw new Error(
+      `图片上传失败：${e?.message || e}（排查：school.config.js 的 envId 是否已填、CloudBase 是否已开启「匿名登录」）`
+    )
+  }
+}
+
 /**
  * H5 端图片压缩：canvas 重编码，按质量阶梯逐档尝试，逐档缩小尺寸，
  * 直到 ≤1MB 或阶梯走完。App 端优先走 uni.compressImage（由调用方处理）。
@@ -529,139 +655,24 @@ export async function compressBlobForAudit(blob: Blob): Promise<Blob> {
  *  - H5/App 端：@cloudbase/js-sdk 的 app.uploadFile（v2 web API；blob: 地址需先取回为 File）
  *
  * 上传前校验：图片必须压到 1MB 以内（与后端同步审核上限一致），格式限 JPG/PNG/GIF/BMP/WEBP。
+ * 平台分支拆到 compressMpImage / uploadMpImage 与 compressH5Image / uploadH5Image，
+ * 本函数只做「校验 → 演示模式 → 分发」，避免单函数圈复杂度继续膨胀。
  */
 export async function uploadImage(localPath: string, cloudDir = 'campushub'): Promise<string> {
   if (!localPath) throw new Error('缺少图片路径')
+  assertImageExt(localPath)
 
   // 演示模式：不触网，直接把本地临时路径当 fileID 返回。
   // 本机路径在当前会话内可直接渲染，足以验证「选图 → 预览 → 发布」整条 UI 链路；
   // 没有云存储也就没有服务端审核配额消耗，不需要压缩到 1MB。
-  if (shouldUseDemo()) {
-    if (!/\.(jpe?g|png|gif|bmp|webp)$/i.test(localPath)) {
-      throw new Error('仅支持 JPG/PNG/GIF/BMP/WEBP 图片')
-    }
-    return localPath
-  }
+  if (shouldUseDemo()) return localPath
 
   const fileName = `${cloudDir}/${Date.now()}-${Math.floor(Math.random() * 1e5)}.${extOf(localPath)}`
 
   // #ifdef MP
-  return new Promise((resolve, reject) => {
-    if (!/\.(jpe?g|png|gif|bmp|webp)$/i.test(localPath || '')) {
-      reject(new Error('仅支持 JPG/PNG/GIF/BMP/WEBP 图片'))
-      return
-    }
-
-    const sizeOf = (p: string) =>
-      new Promise<number | null>((res) => {
-        // @ts-ignore
-        if (typeof wx.getFileInfo !== 'function') return res(null)
-        // @ts-ignore
-        wx.getFileInfo({ filePath: p, success: (i: any) => res(i.size), fail: () => res(null) })
-      })
-
-    const compressOnce = (p: string, quality: number) =>
-      new Promise<string | null>((res) => {
-        // @ts-ignore
-        if (typeof wx.compressImage !== 'function') return res(null)
-        // @ts-ignore：微信仅支持 jpeg/png 压缩
-        wx.compressImage({
-          src: p,
-          quality,
-          success: (c: any) => res(c.tempFilePath),
-          fail: () => res(null)
-        })
-      })
-
-    const upload = (p: string) =>
-      // @ts-ignore
-      wx.cloud.uploadFile({
-        cloudPath: fileName,
-        filePath: p,
-        success: (r: any) => resolve(r.fileID),
-        fail: (e: any) => reject(new Error(e.errMsg || '图片上传失败'))
-      })
-
-    void (async () => {
-      let current = localPath
-      let size = await sizeOf(current)
-      // wx.compressImage 只吃 jpeg/png；gif/bmp/webp 无法压缩，
-      // 超限时只能拒绝并提示用户预先缩小，绝不静默上传后让后端审核失败。
-      const compressible = /\.(jpe?g|png)$/i.test(localPath)
-      if (size && size > IMAGE_AUDIT_MAX_BYTES) {
-        if (!compressible) {
-          reject(
-            new Error(`图片过大（${mb(size)}MB）且该格式不支持压缩，请改用 JPG/PNG 或先缩小尺寸`)
-          )
-          return
-        }
-        for (let i = 0; i < COMPRESS_QUALITY_LADDER.length; i++) {
-          const out = await compressOnce(current, COMPRESS_QUALITY_LADDER[i])
-          if (!out) break
-          current = out
-          size = await sizeOf(current)
-          if (size === null || size <= IMAGE_AUDIT_MAX_BYTES) break
-        }
-      }
-      if (size && size > IMAGE_AUDIT_MAX_BYTES) {
-        reject(new Error(`图片过大：压缩后仍 ${mb(size)}MB，超过审核上限 1MB，请缩小后重试`))
-        return
-      }
-      upload(current)
-    })().catch((e) => reject(e instanceof Error ? e : new Error(String(e))))
-  })
+  return uploadMpImage(localPath, fileName)
   // #endif
   // #ifndef MP
-  try {
-    const cb = await ensureCloudbase()
-    // H5/App 端 uni.chooseImage 给的是 blob:/file: 地址，需取回为 File 才能交给 SDK
-    const blobResp = await fetch(localPath)
-    let blob = await blobResp.blob()
-    // 先压到审核上限以内再上传：App 端优先走 uni.compressImage，H5 端走 canvas 重编码
-    if (blob.size > IMAGE_AUDIT_MAX_BYTES) {
-      // @ts-ignore
-      if (typeof uni !== 'undefined' && typeof uni.compressImage === 'function') {
-        blob = await new Promise<Blob>((res) => {
-          // @ts-ignore
-          uni.compressImage({
-            src: localPath,
-            quality: COMPRESS_QUALITY_LADDER[0],
-            success: async (r: any) => {
-              try {
-                res(await (await fetch(r.tempFilePath)).blob())
-              } catch {
-                res(blob)
-              }
-            },
-            fail: () => res(blob)
-          })
-        })
-      }
-      if (blob.size > IMAGE_AUDIT_MAX_BYTES) blob = await compressBlobForAudit(blob)
-      if (blob.size > IMAGE_AUDIT_MAX_BYTES) {
-        throw new Error(`图片过大：压缩后仍 ${mb(blob.size)}MB，超过审核上限 1MB，请缩小后重试`)
-      }
-    }
-    const file =
-      typeof File !== 'undefined'
-        ? new File([blob], fileName.split('/').pop() as string, {
-            type: blob.type || 'image/jpeg'
-          })
-        : blob
-    // 扩展名校验（与后端图片白名单一致）
-    if (!/\.(jpe?g|png|gif|bmp|webp)$/i.test((file as File).name || '')) {
-      throw new Error('仅支持 JPG/PNG/GIF/BMP/WEBP 图片')
-    }
-    // v2 web SDK：app.uploadFile（官方形态）。以返回的 fileID 为准，勿手工拼接 cloud:// 地址
-    const upRes: any = await cb.uploadFile({ cloudPath: fileName, filePath: file })
-    if (!upRes?.fileID) throw new Error('上传完成但未返回 fileID')
-    return upRes.fileID as string
-  } catch (e: any) {
-    console.error('[CampusHub] H5/App 图片上传失败', e?.message || e)
-    // 带上真实原因：SDK 已随包安装，失败常见于「未填 envId / 未开匿名登录 / 网络异常」
-    throw new Error(
-      `图片上传失败：${e?.message || e}（排查：school.config.js 的 envId 是否已填、CloudBase 是否已开启「匿名登录」）`
-    )
-  }
+  return uploadH5Image(localPath, fileName)
   // #endif
 }

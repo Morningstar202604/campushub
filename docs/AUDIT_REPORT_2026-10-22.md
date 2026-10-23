@@ -29,7 +29,7 @@
 | 项 | 值 |
 |---|---|
 | 项目类型 | 多端内容社区应用（UGC + 二手交易），非 SaaS、非纯 API |
-| 前端 | uni-app（Vue 3 + Vite 5.2.8 + TS 5.8.3 + pinia + z-paging + wot-design-uni） |
+| 前端 | uni-app（Vue 3 + Vite 5.2.8 + TS 5.8.3 + pinia + z-paging；wot-design-uni 与 dayjs 已于 v0.10.0 移除） |
 | 后端 | 微信云开发 CloudBase，37 业务入口 / 10 部署单元 / 9 内核模块 |
 | 数据库 | 云开发 NoSQL，23 集合 / 46 索引 |
 | 部署形态 | 一校一署：小程序 + H5 静态托管 + 安卓 APK |

@@ -252,40 +252,6 @@ onShareAppMessage(() => ({
   }
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 80rpx 0;
-  .empty-shape {
-    width: 48rpx;
-    height: 48rpx;
-    background: var(--accent);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 8rpx 100%, 0 calc(100% - 8rpx));
-    margin-bottom: 24rpx;
-  }
-  .empty-title {
-    font-size: 32rpx;
-    font-weight: var(--fw-title);
-    color: var(--text-primary);
-  }
-  .empty-sub {
-    margin-top: 8rpx;
-    font-size: 22rpx;
-    color: var(--text-tertiary);
-  }
-  .empty-cta {
-    margin-top: 28rpx;
-    padding: 14rpx 40rpx;
-    background: var(--accent);
-    text {
-      font-size: 26rpx;
-      font-weight: var(--fw-title);
-      color: #0d110e;
-    }
-  }
-}
-
 .page-fab {
   position: fixed;
   right: 32rpx;

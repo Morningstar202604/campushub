@@ -1,61 +1,43 @@
 # CampusHub 展示物料 / Showcase Assets
 
-> 本目录收录 CampusHub 小程序的**界面截图、使用视频与可交互原型**，用于开源仓库的对外展示。
-> All visual assets for CampusHub's open-source presentation live here — screenshots, demo video, and an interactive prototype.
+> 本目录只收录**当前版本**（「墨荧 · Acid Campus」设计）的真实运行截图，用于开源仓库对外展示。
+> All visual assets here are real screenshots of the **current** build — v0.8.1 white/blue assets
+> were removed in v0.10.0 to stop stale visuals from misrepresenting the product.
 
 ## 目录结构 / Layout
 
 | 文件 | 说明 | Description |
 |------|------|-------------|
-| `overview.png` | 24 页整机长图总览（按 5 组分类排版） | 24-screen overview wall, grouped into 5 flows |
-| `demo.mp4` | 37 秒使用演示视频（1080×1920，带中文字幕） | 37s usage demo video (1080×1920, Chinese subtitles) |
-| `../preview.html` | 可交互 HTML 原型（24 页可点跳转，加 `?clean=1` 出纯净截图） | Interactive HTML prototype (24 clickable screens) |
+| `v1/` | 27 张逐页截图（390×844 视口 2x，H5 构建产物实机渲染） | 27 per-screen shots (390×844 @2x, rendered from the H5 build) |
+| `overview-v1.png` | 27 页总览长图 | 27-screen overview wall |
 
-## 单页截图 / Individual Screens (750×1624)
+## 页面清单 / Pages
 
-24 张高清单页截图，覆盖全部核心页面：
+**主流程 Core flow**
+`v1/index.png` 首页 ｜ `v1/search.png` 搜索 ｜ `v1/post-detail.png` 帖子详情 ｜ `v1/post-create.png` 发布
 
-**核心主流程 Core flow**
-- `index.png` — 首页瀑布流（推荐 / 热门 / 最新）
-- `search.png` — 搜索（跨帖子 / 二手 / 指南）
-- `post-detail.png` — 帖子详情（嵌套评论、点赞、收藏）
-- `publish.png` — 发布选择（帖子 / 任务 / 失物 / 招领 / 表白）
+**交易 Market**
+`v1/market.png` 二手市集 ｜ `v1/product-detail.png` 商品详情 ｜ `v1/product-create.png` 发布好物 ｜ `v1/my-list.png` 我的内容
 
-**交易闭环 Market loop**
-- `market.png` — 二手市场双列列表
-- `product-detail.png` — 商品详情
-- `product-publish.png` — 发布商品（价格 / 成色 / 交易方式）
-- `my-list.png` — 我的发布（管理 / 标记已售）
-
-**校园特色 Campus features**
-- `guide.png` / `guide-detail.png` — 新生指南与文章详情
-- `lost-found.png` — 失物招领
-- `wall.png` — 表白墙
+**校园特色 Campus**
+`v1/wall.png` 表白墙 ｜ `v1/lost-found.png` 失物招领 ｜ `v1/guide-list.png` 校园指南 ｜ `v1/guide-detail.png` 指南详情
 
 **个人中心 Profile**
-- `profile.png` — 个人主页（统计 / 最近发布 / 关注）
-- `profile-edit.png` — 资料编辑
-- `user-profile.png` — 他人主页
-- `notifications.png` — 站内通知（点赞 / 评论 / 关注）
-- `verify.png` — 校园认证（实名）
-- `feedback.png` — 反馈
-- `agreement.png` — 用户协议 / 隐私
+`v1/user-profile.png` 个人主页 ｜ `v1/user-update.png` 编辑资料 ｜ `v1/notification.png` 通知 ｜ `v1/follow.png` 关注 ｜ `v1/checkin.png` 签到 ｜ `v1/points.png` 积分商城 ｜ `v1/verify.png` 校园认证 ｜ `v1/feedback.png` 反馈 ｜ `v1/report.png` 举报 ｜ `v1/settings.png` 设置 ｜ `v1/legal-agreement.png` 用户协议 ｜ `v1/legal-privacy.png` 隐私政策
 
 **管理端 Admin**
-- `admin.png` — 审核台（举报处理 / 封禁 / 置顶 / 公告）
-- `login.png` — 登录（微信一键登录）
-- `picker.png` — 选择器组件
-- `post-publish.png` — 发帖编辑
-- `expired.png` — 已过期任务归档
+`v1/admin.png` 审核台 ｜ `v1/announcements.png` 公告管理 ｜ `v1/categories.png` 类目管理
 
-## 如何查看 / How to view
+## 如何重新生成 / How to regenerate
 
-- **长图**：直接用图片查看器打开 `overview.png`
-- **视频**：本地播放器打开 `demo.mp4`，或浏览器拖入
-- **原型**：浏览器打开 `../preview.html`，点击任意卡片进入对应页面；URL 加 `?clean=1` 可导出无外壳的纯净截图
+```bash
+cd uni-app && npm run build:h5      # 产物：dist/build/h5
+npx serve dist/build/h5             # 或用任意静态服务器
+# 用 Playwright / Puppeteer 以 390×844、deviceScaleFactor=2 逐页截图，输出到 docs/screenshots/v1/
+```
 
-## 技术备注 / Notes
+## 规则 / Rules
 
-- 截图为离线 headless Chromium 渲染（375×812 视口 → LANCZOS 2x 放大至 750×1624），图标全部使用内联 SVG 以避免无头环境下 emoji 渲染为豆腐块
-- 视频由 ffmpeg（libopenh264）分段转场合成，13 个场景含中文字幕
-- 优化建议见仓库 [`docs/OPTIMIZATION_PLAN.md`](./OPTIMIZATION_PLAN.md)
+- 截图必须来自**当前构建产物**，不允许手绘或改图冒充。
+- 界面变更后同步重截；旧图直接替换，不留历史版本目录（避免误导）。
+- 截图里的 demo 数据由 `uni-app/src/utils/demo-data.ts` 提供，可复现。

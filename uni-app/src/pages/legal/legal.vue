@@ -22,31 +22,39 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import schoolConfig from '@/config/school.config.js'
 
 type LegalType = 'agreement' | 'privacy'
 
 const type = ref<LegalType>('agreement')
 
 /**
+ * 运营方信息一律读 school.config.js 的 operator 段，不在正文里硬编码。
+ * 未配置时正文显示「未配置（部署方需填写）」而不是假装已有主体 ——
+ * 占位文案冒充真实主体会让协议在审核时被判定为虚假信息。
+ */
+const operatorName = (schoolConfig as any).operator?.name || '未配置（部署方需在 school.config.js 填写）'
+const operatorContact =
+  (schoolConfig as any).operator?.contact || '未配置（部署方需在 school.config.js 填写）'
+const operatorRegion = (schoolConfig as any).operator?.region || '中国境内'
+
+/**
  * 协议正文。
  *
  * 为什么写在这里而不是服务端：小程序审核要求「用户协议 / 隐私政策」在首次使用前可见可查，
  * 且不能依赖网络（审核员可能断网查看）。静态文本最可靠。
- *
- * ⚠️ 部署前必须替换的信息：运营主体名称、联系方式、数据存储地域。
- * 这些是《个人信息保护法》要求必须写明的内容，留占位符会导致审核不通过。
  */
 const DOCS: Record<LegalType, any> = {
   agreement: {
     kicker: 'USER AGREEMENT',
     title: '用户协议',
     updated: '2026-10-22',
-    footer: '如对本协议有疑问，可通过「设置 → 意见反馈」联系我们。',
+    footer: `如对本协议有疑问，可通过「设置 → 意见反馈」联系我们；运营方联系方式：${operatorContact}`,
     sections: [
       {
         h: '一、协议范围',
         p: [
-          '本协议是你与 CampusHub 运营方之间关于使用本服务所订立的协议。',
+          `本协议是你与 ${operatorName}（以下简称"运营方"）之间关于使用本服务所订立的协议。`,
           '你注册、登录或使用本服务，即视为已阅读并同意本协议全部内容。若不同意，请停止使用。'
         ]
       },
@@ -105,7 +113,7 @@ const DOCS: Record<LegalType, any> = {
     kicker: 'PRIVACY POLICY',
     title: '隐私政策',
     updated: '2026-10-22',
-    footer: '如需查询、更正或删除你的个人信息，请通过「设置 → 意见反馈」联系我们。',
+    footer: `如需查询、更正或删除你的个人信息，请通过「设置 → 意见反馈」联系我们；运营方联系方式：${operatorContact}`,
     sections: [
       {
         h: '一、我们收集哪些信息',
@@ -130,6 +138,7 @@ const DOCS: Record<LegalType, any> = {
         h: '三、信息存储与保护',
         p: [
           '数据存储于腾讯云开发（CloudBase）位于中国境内的服务器。',
+          `数据存储地域：${operatorRegion}。`,
           '传输全程使用 HTTPS；客户端不持有 openid，身份由服务端从微信上下文获取，无法伪造。',
           '数据库访问受云函数鉴权保护，客户端无法直连数据库。',
           '密码类凭据不由本服务保存（登录依赖微信授权）。'

@@ -326,3 +326,34 @@ test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/
   assert.ok(!readme.includes('nationwide by default'), 'README 不应残留 nationwide 定位')
   assert.ok(!read('docs/README.zh-CN.md').includes('开源贴吧'), 'zh-CN 不应残留「贴吧」定位')
 })
+
+test('开源治理：运营方信息外置、无未使用依赖、归档索引存在（v0.10.0）', () => {
+  const schoolCfg = read('uni-app/src/config/school.config.js')
+  assert.match(schoolCfg, /operator\s*:\s*\{/, 'school.config.js 必须有 operator 段')
+  for (const k of ['name', 'contact', 'region']) {
+    assert.ok(schoolCfg.includes(`${k}:`), `operator 段缺少 ${k}`)
+  }
+  const legal = read('uni-app/src/pages/legal/legal.vue')
+  assert.ok(legal.includes('schoolConfig'), 'legal.vue 必须读 school.config.js 的运营方信息')
+  assert.ok(!legal.includes('CampusHub 运营方'), 'legal.vue 不得再把「CampusHub 运营方」当主体名')
+
+  const uniPkg = JSON.parse(read('uni-app/package.json'))
+  const deps = { ...(uniPkg.dependencies || {}), ...(uniPkg.devDependencies || {}) }
+  // 这两个包曾装而不用，白增安装体积与审计面
+  assert.ok(!deps['wot-design-uni'], 'wot-design-uni 已移除，不得重新引入（源码零 wd-* 引用）')
+  assert.ok(!deps['dayjs'], 'dayjs 已移除，fmtTime 使用原生 Date')
+
+  for (const f of [
+    'docs/archive/README.md',
+    'docs/archive/AUDIT_REPORT_v0.8.1.md',
+    'docs/screenshots/README.md'
+  ]) {
+    assert.ok(fs.existsSync(path.join(ROOT, f)), `缺少 ${f}`)
+  }
+  // 已删除的历史物料不得被文档再次引用
+  for (const stale of ['docs/preview.html', 'screenshots/demo.mp4', 'screenshots/overview.png']) {
+    for (const doc of ['README.md', 'docs/README.zh-CN.md', 'docs/screenshots/README.md']) {
+      assert.ok(!read(doc).includes(stale), `${doc} 仍引用已删除的 ${stale}`)
+    }
+  }
+})

@@ -159,19 +159,6 @@ onShareAppMessage(() => ({ title: 'CampusHub 表白墙 · 校园夜场', path: '
   }
 }
 
-.empty-state {
-  .empty-cta {
-    margin-top: 28rpx;
-    padding: 14rpx 40rpx;
-    background: var(--accent);
-    text {
-      font-size: 26rpx;
-      font-weight: var(--fw-title);
-      color: #0d110e;
-    }
-  }
-}
-
 .error-banner {
   display: flex;
   justify-content: space-between;

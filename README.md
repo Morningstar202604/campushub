@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"/></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.9.5-green.svg" alt="Version"/></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.10.0-green.svg" alt="Version"/></a>
   <a href="https://uniapp.dcloud.net.cn/"><img src="https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg" alt="uni-app"/></a>
   <a href="https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html"><img src="https://img.shields.io/badge/WeChat-CloudBase-orange.svg" alt="CloudBase"/></a>
   <a href="https://gitcode.com/badhope/campushub"><img src="https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue" alt="GitCode"/></a>
@@ -72,7 +72,7 @@
 | 设置 | `v1/settings.png` | 用户协议 | `v1/legal-agreement.png` |
 | 隐私政策 | `v1/legal-privacy.png` | | |
 
-> ⚠️ `docs/screenshots/` 根目录的旧图（`index.png` / `profile.png` / `overview.png` 等）与 `docs/preview.html` 是 v0.8.1 白蓝主题历史版本，**不代表当前界面**。
+> 截图全部来自当前构建产物（`uni-app/dist/build/h5`，390×844 视口），旧版白蓝主题图已随 v0.10.0 清理，不再保留历史版本目录。
 
 ## 🎯 Overview / 项目简介
 
@@ -195,31 +195,35 @@ CampusHub/
 │   ├── common/               # ★ 共享内核层（单一数据源）
 │   │   ├── common-bundle.js  # 一行的聚合导出
 │   │   ├── common-context.js # 用户上下文 & 鉴权
+│   │   ├── common-identity.js# HMAC 设备令牌（H5/APK 身份链路）
 │   │   ├── common-security.js# fail-closed 内容安全
 │   │   ├── common-rate.js    # 原子限频（rate_limits 窗口占位，v0.9.2）
 │   │   ├── common-db.js      # 数据库单例 + sanitizeQuery
 │   │   ├── common-content.js # 内容删除（软删 + 图片回收 + 计数回滚 + 对账）
 │   │   ├── common-indexes.js # 46 条索引权威定义
 │   │   └── common-error.js   # 统一错误模型
-│   ├── post-create/          # 发帖
-│   ├── product-create/       # 发布商品
-│   ├── admin/                # 管理后台
-│   └── ...
+│   ├── api-post/             # 资源型网关：post-* / resolve 等 7 个入口
+│   ├── api-admin/            # 资源型网关：admin / category-* / announcement 等 6 个入口
+│   └── ...                   # api-auth / api-product / api-comment / api-social / api-content
 ├── docs/
 │   ├── HANDOVER.md           # ★ 企业交付手册（本仓库交接入口）
 │   ├── ACCEPTANCE.md         # ★ 交付验收报告（买家复跑命令）
-│   ├── REVIEW-20260922.md    # ★ 两轮审核全记录（19 + 10 项修复对照）
+│   ├── AUDIT_REPORT_2026-10-22.md  # ★ 最近一次全维度审查与对标报告
+│   ├── REVIEW-20260922.md    # 两轮审核全记录（历史，19 + 10 项修复对照）
 │   ├── DEPLOY.md             # ★ 部署指南（10 步）
+│   ├── GATEWAYS.md           # 网关形态与上线/回滚顺序
 │   ├── USER_GUIDE.md         # 使用说明书
 │   ├── INDEXES.md            # 46 条索引检查清单
 │   ├── COST.md / COMPLIANCE.md / OPERATIONS.md
-│   ├── screenshots/          # ★ 截图 / 视频 / 展示索引
-│   ├── preview.html          # 可交互 HTML 原型
-│   ├── architecture.svg      # 系统架构图（v0.9.2）
-│   └── data-model.svg        # 内容模型与分类树（v0.9.2）
+│   ├── screenshots/          # ★ 当前版本逐页截图（v1/）+ 总览长图
+│   ├── archive/              # 历史报告归档（v0.6.0 / v0.8.1，仅追溯用）
+│   ├── architecture.svg      # 系统架构图
+│   └── data-model.svg        # 内容模型与分类树
 ├── scripts/
-│   ├── build-functions.js  # 构建期内联内核（esbuild）
+│   ├── build-functions.js    # 构建期内联内核（esbuild）
 │   ├── gen-gateways.js       # 由 gateway-routes.json 生成网关
+│   ├── ui-lint.js            # UI 层 lint（隐私接口 / 原子类重定义 / 空态 emoji）
+│   ├── verify-release.js     # 发布级静态校验（版本 / 治理文件 / 云函数结构）
 │   └── doctor.js             # 部署前环境自检
 ├── tests/                    # 契约与回归测试（node --test，glob 自动发现）
 ├── .github/workflows/        # CI（JSON/契约/单测 + uni-app 结构门禁）
@@ -328,7 +332,7 @@ node scripts/restore-backup.js --date 2026-10-22 --yes
 
 详见 [`CHANGELOG.md`](./CHANGELOG.md)。
 
-**Latest: v0.9.5** — 修复部署态内核漂移与图片审核形态、补齐云调用权限声明（0.9.4）→ 内核改为构建期内联、门禁本地可用（0.9.4）→ 37 个云函数收敛为 10 个部署单元（0.9.5）。
+**Latest: v0.10.0** — 审计收口：空态样式归一（消除 9 处重复）、`uploadImage` 拆分（CC 33 → 各函数 ≤10）、运营方信息外置配置、SRE 职责与升级路径、CI Actions 版本修正（0.10.0）→ 三端身份链路打通（0.9.5 之后）→ 37 个云函数收敛为 10 个部署单元（0.9.5）。
 
 ---
 

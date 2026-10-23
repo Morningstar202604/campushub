@@ -6,7 +6,7 @@
 > 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](../index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
-[![Version](https://img.shields.io/badge/version-0.9.5-green.svg)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.10.0-green.svg)](../CHANGELOG.md)
 [![uni-app](https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg)](https://uniapp.dcloud.net.cn/)
 [![GitCode](https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue)](https://gitcode.com/badhope/campushub)
 
@@ -20,9 +20,9 @@
 
 | 首页 | 二手市场 | 失物招领 | 个人中心 |
 |---|---|---|---|
-| ![首页](screenshots/index.png) | ![二手市场](screenshots/market.png) | ![失物招领](screenshots/lost-found.png) | ![个人中心](screenshots/profile.png) |
+| ![首页](screenshots/v1/index.png) | ![二手市场](screenshots/v1/market.png) | ![失物招领](screenshots/v1/lost-found.png) | ![个人中心](screenshots/v1/user-profile.png) |
 
-📁 [24 张单页高清截图](./screenshots/) ｜ 🎬 [37s 演示视频](./screenshots/demo.mp4) ｜ 🖼️ [24 页总览长图](./screenshots/overview.png) ｜ 🛠️ [可交互原型](./preview.html)
+📁 [27 张逐页截图](./screenshots/v1/) ｜ 🖼️ [27 页总览长图](./screenshots/overview-v1.png)
 
 ---
 
@@ -58,10 +58,9 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 |---|---|
 | 云函数（部署单元） | 10（7 网关 + 3 独立函数；+ 1 共享内核目录） |
 | 业务入口（handler） | 37 |
-| 前端页面 | 23（三端共用） |
+| 前端页面 | 26（三端共用） |
 | 数据集合 | 23 |
 | 索引定义 | 46 |
-| 云函数（部署单元） | 10（37 个业务入口） |
 | 质量门禁 | `npm run gate`（本地一条命令，平台无关） |
 
 ## 文档导航
@@ -76,17 +75,19 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 | [成本方案 COST](./COST.md) | 免费额度 → 生产 19.9 元/月 |
 | [合规要点 COMPLIANCE](./COMPLIANCE.md) | 个人主体 UGC 合规路径 |
 | [使用说明书 USER_GUIDE](./USER_GUIDE.md) | 面向最终用户 |
-| [两轮审核记录 REVIEW](./REVIEW-20260922.md) | 19 + 10 项修复对照与验证矩阵 |
+| [全维度审查报告](./AUDIT_REPORT_2026-10-22.md) | 最近一次审查与竞品对标（2026-10-22） |
+| [历史文档归档](./archive/) | v0.6.0 / v0.8.1 的过期报告，仅追溯用 |
 
 ## 快速开始
 
 ```bash
-# 后端：npm install → 微信开发者工具导入部署 37 函数 → 开 HTTP 访问 + 匿名登录
-#       → init-db 建集合 → 按 INDEXES.md 建 46 条索引 → 配 ADMIN_OPENIDS
-# 前端：cd uni-app && npm install → 填 school.config.js（envId/restToken）→ 三端构建
+# 后端：npm install → npm run build:functions → 部署 10 个部署单元 → 开 HTTP 访问 + 匿名登录
+#       → init-db 建集合 → 按 INDEXES.md 建 46 条索引 → 5 个部署单元配 ADMIN_OPENIDS
+# 前端：cd uni-app && npm install → 填 src/config/school.config.js（envId/restToken/operator）
+cd uni-app
 npm run build:h5           # H5
 npm run build:mp-weixin    # 微信小程序
-# 安卓 APK：HBuilderX 云打包，见 uni-app/docs/ANDROID_BUILD.md
+npm run build:app          # App 资源（再由 HBuilderX 云打包成 APK，见 uni-app/docs/ANDROID_BUILD.md）
 ```
 
 完整步骤见 [DEPLOY.md](./DEPLOY.md) 与 [HANDOVER.md](./HANDOVER.md)。

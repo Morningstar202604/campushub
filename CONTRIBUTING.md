@@ -2,9 +2,12 @@
 
 Thanks for your interest in contributing to **CampusHub**!
 
-CampusHub is a WeChat mini-program + CloudBase project. The canonical source repository is
-**GitCode** ([badhope/campushub](https://gitcode.com/badhope/campushub)), which is also mirrored
-to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs against GitHub.
+CampusHub is a uni-app (Vue 3 + Vite) + WeChat CloudBase project. The project is mirrored on
+four platforms with the same branch / tag / HEAD:
+[GitHub (X33834)](https://github.com/X33834/campushub),
+[GitHub (Morningstar202604)](https://github.com/Morningstar202604/campushub),
+[GitCode](https://gitcode.com/badhope/campushub) and
+[Gitee](https://gitee.com/badhope/campushub). Issues and PRs are welcome on any of them.
 
 ## Development Setup
 
@@ -14,16 +17,19 @@ to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs 
    git clone https://github.com/<your-username>/campushub.git
    cd campushub
    ```
-3. Install dependencies and sync the shared kernel layer:
+3. Install dependencies and build the cloud functions:
    ```bash
-   npm install            # install build-time devDeps (esbuild / prettier / eslint)
+   npm install              # build-time devDeps (esbuild / prettier / eslint)
+   cd uni-app && npm install && cd ..   # frontend deps (uni-app / Vite / pinia)
    npm run build:functions  # inline the kernel into dist/cloudfunctions/
    ```
    > `cloudfunctions/common/` is the single source of truth for auth / content-safety /
-   > ban / rate-limit / response-format / content-deletion / index definitions. The sync
-   > script copies it into every cloud function directory. **Never edit the `common-*.js`
-   > copies inside individual function folders** — edit `cloudfunctions/common/` only; the kernel is inlined into `dist/` at build time (`npm run build:functions`). Run `npm run gate` before pushing.
-   > There are currently **37 cloud functions**, all carrying synced copies of the 9 common modules.
+   > ban / rate-limit / response-format / content-deletion / index definitions. **Never create
+   > `common-*.js` copies inside individual function folders** — edit `cloudfunctions/common/`
+   > only; `npm run build:functions` inlines the kernel into `dist/` at build time, and
+   > `npm run doctor` / the pre-commit hook reject any copy that reappears.
+   > There are currently **10 deployment units** (7 resource gateways + 3 standalone functions)
+   > hosting 37 business entries.
 4. Open the project in **WeChat DevTools** (fill in your own `appid` and cloud `env`).
 5. Create a feature branch: `git checkout -b my-feature`.
 6. Make your changes.
@@ -41,7 +47,7 @@ to **GitCode** and **Gitee**. All three stay in sync; you only need to open PRs 
 
 ## Reporting Issues
 
-- Use [GitCode Issues](https://gitcode.com/badhope/campushub/issues) to report bugs or request features.
+- Use the [issue tracker](https://github.com/Morningstar202604/campushub/issues) to report bugs or request features (GitHub is the platform with Actions enabled, so CI feedback is visible there).
 - Include steps to reproduce for bug reports.
 - **Do not** open public issues for security vulnerabilities — see [SECURITY.md](SECURITY.md).
 

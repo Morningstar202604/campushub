@@ -4,8 +4,10 @@
 
 If you discover a security vulnerability in this project, please report it responsibly:
 
-1. **Do not** open a public GitHub issue.
-2. Open a [security issue on GitCode](https://gitcode.com/badhope/campushub/issues) (mark it clearly as a security report), or email the maintainer directly.
+1. **Do not** open a public issue.
+2. Report privately through [GitHub Security Advisories](https://github.com/Morningstar202604/campushub/security/advisories/new)
+   (preferred), or open a clearly-marked security report on
+   [GitCode Issues](https://gitcode.com/badhope/campushub/issues).
 3. Include a clear description of the vulnerability, steps to reproduce, and the potential impact.
 
 We will acknowledge receipt within 48 hours and aim to provide a fix or mitigation within 14 days, depending on severity.
@@ -14,9 +16,9 @@ We will acknowledge receipt within 48 hours and aim to provide a fix or mitigati
 
 Only the latest release receives security updates.
 
-> Note: CampusHub is mirrored across **GitCode**, **Gitee**, and **GitHub**, but **GitHub is the
-> canonical source**. Please report security issues against the GitHub repository so they are
-> tracked properly.
+> Note: CampusHub is mirrored across **GitHub**, **GitCode** and **Gitee** with identical
+> branch / tag / HEAD. Security reports are accepted on any platform; GitHub Security
+> Advisories are preferred because they can be tracked privately.
 
 ## Security Features
 
@@ -58,7 +60,7 @@ carry the following obligations, independent of the technical safeguards above:
 | Regulator data request | Export relevant collections from CloudBase console; cooperate per applicable law |
 | Moderation API outage | Users cannot publish (fail-closed). Announce downtime; **never** disable fail-closed to "temporarily" allow posting |
 
-See [docs/OPERATIONS.md](./OPERATIONS.md) §3 for the day-to-day duty roster.
+See [docs/OPERATIONS.md](docs/OPERATIONS.md) §3 for the day-to-day duty roster.
 
 ## Disclosure Policy
 

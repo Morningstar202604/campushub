@@ -7,20 +7,21 @@
 ## 发布前快速 Checklist（30 秒版）
 
 ```bash
-npm install          # 装依赖 + 自动同步 common 内核
+npm install              # 根依赖：esbuild / eslint / prettier / miniprogram-ci
+cd uni-app && npm install && cd ..   # 前端依赖（uni-app / Vite / pinia）
 npm run build:functions  # 把内核内联进 dist/cloudfunctions/
 npm run doctor       # 自检：AppID / envId / 内核一致性 —— 错误必须清零
-npm run verify       # 发布级静态校验：页面/组件/WXML/WXSS/依赖/图片 —— 必须 0 错误
+npm run verify       # 发布级静态校验：页面/版本/治理文件/云函数结构 —— 必须 0 错误
 npm run contract     # 跨端契约校验：前端 callFunction 与云函数 action 比对 —— 必须 0 错误
-npm run lint         # UI 层 lint：事件绑定死链 / wx:for 缺 key / 冗余组件 / 隐私接口清单 —— 必须 0 错误
-npm test             # 单元 + 契约测试 —— 必须 25/25
+npm run lint         # UI 层 lint：隐私接口清单 / 全局原子类重定义 / 空态 emoji —— 必须 0 错误
+npm run gate         # 一条命令跑完上面除 doctor/verify 外的全部门禁（含 250 条测试）
 ```
 
-- [ ] `project.config.json` 已填 AppID
-- [ ] `miniprogram/app.js` env 已改为真实环境 ID
-- [ ] 37 个云函数已部署 + 2 个触发器已上传（第四步）
+- [ ] `project.config.json` 与 `uni-app/src/manifest.json` 的 AppID 已填
+- [ ] `uni-app/src/config/school.config.js` 的 envId / restToken / operator 已填
+- [ ] 10 个部署单元已上传 + 2 个触发器已上传（第四步）
 - [ ] 46 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
-- [ ] 真机预览回归通过，重点看 TDesign 组件渲染（第九步）
+- [ ] 真机预览回归通过（小程序 / H5 / APK 三端各一轮）
 - [ ] 主体资质与类目已确认：**UGC 社区类目需个体工商户及以上主体**，个人主体请先读 [`docs/COMPLIANCE.md`](./COMPLIANCE.md)
 - [ ] 成本方案已确认：开发阶段用云开发免费体验版（¥0），上线前评估转个人版（¥19.9/月），详见 [`docs/COST.md`](./COST.md)
 
@@ -44,12 +45,14 @@ npm test             # 单元 + 契约测试 —— 必须 25/25
 
 ### 1.2 填入项目配置
 
-打开 `project.config.json`，把 `appid` 填上：
+AppID 有两处必须一致：
+
+1. `project.config.json` → `appid`（微信开发者工具识别项目用）
+2. `uni-app/src/manifest.json` → `mp-weixin.appid`（uni-app 构建小程序时写入产物）
 
 ```json
 {
-  "appid": "你的AppID",
-  ...
+  "appid": "你的AppID"
 }
 ```
 
@@ -66,43 +69,40 @@ npm test             # 单元 + 契约测试 —— 必须 25/25
 
 ### 2.2 填入云环境 ID
 
-打开 `miniprogram/app.js`，第 17 行：
+打开 `uni-app/src/config/school.config.js`（多校配置的唯一入口）：
 
 ```js
-wx.cloud.init({
-  env: '你的云环境ID',  // ← 替换这里
-  traceUser: true
-})
+const schoolConfig = {
+  envId: '你的云环境ID',   // ← 替换这里；留空 = 演示模式（数据只存本机）
+  restToken: '',           // H5/App 端 REST 必填，小程序端可留空
+  ...
+}
 ```
 
-> 注意：云函数端不需要手动填环境 ID，`common-db.js` 用的是 `cloud.DYNAMIC_CURRENT_ENV`（自动识别）。
+> 小程序端 `wx.cloud.init()` 在 `uni-app/src/main.ts`，env 由上面的 `schoolConfig.envId` 注入，不需要再改别处。
+> 云函数端不需要手动填环境 ID，`common-db.js` 用的是 `cloud.DYNAMIC_CURRENT_ENV`（自动识别）。
 
 ---
 
-## 第三步：安装依赖 + 构建 npm
+## 第三步：安装依赖
 
 ### 3.1 安装 npm 依赖
 
-在项目根目录（CampusHub/）执行：
-
 ```bash
-npm install
+npm install                 # 根：构建与部署工具链（esbuild / eslint / prettier / miniprogram-ci）
+cd uni-app && npm install   # 前端：uni-app / Vite / pinia / z-paging
+cd ..
 ```
 
-这会：
-- 安装 `tdesign-miniprogram` 组件库
-- `npm run deploy` 会先执行 `scripts/build-functions.js` 重建并用 `--check` 校验产物指纹，再上传 `dist/cloudfunctions/` —— 不再依赖"记得同步副本"
+### 3.2 构建云函数产物
 
-### 3.2 构建 npm（微信开发者工具操作）
+```bash
+npm run build:functions   # esbuild 把 cloudfunctions/common 内核内联进 dist/cloudfunctions/
+npm run doctor            # 校验产物新鲜度与权限声明
+```
 
-微信开发者工具 → 菜单栏「工具」→「构建 npm」
-
-> ⚠️ **前置（本版本起）**：`miniprogram/miniprogram_npm/`（tdesign 全量 + dayjs，约 4.3MB）**已出库到 `.gitignore`**，克隆仓库后**没有**该目录。
-> **部署/上传前必须先用微信开发者工具「工具 → 构建 npm」生成 `miniprogram_npm/`**，否则 tdesign 组件（t-button / t-icon 等）不会渲染。
-> 等价命令：`npm run build:mpm`（仅打印指引，实际仍需开发者工具内「构建 npm」，CI 不自动生成）。
->
-> 产物结构须为标准：`miniprogram_npm/tdesign-miniprogram/<组件>/`（保留包名层）。构建后务必跑 `npm run verify` 校验（历史上曾因产物平铺缺包名层导致真机组件全部不渲染，verify 会拦住这类问题）。
-> 升级 `tdesign-miniprogram` 版本后需重新构建。瘦身待验证清单见 [`docs/NPM_TRIM.md`](./NPM_TRIM.md)。
+> 前端不需要「构建 npm」：uni-app 的依赖由 Vite 打包。微信开发者工具导入 `uni-app/dist/build/mp-weixin`（先跑 `cd uni-app && npm run build:mp-weixin`），该目录由 uni-app 自动生成 `project.config.json`。
+> 若要在开发者工具里同时看到云函数面板，导入仓库根目录：根 `project.config.json` 已把 `cloudfunctionRoot` 指向 `dist/cloudfunctions/`；此时需在根 `project.config.json` 手工补一行 `"miniprogramRoot": "uni-app/dist/build/mp-weixin/"`。
 
 ---
 
@@ -130,27 +130,26 @@ npm install
 >
 > 手动部署方式保留如下，适用于不想装 CLI 的场景。
 
-项目共 **37 个云函数**，全部需要部署。
+项目共 **10 个部署单元 / 37 个业务入口**（v0.9.5 起由 37 个函数目录收敛而来），全部需要部署。
 
 ### 4.1 批量部署
 
-在微信开发者工具中：
-1. 左侧文件树 → `cloudfunctions/` 目录
-2. **逐个**右键每个云函数文件夹 →「上传并部署：云端安装依赖」
-3. 等待每个部署完成（状态栏有进度提示）
+> 手动方式（微信开发者工具）：左侧文件树 → `dist/cloudfunctions/` → 逐个右键每个部署单元 →「上传并部署：云端安装依赖」。
+> 推荐用 `npm run deploy`（见本节开头）一次传完，避免逐个点击。
 
-> 37 个函数列表：
-> `login`, `user-update`, `user-profile`, `post-create`, `post-list`, `post-detail`, `post-delete`, `post-update`, `product-create`, `product-list`, `product-detail`, `product-delete`, `product-update`, `comment-create`, `comment-list`, `comment-delete`, `like`, `collect`, `report`, `feedback-create`, `search`, `my-list`, `category-list`, `category-manage`, `guide-list`, `guide-detail`, `admin`, `resolve`, `task-expire`, `init-db`, `follow`, `checkin`, `notification`, `verify`, `backup-db`, `announcement`, `points`
+10 个部署单元：`api-auth`、`api-post`、`api-product`、`api-comment`、`api-social`、`api-admin`、`api-content`（7 个资源型网关）+ `task-expire`、`backup-db`、`init-db`（3 个独立函数）。
+
+37 个业务入口按 `gateway-routes.json` 分发，清单与寻址规则见 [`GATEWAYS.md`](./GATEWAYS.md)；新增入口只改路由表再跑 `npm run gen:gateways`，不要手改生成物。
 
 ### 4.2 部署定时触发器（共 2 个）
 
 项目有 **2 个定时任务**，除了上传代码外，都需要单独部署触发器：
 
-1. 右键 `cloudfunctions/task-expire/` →「上传触发器」
-2. 右键 `cloudfunctions/backup-db/` →「上传触发器」
+1. 右键 `dist/cloudfunctions/task-expire/` →「上传触发器」
+2. 右键 `dist/cloudfunctions/backup-db/` →「上传触发器」
 3. 确认 cron 表达式被正确部署：
    - `task-expire/config.json` → `"0 0 */6 * * *"`：每 6 小时执行（降本 C3：信息流已惰性过滤过期任务，cron 仅作归档兜底）
-   - `backup-db/config.json` → `"0 0 3 * * * *"`：每日 03:00 全库备份到 `backups` 集合
+   - `backup-db/config.json` → `"0 0 3 * * *"`：每日 03:00 全库备份到 `backups` 集合
 
 > cron 格式为 6 字段：秒 分 时 日 月 周
 
@@ -160,15 +159,15 @@ npm install
 
 ### 5.1 管理员 OpenID（必配）
 
-云开发控制台 → 云函数 → `admin` 函数 → 版本管理 → 环境变量：
+云开发控制台 → 云函数 → 版本管理 → 环境变量：
 
 | Key | Value |
 |-----|-------|
 | `ADMIN_OPENIDS` | `你的openid`（逗号分隔可配多个） |
 
-> **如何获取你的 openid**：先部署好 `login` 云函数后，在小程序中登录一次，然后到云开发控制台 → 数据库 → `users` 集合 → 找到你的记录 → 复制 `openid` 字段值。
+> **如何获取你的 openid**：先部署好云函数后，在小程序中登录一次，然后到云开发控制台 → 数据库 → `users` 集合 → 找到你的记录 → 复制 `openid` 字段值。
 
-> 同样的环境变量也要配给 `resolve` 和 `category-manage` 函数（它们也调用 `checkAdmin`）。
+> 需要配到 **5 个部署单元**（源码里实际调用 `checkAdmin` 的）：`api-auth`、`api-admin`、`api-post`、`backup-db`、`task-expire`。漏配的症状不同：`api-admin` 表现为管理台全部 403，`backup-db` / `task-expire` 表现为手动调用被拒（定时触发不受影响）。
 
 ### 5.2 init-db 安全密钥（必配，fail-closed）
 
@@ -382,7 +381,7 @@ mp.weixin.qq.com → 开发管理 → 接口设置 → 找到「内容安全」�
 npm run verify
 ```
 
-覆盖：页面四件套 / tabBar 图标 / JS 语法 / require 解析 / WXML 标签平衡与组件注册 / WXSS 变量 / 图片引用 / 云函数依赖。**0 错误才继续往下**（有错误时输出会指明文件与原因）。
+覆盖：pages.json 与 .vue 对应关系 / tabBar 图标 / JS 语法 / require 解析 / 云函数结构 / 旧架构残留 / 版本徽章一致性 / 开源治理文件。**0 错误才继续往下**。
 
 ### 9.1 预览测试
 
@@ -390,13 +389,13 @@ npm run verify
 
 ### 9.2 测试清单
 
-按以下顺序测试核心流程：
+按以下顺序测试核心流程（小程序端；H5 / APK 端同名流程同样要跑一遍）：
 
-1. **登录**：进入小程序 → 登录页 → 填昵称 → 勾选协议 → 进入
-2. **发帖**：首页 + 号 → 发帖子 → 选分类 → 发布 → 看到帖子出现在首页
+1. **登录**：进入小程序 → 首次进入触发隐私授权 → 微信一键登录 → 进入首页
+2. **发帖**：首页「发布」→ 填标题/正文 → 选分类 → 发布 → 看到帖子出现在首页
 3. **评论**：点进帖子详情 → 写评论 → 发送 → 楼中楼回复
 4. **点赞/收藏**：帖子详情 → 点赞 → 收藏
-5. **发商品**：首页 + 号 → 卖东西 → 填信息 → 发布
+5. **发商品**：首页「好物」→ 填信息 → 发布
 6. **搜索**：搜索页搜刚发的帖子标题
 7. **个人中心**：统计数据是否正确 → 签到 → 消息
 8. **管理后台**（如果配了管理员）：我的 → 管理后台 → 举报审核 / 帖子管理 / 用户封禁
@@ -409,7 +408,8 @@ npm run verify
 | 发帖提示"内容审核服务暂不可用" | 内容安全 API 未开通 | 第八步检查 |
 | 管理后台不显示 | 未配 ADMIN_OPENIDS | 第五步配置 |
 | 云函数调用报错 | 云函数未部署 | 第四步部署 |
-| TDesign 组件不显示 | 未构建 npm，或 `miniprogram_npm` 产物结构被破坏 | 第三步重建 npm 后跑 `npm run verify` |
+| 小程序页面样式错乱 / 组件不渲染 | 用的是旧构建产物 | `cd uni-app && npm run build:mp-weixin` 重新构建后导入 `dist/build/mp-weixin` |
+| H5 端登录后立刻掉线 / 请求全 401 | 未配 `restToken` 或未配 `IDENTITY_SECRET` | 见 `docs/LAUNCH_CHECKLIST.md` #27、#33a |
 | 定时任务不执行 | 触发器未部署 | 第四步 4.2 部署触发器（task-expire + backup-db 共 2 个） |
 
 ---
@@ -418,7 +418,7 @@ npm run verify
 
 ### 10.1 上传代码
 
-微信开发者工具 → 上传 → 填写版本号（当前为 `0.9.2`）和备注 → 上传
+微信开发者工具 → 上传 → 填写版本号（与 `package.json` 一致，当前 `0.10.0`）和备注 → 上传
 
 ### 10.2 提交审核
 
@@ -443,11 +443,11 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 | 配置项 | 文件位置 | 值 |
 |--------|----------|-----|
 | AppID | `project.config.json` → `appid` | 你的小程序 AppID |
-| 云环境 ID | `miniprogram/app.js` → `env` | 你的云环境 ID |
-| 管理员 OpenID | 云函数 `admin` 环境变量 `ADMIN_OPENIDS` | 你的 openid |
+| 云环境 ID | `uni-app/src/config/school.config.js` → `envId` | 你的云环境 ID |
+| 管理员 OpenID | 5 个部署单元的 `ADMIN_OPENIDS`（见 5.1） | 你的 openid |
 | init-db 密钥 | 云函数 `init-db` 环境变量 `INIT_SECRET` | 自定义密钥 |
 | 数据库索引 | 云开发控制台手动创建 | 见第七步 |
-| 定时触发器 | `task-expire/config.json` | `0 0 */6 * * *`（每 6 小时） |
+| 定时触发器 | `dist/cloudfunctions/task-expire/config.json` | `0 0 */6 * * *`（每 6 小时） |
 | 一键部署配置 | `scripts/deploy.config.json`（不入库，模板见 `deploy.config.example.json`） | appid / privateKeyPath / environments |
 | 部署前自检 | 终端执行 `npm run doctor` | 错误阻断，警告提示 |
 | 发布级校验 | 终端执行 `npm run verify` | 必须 0 错误，可接 CI |
@@ -461,20 +461,24 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 ```
 CampusHub/
 ├── uni-app/               # 前端（uni-app Vue 3 三端：微信小程序 / H5 / 安卓 APK，26 个页面）
-│   └── miniprogram_npm/   # npm 构建产物（已入库，标准结构，勿手动改动）
-├── cloudfunctions/        # 云函数（37 个）
-│   └── common/            # 共享内核层（单一事实来源）
+│   └── src/config/school.config.js  # 多校配置唯一入口（envId / restToken / operator）
+├── cloudfunctions/        # 云函数源码（7 网关 + 3 独立函数 = 10 个部署单元）
+│   └── common/            # 共享内核层（单一事实源，构建期内联）
+├── gateway-routes.json    # 业务入口 → 部署单元的唯一事实源（由 gen-gateways 生成）
+├── tests/                 # node --test 单测 + tests/frontend 前端测试
 ├── scripts/
 │   ├── build-functions.js # 内核构建期内联（esbuild）
+│   ├── gen-gateways.js    # 从路由表生成网关入口/权限/前端寻址表
 │   ├── deploy.js          # miniprogram-ci 一键部署（配合 deploy.config.json）
 │   ├── doctor.js          # 部署前自检（npm run doctor）
-│   ├── verify-release.js  # 发布级静态校验（npm run verify）
-│   └── sync-mirrors.sh    # 三平台同步脚本
+│   ├── ui-lint.js         # UI 层 lint：隐私接口 / 原子类重定义 / 空态 emoji
+│   └── verify-release.js  # 发布级静态校验（npm run verify）
 ├── docs/
 │   ├── DEPLOY.md          # 本文件
-│   ├── COST.md            # 成本与云服务选型（CF 可行性分析）
+│   ├── GATEWAYS.md        # 网关形态与上线/回滚顺序
+│   ├── COST.md            # 成本与云服务选型
 │   ├── COMPLIANCE.md      # 主体资质 / 类目 / 备案合规
 │   ├── INDEXES.md         # 索引必建清单
-│   └── SYNC.md            # 三端同步说明
-└── project.config.json    # 项目配置
+│   └── SYNC.md            # 内核内联与镜像同步说明
+└── project.config.json    # 微信开发者工具项目配置（cloudfunctionRoot → dist/）
 ```

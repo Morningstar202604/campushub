@@ -6,10 +6,10 @@
  * 这里负责把选择落到 DOM 并持久化。
  *
  * 平台差异：
- *  - H5：直接给 document.documentElement 设 data-theme，CSS 变量立即生效；
- *  - 小程序 / App：没有 document，主题只能通过页面级 class 或 App.vue 的全局状态实现。
- *    当前实现退化为「记住选择但不改变外观」，并在设置页明确提示。
- *    （小程序端做主题切换需给每页根节点绑 class，属独立改造，见 README 待办）
+ *  - H5：给 document.documentElement 设 data-theme，`[data-theme='light']` 的 CSS 变量立即生效；
+ *  - 小程序 / App：没有 document，WXSS 也不支持属性选择器，页面内容仍是深色令牌；
+ *    但原生导航栏与 tabBar 会经 uni.setNavigationBarColor / setTabBarStyle 跟随主题。
+ *    页面内容跟随主题需逐页根节点绑 class（26 个页面），未在本轮范围内。
  */
 import { ref, watch } from 'vue'
 

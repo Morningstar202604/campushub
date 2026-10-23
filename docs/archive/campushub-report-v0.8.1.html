@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusHub 全量代码分析报告</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#30363d;
+  --txt:#e6edf3; --muted:#8b949e; --acid:#a4f300; --acid2:#7ee787;
+  --blue:#58a6ff; --purple:#a371f7; --pink:#db61a2; --yellow:#e3b341; --red:#ff7b72;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;font-size:15px}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px 80px}
+header.hero{background:radial-gradient(1200px 400px at 70% -10%,rgba(164,243,0,.16),transparent 60%),linear-gradient(180deg,#11161f,#0d1117);border-bottom:1px solid var(--line);padding:54px 22px 40px}
+.hero-inner{max-width:1180px;margin:0 auto}
+.badge{display:inline-block;border:1px solid var(--acid);color:var(--acid);padding:3px 12px;border-radius:999px;font-size:12px;letter-spacing:.5px;font-weight:600}
+h1{font-size:38px;margin:16px 0 8px;letter-spacing:-.5px}
+.hero p.sub{color:var(--muted);font-size:16px;max-width:760px;margin:6px 0}
+.hero .meta{margin-top:14px;color:var(--muted);font-size:13px}
+.hero .meta b{color:var(--txt)}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:30px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acid)}
+.stat .k{font-size:28px;font-weight:700;color:var(--acid2)}
+.stat .l{font-size:13px;margin-top:2px}
+.stat .s{font-size:11px;color:var(--muted);margin-top:3px}
+section{margin-top:46px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:20px}
+.sec-head .num{font-family:ui-monospace,monospace;color:var(--acid);font-size:14px;font-weight:700}
+.sec-head h2{font-size:24px;margin:0}
+.sec-head .en{color:var(--muted);font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.donut-wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.donut-svg{flex:0 0 auto}
+.donut-mid{fill:var(--txt);font-size:26px;font-weight:700}
+.donut-sub{fill:var(--muted);font-size:12px}
+.legend{flex:1;min-width:260px}
+.lg-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px;border-bottom:1px dashed #21262d}
+.lg-row:last-child{border-bottom:none}
+.dot{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.lg-name{flex:1;font-family:ui-monospace,monospace}
+.lg-val{color:var(--muted);min-width:62px;text-align:right}
+.lg-pct{color:var(--acid2);min-width:48px;text-align:right}
+.bar-row{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+.bar-label{width:230px;flex:0 0 auto;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;background:#21262d;border-radius:6px;height:14px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,#3fb950,#a4f300);border-radius:6px}
+.bar-val{width:64px;text-align:right;color:var(--txt);font-variant-numeric:tabular-nums}
+.sec-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+.sec-name{width:150px;flex:0 0 auto;font-family:ui-monospace,monospace;color:var(--blue)}
+.sec-track{flex:1;background:#21262d;border-radius:6px;height:13px;overflow:hidden}
+.sec-fill{height:100%;background:linear-gradient(90deg,#1f6feb,#58a6ff);border-radius:6px}
+.sec-val{width:34px;text-align:right;color:var(--txt)}
+
+/* architecture */
+.arch{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.arch svg{width:100%;height:auto;display:block}
+.tier-label{fill:var(--acid);font-size:11px;font-weight:700;font-family:ui-monospace,monospace}
+.box{fill:#1c2230;stroke:#30363d;stroke-width:1.5}
+.box-t{fill:var(--txt);font-size:12px;font-weight:600}
+.box-s{fill:var(--muted);font-size:10px}
+.arrow{stroke:#6e7681;stroke-width:1.5;fill:none}
+.arrow-h{fill:#6e7681}
+.flow-t{fill:var(--muted);font-size:10px}
+
+/* routing */
+.rt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rt-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.rt-card.standalone{border-color:#3a2f12;background:#1f1b10}
+.rt-head{display:flex;align-items:center;gap:9px}
+.rt-unit{font-family:ui-monospace,monospace;color:var(--acid2);font-weight:700;font-size:14px}
+.rt-note{color:var(--muted);font-size:12px}
+.rt-count{margin-left:auto;background:#0d1117;border:1px solid var(--line);border-radius:8px;min-width:26px;text-align:center;font-size:12px;padding:1px 6px}
+.rt-routes{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#0d1117;border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11px;color:var(--txt);font-family:ui-monospace,monospace}
+.rt-card.standalone .chip{border-color:#5a4a1a;color:var(--yellow)}
+
+/* kernel */
+.krow{display:flex;gap:14px;padding:11px 0;border-bottom:1px dashed #21262d}
+.krow:last-child{border-bottom:none}
+.kmod{width:170px;flex:0 0 auto;font-family:ui-monospace,monospace;color:var(--purple);font-weight:700;font-size:13px}
+.kdesc{flex:1;color:var(--txt);font-size:13px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #21262d;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px}
+.mono{font-family:ui-monospace,monospace;color:var(--blue);font-size:12px}
+.env-table{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+
+/* gate */
+.gate-flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.gate-node{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;flex:1 1 200px;display:flex;gap:10px;align-items:center}
+.gate-idx{width:24px;height:24px;border-radius:50%;background:var(--acid);color:#0d1117;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+.gate-txt{font-size:12px;color:var(--txt)}
+
+/* quality badges */
+.qbadges{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.qb{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.qb .num{font-size:30px;font-weight:800}
+.qb .lab{font-size:11px;color:var(--muted);margin-top:4px}
+.qb.ok .num{color:var(--acid2)} .qb.warn .num{color:var(--yellow)} .qb.blue .num{color:var(--blue)}
+
+.deps{display:flex;flex-wrap:wrap;gap:8px}
+.dep{background:#0d1117;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:12px;font-family:ui-monospace,monospace;color:var(--txt)}
+
+.callout{background:#10161f;border-left:3px solid var(--acid);padding:14px 18px;border-radius:0 10px 10px 0;margin:14px 0;font-size:14px}
+.callout b{color:var(--acid2)}
+.kinds{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.kind{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 11px;font-size:13px}
+
+ul.clean{margin:8px 0;padding-left:20px}
+ul.clean li{margin:6px 0}
+.strong-acid{color:var(--acid)}
+
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font-size:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.toc a{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 11px;font-size:12px;color:var(--txt)}
+@media(max-width:880px){.stat-grid{grid-template-columns:repeat(2,1fr)}.grid2,.grid3,.rt-grid{grid-template-columns:1fr}.bar-label{width:150px}.sec-name{width:120px}.qbadges{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <span class="badge">CAMPUSHUB · v0.9.5 · 全量代码审计报告</span>
+    <h1>CampusHub 全量代码分析报告</h1>
+    <p class="sub">基于 247 文件 / 55,165 行逐文件通读的架构 · 安全 · 质量评估</p>
+    <div class="meta">仓库：<b>gitcode.com/badhope/campushub</b> ｜ 克隆路径：<b>C:/Users/X1882/Desktop/workspace/wb/web/campushub-repo</b> ｜ 生成日期：<b>2026-10-19</b><br>
+    审计方式：<b>脚本全量通读（247 文件逐行扫描 + 关键安全/架构文件逐段精读）</b>，无任何文件遗漏。</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="k">247</div><div class="l">文件总数</div><div class="s">文本 208 / 二进制 39</div></div><div class="stat"><div class="k">55,165</div><div class="l">文本总行数</div><div class="s">约 12.2 MB</div></div><div class="stat"><div class="k">10</div><div class="l">部署单元</div><div class="s">7 网关 + 3 独立函数</div></div><div class="stat"><div class="k">37</div><div class="l">业务入口</div><div class="s">handler 收敛</div></div><div class="stat"><div class="k">20</div><div class="l">前端页面</div><div class="s">uni-app 三端共用</div></div><div class="stat"><div class="k">23</div><div class="l">数据集合</div><div class="s">云数据库</div></div><div class="stat"><div class="k">46</div><div class="l">索引</div><div class="s">init-db 自检</div></div><div class="stat"><div class="k">9</div><div class="l">共享内核模块</div><div class="s">构建期内联</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="toc">
+    <a href="#overview">① 项目概览</a>
+    <a href="#scale">② 代码规模与语言</a>
+    <a href="#arch">③ 系统架构</a>
+    <a href="#routing">④ 路由矩阵</a>
+    <a href="#kernel">⑤ 共享内核</a>
+    <a href="#security">⑥ 安全模型</a>
+    <a href="#data">⑦ 数据模型</a>
+    <a href="#quality">⑧ 质量工程</a>
+    <a href="#frontend">⑨ 前端细读</a>
+    <a href="#tests">⑩ 测试覆盖</a>
+    <a href="#conclusion">⑪ 结论与建议</a>
+  </div>
+
+  <!-- ① OVERVIEW -->
+  <section id="overview">
+    <div class="sec-head"><span class="num">01</span><h2>项目概览</h2><span class="en">Overview</span></div>
+    <div class="card">
+      <p><b class="strong-acid">CampusHub</b> 是一个基于 <b>uni-app 三端（微信小程序 / H5 / 安卓 APK）+ 微信云开发（CloudBase）</b> 的开源校园内容社区。采用「一校一部署」模式：每个学校/组织独立部署一套云环境，学生在多级分类树下发帖、提问、交易、互动。</p>
+      <ul class="clean">
+        <li><b>一套代码 · 三端交付</b>：uni-app（Vue 3 + Vite）共用 <b>20 个页面</b>与全部业务逻辑，小程序走 <code>wx.cloud.callFunction</code>，H5/App 走 CloudBase REST（restToken）。</li>
+        <li><b>37 个业务入口收敛到 10 个部署单元</b>：7 个资源型网关（auth/post/product/comment/social/admin/content）+ 3 个独立函数（2 定时器 + 1 初始化）。</li>
+        <li><b>共享内核层（9 模块）</b>：通过 <code>build:functions</code>（esbuild）在构建期内联进各函数产物，单一数据源，副本漂移在结构上不可能（历史 333 份重复代码已消除）。</li>
+        <li><b>安全优先</b>：所有 UGC 经微信 <code>msgSecCheck</code>/<code>imgSecCheck</code>，<b>fail-closed</b>（任何异常即拒绝发布）。</li>
+        <li><b>近零成本</b>：云开发免费额度起步，生产环境 19.9 元/月起。</li>
+      </ul>
+      <div class="callout">核心设计哲学可概括为：<b>三端同源 · fail-closed 内容安全 · 原子限频 · 查询白名单 · 集中封禁 · 单一删除入口 · 定时任务守卫</b>。整套代码已无 TODO/FIXME 技术债、无硬编码密钥、所有 handler 经 <code>wrap()</code> 统一错误处理。</div>
+    </div>
+  </section>
+
+  <!-- ② SCALE -->
+  <section id="scale">
+    <div class="sec-head"><span class="num">02</span><h2>代码规模与语言分布</h2><span class="en">Size &amp; Language</span></div>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">语言 LOC 占比</h3>
+        <div class="donut-wrap">
+          <svg class="donut-svg" width="320" height="320" viewBox="0 0 320 320"><path d="M 122.65823291230062 294.9281009677673 A 140 140 0 1 0 160 20 L 160 75 A 85 85 0 1 1 137.3282128396111 241.92063273043016 Z" fill="#7ee787" stroke="#0d1117" stroke-width="1.5"><title>.json: 29,953 行 (54.3%)</title></path><path d="M 24.32785283882302 194.54082345104032 A 140 140 0 0 0 122.65823291230062 294.9281009677673 L 137.3282128396111 241.92063273043016 A 85 85 0 0 1 77.62762493785684 180.9712142381316 Z" fill="#58a6ff" stroke="#0d1117" stroke-width="1.5"><title>.js: 9,232 行 (16.7%)</title></path><path d="M 31.5684001797475 104.27456444665043 A 140 140 0 0 0 24.32785283882302 194.54082345104032 L 77.62762493785684 180.9712142381316 A 85 85 0 0 1 82.02367153770383 126.16669984260919 Z" fill="#a371f7" stroke="#0d1117" stroke-width="1.5"><title>.vue: 5,783 行 (10.5%)</title></path><path d="M 87.57126268783459 40.191494411434476 A 140 140 0 0 0 31.5684001797475 104.27456444665043 L 82.02367153770383 126.16669984260919 A 85 85 0 0 1 116.02540948904243 87.25912160694236 Z" fill="#e3b341" stroke="#0d1117" stroke-width="1.5"><title>.md: 5,423 行 (9.8%)</title></path><path d="M 111.60392518499182 28.630977995190477 A 140 140 0 0 0 87.57126268783459 40.191494411434476 L 116.02540948904243 87.25912160694236 A 85 85 0 0 1 130.61666886231646 80.24023663993707 Z" fill="#ff7b72" stroke="#0d1117" stroke-width="1.5"><title>.html: 1,675 行 (3.0%)</title></path><path d="M 136.70059231068944 21.95240820163758 A 140 140 0 0 0 111.60392518499182 28.630977995190477 L 130.61666886231646 80.24023663993707 A 85 85 0 0 1 145.85393104577574 76.18539069385139 Z" fill="#39c5cf" stroke="#0d1117" stroke-width="1.5"><title>.ts: 1,631 行 (3.0%)</title></path><path d="M 145.7691428817565 20.72515408129098 A 140 140 0 0 0 136.70059231068944 21.95240820163758 L 145.85393104577574 76.18539069385139 A 85 85 0 0 1 151.35983674963788 75.44027212078382 Z" fill="#db61a2" stroke="#0d1117" stroke-width="1.5"><title>.py: 574 行 (1.0%)</title></path><path d="M 151.96776750475544 20.23060692289482 A 140 140 0 0 0 145.7691428817565 20.72515408129098 L 151.35983674963788 75.44027212078382 A 85 85 0 0 1 155.12328741360153 75.14001134604328 Z" fill="#8b949e" stroke="#0d1117" stroke-width="1.5"><title>(none): 390 行 (0.7%)</title></path><path d="M 156.1735024861938 20.052302924353796 A 140 140 0 0 0 151.96776750475544 20.23060692289482 L 155.12328741360153 75.14001134604328 A 85 85 0 0 1 157.67676936661766 75.03175534692909 Z" fill="#f69d50" stroke="#0d1117" stroke-width="1.5"><title>.scss: 264 行 (0.5%)</title></path><path d="M 158.3895172533237 20.00926335888272 A 140 140 0 0 0 156.1735024861938 20.052302924353796 L 157.67676936661766 75.03175534692909 A 85 85 0 0 1 159.02220690380366 75.00562418217879 Z" fill="#bc8cff" stroke="#0d1117" stroke-width="1.5"><title>.svg: 139 行 (0.3%)</title></path><path d="M 159.99999999999997 20 A 140 140 0 0 0 158.3895172533237 20.00926335888272 L 159.02220690380366 75.00562418217879 A 85 85 0 0 1 159.99999999999997 75 Z" fill="#6e7681" stroke="#0d1117" stroke-width="1.5"><title>.yml: 101 行 (0.2%)</title></path><text x="160" y="152" text-anchor="middle" class="donut-mid">55,165</text><text x="160" y="176" text-anchor="middle" class="donut-sub">总行数</text></svg>
+          <div class="legend"><div class="lg-row"><span class="dot" style="background:#7ee787"></span><span class="lg-name">.json</span><span class="lg-val">29,953</span><span class="lg-pct">54.3%</span></div><div class="lg-row"><span class="dot" style="background:#58a6ff"></span><span class="lg-name">.js</span><span class="lg-val">9,232</span><span class="lg-pct">16.7%</span></div><div class="lg-row"><span class="dot" style="background:#a371f7"></span><span class="lg-name">.vue</span><span class="lg-val">5,783</span><span class="lg-pct">10.5%</span></div><div class="lg-row"><span class="dot" style="background:#e3b341"></span><span class="lg-name">.md</span><span class="lg-val">5,423</span><span class="lg-pct">9.8%</span></div><div class="lg-row"><span class="dot" style="background:#ff7b72"></span><span class="lg-name">.html</span><span class="lg-val">1,675</span><span class="lg-pct">3.0%</span></div><div class="lg-row"><span class="dot" style="background:#39c5cf"></span><span class="lg-name">.ts</span><span class="lg-val">1,631</span><span class="lg-pct">3.0%</span></div><div class="lg-row"><span class="dot" style="background:#db61a2"></span><span class="lg-name">.py</span><span class="lg-val">574</span><span class="lg-pct">1.0%</span></div><div class="lg-row"><span class="dot" style="background:#8b949e"></span><span class="lg-name">(none)</span><span class="lg-val">390</span><span class="lg-pct">0.7%</span></div><div class="lg-row"><span class="dot" style="background:#f69d50"></span><span class="lg-name">.scss</span><span class="lg-val">264</span><span class="lg-pct">0.5%</span></div><div class="lg-row"><span class="dot" style="background:#bc8cff"></span><span class="lg-name">.svg</span><span class="lg-val">139</span><span class="lg-pct">0.3%</span></div><div class="lg-row"><span class="dot" style="background:#6e7681"></span><span class="lg-name">.yml</span><span class="lg-val">101</span><span class="lg-pct">0.2%</span></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">顶层目录 LOC 分布</h3>
+        <div class="bar-row"><div class="bar-label" title="package-lock.json">package-lock.json</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="bar-val">15,460</div></div><div class="bar-row"><div class="bar-label" title="uni-app/package-lock.json">uni-app/package-lock.json</div><div class="bar-track"><div class="bar-fill" style="width:77%"></div></div><div class="bar-val">11,969</div></div><div class="bar-row"><div class="bar-label" title="uni-app/src">uni-app/src</div><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><div class="bar-val">7,802</div></div><div class="bar-row"><div class="bar-label" title="cloudfunctions/common">cloudfunctions/common</div><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div><div class="bar-val">3,136</div></div><div class="bar-row"><div class="bar-label" title="docs/">docs/</div><div class="bar-track"><div class="bar-fill" style="width:47%"></div></div><div class="bar-val">7,200</div></div><div class="bar-row"><div class="bar-label" title="cloudfunctions/* 业务">cloudfunctions/* 业务</div><div class="bar-track"><div class="bar-fill" style="width:29%"></div></div><div class="bar-val">4,511</div></div><div class="bar-row"><div class="bar-label" title="scripts/">scripts/</div><div class="bar-track"><div class="bar-fill" style="width:12%"></div></div><div class="bar-val">1,882</div></div><div class="bar-row"><div class="bar-label" title="tests/">tests/</div><div class="bar-track"><div class="bar-fill" style="width:16%"></div></div><div class="bar-val">2,397</div></div>
+        <div class="callout" style="margin-bottom:0">两个 <code>package-lock.json</code> 合计约 27,400 行（占比近半），为锁文件非业务代码；<b>真实业务代码约 25,000 行</b>（前端 uni-app/src 7,802 + 云函数 4,511 + 共享内核 3,136 + 脚本/测试约 4,300）。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ ARCHITECTURE -->
+  <section id="arch">
+    <div class="sec-head"><span class="num">03</span><h2>系统架构</h2><span class="en">Architecture</span></div>
+    <div class="card arch">
+      <svg viewBox="0 0 1100 420" role="img" aria-label="三层架构图">
+        <!-- 前端层 -->
+        <rect class="box" x="20" y="60" width="300" height="300" rx="12"/>
+        <text class="tier-label" x="30" y="84">前端 · uni-app (Vue3+Vite)</text>
+        <rect class="box" x="40" y="100" width="120" height="46" rx="8"/>
+        <text class="box-t" x="100" y="120" text-anchor="middle">微信小程序</text>
+        <text class="box-s" x="100" y="136" text-anchor="middle">wx.cloud.callFunction</text>
+        <rect class="box" x="180" y="100" width="120" height="46" rx="8"/>
+        <text class="box-t" x="240" y="120" text-anchor="middle">H5 / App</text>
+        <text class="box-s" x="240" y="136" text-anchor="middle">CloudBase REST</text>
+        <rect class="box" x="40" y="170" width="260" height="40" rx="8"/>
+        <text class="box-t" x="170" y="188" text-anchor="middle">20 页面 · pinia · z-paging</text>
+        <rect class="box" x="40" y="225" width="260" height="40" rx="8"/>
+        <text class="box-t" x="170" y="243" text-anchor="middle">utils/api.ts 平台分发器</text>
+        <text class="box-s" x="170" y="258" text-anchor="middle">fn 白名单 · idempotency · 1MB 图片上限</text>
+        <rect class="box" x="40" y="285" width="260" height="40" rx="8"/>
+        <text class="box-t" x="170" y="303" text-anchor="middle">设计系统「墨荧·Acid Campus」</text>
+        <text class="box-s" x="170" y="318" text-anchor="middle">wot-design-uni · tokens.scss</text>
+
+        <!-- 网关层 -->
+        <rect class="box" x="390" y="30" width="320" height="330" rx="12"/>
+        <text class="tier-label" x="400" y="54">API 网关 · 10 部署单元 (37 入口)</text>
+        <rect class="box" x="408" y="70" width="284" height="36" rx="7"/>
+        <text class="box-t" x="550" y="87" text-anchor="middle">api-auth · api-post · api-product</text>
+        <rect class="box" x="408" y="116" width="284" height="36" rx="7"/>
+        <text class="box-t" x="550" y="133" text-anchor="middle">api-comment · api-social</text>
+        <rect class="box" x="408" y="162" width="284" height="36" rx="7"/>
+        <text class="box-t" x="550" y="179" text-anchor="middle">api-admin · api-content</text>
+        <rect class="box" x="408" y="210" width="284" height="36" rx="7"/>
+        <text class="box-t" x="550" y="227" text-anchor="middle">init-db (手动初始化)</text>
+        <rect class="box" x="408" y="256" width="284" height="36" rx="7"/>
+        <text class="box-t" x="550" y="273" text-anchor="middle">task-expire (定时·6h)</text>
+        <rect class="box" x="408" y="302" width="284" height="36" rx="7"/>
+        <text class="box-t" x="550" y="319" text-anchor="middle">backup-db (定时·03:00)</text>
+
+        <!-- 内核层 -->
+        <rect class="box" x="770" y="120" width="310" height="240" rx="12" style="stroke:#5a4a1a"/>
+        <text class="tier-label" x="780" y="144" style="fill:#e3b341">共享内核 · common/ (9 模块)</text>
+        <rect class="box" x="788" y="156" width="274" height="30" rx="6"/>
+        <text class="box-s" x="925" y="175" text-anchor="middle">context · security · rate</text>
+        <rect class="box" x="788" y="190" width="274" height="30" rx="6"/>
+        <text class="box-s" x="925" y="209" text-anchor="middle">db · content · indexes</text>
+        <rect class="box" x="788" y="224" width="274" height="30" rx="6"/>
+        <text class="box-s" x="925" y="243" text-anchor="middle">error · bundle · subscribe</text>
+        <text class="box-s" x="925" y="276" text-anchor="middle">构建期内联（esbuild）</text>
+        <text class="box-s" x="925" y="292" text-anchor="middle">≈ 333 份重复代码已消除</text>
+
+        <!-- 后端层 -->
+        <rect class="box" x="770" y="30" width="310" height="74" rx="12" style="stroke:#1f6feb"/>
+        <text class="tier-label" x="780" y="52" style="fill:#58a6ff">后端 · CloudBase</text>
+        <text class="box-s" x="925" y="74" text-anchor="middle">云数据库 23 集合 / 46 索引</text>
+        <text class="box-s" x="925" y="92" text-anchor="middle">云存储 · 云调用(内容安全)</text>
+
+        <!-- 箭头 -->
+        <path class="arrow" d="M320 210 H388"/>
+        <path class="arrow-h" d="M388 210 l-8 -4 v8 z"/>
+        <path class="arrow" d="M710 195 H768"/>
+        <path class="arrow-h" d="M768 195 l-8 -4 v8 z"/>
+        <path class="arrow" d="M770 95 C 740 95, 740 255, 775 255" style="stroke-dasharray:4 3"/>
+        <text class="flow-t" x="735" y="180" style="fill:#58a6ff">业务读写</text>
+        <text class="flow-t" x="560" y="352" style="text-anchor:middle">前端 37 入口 → 按 event.fn 寻址</text>
+      </svg>
+    </div>
+    <div class="grid3" style="margin-top:18px">
+      <div class="card"><h3 style="margin-top:0;color:var(--acid2)">前端层</h3><p style="font-size:13px;color:var(--muted)">uni-app 三端同源；<code>utils/api.ts</code> 按平台切换云调用/REST，注入 <code>fn=原函数名</code> 并做函数名白名单校验、idempotency、超时与 1MB 图片上限。</p></div>
+      <div class="card"><h3 style="margin-top:0;color:var(--acid2)">API 层</h3><p style="font-size:13px;color:var(--muted)">37 入口收敛为 10 部署单元；入口按 <code>event.fn</code> 分发，鉴权/限频/审核仍在各 handler 内部执行。寻址表见 <code>gateway-routes.json</code>。</p></div>
+      <div class="card"><h3 style="margin-top:0;color:var(--acid2)">内核 + 后端</h3><p style="font-size:13px;color:var(--muted)">9 内核模块构建期内联进产物；CloudBase 23 集合/46 索引；定时触发器做备份与归档。</p></div>
+    </div>
+  </section>
+
+  <!-- ④ ROUTING -->
+  <section id="routing">
+    <div class="sec-head"><span class="num">04</span><h2>业务入口 → 部署单元 路由矩阵</h2><span class="en">Routing Matrix</span></div>
+    <div class="rt-grid"><div class="rt-card ">
+    <div class="rt-head"><span class="rt-unit">api-auth</span><span class="rt-note">鉴权</span><span class="rt-count">4</span></div>
+    <div class="rt-routes"><span class="chip">login</span><span class="chip">user-profile</span><span class="chip">user-update</span><span class="chip">verify</span></div>
+  </div><div class="rt-card ">
+    <div class="rt-head"><span class="rt-unit">api-post</span><span class="rt-note">帖子</span><span class="rt-count">7</span></div>
+    <div class="rt-routes"><span class="chip">post-list</span><span class="chip">post-detail</span><span class="chip">post-create</span><span class="chip">post-update</span><span class="chip">post-delete</span><span class="chip">my-list</span><span class="chip">resolve</span></div>
+  </div><div class="rt-card ">
+    <div class="rt-head"><span class="rt-unit">api-product</span><span class="rt-note">二手</span><span class="rt-count">5</span></div>
+    <div class="rt-routes"><span class="chip">product-list</span><span class="chip">product-detail</span><span class="chip">product-create</span><span class="chip">product-update</span><span class="chip">product-delete</span></div>
+  </div><div class="rt-card ">
+    <div class="rt-head"><span class="rt-unit">api-comment</span><span class="rt-note">评论</span><span class="rt-count">3</span></div>
+    <div class="rt-routes"><span class="chip">comment-list</span><span class="chip">comment-create</span><span class="chip">comment-delete</span></div>
+  </div><div class="rt-card ">
+    <div class="rt-head"><span class="rt-unit">api-social</span><span class="rt-note">社交</span><span class="rt-count">6</span></div>
+    <div class="rt-routes"><span class="chip">like</span><span class="chip">collect</span><span class="chip">follow</span><span class="chip">notification</span><span class="chip">checkin</span><span class="chip">points</span></div>
+  </div><div class="rt-card ">
+    <div class="rt-head"><span class="rt-unit">api-admin</span><span class="rt-note">管理</span><span class="rt-count">6</span></div>
+    <div class="rt-routes"><span class="chip">admin</span><span class="chip">category-list</span><span class="chip">category-manage</span><span class="chip">announcement</span><span class="chip">feedback-create</span><span class="chip">report</span></div>
+  </div><div class="rt-card ">
+    <div class="rt-head"><span class="rt-unit">api-content</span><span class="rt-note">内容</span><span class="rt-count">3</span></div>
+    <div class="rt-routes"><span class="chip">guide-list</span><span class="chip">guide-detail</span><span class="chip">search</span></div>
+  </div><div class="rt-card standalone">
+    <div class="rt-head"><span class="rt-unit">task-expire</span><span class="rt-note">定时·归档</span><span class="rt-count"></span></div>
+    <div class="rt-routes"><span class="chip">(timer) 过期任务归档 / 日志清理</span></div>
+  </div><div class="rt-card standalone">
+    <div class="rt-head"><span class="rt-unit">backup-db</span><span class="rt-note">定时·备份</span><span class="rt-count"></span></div>
+    <div class="rt-routes"><span class="chip">(timer) 每日 03:00 快照核心集合</span></div>
+  </div><div class="rt-card standalone">
+    <div class="rt-head"><span class="rt-unit">init-db</span><span class="rt-note">初始化</span><span class="rt-count"></span></div>
+    <div class="rt-routes"><span class="chip">(manual) 建集合 + 种子 + 索引比对</span></div>
+  </div></div>
+    <div class="callout" style="margin-top:16px"><b>37 个业务入口</b>全部经由 <code>gateway-routes.json</code> 单一事实来源寻址；修改该表后执行 <code>npm run gen:gateways</code> 重新生成网关入口与前端路由，手改生成物会被 <code>npm run gate</code> 拦下。橙色块为 <b>3 个独立函数</b>（定时器/初始化不经过网关）。</div>
+  </section>
+
+  <!-- ⑤ KERNEL -->
+  <section id="kernel">
+    <div class="sec-head"><span class="num">05</span><h2>共享内核层</h2><span class="en">Shared Kernel (common/)</span></div>
+    <div class="card">
+      <p style="margin-top:0;color:var(--muted);font-size:14px"><code>cloudfunctions/common/</code> 下 9 个模块只保留一份源码，由 <code>build:functions</code>（esbuild）在构建期内联进每个函数产物。部署物永远等于当前源码，<b>副本漂移在结构上不可能</b>——历史 333 份重复拷贝债务已彻底消除。</p>
+      <div class="krow"><div class="kmod">common-context</div><div class="kdesc">用户上下文 & 鉴权：getOpenid / getCurrentUser / requireActive / requireActiveUser（统一封禁拦截）</div></div><div class="krow"><div class="kmod">common-security</div><div class="kdesc">fail-closed 内容安全：checkContent(s) / checkImage(s)（下载云文件→msgSecCheck/imgSecCheck）；checkAdmin 区分未找到与 DB 错误</div></div><div class="krow"><div class="kmod">common-rate</div><div class="kdesc">原子限频：rate_limits 确定性 _id 占位 + 原子 _.inc 自增，杜绝并发 TOCTOU 绕过（v0.9.2）</div></div><div class="krow"><div class="kmod">common-db</div><div class="kdesc">云数据库单例 + sanitizeQuery 字段白名单 / 标量断言，防对象/操作符注入</div></div><div class="krow"><div class="kmod">common-content</div><div class="kdesc">统一删除入口 removeContent（软删 + 图片回收 + 计数原子回退 + reconcileUserCounts）、countViewOnce、resolveCategoryPath（服务端推导，防伪造）</div></div><div class="krow"><div class="kmod">common-indexes</div><div class="kdesc">46 条索引权威定义（EXPECTED_INDEXES），init-db 比对缺失清单</div></div><div class="krow"><div class="kmod">common-error</div><div class="kdesc">统一错误模型：AppError / ok / fail / wrap(handler)（40 处 handler 包裹）</div></div><div class="krow"><div class="kmod">common-subscribe</div><div class="kdesc">订阅消息发送 sendSubscribe / getOpenidByUserId</div></div><div class="krow"><div class="kmod">common-bundle</div><div class="kdesc">聚合导出（一行 import 即可引用全部内核）</div></div>
+    </div>
+  </section>
+
+  <!-- ⑥ SECURITY -->
+  <section id="security">
+    <div class="sec-head"><span class="num">06</span><h2>安全模型</h2><span class="en">Security Posture</span></div>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">安全原语调用分布（cloudfunctions 内）</h3>
+        <div class="sec-row"><div class="sec-name" title="统一错误包裹，所有 handler 入口">wrap()</div><div class="sec-track"><div class="sec-fill" style="width:100%"></div></div><div class="sec-val">40</div></div><div class="sec-row"><div class="sec-name" title="校验活跃用户（含封禁判断）">requireActive</div><div class="sec-track"><div class="sec-fill" style="width:65%"></div></div><div class="sec-val">26</div></div><div class="sec-row"><div class="sec-name" title="未登录即拒绝写操作">requireActiveUser</div><div class="sec-track"><div class="sec-fill" style="width:53%"></div></div><div class="sec-val">21</div></div><div class="sec-row"><div class="sec-name" title="原子限频窗口占位">rateLimit</div><div class="sec-track"><div class="sec-fill" style="width:60%"></div></div><div class="sec-val">24</div></div><div class="sec-row"><div class="sec-name" title="文本安全（msgSecCheck）">checkContent</div><div class="sec-track"><div class="sec-fill" style="width:45%"></div></div><div class="sec-val">18</div></div><div class="sec-row"><div class="sec-name" title="批量文本安全">checkContents</div><div class="sec-track"><div class="sec-fill" style="width:43%"></div></div><div class="sec-val">17</div></div><div class="sec-row"><div class="sec-name" title="图片安全（imgSecCheck）">checkImage</div><div class="sec-track"><div class="sec-fill" style="width:35%"></div></div><div class="sec-val">14</div></div><div class="sec-row"><div class="sec-name" title="并发图片安全（并发 4）">checkImages</div><div class="sec-track"><div class="sec-fill" style="width:28%"></div></div><div class="sec-val">11</div></div><div class="sec-row"><div class="sec-name" title="管理员判定（fail-closed）">checkAdmin</div><div class="sec-track"><div class="sec-fill" style="width:30%"></div></div><div class="sec-val">12</div></div><div class="sec-row"><div class="sec-name" title="取当前用户上下文">getCurrentUser</div><div class="sec-track"><div class="sec-fill" style="width:18%"></div></div><div class="sec-val">7</div></div><div class="sec-row"><div class="sec-name" title="查询字段白名单">sanitizeQuery</div><div class="sec-track"><div class="sec-fill" style="width:15%"></div></div><div class="sec-val">6</div></div><div class="sec-row"><div class="sec-name" title="统一软删 + 计数回退">removeContent</div><div class="sec-track"><div class="sec-fill" style="width:15%"></div></div><div class="sec-val">6</div></div><div class="sec-row"><div class="sec-name" title="订阅消息">sendSubscribe</div><div class="sec-track"><div class="sec-fill" style="width:15%"></div></div><div class="sec-val">6</div></div><div class="sec-row"><div class="sec-name" title="浏览量原子 +1（去重）">countViewOnce</div><div class="sec-track"><div class="sec-fill" style="width:13%"></div></div><div class="sec-val">5</div></div><div class="sec-row"><div class="sec-name" title="服务端推导分类路径">resolveCategoryPath</div><div class="sec-track"><div class="sec-fill" style="width:13%"></div></div><div class="sec-val">5</div></div>
+        <p style="font-size:12px;color:var(--muted);margin-top:12px">统计口径：各 handler / 内核模块对公共安全函数的引用次数（同一函数可被多处引用）。<code>wrap()</code> 出现 40 次即代表 40 个 handler 入口全部经统一错误处理包裹。</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">环境变量读取点（9 处）</h3>
+        <div class="env-table" style="border:none">
+          <table><tr><td class="mono">cloudfunctions/api-social/handlers/notification.js</td><td>TMPL_COMMENT, TMPL_LIKE, TMPL_FOLLOW（订阅模板 id）</td></tr><tr><td class="mono">cloudfunctions/backup-db/index.js</td><td>BACKUP_RETENTION_DAYS（备份保留天数）</td></tr><tr><td class="mono">cloudfunctions/common/common-security.js</td><td>ADMIN_OPENIDS（管理员白名单）</td></tr><tr><td class="mono">cloudfunctions/common/common-subscribe.js</td><td>TMPL_STATE（订阅状态模板）</td></tr><tr><td class="mono">cloudfunctions/init-db/index.js</td><td>INIT_SECRET（初始化秘钥）, SEED_SCHOOL_ID, SEED_SCHOOL_NAME</td></tr><tr><td class="mono">scripts/deploy.js</td><td>WX_APPID, CLOUD_ENV_ID, WX_UPLOAD_PRIVATE_KEY_PATH/B64（部署凭据，本地/CI 注入）</td></tr></table>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3 style="margin-top:0;color:var(--acid2)">核心安全原则（逐条对照源码实现）</h3>
+      <ul class="clean">
+        <li><b>Fail-closed 内容安全</b>：<code>checkImage</code> 下载 <code>cloud://</code> 文件转 Buffer 后调 <code>imgSecCheck</code>；任何异常/超限/违规一律拒绝发布，不让未检内容通过。</li>
+        <li><b>原子限频（v0.9.2）</b>：<code>rate_limits</code> 确定性 <code>_id</code> 占位 + <code>_.inc</code> 原子自增，主键唯一性保证窗口内恰一次放行，<b>杜绝并发 TOCTOU 绕过</b>。</li>
+        <li><b>查询面白名单</b>：<code>sanitizeQuery</code> 字段白名单 + 标量断言，防对象/操作符注入。</li>
+        <li><b>集中封禁</b>：<code>requireActiveUser()</code> 在 21 处统一拦截写操作，封禁检查不在各函数里散落。</li>
+        <li><b>单一删除入口</b>：<code>removeContent()</code> 统一处理软删 + 云存储图片回收 + <code>_.inc</code> 计数原子回退 + <code>reconcileUserCounts</code> 对账。</li>
+        <li><b>定时任务守卫</b>：<code>backup-db</code>/<code>task-expire</code> fail-closed——定时触发放行，手动调用仅限管理员；<code>init-db</code> 校验 <code>INIT_SECRET</code>。</li>
+        <li><b>分类路径服务端推导</b>：<code>resolveCategoryPath</code> 由服务端从分类树推导，防客户端伪造 <code>categoryPath</code>。</li>
+        <li><b>幂等</b>：<code>clientReqId</code> + 唯一索引实现首次登录/发帖/点赞幂等，防重复提交。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ⑦ DATA -->
+  <section id="data">
+    <div class="sec-head"><span class="num">07</span><h2>数据模型</h2><span class="en">Data Model</span></div>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">分类树 3 级</h3>
+        <div class="arch" style="padding:14px">
+          <svg viewBox="0 0 360 200">
+            <rect class="box" x="120" y="10" width="120" height="34" rx="8"/>
+            <text class="box-t" x="180" y="31" text-anchor="middle">Zone 校区/兴趣圈</text>
+            <rect class="box" x="40" y="80" width="120" height="34" rx="8"/>
+            <text class="box-t" x="100" y="101" text-anchor="middle">Category 大类</text>
+            <rect class="box" x="200" y="80" width="120" height="34" rx="8"/>
+            <text class="box-t" x="260" y="101" text-anchor="middle">Category 大类</text>
+            <rect class="box" x="20" y="150" width="120" height="34" rx="8"/>
+            <text class="box-t" x="80" y="171" text-anchor="middle">Board 子版</text>
+            <rect class="box" x="200" y="150" width="120" height="34" rx="8"/>
+            <text class="box-t" x="260" y="171" text-anchor="middle">Board 子版</text>
+            <path class="arrow" d="M180 44 V78"/><path class="arrow-h" d="M180 78 l-4 -8 h8 z"/>
+            <path class="arrow" d="M100 114 V148"/><path class="arrow-h" d="M100 148 l-4 -8 h8 z"/>
+            <path class="arrow" d="M260 114 V148"/><path class="arrow-h" d="M260 148 l-4 -8 h8 z"/>
+            <path class="arrow" d="M180 44 C 140 60, 100 60, 100 78" style="stroke-dasharray:3 3"/>
+            <path class="arrow" d="M180 44 C 220 60, 260 60, 260 78" style="stroke-dasharray:3 3"/>
+          </svg>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:0">Zone→Category→Board 三级分类树；categoryPath 祖先数组支持任意层级单索引筛选；二手商品独立 products 集合。</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">内容类型 VALID_KINDS</h3>
+        <div class="kinds"><span class="kind">post 帖子</span><span class="kind">task 任务</span><span class="kind">lost 失物</span><span class="kind">found 招领</span><span class="kind">confession 表白墙</span></div>
+        <h3 style="margin-top:22px">集合与索引</h3>
+        <ul class="clean" style="font-size:13px;color:var(--muted)">
+          <li><b style="color:var(--txt)">23 个集合</b>：users / posts / products / comments / follows / likes / collects / notifications / checkins / points_log / reports / feedbacks / categories / announcements / verify_requests / view_logs / rate_limits / idempotency / backups / admin_logs 等。</li>
+          <li><b style="color:var(--txt)">46 条索引</b>：权威定义见 <code>common-indexes.js</code>，<code>init-db</code> 上线时比对缺失清单（<code>missingIndexes</code>）。</li>
+          <li><b style="color:var(--txt)">任务 TTL</b>：任务帖支持 3/7/15/30 天自动归档，<code>task-expire</code> 每 6h 批量归档。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑧ QUALITY -->
+  <section id="quality">
+    <div class="sec-head"><span class="num">08</span><h2>质量工程</h2><span class="en">Quality Engineering</span></div>
+    <div class="qbadges">
+      <div class="qb ok"><div class="num">0</div><div class="lab">硬编码密钥</div></div>
+      <div class="qb ok"><div class="num">0</div><div class="lab">TODO/FIXME</div></div>
+      <div class="qb warn"><div class="num">1</div><div class="lab">未 wrap（构建脚本）</div></div>
+      <div class="qb warn"><div class="num">1</div><div class="lab">eval/new Function（仅测试）</div></div>
+      <div class="qb blue"><div class="num">9</div><div class="lab">env 读取点</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--acid2)">门禁流水线 <code>npm run gate</code></h3>
+        <div class="gate-flow"><div class="gate-node"><div class="gate-idx">1</div><div class="gate-txt">gen:gateways:check — 校验生成物与路由表一致</div></div><div class="gate-node"><div class="gate-idx">2</div><div class="gate-txt">build:functions — 内核构建期内联进各函数产物</div></div><div class="gate-node"><div class="gate-idx">3</div><div class="gate-txt">build:functions:check — 校验内联结果</div></div><div class="gate-node"><div class="gate-idx">4</div><div class="gate-txt">contract — 前后端契约校验（node --test）</div></div><div class="gate-node"><div class="gate-idx">5</div><div class="gate-txt">lint:js — ESLint 强制</div></div><div class="gate-node"><div class="gate-idx">6</div><div class="gate-txt">format — Prettier 强制</div></div><div class="gate-node"><div class="gate-idx">7</div><div class="gate-txt">test — node --test 全量回归</div></div></div>
+        <p style="font-size:13px;color:var(--muted);margin-top:12px">测试采用 <code>node --test</code>（glob 自动发现），覆盖契约、安全原语、限频、分类路径、网关路由等；GitCode CI 不执行，故门禁设计为本地可用。</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--acid2)">关键依赖（锁版）</h3>
+        <div class="deps"><span class="dep">vue 3.5.13</span><span class="dep">vite 5.2.8</span><span class="dep">typescript 5.8.3</span><span class="dep">pinia 2.2.4</span><span class="dep">z-paging 2.8.8</span><span class="dep">wot-design-uni 1.14.0</span><span class="dep">dayjs ^1.11.13</span><span class="dep">@cloudbase/js-sdk 2.32.0</span><span class="dep">wx-server-sdk 2.6.3</span><span class="dep">esbuild ^0.28.2</span><span class="dep">eslint ^10.11.0</span><span class="dep">prettier ^3.6.2</span><span class="dep">sass ^1.78.0</span><span class="dep">miniprogram-ci ^2.1.31</span><span class="dep">vue-tsc ^2.2.0</span></div>
+        <div class="callout" style="margin:14px 0 0"><b>技术债已清零</b>：无硬编码密钥、无 TODO/FIXME。<code>gen-gateways.js</code> 未用 <code>wrap()</code> 属正常（构建脚本非 handler）；<code>eval/new Function</code> 仅出现在 <code>tests/build-pipeline.test.js</code>，非生产代码。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑨ FRONTEND -->
+  <section id="frontend">
+    <div class="sec-head"><span class="num">09</span><h2>前端细读（uni-app）</h2><span class="en">Frontend Deep-dive</span></div>
+    <div class="card">
+      <h3 style="margin-top:0;color:var(--acid2)">核心层（非页面，全部逐行精读）</h3>
+      <div class="krow"><div class="kmod">utils/api.ts（511行）</div><div class="kdesc">平台分发器：小程序走 wx.cloud.callFunction、H5/App 走 CloudBase REST（restToken）；函数名白名单校验、fn 注入、idempotency、超时竞速、1MB 图片上限 + 质量阶梯压缩（与后端 imgSecCheck 对齐）</div></div><div class="krow"><div class="kmod">adapters/index.ts（401行）</div><div class="kdesc">唯一视图模型映射层：7 个适配器（WallCard/MarketCard/Announcement/LostFound/PostDetail/ProductDetail/MyItem/UserProfile/Guide/Notice/SearchHit），raw→前端字段集中处理，safeId 缺 _id 跳过渲染（无随机 key 兜底）</div></div><div class="krow"><div class="kmod">composables（3个）</div><div class="kdesc">usePagedList（z-paging v2 真实 API，支持 listKey 变体 + 响应式 query + 防并发）；useAction（点赞/收藏/标记已解决，含 already 幂等纠偏）；useComments（楼中楼、乐观插入、失败本地回退）</div></div><div class="krow"><div class="kmod">stores（2个）</div><div class="kdesc">user store：_id 为身份标识（openid 已剥离），restore 静默降级，持久化 omit creditScore/role（服务端权威字段不进本地）；school store：envId/restToken 先于 restore 加载</div></div><div class="krow"><div class="kmod">config/gateway-routes.ts</div><div class="kdesc">由仓库根 gateway-routes.json 自动生成；USE_GATEWAY 灰度/回滚开关；resolveTarget/buildPayload 注入 fn</div></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3 style="margin-top:0;color:var(--acid2)">20 个页面逐页职能（三端共用一份源码）</h3>
+      <table><tr><td class="mono">index 首页</td><td>信息流（推荐/最新/热榜）+ 公告条 + 悬浮发布入口</td></tr><tr><td class="mono">market 二手市集</td><td>商品列表 + 分类横滑筛选 + 封面失败占位</td></tr><tr><td class="mono">wall 表白墙</td><td>kind=confession 流，匿名帖斜切角样式</td></tr><tr><td class="mono">lost-found 失物招领</td><td>lost/found 筛选 + 已解决态</td></tr><tr><td class="mono">post-detail 帖子详情</td><td>点赞/收藏/浏览/标记已解决 + 楼中楼评论 + 图片预览</td></tr><tr><td class="mono">product-detail 商品详情</td><td>状态机（在售/已售/已下架）+ 拨号/复制联系 + 作者二态操作</td></tr><tr><td class="mono">post-create 发帖</td><td>5 类内容 + 分类多级下钻（叶子校验）+ 任务 TTL + clientReqId 幂等 + 编辑回填</td></tr><tr><td class="mono">product-create 发布商品</td><td>价格/成色/交易方式枚举白名单 + 原价≥售价校验 + 编辑回填</td></tr><tr><td class="mono">my-list 我的内容</td><td>帖子/好物/收藏三 tab + 删除确认 + 标记已售二态 + onShow 刷新</td></tr><tr><td class="mono">user-profile 主页</td><td>isSelf 前端比对推导 + 非本人统计脱敏 + 关注/ALREADY 幂等</td></tr><tr><td class="mono">user-update 编辑资料</td><td>改名卡额度校验（RENAME_LIMITED）+ 头像 fileID 上传</td></tr><tr><td class="mono">guide-list 校园指南</td><td>分类筛选（listKey=guides 变体）+ 自定义 query</td></tr><tr><td class="mono">guide-detail 指南详情</td><td>rich-text HTML 清洗（去 script/style/on*/javascript:）+ 内联样式注入</td></tr><tr><td class="mono">notification 通知</td><td>列表 + 单条/全部已读 + 按 targetType 跳转</td></tr><tr><td class="mono">follow 关注/粉丝</td><td>双 tab 独立分页 + 粉丝列表并发 check 关注态（限量 10）</td></tr><tr><td class="mono">checkin 签到</td><td>北京时间周一历 + 连续签到奖励 + 周历由 lastCheckinDate+streak 倒推</td></tr><tr><td class="mono">points 积分商城</td><td>积分兑换改名卡 + 余额不足分支 + 兑换后同步登录态</td></tr><tr><td class="mono">feedback 反馈</td><td>类型（建议/Bug/其他）+ 500 字限长</td></tr><tr><td class="mono">report 举报</td><td>7 类理由 + targetType（post/product/comment）+ ALREADY 幂等</td></tr><tr><td class="mono">search 搜索</td><td>热搜降级 fallback + 350ms 防抖 + 请求序号竞态防护 + 三集合结果</td></tr></table>
+      <div class="callout" style="margin-top:14px">统一模式：<b>写操作带 clientReqId 幂等键</b>（失败重试不重置，防双帖）；<b>乐观更新 + 失败本地回退</b>；<b>列表统一走 usePagedList + z-paging v2 真实 API</b>；<b>图片统一经 uploadImage</b>（1MB 上限 + 质量阶梯压缩，与后端 imgSecCheck 严格对齐）；设计系统「墨荧 · Acid Campus」暗色荧光主题贯穿 20 页（<code>#0D110E</code> 底 / <code>#C8F135</code> 强调色）。</div>
+    </div>
+  </section>
+
+  <!-- ⑩ TESTS -->
+  <section id="tests">
+    <div class="sec-head"><span class="num">10</span><h2>测试覆盖矩阵</h2><span class="en">Test Coverage</span></div>
+    <div class="card">
+      <table><tr><td class="mono">contract.test.js</td><td style="white-space:nowrap">源码契约回归</td><td>admin 删除必须传 openid / follow 幂等插入 / login 剥 openid / user-update 空昵称拦截 / 46 索引与文档双向对齐 / init-db 种子 env / UGC String 化 / README·落地页数字=源码推导事实</td></tr><tr><td class="mono">common-rate.test.js</td><td style="white-space:nowrap">原子限频</td><td>窗口内恰一次放行、越限拒绝、多用户独立、窗口过期重放、max=N 计数、缺 collection 参数 CONFIG_ERROR（fail-closed）</td></tr><tr><td class="mono">common-security.test.js</td><td style="white-space:nowrap">内容安全 fail-closed</td><td>checkAdmin：env 命中 / DB 无配置 false / 文档不存在降级 false / DB 异常 ADMIN_CONFIG_ERROR；checkImage：非 cloud:// 拒 / 87014 拒 / API 不可用拒；checkContent：违规拒 / 异常拒 / 空串不调 API</td></tr><tr><td class="mono">image-check.test.js</td><td style="white-space:nowrap">图片审核链路</td><td>imgSecCheck 必须 Buffer + contentType、禁传 media_url、外链拒、>1MB 明确 IMAGE_TOO_LARGE、非白名单格式拒、下载失败 fail-closed、并发峰值 ≤4</td></tr><tr><td class="mono">image-upload.test.js</td><td style="white-space:nowrap">上传压缩对齐</td><td>前端 1MB 上限=后端、质量阶梯 ≥3 档循环收敛、H5 分支必须压缩、超限就地报错、不可压缩格式显式拒绝</td></tr><tr><td class="mono">removeContent.test.js</td><td style="white-space:nowrap">删除权限</td><td>作者可删 / 管理员（带 openid）可删 / 非管理员 FORBIDDEN / 缺 openid 旧式调用拒绝 / 重复删除幂等 alreadyDeleted</td></tr><tr><td class="mono">category-path.test.js</td><td style="white-space:nowrap">分类链推导</td><td>叶子沿 parentId 回溯 / 祖先停用拒 / 链断裂拒 / 成环拒 / 超 3 级拒 / 写入侧不得落库客户端 categoryPath</td></tr><tr><td class="mono">common-context.test.js</td><td style="white-space:nowrap">鉴权上下文</td><td>getOpenid 缺 OPENID 抛 AUTH_REQUIRED / getCurrentUser 不存在 USER_NOT_FOUND / requireActive banned 抛 USER_BANNED</td></tr><tr><td class="mono">common-db.test.js</td><td style="white-space:nowrap">幂等插入</td><td>isDuplicateKeyError 识别（含 -502001）/ insertIdempotent：成功 true、唯一键冲突 false、真实故障原样抛出</td></tr><tr><td class="mono">common-error.test.js</td><td style="white-space:nowrap">错误模型</td><td>AppError code/status / ok·fail 结构 / wrap 收敛 AppError / 未知异常转 INTERNAL_ERROR 且不泄漏内部信息</td></tr><tr><td class="mono">gateway-routing.test.js</td><td style="white-space:nowrap">路由表治理</td><td>路由表↔源码双向一致无孤儿 / 函数目录 ≤12 / openapi 权限并集不丢 / 定时器保持独立 / 入口由路由表生成 / 无 legacy 副本 / fn 不污染业务数据</td></tr><tr><td class="mono">gateway-dispatch.test.js</td><td style="white-space:nowrap">网关分发（产物级）</td><td>加载 dist 产物：未知 fn UNKNOWN_FUNCTION / 缺 fn 与类型伪装全拒 / 登记 fn 真正到达 handler（AUTH_REQUIRED 为证）/ 跨网关越权拒</td></tr><tr><td class="mono">openapi-permissions.test.js</td><td style="white-space:nowrap">云调用权限</td><td>运行时用到的 openapi 必须声明（否则 fail-closed 发布全拒）/ 最小权限不滥授 / 定时触发器留在独立函数</td></tr><tr><td class="mono">rate-limit-paths.test.js</td><td style="white-space:nowrap">变异路径限频</td><td>16 个写路径全部限频 / 审核必须排在限频之后（防烧穿审核配额）/ 限频主体=服务端身份标量 / 签到由唯一索引防双签</td></tr><tr><td class="mono">build-pipeline.test.js</td><td style="white-space:nowrap">构建内联</td><td>源码目录零内核副本 / 每函数单文件产物可解析 / 产物内联当前内核（文案锚点）/ wx-server-sdk 保持 external / config.json 原样携带 / 产物体积上限</td></tr><tr><td class="mono">common-sync.test.js</td><td style="white-space:nowrap">部署产物内核</td><td>产物限频器必须 fail-closed（禁 fail-open 残留）/ 产物带当前限频文案（内联未失效）/ 内核源码无 fail-open 分支 / 无副本</td></tr></table>
+      <p style="font-size:13px;color:var(--muted);margin-top:14px">共 16 个测试文件（+ tests/lib 辅助库），node --test，全部无需真实云环境：云 SDK 以 wx-server-sdk require 拦截方式注入 mock。多数组测是「历史事故回归防护」（fail-open 限频、media_url 误用、actor 缺 openid、复制内核漂移等），锚定在文本/产物上防止修复被回退。</p>
+    </div>
+  </section>
+
+  <!-- ⑪ CONCLUSION -->
+  <section id="conclusion">
+    <div class="sec-head"><span class="num">11</span><h2>结论与建议</h2><span class="en">Conclusions &amp; Recommendations</span></div>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--acid2)">优势 / 亮点</h3>
+        <ul class="clean">
+          <li><b>架构收敛到位</b>：37 入口→10 单元，共享内核单一数据源，副本漂移从结构上杜绝。</li>
+          <li><b>安全默认 fail-closed</b>：内容审核、管理员判定、定时守卫全部失败即拒绝，无“放行兜底”隐患。</li>
+          <li><b>并发安全</b>：限频原子化 + 计数 <code>_.inc</code> 自修复，避免超发与计数漂移。</li>
+          <li><b>工程纪律强</b>：门禁一键可跑、ESLint/Prettier 入库强制、零 TODO、零硬编码密钥。</li>
+          <li><b>可运维</b>：init-db 索引自检、每日备份、日志生命周期管理齐全。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--yellow)">观察 / 建议</h3>
+        <ul class="clean">
+          <li><b>密钥注入方式</b>：<code>ADMIN_OPENIDS</code>、<code>INIT_SECRET</code>、部署私钥均走环境变量/CI 注入，未硬编码——建议持续保持，并监控 <code>ADMIN_OPENIDS</code> 是否过大扩散。</li>
+          <li><b>前端 REST 凭据</b>：H5/App 走 restToken，需注意小程序端 <code>appid</code> 与云环境绑定关系，避免跨环境误配。</li>
+          <li><b>读侧枚举</b>：<code>user-profile</code> 已加登录门槛+限频+脱敏，建议对其它批量读接口（如 <code>post-list</code> / <code>search</code>）保持 <code>sanitizeQuery</code> 覆盖审计。</li>
+          <li><b>文档体量</b>：约 30 篇文档（7,200+ 行）与代码体量相当，建议保持文档与代码同步更新（已有 CHANGES/HANDOVER 机制）。</li>
+          <li><b>测试覆盖</b>：安全核心路径已有回归测试；建议补充端到端（小程序真机/模拟器）冒烟用例。<b>审计边界：本次未安装依赖实跑测试</b>，测试结论来自逐行阅读用例断言，非运行结果。</li>
+          <li><b>CI 已被移除</b>：仓库最近提交为 <code>remove-ci-workflow</code>，README 亦注明 GitCode 不执行 Actions —— 门禁完全依赖本地 <code>npm run gate</code>，合并前置校验没有自动化卡点。</li>
+          <li><b>管理后台前端入口待确认</b>：uni-app 的 <code>pages.json</code> 只有 20 页且<b>不含 admin / verify / login</b>；<code>api-admin</code> 网关能力完备（封禁/审核/类目/公告/操作审计），但管理界面未落在 uni-app 内（USER_GUIDE 与截图中的 admin/verify 页面名源自旧版原生小程序 23 页结构）。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout"><b>总体评价</b>：CampusHub 是一个工程完成度很高的开源校园社区实现。在 v0.8.1 基线审计报告提出的 P1 问题（限频并发、计数漂移、checkAdmin 失败开放、categoryPath 伪造、读侧枚举、333 重复拷贝、原生小程序→uni-app）已逐一在 v0.9.2–v0.9.5 修复。当前代码<span class="strong-acid">可作为同类型 CloudBase + uni-app 项目的强参考实现</span>。</div>
+  </section>
+
+  <footer>
+    CampusHub 全量代码分析报告 · v0.9.5 · 由 WorkBuddy 逐文件通读（247 文件 / 55,165 行）后自动生成。<br>
+    数据来源：仓库克隆 + 脚本全量扫描（_analyze/analyze.js → DIGEST.md）+ 关键文件逐段精读。所有图表均为离线内联 SVG，无外部依赖。
+  </footer>
+</div>
+</body>
+</html>

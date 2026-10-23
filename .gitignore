@@ -1,9 +1,5 @@
 # Dependencies
 node_modules/
-# 小程序 npm 构建产物（tdesign-miniprogram 全量 + dayjs，约 4.3MB / 1208 文件）出库，
-# 克隆后需先用「微信开发者工具 → 工具 → 构建 npm」生成，再部署（见 docs/DEPLOY.md 第三步
-# 与 docs/NPM_TRIM.md）。产物可由 npm 依赖确定性重建，不入库可避免仓库膨胀与无意义 diff。
-miniprogram/miniprogram_npm/
 
 # Build output
 dist/
@@ -31,7 +27,7 @@ private.key
 # WeChat DevTools private config
 project.private.config.json
 
-# Per-function node_modules (common layer is synced, not installed per function)
+# Per-function node_modules (kernel is inlined at build time, not installed per function)
 cloudfunctions/*/node_modules/
 
 # Coverage / test artifacts
@@ -43,12 +39,12 @@ android/build/
 android/app/build/
 android/local.properties
 # APK 交付物不入库（可执行 npm run build:apk 重建），避免仓库随二进制膨胀
-out/*.apk
-out/plan.md
+out/
 # Android 壳内嵌的 H5 产物由 `node scripts/build-apk.js` 自动同步，不入库
 android/app/src/main/assets/www/
 android/.v2c/
-out/
+# 验证脚本的临时输出
+uni-app/scripts/*.out.txt
 # 测试专用转发桩（由 tests/bootstrap-source-shims 逻辑生成）
 cloudfunctions/*/handlers/common-bundle.js
 cloudfunctions/*/handlers/common-subscribe.js

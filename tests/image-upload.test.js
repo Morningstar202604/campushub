@@ -33,15 +33,16 @@ test('小程序端必须按质量阶梯反复压缩直到达标，而不是只�
 })
 
 test('H5/App 端不得把原图裸传上去（必须有 canvas 或 uni.compressImage 压缩）', () => {
-  // 必须精确取 uploadImage 里的 #ifndef MP 分支：文件其他位置也有同名条件编译标记，
-  // 用首次出现的位置会把小程序分支一起圈进来，导致本用例假通过。
-  const fnStart = API.indexOf('export async function uploadImage')
-  assert.ok(fnStart > 0, '缺少 uploadImage 入口')
-  const body = API.slice(fnStart)
-  const from = body.indexOf('#ifndef MP')
-  assert.ok(from > 0, 'uploadImage 必须有 #ifndef MP 分支')
-  const seg = body.slice(from, body.indexOf('#endif', from))
-  assert.match(seg, /uni\.compressImage|canvas|toBlob|createImageBitmap/, 'H5/App 分支必须做压缩')
+  // uploadImage 只做校验与分发，压缩实现下沉到 compressH5Image；
+  // 断言必须盯住真正做压缩的那个函数，否则重构后用例会假通过。
+  const h5Start = API.indexOf('async function compressH5Image')
+  assert.ok(h5Start > 0, '缺少 H5/App 压缩实现 compressH5Image')
+  const seg = API.slice(h5Start, API.indexOf('async function uploadH5Image'))
+  assert.match(seg, /uni\.compressImage|compressBlobForAudit/, 'H5/App 分支必须做压缩')
+  const upStart = API.indexOf('async function uploadH5Image')
+  const upSeg = API.slice(upStart, API.indexOf('\n}', upStart))
+  assert.match(upSeg, /compressH5Image\(/, 'uploadH5Image 必须走压缩后再上传')
+  assert.match(API, /return uploadH5Image\(/, 'uploadImage 的 #ifndef MP 分支必须委派 uploadH5Image')
 })
 
 test('压缩后仍超限必须就地报错，不能等后端审核才失败', () => {

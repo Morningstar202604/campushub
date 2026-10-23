@@ -75,7 +75,7 @@
 
 | 项 | 说明 |
 |---|---|
-| 小程序端主题 | 导航栏是原生组件，`setNavigationBarColor` 在页面级不生效；**页面内容**会跟随主题，导航栏保持深色 |
+| 小程序端主题 | 已修：`use-theme.ts` 在 `#ifndef H5` 分支调用 `uni.setNavigationBarColor` + `setTabBarStyle`，切浅色后导航栏与 tabBar 同步变米白（`pages.json` 仍是深色编译期常量，作为首帧默认）。**真机需复核**：部分基础库对 `backgroundColor` 有限制，颜色不生效时以页面内容主题为准 |
 | H5/App 端身份 | 已用 HMAC 设备令牌解决（`common-identity.js`）。REST 请求没有 `OPENID` 时，`login` 签发 30 天设备令牌，客户端存本地并回传。**前提是配置 `IDENTITY_SECRET`**，否则退化为 envId 派生盐（弱） |
 | APK 原生能力 | WebView 壳拿不到相机/推送/微信登录，退化为浏览器 API；完整能力需 HBuilderX 云打包 |
 | 搜索 | 正则全表扫描，内容超过约 1 万条后性能下降，需接外部检索 |

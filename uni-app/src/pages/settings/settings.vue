@@ -32,6 +32,9 @@
           <view class="st-row-main">
             <text class="st-row-label">主题</text>
             <text class="st-row-sub">深色为默认，浅色适合强光环境</text>
+            <!-- #ifdef MP -->
+            <text class="st-row-sub">小程序端导航栏与 tabBar 会跟随；页面内容仍为深色（WXSS 不支持属性选择器）</text>
+            <!-- #endif -->
           </view>
         </view>
         <view class="st-seg">

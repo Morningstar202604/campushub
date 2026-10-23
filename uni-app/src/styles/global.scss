@@ -145,6 +145,17 @@ text {
   text-align: center;
   line-height: 1.5;
 }
+/* 空态引导按钮：全站唯一实现，页面里不要再各写一份（重复样式是 F-003 的主因） */
+.empty-cta {
+  margin-top: var(--sp-3);
+  padding: 14rpx 40rpx;
+  background: var(--accent);
+}
+.empty-cta text {
+  font-size: 26rpx;
+  font-weight: var(--fw-title);
+  color: #0d110e;
+}
 
 /* ===== 品牌焦点数字（荧光 + 等宽） ===== */
 .accent-num {
