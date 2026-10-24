@@ -48,6 +48,9 @@ wrangler pages deploy . --project-name=campushub-landing
 ```
 
 > 注意：落地页只能做**外部宣传**，不能放进小程序 webview（个人主体无业务域名功能 + 备案要求）。
+>
+> v0.12.0 现状：官网已用 **GitHub Pages** 免费托管（`Settings → Pages → Deploy from branch: main / root`），
+> 地址 <https://badhope.github.io/campushub/>；`campushub-landing.pages.dev` 只是本文档给出的可选项，**并未部署**。
 
 ---
 

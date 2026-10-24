@@ -3,7 +3,7 @@
 > **一校一署的开源校园内容社区 —— uni-app 一套代码，三端交付（微信小程序 / H5 / 安卓 APK），后端微信云开发零成本起步。**
 > 多级分类、发帖、二手交易、楼中楼评论、签到积分、关注、内容安全、管理后台，开箱即用。
 >
-> 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](../index.html)
+> 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [在线官网](https://badhope.github.io/campushub/) ｜ [落地页源文件](../index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
 [![Version](https://img.shields.io/badge/version-0.12.0-green.svg)](../CHANGELOG.md)

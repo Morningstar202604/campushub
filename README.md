@@ -24,7 +24,8 @@
   💰 <a href="./docs/COST.md">成本</a> ｜
   ⚖️ <a href="./docs/COMPLIANCE.md">合规</a> ｜
   🇨🇳 <a href="./docs/README.zh-CN.md">中文</a> ｜
-  🌐 <a href="./index.html">Landing Page</a>
+  🌐 <a href="https://badhope.github.io/campushub/">在线官网</a> ｜
+  🌐 <a href="./index.html">落地页源文件</a>
 </p>
 
 <p align="center">
