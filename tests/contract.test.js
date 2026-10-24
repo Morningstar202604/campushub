@@ -232,8 +232,9 @@ test('DEPLOY.md 索引清单与 common-indexes.js 双向完全一致（防止漏
   // v0.9.3 审计加固：46 = 45 + idx_verify_requests_status_created（M8: verify_requests 集合补索引）
   // v0.11.0 用户拉黑：48 = 46 + idx_blocks_blocker_created + idx_blocks_blocker_blocked；
   // v0.11.0 站内私信：51 = 48 + 3 个 messages 索引（会话线程 + 收发两侧窗口）
-  assert.strictEqual(srcNames.size, 51, 'common-indexes.js 应为 51 个索引')
-  assert.strictEqual(depNames.size, 51, 'DEPLOY.md 应列出全部 51 个索引')
+  // v0.12.0 内容治理：55 = 51 + posts 回收站 1 + post_revisions 1 + sensitive_words 2
+  assert.strictEqual(srcNames.size, 55, 'common-indexes.js 应为 55 个索引')
+  assert.strictEqual(depNames.size, 55, 'DEPLOY.md 应列出全部 55 个索引')
 })
 
 test('P5: 新增功能已真正落地（备份/公告/审计日志/搜索限频/积分闭环/深分页/海报）', () => {
@@ -432,8 +433,10 @@ test('开源治理：运营方信息外置、无未使用依赖、归档索引�
   ]) {
     assert.ok(fs.existsSync(path.join(ROOT, f)), `缺少 ${f}`)
   }
-  // 已删除的历史物料不得被文档再次引用
-  for (const stale of ['docs/preview.html', 'screenshots/demo.mp4', 'screenshots/overview.png']) {
+  // 已删除的历史物料不得被文档再次引用。
+  // v0.12.0 重新制作了演示视频（docs/screenshots/demo.mp4），因此从本清单移除；
+  // 仍禁止引用旧版 preview.html 与不带 -v1 后缀的旧总览图。
+  for (const stale of ['docs/preview.html', 'screenshots/overview.png']) {
     for (const doc of ['README.md', 'docs/README.zh-CN.md', 'docs/screenshots/README.md']) {
       assert.ok(!read(doc).includes(stale), `${doc} 仍引用已删除的 ${stale}`)
     }

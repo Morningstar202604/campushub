@@ -185,4 +185,11 @@ async function checkAdmin(db, openid) {
   return false
 }
 
-module.exports = { checkContent, checkContents, checkImage, checkImages, checkAdmin }
+module.exports = {
+  checkContent,
+  checkContents,
+  checkImage,
+  checkImages,
+  checkAdmin,
+  IMAGE_MAX_BYTES
+}

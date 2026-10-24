@@ -4,6 +4,8 @@
 const { getDB, getCmd, cloud } = require('./common-db')
 const { AppError } = require('./common-error')
 const { checkAdmin } = require('./common-security')
+const { resolveIdentity } = require('./common-identity')
+const { getCurrentEvent } = require('./common-scope')
 
 /**
  * 软删除一条内容并回收其云存储图片。
@@ -97,14 +99,17 @@ async function removeContent({ collection, docId, actor, opts = {} }) {
 }
 
 /**
- * 浏览量去重自增：同一 openid 对同一文档每天只计 1 次。
+ * 浏览量去重自增：同一身份对同一文档每天只计 1 次。
  * 用"确定性 _id 插入冲突"做天然去重，无额外读开销；任何失败静默降级为不计数。
  * 需要 init-db 预创建 view_logs 集合（_id 主键天然唯一，无需额外索引）。
+ *
+ * 身份必须走 resolveIdentity（而非裸 getWXContext）：H5/APK 走 REST 时没有 OPENID，
+ * 旧实现直接 return false —— 三端里只有小程序能计数，浏览量在 H5 永远是 0。
  */
 async function countViewOnce(collection, docId) {
   try {
-    const wxContext = cloud.getWXContext()
-    const openid = wxContext && wxContext.OPENID
+    const identity = resolveIdentity(getCurrentEvent())
+    const openid = identity && identity.openid
     if (!openid) return false
     const db = getDB()
     const d = new Date(Date.now() + 8 * 3600 * 1000)

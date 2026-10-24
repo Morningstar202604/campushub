@@ -11,11 +11,14 @@ const { fail, bindEvent } = require('./common-bundle')
 
 const HANDLERS = {
   admin: require('./handlers/admin'),
+  'admin-stats': require('./handlers/admin-stats'),
   announcement: require('./handlers/announcement'),
   'category-list': require('./handlers/category-list'),
   'category-manage': require('./handlers/category-manage'),
+  'content-restore': require('./handlers/content-restore'),
   'feedback-create': require('./handlers/feedback-create'),
-  report: require('./handlers/report')
+  report: require('./handlers/report'),
+  'word-manage': require('./handlers/word-manage')
 }
 
 exports.main = async (event, context) => {

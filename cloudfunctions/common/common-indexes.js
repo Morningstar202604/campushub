@@ -149,6 +149,42 @@ const EXPECTED_INDEXES = [
     unique: false
   },
 
+  // ===== posts 回收站：管理员按 status=deleted + updatedAt 倒序列出（v0.12.0）=====
+  {
+    collection: 'posts',
+    name: 'idx_posts_status_updated',
+    fields: [
+      { key: 'status', direction: -1 },
+      { key: 'updatedAt', direction: -1 }
+    ],
+    unique: false
+  },
+
+  // ===== post_revisions（编辑历史：按帖子取最近 N 版）=====
+  {
+    collection: 'post_revisions',
+    name: 'idx_post_revisions_post_created',
+    fields: [
+      { key: 'postId', direction: 1 },
+      { key: 'createdAt', direction: -1 }
+    ],
+    unique: false
+  },
+
+  // ===== sensitive_words（分级敏感词库）=====
+  {
+    collection: 'sensitive_words',
+    name: 'idx_sensitive_words_word',
+    fields: [{ key: 'word', direction: 1 }],
+    unique: true
+  },
+  {
+    collection: 'sensitive_words',
+    name: 'idx_sensitive_words_status',
+    fields: [{ key: 'status', direction: 1 }],
+    unique: false
+  },
+
   // ===== products =====
   {
     collection: 'products',

@@ -64,6 +64,22 @@ function sanitizeQuery(input, allowedKeys) {
   return out
 }
 
+// 分页参数归一：page/pageSize 来自客户端，可能是 'abc' / 0 / 负数 / 超大值。
+// 旧实现直接 `Math.min(100, Math.max(1, Number(pageSize)))`，Number('abc') = NaN 会一路传到
+// .skip(NaN)/.limit(NaN)，云数据库直接报错；负数与超大值也没有统一上限。
+// 统一收敛为：page >= 1，1 <= pageSize <= maxSize，非数字回落默认值。
+function clampInt(v, def, min, max) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return def
+  return Math.min(max, Math.max(min, Math.trunc(n)))
+}
+
+function pageParams(query = {}, { defaultSize = 20, maxSize = 100 } = {}) {
+  const page = clampInt(query.page, 1, 1, 100000)
+  const pageSize = clampInt(query.pageSize, defaultSize, 1, maxSize)
+  return { page, pageSize, skip: (page - 1) * pageSize }
+}
+
 module.exports = {
   cloud,
   initCloud,
@@ -72,5 +88,7 @@ module.exports = {
   getCmd,
   isDuplicateKeyError,
   insertIdempotent,
-  sanitizeQuery
+  sanitizeQuery,
+  clampInt,
+  pageParams
 }

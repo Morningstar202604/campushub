@@ -8,7 +8,6 @@ const {
   AppError,
   ok,
   wrap,
-  cloud,
   getOptionalUser,
   blockedUserIds
 } = require('./common-bundle')
@@ -18,16 +17,16 @@ function toInt(v, def) {
   return Number.isFinite(n) ? n : def
 }
 
-/** 当前用户在本页评论上的点赞 id 集合；未登录/查不到用户 → null（全部视为未赞） */
-async function backfillLikedSet(db, floorIds, replies) {
+/**
+ * 当前用户在本页评论上的点赞 id 集合；未登录/查不到用户 → null（全部视为未赞）。
+ * 身份由调用方传入（getOptionalUser 已按 resolveIdentity 解析）——
+ * 旧实现读 getWXContext().OPENID，H5/APK 恒空，评论点赞在 H5 永远显示未点亮。
+ */
+async function backfillLikedSet(db, viewerId, floorIds, replies) {
+  if (!viewerId) return null
   try {
-    const wxContext = cloud.getWXContext()
-    const openid = wxContext && wxContext.OPENID
-    if (!openid) return null
-    const u = await db.collection('users').where({ openid }).field({ _id: true }).limit(1).get()
-    if (!u.data || !u.data[0]) return null
-    const viewerId = u.data[0]._id
     const allIds = [...floorIds, ...replies.map((r) => r._id)]
+    if (!allIds.length) return new Set()
     const likedRes = await db
       .collection('likes')
       .where({ userId: viewerId, targetId: getCmd().in(allIds), type: 'comment' })
@@ -35,7 +34,7 @@ async function backfillLikedSet(db, floorIds, replies) {
       .get()
     return new Set((likedRes.data || []).map((l) => l.targetId))
   } catch {
-    // 未登录等场景静默降级：全部视为未赞
+    // 查询失败降级：全部视为未赞
     return null
   }
 }
@@ -85,11 +84,12 @@ module.exports = wrap(async (event) => {
   }
 
   // 点赞状态回填：查出当前用户在本页全部评论上的点赞记录
-  const likedSet = await backfillLikedSet(db, floorIds, replies)
+  // （身份只取一次：getOptionalUser 已按 resolveIdentity 解析，兼容小程序 OPENID 与 H5/APK 设备令牌）
+  const viewer = await getOptionalUser()
+  const likedSet = await backfillLikedSet(db, viewer && viewer._id, floorIds, replies)
 
   // 黑名单过滤：拉黑的人发的楼层与整条回复串都不展示（读侧，拉黑方视角）。
   // 在挂载完成后过滤，父楼层被滤掉时其子回复随之消失，不会留孤儿楼层。
-  const viewer = await getOptionalUser()
   const blocked = new Set(await blockedUserIds(viewer && viewer._id))
   const visible = (c) => !blocked.has(c.userId)
 

@@ -220,8 +220,24 @@ onShareAppMessage(() => ({ title: 'CampusHub · {school}', path: '/pages/index/i
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   padding: 32rpx;
+}
+
+/* 右上角「墨荧」徽章 + 设置入口：竖向排列时徽章在上、设置在下，
+   基线对齐让两行文字贴住底边（水平居中的旧写法会把「设置」顶到标题行中间）。 */
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+}
+.header-gear {
+  padding: 4rpx 4rpx;
+}
+.header-gear-text {
+  font-size: 24rpx;
+  color: var(--text-secondary);
 }
 
 .demo-banner {

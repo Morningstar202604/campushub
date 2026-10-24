@@ -15,8 +15,10 @@ const HANDLERS = {
   'post-delete': require('./handlers/post-delete'),
   'post-detail': require('./handlers/post-detail'),
   'post-list': require('./handlers/post-list'),
+  'post-related': require('./handlers/post-related'),
   'post-update': require('./handlers/post-update'),
-  resolve: require('./handlers/resolve')
+  resolve: require('./handlers/resolve'),
+  'revision-list': require('./handlers/revision-list')
 }
 
 exports.main = async (event, context) => {

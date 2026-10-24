@@ -1,10 +1,9 @@
 ﻿// cloudfunctions/guide-list/index.js
 // 校园指南列表：按 categoryId 正确筛选（根本性修复原 category 字段不匹配问题）
-const { getDB, ok, wrap, sanitizeQuery } = require('./common-bundle')
+const { getDB, ok, wrap, sanitizeQuery, pageParams } = require('./common-bundle')
 
 module.exports = wrap(async (event) => {
   const db = getDB()
-  const { page = 1, pageSize = 50 } = event
   // 客户端查询字段过白名单标量断言，防对象/操作符注入 where（v0.9.2 统一口径）
   const { schoolId, categoryId } = sanitizeQuery(event, ['schoolId', 'categoryId'])
 
@@ -23,8 +22,7 @@ module.exports = wrap(async (event) => {
   if (schoolId) where.schoolId = schoolId
   if (categoryId && categoryId !== 'all') where.categoryId = categoryId
 
-  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
-  const size = Math.min(100, Math.max(1, Number(pageSize)))
+  const { pageSize: size, skip } = pageParams(event, { defaultSize: 50, maxSize: 100 })
 
   const guideRes = await db
     .collection('guides')

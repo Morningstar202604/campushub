@@ -1,10 +1,9 @@
-﻿// cloudfunctions/post-detail/index.js
-// 帖子详情：浏览量 + 基于可信 OPENID 的点赞/收藏状态（不再依赖前端传 userId）
-const { cloud, getDB, getCmd, AppError, ok, wrap, countViewOnce } = require('./common-bundle')
+// cloudfunctions/post-detail/index.js
+// 帖子详情：浏览量 + 基于可信身份的点赞/收藏状态（不再依赖前端传 userId）
+const { getDB, AppError, ok, wrap, countViewOnce, resolveIdentity } = require('./common-bundle')
 
 module.exports = wrap(async (event) => {
   const db = getDB()
-  const _ = getCmd()
   const { postId } = event
   if (!postId) throw new AppError('缺少帖子ID', 'INVALID_PARAM')
 
@@ -12,11 +11,14 @@ module.exports = wrap(async (event) => {
   const post = postRes.data
   if (!post || post.status === 'deleted') throw new AppError('帖子不存在或已删除', 'NOT_FOUND')
 
-  // 浏览量按 (openid, 文档, 自然日) 去重自增，防脚本/反复刷新刷量
+  // 浏览量按 (身份, 文档, 自然日) 去重自增，防脚本/反复刷新刷量
   const viewed = await countViewOnce('posts', postId)
   if (viewed) post.viewCount = (post.viewCount || 0) + 1
 
-  const openid = cloud.getWXContext().OPENID
+  // 身份解析必须走 resolveIdentity：H5/APK 走 REST 时没有 OPENID，
+  // 旧实现读 cloud.getWXContext().OPENID → 恒空 → 详情页永远显示「未点赞」。
+  const identity = resolveIdentity(event)
+  const openid = identity && identity.openid
   let isLiked = false
   let isCollected = false
   if (openid) {

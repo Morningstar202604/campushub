@@ -23,12 +23,39 @@
         </view>
         <view class="st-divider"></view>
         <view class="st-row press" @click="goBlocklist">
-          <text class="st-row-main">
+          <view class="st-row-main">
             <text class="st-row-label">黑名单</text>
             <text class="st-row-sub">被拉黑的人的内容不会出现在你的信息流</text>
-          </text>
+          </view>
           <text class="st-arrow">→</text>
         </view>
+        <!-- 管理员专属：治理与运营入口（role 是服务端权威字段，只做入口显隐） -->
+        <template v-if="isAdmin">
+          <view class="st-divider"></view>
+          <view class="st-row press" @click="goDashboard">
+            <view class="st-row-main">
+              <text class="st-row-label">运营仪表盘</text>
+              <text class="st-row-sub">待处理队列 / 规模 / 治理指标</text>
+            </view>
+            <text class="st-arrow">→</text>
+          </view>
+          <view class="st-divider"></view>
+          <view class="st-row press" @click="goWords">
+            <view class="st-row-main">
+              <text class="st-row-label">敏感词库</text>
+              <text class="st-row-sub">拒发 / 替换 / 送审三级词表</text>
+            </view>
+            <text class="st-arrow">→</text>
+          </view>
+          <view class="st-divider"></view>
+          <view class="st-row press" @click="goRecycle">
+            <view class="st-row-main">
+              <text class="st-row-label">内容回收站</text>
+              <text class="st-row-sub">恢复被删除的帖子 / 商品 / 评论</text>
+            </view>
+            <text class="st-arrow">→</text>
+          </view>
+        </template>
       </view>
     </view>
 
@@ -77,10 +104,10 @@
         </view>
         <view class="st-divider"></view>
         <view class="st-row press" @click="goMessages">
-          <text class="st-row-main">
+          <view class="st-row-main">
             <text class="st-row-label">查看私信</text>
             <text class="st-row-sub">与同学的私信会话列表</text>
-          </text>
+          </view>
           <text class="st-arrow">→</text>
         </view>
       </view>
@@ -155,6 +182,7 @@ const schoolStore = useSchoolStore()
 const { theme, setTheme } = useTheme()
 
 const me = computed(() => (userStore.userInfo || {}) as any)
+const isAdmin = computed(() => userStore.userInfo?.role === 'admin')
 const unread = computed(() => userStore.unreadCount || 0)
 const isDemo = computed(() => shouldUseDemo())
 const version = ref('1.0.0')
@@ -204,6 +232,15 @@ function goBlocklist() {
 }
 function goMessages() {
   uni.navigateTo({ url: '/pages/message-list/message-list' })
+}
+function goDashboard() {
+  uni.navigateTo({ url: '/pages/admin/dashboard' })
+}
+function goWords() {
+  uni.navigateTo({ url: '/pages/admin/words' })
+}
+function goRecycle() {
+  uni.navigateTo({ url: '/pages/admin/recycle' })
 }
 function goNotification() {
   uni.navigateTo({ url: '/pages/notification/notification' })

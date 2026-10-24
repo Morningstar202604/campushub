@@ -14,6 +14,8 @@ const {
   checkImages,
   rateLimit,
   isDuplicateKeyError,
+  screenTexts,
+  recordWordFlags,
   resolveCategoryPath
 } = require('./common-bundle')
 
@@ -136,8 +138,24 @@ module.exports = wrap(async (event) => {
     .count()
   if (childCount.total > 0) throw new AppError('请选择更具体的分类', 'INVALID_PARAM')
 
+  // 本地分级词表：replace 命中片段替换、block 直接拒发（比微信审核更可控；
+  // 微信 msgSecCheck 只有通过/拒绝，无法表达「替换后放行」）。
+  const screened = await screenTexts(db, [title, content, safeTags.join(' ')])
+  if (screened.blocked.length) {
+    throw new AppError('内容包含禁止发布的词，请修改后重试', 'CONTENT_RISKY')
+  }
+  const finalTitle = screened.texts[0] ?? title
+  const finalContent = screened.texts[1] ?? content
+  const finalTags = String(screened.texts[2] || '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 10)
+
   // 文本安全：任何异常一律拒绝发布（fail-closed）
-  await checkContents([title, content, safeTags.join(' ')], { openid: user.openid, scene: 2 })
+  await checkContents([finalTitle, finalContent, finalTags.join(' ')], {
+    openid: user.openid,
+    scene: 2
+  })
 
   // 图片安全：同步 imgSecCheck + Buffer（fail-closed，并发受限）
   if (images.length) await checkImages(images)
@@ -167,10 +185,10 @@ module.exports = wrap(async (event) => {
     resolved: false,
     resolvedAt: null,
     type: images.length > 0 ? 'image' : 'text',
-    title,
-    content,
+    title: finalTitle,
+    content: finalContent,
     images,
-    tags: safeTags,
+    tags: finalTags,
     isAnonymous: isAnon,
     authorVerified: user.campusVerified === true,
     likeCount: 0,
@@ -189,6 +207,14 @@ module.exports = wrap(async (event) => {
     .collection('users')
     .doc(user._id)
     .update({ data: { postCount: _.inc(1) } })
+
+  // 命中 flag 级敏感词 → 写一条审核队列记录（与用户举报同一入口处置）
+  await recordWordFlags(db, {
+    flags: screened.flags,
+    targetType: 'post',
+    targetId: addRes._id,
+    snippet: finalTitle || finalContent
+  })
 
   // 落库后回填幂等键结果，供并发/重试请求回查（失败静默，不影响主流程）
   if (idemId) {

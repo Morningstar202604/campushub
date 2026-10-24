@@ -1,6 +1,8 @@
 ﻿// cloudfunctions/report/index.js
 // 举报：登录 + 封禁拦截 + 内容安全 + 频率限制 + 类型白名单 + 防重复举报
-// 写操作统一经 requireActiveUser，封禁用户不可提交举报
+// 支持 post / product / comment / message 四类目标。
+// message（站内私信）只能由会话双方举报，且进入同一审核队列 —— 私信同样是 UGC，
+// 只做发送侧 msgSecCheck 无法覆盖「事后骚扰」场景。
 const {
   getDB,
   AppError,
@@ -11,7 +13,32 @@ const {
   rateLimit
 } = require('./common-bundle')
 
-const VALID_TARGET_TYPES = ['post', 'product', 'comment']
+const VALID_TARGET_TYPES = ['post', 'product', 'comment', 'message']
+
+/** 目标必须存在；message 额外校验举报人是会话参与方（防任意用户举报他人私信） */
+async function assertTargetExists(db, { targetId, targetType, userId }) {
+  if (targetType === 'message') {
+    const res = await db
+      .collection('messages')
+      .doc(targetId)
+      .get()
+      .catch(() => ({ data: null }))
+    const msg = res && res.data
+    if (!msg) throw new AppError('私信不存在', 'NOT_FOUND')
+    if (msg.fromUserId !== userId && msg.toUserId !== userId) {
+      throw new AppError('无权举报该私信', 'FORBIDDEN')
+    }
+    return
+  }
+  const col = targetType === 'post' ? 'posts' : targetType === 'product' ? 'products' : 'comments'
+  const res = await db
+    .collection(col)
+    .doc(targetId)
+    .field({ _id: true, status: true })
+    .get()
+    .catch(() => ({ data: null }))
+  if (!res || !res.data) throw new AppError('举报对象不存在', 'NOT_FOUND')
+}
 
 module.exports = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -24,6 +51,8 @@ module.exports = wrap(async (event) => {
   if (!VALID_TARGET_TYPES.includes(targetType))
     throw new AppError('非法的目标类型', 'INVALID_PARAM')
   if (safeDescription.length > 500) throw new AppError('补充说明不能超过500字', 'INVALID_PARAM')
+
+  await assertTargetExists(db, { targetId, targetType, userId: user._id })
 
   // 防重复举报：同一用户对同一目标只允许一次 pending 举报
   const dupCheck = await db

@@ -9,6 +9,7 @@ const content = require('./common-content')
 const subscribe = require('./common-subscribe')
 const identity = require('./common-identity')
 const blocklist = require('./common-blocklist')
+const words = require('./common-words')
 
 module.exports = {
   ...db,
@@ -19,5 +20,6 @@ module.exports = {
   ...content,
   ...subscribe,
   ...identity,
-  ...blocklist
+  ...blocklist,
+  ...words
 }

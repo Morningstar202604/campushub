@@ -25,7 +25,7 @@ cp config/school.default.json config/school.json
 
 ```bash
 npm install && npm run sync:common && npm run doctor
-# 微信开发者工具逐个上传 37 个云函数（或 scripts/deploy.js 自动化）
+# 微信开发者工具逐个上传 10 个部署单元（或 scripts/deploy.js 自动化）
 # 配置环境变量：SEED_SCHOOL_NAME / SEED_SCHOOL_ID / ADMIN_OPENIDS / INIT_SECRET / TMPL_*
 # 调 init-db 建集合/索引/种子内容 → 确认 missingIndexes 为空
 # app.js 替换 env → 预览发布

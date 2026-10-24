@@ -11,7 +11,7 @@
 
 ```
 campushub/
-├── cloudfunctions/     # 后端：37 个 CloudBase 云函数（唯一事实源）
+├── cloudfunctions/     # 后端：10 个部署单元（7 网关 + 3 独立函数），44 个业务入口
 │   └── common/         # 共享库（ok()/fail()/鉴权/内容安全），随各函数打包
 ├── uni-app/            # 前端：uni-app(Vue3+Vite) 三端，微信小程序 / H5 / 安卓 APK
 │   ├── src/            #   26 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
@@ -38,7 +38,7 @@ campushub/
 ## 三、后端部署（约 30 分钟）
 
 1. CloudBase 控制台创建环境，记下 **envId**（形如 `campushub-1a2b3c`）。
-2. 部署 `cloudfunctions/` 下**全部 37 个函数**（微信开发者工具「云开发」面板右键逐个上传，或 CloudBase CLI 批量；`common/` 是共享库，会被各函数 require，不单独部署）。
+2. 部署 `cloudfunctions/` 下**全部 10 个部署单元**（微信开发者工具「云开发」面板右键逐个上传，或 CloudBase CLI 批量；`common/` 是共享库，会被各函数 require，不单独部署）。
    - 若手动同步过 common：根目录 `package.json` 提供 `sync:common` 脚本。
 3. 控制台开启**HTTP 访问服务**（H5/App 端走 REST 调用必需），鉴权方式按 `docs/DEPLOY.md`，并生成 **restToken**。
 4. 控制台「身份验证登录」开启**匿名登录**（H5/App 端云存储上传/临时链接的前置条件，未开启会导致图片上传失败）。
@@ -74,7 +74,7 @@ npm run type-check         # vue-tsc 全量类型检查（CI 建议保留）
 ## 六、验收清单（逐项打勾后再签收）
 
 **后端**
-- [ ] 37 个云函数全部部署成功，无「缺少 common」报错
+- [ ] 10 个部署单元全部部署成功，无「缺少 common」报错
 - [ ] HTTP 访问服务开启，curl 带 `restToken` 调 `login` 返回 `success:true`
 - [ ] 索引/TTL 建立；`init-db` 执行成功
 - [ ] 定时触发器 `task-expire` 生效

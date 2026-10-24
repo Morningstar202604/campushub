@@ -10,21 +10,14 @@ const {
   wrap,
   sanitizeQuery,
   getOptionalUser,
-  blockedUserIds
+  blockedUserIds,
+  pageParams
 } = require('./common-bundle')
 
 module.exports = wrap(async (event) => {
   const db = getDB()
   const _ = db.command
-  const {
-    tab = 'recommend',
-    page = 1,
-    pageSize = 20,
-    status = 'normal',
-    kind,
-    kinds,
-    cursor
-  } = event
+  const { tab = 'recommend', status = 'normal', kind, kinds, cursor } = event
   // where 字段白名单：客户端可控的 schoolId/categoryId 只做标量断言，
   // 丢弃对象/RegExp/命令型值，避免拼进 .where() 造成查询报错或异常匹配。
   const { schoolId, categoryId } = sanitizeQuery(event, ['schoolId', 'categoryId'])
@@ -68,8 +61,7 @@ module.exports = wrap(async (event) => {
     ])
   }
 
-  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
-  const size = Math.min(100, Math.max(1, Number(pageSize)))
+  const { pageSize: size, skip } = pageParams(event, { defaultSize: 20, maxSize: 100 })
 
   let res
   if (tab === 'hot') {

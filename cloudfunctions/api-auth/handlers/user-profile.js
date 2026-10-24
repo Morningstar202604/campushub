@@ -13,7 +13,8 @@ const {
   wrap,
   requireActiveUser,
   rateLimit,
-  checkAdmin
+  checkAdmin,
+  pageParams
 } = require('./common-bundle')
 /** 兜底读取：与原 `x || d` 等价（null/undefined/''/0/false 都落默认值） */
 function orDefault(v, d = '') {
@@ -110,7 +111,7 @@ async function fetchIsBlocked(db, me, userId) {
 module.exports = wrap(async (event) => {
   const db = getDB()
   const _ = getCmd()
-  const { userId, page = 1, pageSize = 10 } = event
+  const { userId } = event
   if (!userId) throw new AppError('缺少用户ID', 'INVALID_PARAM')
 
   // 登录态门槛：游客直接拒绝
@@ -127,8 +128,7 @@ module.exports = wrap(async (event) => {
     max: 20
   })
 
-  const pSize = Math.min(50, Math.max(1, Number(pageSize)))
-  const skip = Math.max(0, (Number(page) - 1) * pSize)
+  const { pageSize: pSize, skip } = pageParams(event, { defaultSize: 10, maxSize: 50 })
 
   // 获取用户公开资料
   const userRes = await db

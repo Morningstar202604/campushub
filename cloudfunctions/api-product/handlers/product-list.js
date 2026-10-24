@@ -5,7 +5,8 @@ const {
   wrap,
   sanitizeQuery,
   getOptionalUser,
-  blockedUserIds
+  blockedUserIds,
+  pageParams
 } = require('./common-bundle')
 
 function escapeRegExp(s) {
@@ -14,7 +15,6 @@ function escapeRegExp(s) {
 
 module.exports = wrap(async (event) => {
   const db = getDB()
-  const { page = 1, pageSize = 20 } = event
   // 客户端查询字段统一过白名单标量断言（与 post-list 口径一致），防对象/操作符注入 where
   const safe = sanitizeQuery(event, ['schoolId', 'category', 'keyword'])
   const schoolId = safe.schoolId
@@ -36,8 +36,7 @@ module.exports = wrap(async (event) => {
   const blocked = await blockedUserIds(viewer && viewer._id)
   if (blocked.length) where.userId = db.command.nin(blocked)
 
-  const skip = Math.max(0, (Number(page) - 1) * Number(pageSize))
-  const size = Math.min(100, Math.max(1, Number(pageSize)))
+  const { pageSize: size, skip } = pageParams(event, { defaultSize: 20, maxSize: 100 })
 
   const res = await db
     .collection('products')

@@ -1,6 +1,6 @@
 {
   "name": "campushub-uni",
-  "version": "1.0.0",
+  "version": "0.12.0",
   "private": true,
   "description": "CampusHub uni-app (Vue3 + Vite) 三端：小程序 / H5 / 安卓 APK",
   "scripts": {

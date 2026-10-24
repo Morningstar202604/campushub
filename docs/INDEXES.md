@@ -41,6 +41,7 @@
 | idx_posts_status_pinned_created | status(降), isPinned(降), createdAt(降) | 否 |
 | idx_posts_category_status_pinned_created | categoryPath(降), status(降), isPinned(降), createdAt(降) | 否 |
 | idx_posts_status_likes_created | status(降), likeCount(降), createdAt(降) | 否 |
+| idx_posts_status_updated | status(降), updatedAt(降) | 否 |
 
 ### categories
 | 索引名称 | 字段（方向） | 唯一 |
@@ -81,6 +82,19 @@
 | follows | idx_follows_follower_created | followerId(升), createdAt(降) | 否 |
 | follows | idx_follows_following_created | followingId(升), createdAt(降) | 否 |
 | follows | idx_follows_follower_following | followerId(升), followingId(升) | **是** |
+
+### post_revisions（编辑历史，v0.12.0）
+> post-update 每次成功前写入旧值快照，本索引支撑「按帖子取最近 10 版」。
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| post_revisions | idx_post_revisions_post_created | postId(升), createdAt(降) | 否 |
+
+### sensitive_words（分级敏感词库，v0.12.0）
+> word 唯一：同一词条只能有一条（create 前还会查重，唯一索引兜底并发）。
+| 集合 | 索引名称 | 字段（方向） | 唯一 |
+|---|---|---|---|
+| sensitive_words | idx_sensitive_words_word | word(升) | **是** |
+| sensitive_words | idx_sensitive_words_status | status(升) | 否 |
 
 ### blocks
 > ⚠️ `idx_blocks_blocker_blocked` 为**唯一索引**——拉黑操作依赖它做幂等（`insertIdempotent`），并发双点拉黑不会产生重复记录。

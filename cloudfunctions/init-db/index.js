@@ -67,7 +67,10 @@ exports.main = wrap(async (event = {}) => {
     'points_orders',
     // 幂等占位（发帖/发品防闪断双写）/ 统一限频占位（rateLimit 原子化，v0.9.2 取代死集合 profile_views）
     'idempotency',
-    'rate_limits'
+    'rate_limits',
+    // v0.12.0 内容治理：编辑历史快照 / 分级敏感词库
+    'post_revisions',
+    'sensitive_words'
   ]
   for (const name of collections) {
     try {

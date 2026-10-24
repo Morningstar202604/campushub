@@ -7,7 +7,6 @@
     "user-profile": "api-auth",
     "user-update": "api-auth",
     "verify": "api-auth",
-
     "post-list": "api-post",
     "post-detail": "api-post",
     "post-create": "api-post",
@@ -15,17 +14,14 @@
     "post-delete": "api-post",
     "my-list": "api-post",
     "resolve": "api-post",
-
     "product-list": "api-product",
     "product-detail": "api-product",
     "product-create": "api-product",
     "product-update": "api-product",
     "product-delete": "api-product",
-
     "comment-list": "api-comment",
     "comment-create": "api-comment",
     "comment-delete": "api-comment",
-
     "like": "api-social",
     "collect": "api-social",
     "follow": "api-social",
@@ -34,20 +30,22 @@
     "notification": "api-social",
     "checkin": "api-social",
     "points": "api-social",
-
     "admin": "api-admin",
     "category-list": "api-admin",
     "category-manage": "api-admin",
     "announcement": "api-admin",
     "feedback-create": "api-admin",
     "report": "api-admin",
-
     "guide-list": "api-content",
     "guide-detail": "api-content",
     "search": "api-content",
-
     "task-expire": "task-expire",
     "backup-db": "backup-db",
-    "init-db": "init-db"
+    "init-db": "init-db",
+    "revision-list": "api-post",
+    "word-manage": "api-admin",
+    "content-restore": "api-admin",
+    "admin-stats": "api-admin",
+    "post-related": "api-post"
   }
 }

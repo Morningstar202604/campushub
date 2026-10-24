@@ -9,17 +9,17 @@ const {
   wrap,
   requireActiveUser,
   rateLimit,
-  insertIdempotent
+  insertIdempotent,
+  pageParams
 } = require('./common-bundle')
 
 module.exports = wrap(async (event) => {
   const user = await requireActiveUser()
   const db = getDB()
   const _ = getCmd()
-  const { action = 'follow', targetUserId, page = 1, pageSize = 20 } = event
+  const { action = 'follow', targetUserId, page = 1 } = event
 
-  const pSize = Math.min(100, Math.max(1, Number(pageSize)))
-  const skip = Math.max(0, (Number(page) - 1) * pSize)
+  const { pageSize: pSize, skip } = pageParams(event, { defaultSize: 20, maxSize: 100 })
 
   // ---- 关注 / 取关 ----
   if (action === 'follow' || action === 'unfollow') {

@@ -20,7 +20,7 @@ npm run gate         # 一条命令跑完上面除 doctor/verify 外的全部门
 - [ ] `project.config.json` 与 `uni-app/src/manifest.json` 的 AppID 已填
 - [ ] `uni-app/src/config/school.config.js` 的 envId / restToken / operator 已填
 - [ ] 10 个部署单元已上传 + 2 个触发器已上传（第四步）
-- [ ] 46 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
+- [ ] 55 个索引已建全，`init-db` 返回 `missingIndexes: []`（第七步）
 - [ ] 真机预览回归通过（小程序 / H5 / APK 三端各一轮）
 - [ ] 主体资质与类目已确认：**UGC 社区类目需个体工商户及以上主体**，个人主体请先读 [`docs/COMPLIANCE.md`](./COMPLIANCE.md)
 - [ ] 成本方案已确认：开发阶段用云开发免费体验版（¥0），上线前评估转个人版（¥19.9/月），详见 [`docs/COST.md`](./COST.md)
@@ -130,7 +130,7 @@ npm run doctor            # 校验产物新鲜度与权限声明
 >
 > 手动部署方式保留如下，适用于不想装 CLI 的场景。
 
-项目共 **10 个部署单元 / 37 个业务入口**（v0.9.5 起由 37 个函数目录收敛而来），全部需要部署。
+项目共 **10 个部署单元 / 44 个业务入口**（v0.9.5 起由 37 个函数目录收敛而来，v0.12.0 增至 44 个入口），全部需要部署。
 
 ### 4.1 批量部署
 
@@ -139,7 +139,7 @@ npm run doctor            # 校验产物新鲜度与权限声明
 
 10 个部署单元：`api-auth`、`api-post`、`api-product`、`api-comment`、`api-social`、`api-admin`、`api-content`（7 个资源型网关）+ `task-expire`、`backup-db`、`init-db`（3 个独立函数）。
 
-37 个业务入口按 `gateway-routes.json` 分发，清单与寻址规则见 [`GATEWAYS.md`](./GATEWAYS.md)；新增入口只改路由表再跑 `npm run gen:gateways`，不要手改生成物。
+44 个业务入口按 `gateway-routes.json` 分发，清单与寻址规则见 [`GATEWAYS.md`](./GATEWAYS.md)；新增入口只改路由表再跑 `npm run gen:gateways`，不要手改生成物。
 
 ### 4.2 部署定时触发器（共 2 个）
 
@@ -237,7 +237,7 @@ npm run doctor            # 校验产物新鲜度与权限声明
 
 云开发控制台 → 数据库 → 选择集合 →「索引管理」→「新建索引」
 
-### 7.2 索引清单（共 46 个）
+### 7.2 索引清单（共 55 个）
 
 > 完整定义见 `cloudfunctions/common/common-indexes.js` 和 `docs/INDEXES.md`
 
@@ -246,7 +246,7 @@ npm run doctor            # 校验产物新鲜度与权限声明
 |--------|------|------|
 | idx_users_openid | openid(升) | 是 |
 
-**posts**（11个）
+**posts**（12个）
 | 索引名 | 字段 |
 |--------|------|
 | idx_posts_school_status_created | schoolId(降), status(降), createdAt(降) |
@@ -260,6 +260,18 @@ npm run doctor            # 校验产物新鲜度与权限声明
 | idx_posts_status_pinned_created | status(降), isPinned(降), createdAt(降) |
 | idx_posts_category_status_pinned_created | categoryPath(降), status(降), isPinned(降), createdAt(降) |
 | idx_posts_status_likes_created | status(降), likeCount(降), createdAt(降) |
+| idx_posts_status_updated | status(降), updatedAt(降) |
+
+**post_revisions**（1个，编辑历史，v0.12.0）
+| 索引名 | 字段 |
+|--------|------|
+| idx_post_revisions_post_created | postId(升), createdAt(降) |
+
+**sensitive_words**（2个，分级敏感词库，v0.12.0）
+| 索引名 | 字段 | 唯一 |
+|--------|------|------|
+| idx_sensitive_words_word | word(升) | 是 |
+| idx_sensitive_words_status | status(升) | 否 |
 
 **categories**（2个）
 | 索引名 | 字段 |

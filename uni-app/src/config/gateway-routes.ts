@@ -8,6 +8,7 @@ export const USE_GATEWAY = true
 /** 原函数名 → 实际部署的云函数名（等于原名时为直连） */
 export const GATEWAY_ROUTES: Record<string, string> = {
   admin: 'api-admin',
+  'admin-stats': 'api-admin',
   announcement: 'api-admin',
   'backup-db': 'backup-db',
   block: 'api-social',
@@ -18,6 +19,7 @@ export const GATEWAY_ROUTES: Record<string, string> = {
   'comment-create': 'api-comment',
   'comment-delete': 'api-comment',
   'comment-list': 'api-comment',
+  'content-restore': 'api-admin',
   'feedback-create': 'api-admin',
   follow: 'api-social',
   'guide-detail': 'api-content',
@@ -33,6 +35,7 @@ export const GATEWAY_ROUTES: Record<string, string> = {
   'post-delete': 'api-post',
   'post-detail': 'api-post',
   'post-list': 'api-post',
+  'post-related': 'api-post',
   'post-update': 'api-post',
   'product-create': 'api-product',
   'product-delete': 'api-product',
@@ -41,11 +44,13 @@ export const GATEWAY_ROUTES: Record<string, string> = {
   'product-update': 'api-product',
   report: 'api-admin',
   resolve: 'api-post',
+  'revision-list': 'api-post',
   search: 'api-content',
   'task-expire': 'task-expire',
   'user-profile': 'api-auth',
   'user-update': 'api-auth',
-  verify: 'api-auth'
+  verify: 'api-auth',
+  'word-manage': 'api-admin'
 }
 
 export function resolveTarget(name: string): string {

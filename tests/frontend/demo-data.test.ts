@@ -217,7 +217,8 @@ test('demo 黑名单：拉黑后读侧过滤对方内容，解除后恢复（与
     status: 'normal',
     createdAt: new Date().toISOString()
   })
-  memory.set('campushub.demo.v1', { ...raw, __v: 2 })
+  // 保留存储里的真实版本号：写死数字会在 STORE_VERSION 升级时让整条用例静默失效
+  memory.set('campushub.demo.v1', { ...raw, __v: raw.__v })
   // demo-data 的 state 是模块级缓存：必须重新加载模块才会读到新存储
   installUni()
   delete (globalThis as any).__CALL_STUB__
@@ -290,4 +291,80 @@ test('demo 私信：发送落库 + 会话列表/线程/已读/未读数闭环', 
 
   const read: any = await demo.callDemo('message', { action: 'read', withUserId: 'u-2' })
   assert.equal(read.read, true)
+})
+
+/* ---------------- v0.12.0 内容治理（演示层同契约） ---------------- */
+
+test('demo 敏感词：block 词拒发、replace 词替换后落库', async () => {
+  const demo = await freshDemo()
+  // 种子词库：代写代考=block，加微信=replace(****)，急转=flag
+  await assert.rejects(
+    () =>
+      demo.callDemo('post-create', {
+        title: '代写代考',
+        content: '价格优惠',
+        categoryId: 'c-study'
+      }),
+    /禁止发布的词/
+  )
+  const res: any = await demo.callDemo('post-create', {
+    title: '出闲置',
+    content: '想要加微信聊',
+    categoryId: 'c-study'
+  })
+  assert.ok(res.postId)
+  const detail: any = await demo.callDemo('post-detail', { postId: res.postId })
+  assert.equal(detail.post.content, '想要****聊')
+})
+
+test('demo 编辑历史：post-update 前快照旧值，revision-list 返回最近版本', async () => {
+  const demo = await freshDemo()
+  await demo.callDemo('post-update', { postId: 'p1', title: '改过的标题' })
+  const revs: any = await demo.callDemo('revision-list', { postId: 'p1' })
+  assert.ok(revs.list.length >= 1, '应至少有 1 条历史')
+  assert.equal(revs.list[0].title, '图书馆四楼自习位拼团', '快照必须是编辑前的标题')
+})
+
+test('demo 管理台：admin-stats 返回聚合结构；content-restore 恢复软删帖子', async () => {
+  const demo = await freshDemo()
+  const stats: any = await demo.callDemo('admin-stats', { days: 7 })
+  assert.ok(stats.users && stats.posts && stats.products && stats.comments && stats.queue)
+  assert.equal(typeof stats.posts.normal, 'number')
+
+  await demo.callDemo('post-delete', { postId: 'p1' })
+  const bin: any = await demo.callDemo('content-restore', { action: 'list', type: 'post' })
+  assert.ok(bin.list.some((x: any) => x._id === 'p1'), '删除后应出现在回收站')
+  const restored: any = await demo.callDemo('content-restore', {
+    action: 'restore',
+    targetType: 'post',
+    targetId: 'p1'
+  })
+  assert.equal(restored.restored, true)
+  const detail: any = await demo.callDemo('post-detail', { postId: 'p1' })
+  assert.equal(detail.post.status, 'normal')
+})
+
+test('demo 相关阅读：排除当前帖，最多 5 条', async () => {
+  const demo = await freshDemo()
+  const res: any = await demo.callDemo('post-related', { postId: 'p1' })
+  assert.ok(res.list.length > 0 && res.list.length <= 5)
+  assert.ok(!res.list.some((x: any) => x._id === 'p1'), '不得把当前帖推荐给自己')
+})
+
+test('demo 词库管理：新增后立即参与筛查', async () => {
+  const demo = await freshDemo()
+  await demo.callDemo('word-manage', {
+    action: 'create',
+    word: '测试禁用词',
+    wordAction: 'block'
+  })
+  await assert.rejects(
+    () =>
+      demo.callDemo('post-create', {
+        title: '包含测试禁用词',
+        content: '正常内容',
+        categoryId: 'c-study'
+      }),
+    /禁止发布的词/
+  )
 })

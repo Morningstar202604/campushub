@@ -12,7 +12,9 @@ const db = cloud.database()
 const _ = db.command
 const { checkAdmin } = require('./common-bundle')
 
-// 备份集合清单：排除超大日志表 view_logs（可重建）
+// 备份集合清单：排除超大日志表 view_logs / search_queries / rate_limits（可重建或纯运维数据）。
+// v0.12.0 补齐此前遗漏的增量集合：blocks / messages / announcements / points_orders /
+// post_revisions / sensitive_words —— 这些是用户数据或运营配置，丢了无法重建。
 const BACKUP_COLLECTIONS = [
   'users',
   'posts',
@@ -26,8 +28,14 @@ const BACKUP_COLLECTIONS = [
   'reports',
   'feedbacks',
   'follows',
+  'blocks',
+  'messages',
   'checkins',
   'notifications',
+  'announcements',
+  'points_orders',
+  'post_revisions',
+  'sensitive_words',
   'verify_requests'
 ]
 const DEFAULT_RETENTION_DAYS = 7

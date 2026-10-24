@@ -1,9 +1,8 @@
 ﻿// cloudfunctions/product-detail/index.js
-const { cloud, getDB, getCmd, AppError, ok, wrap, countViewOnce } = require('./common-bundle')
+const { getDB, AppError, ok, wrap, countViewOnce, resolveIdentity } = require('./common-bundle')
 
 module.exports = wrap(async (event) => {
   const db = getDB()
-  const _ = getCmd()
   const { productId } = event
   if (!productId) throw new AppError('缺少商品ID', 'INVALID_PARAM')
 
@@ -12,18 +11,19 @@ module.exports = wrap(async (event) => {
   if (!product || product.status === 'deleted')
     throw new AppError('商品不存在或已下架', 'NOT_FOUND')
 
-  // 浏览量按 (openid, 文档, 自然日) 去重自增
+  // 浏览量按 (身份, 文档, 自然日) 去重自增
   const viewed = await countViewOnce('products', productId)
   if (viewed) product.viewCount = (product.viewCount || 0) + 1
 
-  const openid = cloud.getWXContext().OPENID
+  // 与 post-detail 一致：身份走 resolveIdentity，H5/APK 才能拿到点赞/收藏状态
+  const identity = resolveIdentity(event)
+  const openid = identity && identity.openid
   let isLiked = false
   let isCollected = false
   if (openid) {
     const me = await db.collection('users').where({ openid }).field({ _id: true }).get()
     if (me.data && me.data.length) {
       const uid = me.data[0]._id
-      // 与 post-detail 对齐：返回点赞态（修复前端重载后点赞高亮丢失）
       const likeRes = await db
         .collection('likes')
         .where({ userId: uid, targetId: productId, type: 'product' })

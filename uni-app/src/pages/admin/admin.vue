@@ -1,17 +1,24 @@
 <template>
   <view class="adm-page">
-    <!-- 顶栏：标题 + 姊妹页入口（公告 / 类目） -->
+    <!-- 顶栏：标题 + 姊妹页入口（仪表盘 / 公告 / 类目 / 词库 / 回收站） -->
     <view class="adm-top">
       <view class="adm-heading">
         <text class="adm-kicker clip-tag">ADMIN CONSOLE</text>
-        <text class="adm-sub">举报 / 用户 / 认证 / 反馈 / 日志</text>
+        <text class="adm-sub">举报 / 用户 / 认证 / 反馈 / 内容 / 日志</text>
       </view>
       <view class="adm-links">
+        <button class="btn-ghost adm-link press" @click="go('/pages/admin/dashboard')">
+          仪表盘
+        </button>
         <button class="btn-ghost adm-link press" @click="go('/pages/admin/announcements')">
           公告
         </button>
         <button class="btn-ghost adm-link press" @click="go('/pages/admin/categories')">
           类目
+        </button>
+        <button class="btn-ghost adm-link press" @click="go('/pages/admin/words')">词库</button>
+        <button class="btn-ghost adm-link press" @click="go('/pages/admin/recycle')">
+          回收站
         </button>
       </view>
     </view>
@@ -621,7 +628,10 @@ async function onResolveFeedback(f: any) {
 }
 .adm-links {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12rpx;
+  max-width: 420rpx;
 }
 .adm-link {
   font-size: 22rpx;

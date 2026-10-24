@@ -6,7 +6,7 @@
 > 📖 [使用说明书](./USER_GUIDE.md) ｜ 🇨🇳 [中文](#概述) ｜ 🇬🇧 [English](../README.md) ｜ 🌐 [官网落地页](../index.html)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../LICENSE)
-[![Version](https://img.shields.io/badge/version-0.11.0-green.svg)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.12.0-green.svg)](../CHANGELOG.md)
 [![uni-app](https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg)](https://uniapp.dcloud.net.cn/)
 [![GitCode](https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue)](https://gitcode.com/badhope/campushub)
 
@@ -22,7 +22,7 @@
 |---|---|---|---|
 | ![首页](screenshots/v1/index.png) | ![二手市场](screenshots/v1/market.png) | ![失物招领](screenshots/v1/lost-found.png) | ![个人中心](screenshots/v1/user-profile.png) |
 
-📁 [27 张逐页截图](./screenshots/v1/) ｜ 🖼️ [27 页总览长图](./screenshots/overview-v1.png)
+📁 [33 张逐页截图](./screenshots/v1/) ｜ 🖼️ [33 页总览长图](./screenshots/overview-v1.png) ｜ 🎬 [演示视频](./screenshots/demo.mp4)
 
 ---
 
@@ -30,7 +30,7 @@
 
 CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBase）** 的开源校园内容社区，采用「**一校一部署**」模式：
 
-- **一套代码，三端交付**：微信小程序（`wx.cloud.callFunction`）、H5（REST + restToken）、安卓 APK（HBuilderX 云打包），共用 29 个页面与同一套 39 个业务入口（部署在 10 个云函数上）
+- **一套代码，三端交付**：微信小程序（`wx.cloud.callFunction`）、H5（REST + restToken）、安卓 APK（HBuilderX 云打包），共用 32 个页面与同一套 44 个业务入口（部署在 10 个云函数上）
 - 内容**面向本校师生**，每个学校独立部署一个云环境
 - 分类树（分区→版块→子版，三级）**由管理员后台管理**，加学校、开新分类无需改代码
 - 任务类内容支持**自动过期**与**已解决标注**
@@ -40,7 +40,7 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 ## 功能亮点
 
 - 🌳 **多级分类**：`categoryPath` 祖先数组，单一索引覆盖任意层级筛选，发帖限定叶子节点
-- 🏠 **信息流首页**：帖子 + 商品双列瀑布流，推荐 / 热门 / 最新 Tab，分类筛选
+- 🏠 **信息流首页**：单列信息流 + 类型标签，推荐 / 热门 / 最新 Tab，分类筛选
 - 🛒 **二手市场**：类目 / 成色 / 交易方式枚举白名单，标记已售 / 重新上架 / 编辑
 - 💬 **楼中楼评论**：楼层 + 子回复，replyCount 原子回退，计数不漂移
 - ⏳ **任务过期**：3/7/15/30 天 TTL，6 小时 cron 自动归档
@@ -57,10 +57,10 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 | 指标 | 数量 |
 |---|---|
 | 云函数（部署单元） | 10（7 网关 + 3 独立函数；+ 1 共享内核目录） |
-| 业务入口（handler） | 39 |
-| 前端页面 | 26（三端共用） |
-| 数据集合 | 25 |
-| 索引定义 | 51 |
+| 业务入口（handler） | 44 |
+| 前端页面 | 32（三端共用） |
+| 数据集合 | 27 |
+| 索引定义 | 55 |
 | 质量门禁 | `npm run gate`（本地一条命令，平台无关） |
 
 ## 文档导航
@@ -71,18 +71,19 @@ CampusHub 是一个基于 **uni-app（Vue 3 + Vite）+ 微信云开发（CloudBa
 | [验收报告 ACCEPTANCE](./ACCEPTANCE.md) | ★ 验收结论 + 买家可复跑命令 |
 | [部署指南 DEPLOY](./DEPLOY.md) | 从 AppID 到上线的 10 步 |
 | [H5 / 安卓部署](./DEPLOY_H5_ANDROID.md) | 网站静态托管、APK 构建签名与三端一致性自检 |
-| [索引清单 INDEXES](./INDEXES.md) | 51 条索引控制台建卡步骤 |
+| [索引清单 INDEXES](./INDEXES.md) | 55 条索引控制台建卡步骤 |
 | [成本方案 COST](./COST.md) | 免费额度 → 生产 19.9 元/月 |
 | [合规要点 COMPLIANCE](./COMPLIANCE.md) | 个人主体 UGC 合规路径 |
 | [使用说明书 USER_GUIDE](./USER_GUIDE.md) | 面向最终用户 |
 | [全维度审查报告](./AUDIT_REPORT_2026-10-22.md) | 最近一次审查与竞品对标（2026-10-22） |
+| [竞品对标调研](./BENCHMARK.md) | Discourse / Flarum / NodeBB / 校园产品能力矩阵与落地状态（2026-10-24） |
 | [历史文档归档](./archive/) | v0.6.0 / v0.8.1 的过期报告，仅追溯用 |
 
 ## 快速开始
 
 ```bash
 # 后端：npm install → npm run build:functions → 部署 10 个部署单元 → 开 HTTP 访问 + 匿名登录
-#       → init-db 建集合 → 按 INDEXES.md 建 51 条索引 → 5 个部署单元配 ADMIN_OPENIDS
+#       → init-db 建集合 → 按 INDEXES.md 建 55 条索引 → 5 个部署单元配 ADMIN_OPENIDS
 # 前端：cd uni-app && npm install → 填 src/config/school.config.js（envId/restToken/operator）
 cd uni-app
 npm run build:h5           # H5

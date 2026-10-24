@@ -16,8 +16,18 @@
         <text class="empty-title">还没有消息</text>
         <text class="empty-sub">发一条打个招呼吧</text>
       </view>
-      <view v-for="m in list" :key="m._id" :id="'msg-' + m._id" class="chat-row" :class="{ mine: m.isMine }">
-        <view class="chat-bubble">
+      <view
+        v-for="m in list"
+        :key="m._id"
+        :id="'msg-' + m._id"
+        class="chat-row"
+        :class="{ mine: m.isMine }"
+      >
+        <view
+          class="chat-bubble"
+          @longpress="onLongPress(m)"
+          @contextmenu.prevent="onLongPress(m)"
+        >
           <text class="chat-content">{{ m.content }}</text>
           <text class="chat-time tabular-nums">{{ fmtTime(m.createdAt) }}</text>
         </view>
@@ -113,6 +123,31 @@ function scrollToBottom() {
   scrollTop.value = scrollTop.value + 999999
 }
 
+/**
+ * 长按消息：复制 / 举报。
+ * 私信没有独立详情页，举报入口只能挂在消息气泡上（后端 report 已支持 targetType=message，
+ * 且校验举报人必须是会话参与方）。
+ */
+function onLongPress(m: ChatMessage) {
+  if (!m || String(m._id).startsWith("temp-")) return
+  uni.showActionSheet({
+    itemList: ["复制内容", "举报该私信"],
+    success: (r) => {
+      if (r.tapIndex === 0) {
+        uni.setClipboardData({ data: m.content })
+        return
+      }
+      if (r.tapIndex === 1) {
+        const label = encodeURIComponent("私信：" + m.content.slice(0, 16))
+        uni.navigateTo({
+          url: "/pages/report/report?targetId=" + encodeURIComponent(m._id) + "&targetType=message&targetLabel=" + label
+        })
+      }
+    },
+    fail: () => {}
+  })
+}
+
 async function onSend() {
   const content = draft.value.trim()
   if (!content || sending.value) return
@@ -162,6 +197,10 @@ async function onSend() {
 .chat-scroll {
   flex: 1 1 0;
   min-height: 0;
+  /* scroll-view 是自定义组件根节点，不在全局 view,text 的 border-box 重置范围内：
+     不加 box-sizing 时 100% 宽度 + 左右 padding 会撑出 24rpx 横向滚动条。 */
+  width: 100%;
+  box-sizing: border-box;
   padding: 24rpx;
 }
 .chat-tail {

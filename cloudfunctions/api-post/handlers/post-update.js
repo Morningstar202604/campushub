@@ -1,5 +1,5 @@
 // cloudfunctions/post-update/index.js
-// 编辑帖子：仅作者本人可编辑 + fail-closed 内容安全 + 分类校验
+// 编辑帖子：仅作者本人可编辑 + fail-closed 内容安全 + 分类校验 + 编辑历史快照
 // 可编辑字段：title, content, images, tags, categoryId, categoryPath
 // 不可编辑：kind（普通/任务）, isAnonymous, status, 计数字段
 const {
@@ -11,8 +11,11 @@ const {
   checkContents,
   checkImages,
   rateLimit,
-  resolveCategoryPath
+  resolveCategoryPath,
+  screenTexts
 } = require('./common-bundle')
+
+const MAX_REVISIONS = 10
 
 module.exports = wrap(async (event) => {
   const user = await requireActiveUser()
@@ -42,45 +45,54 @@ module.exports = wrap(async (event) => {
   if (post.status === 'deleted') throw new AppError('该帖子已被删除', 'INVALID_PARAM')
   if (post.userId !== user._id) throw new AppError('无权编辑他人帖子', 'FORBIDDEN')
 
-  const patch = {}
-  const textsToCheck = []
-
-  // 标题
+  // 1) 先把客户端字段收敛成 patch（长度/类型校验），再过两道路由级审核：
+  //    本地分级词表（replace 生效 / block 拒绝）→ 微信 msgSecCheck（fail-closed）。
+  const rawPatch = {}
+  const rawTexts = []
   if (title !== undefined) {
     if (!String(title).trim()) throw new AppError('标题不能为空', 'INVALID_PARAM')
     if (String(title).length > 30) throw new AppError('标题不能超过30字', 'INVALID_PARAM')
-    patch.title = String(title).trim()
-    textsToCheck.push(patch.title)
+    rawPatch.title = String(title).trim()
+    rawTexts.push(rawPatch.title)
   }
-
-  // 内容：按帖子类型套上限（创建侧 confession=500/其余=2000，更新侧必须一致，否则可绕过表白墙 500 字限制）
   if (content !== undefined) {
     const maxContent = post.kind === 'confession' ? 500 : 2000
     if (String(content).length > maxContent)
       throw new AppError('内容不能超过' + maxContent + '字', 'INVALID_PARAM')
-    patch.content = String(content).trim()
-    textsToCheck.push(patch.content)
+    rawPatch.content = String(content).trim()
+    rawTexts.push(rawPatch.content)
+  }
+  if (tags !== undefined) {
+    rawPatch.tags = Array.isArray(tags) ? tags.slice(0, 10).map((t) => String(t).slice(0, 20)) : []
+    rawTexts.push(rawPatch.tags.join(' '))
   }
 
-  // 图片
+  const screened = rawTexts.length
+    ? await screenTexts(db, rawTexts)
+    : { texts: [], blocked: [], flags: [] }
+  if (screened.blocked.length) {
+    throw new AppError('内容包含禁止发布的词，请修改后重试', 'CONTENT_RISKY')
+  }
+  let cursor = 0
+  const patch = {}
+  if (rawPatch.title !== undefined) patch.title = screened.texts[cursor++]
+  if (rawPatch.content !== undefined) patch.content = screened.texts[cursor++]
+  if (rawPatch.tags !== undefined) {
+    patch.tags = String(screened.texts[cursor++] || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 10)
+  }
+
   if (images !== undefined) {
     if (!Array.isArray(images) || images.length > 9)
       throw new AppError('图片不能超过9张', 'INVALID_PARAM')
     patch.images = images
     patch.type = images.length > 0 ? 'image' : 'text'
-    // 对新图片做安全检查
     const newImages = images.filter((img) => img && !post.images?.includes(img))
     if (newImages.length) await checkImages(newImages, { openid: user.openid })
   }
 
-  // 标签
-  if (tags !== undefined) {
-    const safeTags = Array.isArray(tags) ? tags.slice(0, 10).map((t) => String(t).slice(0, 20)) : []
-    patch.tags = safeTags
-    textsToCheck.push(safeTags.join(' '))
-  }
-
-  // 分类
   if (categoryId !== undefined) {
     // 祖先链一律服务端推导（含全链 active 校验），不接受客户端 categoryPath
     const { chain: categoryPath, leaf: cat } = await resolveCategoryPath({ db, categoryId })
@@ -95,14 +107,59 @@ module.exports = wrap(async (event) => {
     patch.schoolId = cat.schoolId || post.schoolId || null
   }
 
-  // 文本安全审核（fail-closed）
-  if (textsToCheck.length) {
-    await checkContents(textsToCheck, { openid: user.openid, scene: 2 })
+  // 2) 微信内容安全（fail-closed）：送检的是替换后的最终文本
+  const finalTexts = [patch.title, patch.content, (patch.tags || []).join(' ')].filter(
+    (t) => t !== undefined && String(t).length
+  )
+  if (finalTexts.length) {
+    await checkContents(finalTexts, { openid: user.openid, scene: 2 })
   }
 
   if (Object.keys(patch).length === 0) throw new AppError('没有需要更新的字段', 'INVALID_PARAM')
   patch.updatedAt = new Date()
 
+  // 3) 编辑历史：写入前把旧值快照进 post_revisions（保留最近 MAX_REVISIONS 版）
+  await snapshotRevision(db, post, user._id)
+
   await db.collection('posts').doc(postId).update({ data: patch })
   return ok({ updated: true })
 })
+
+/**
+ * 快照旧版本并裁剪历史。
+ * 失败仅告警：历史是审计增强，不应阻断编辑本身（主流程已通过审核）。
+ */
+async function snapshotRevision(db, post, editorId) {
+  try {
+    await db.collection('post_revisions').add({
+      data: {
+        postId: post._id,
+        title: post.title || '',
+        content: post.content || '',
+        images: Array.isArray(post.images) ? post.images : [],
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        categoryId: post.categoryId || '',
+        editedBy: editorId,
+        createdAt: new Date()
+      }
+    })
+    const old = await db
+      .collection('post_revisions')
+      .where({ postId: post._id })
+      .orderBy('createdAt', 'desc')
+      .skip(MAX_REVISIONS)
+      .limit(20)
+      .get()
+    await Promise.all(
+      (old.data || []).map((r) =>
+        db
+          .collection('post_revisions')
+          .doc(r._id)
+          .remove()
+          .catch(() => {})
+      )
+    )
+  } catch (e) {
+    console.warn('[post-update] 编辑历史写入失败(已忽略):', e && (e.errMsg || e.message))
+  }
+}

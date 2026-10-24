@@ -179,6 +179,24 @@
       "style": {
         "navigationBarTitleText": "用户协议"
       }
+    },
+    {
+      "path": "pages/admin/dashboard",
+      "style": {
+        "navigationBarTitleText": "运营仪表盘"
+      }
+    },
+    {
+      "path": "pages/admin/words",
+      "style": {
+        "navigationBarTitleText": "敏感词库"
+      }
+    },
+    {
+      "path": "pages/admin/recycle",
+      "style": {
+        "navigationBarTitleText": "内容回收站"
+      }
     }
   ],
   "globalStyle": {

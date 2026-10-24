@@ -5,6 +5,37 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [0.12.0] - 2026-10-24
+
+内容治理、运营闭环与跨端一致性。对标 [docs/BENCHMARK.md](docs/BENCHMARK.md) 的 P0/P1 项落地；`npm run gate` 全绿（后端 233 → 244 条，前端 37 → 42 条），vue-tsc 0 错误，H5 / 小程序双端构建通过。
+
+### Added
+- **分级敏感词库（`word-manage` + 内核 `common-words`）**：三级语义 `block`（命中即拒发）/ `replace`（片段替换后放行）/ `flag`（照发但写审核队列）。词表存 `sensitive_words`（`word` 唯一索引），后台可增删改停用；内核 5 分钟缓存，管理台写操作立即失效。接在 `post-create` / `post-update` 的微信 `msgSecCheck` 之前（本地先筛，省审核配额），送审记录复用 `reports`（`source=word_filter`）与用户举报同一处置入口。
+- **编辑历史（`revision-list`）**：`post-update` 在落库前快照旧 title / content / images / tags 到 `post_revisions`，每个帖子保留最近 10 版（写入后自动裁剪）；作者或管理员可读，详情页「历史」弹层展示。刻意不提供回滚：回滚会绕过内容安全审核。
+- **内容回收站（`content-restore`）**：管理员按帖子 / 商品 / 评论列出 `status=deleted` 内容并恢复。恢复用「`deleted → normal` 条件更新」原子占位，只有真正翻转的请求才回补作者计数，重复恢复幂等。删除时已回收的云存储图片不恢复（有意取舍，避免假删除）。
+- **运营仪表盘（`admin-stats`）**：一次请求聚合待处理队列（举报 / 认证 / 反馈）、用户与内容规模、7/30/90 天新增、封禁数、已删帖数、举报平均处理时长；单项 `count` 失败降级为 `null`，不拖垮整页。
+- **相关阅读（`post-related`）**：详情页末尾 5 条同分类热帖，同分类不足时回退全站热帖；纯启发式（分类 + 点赞 + 时间），不引入向量服务。
+- **私信举报**：`report` 新增 `targetType=message`，服务端校验举报人必须是会话参与方（防任意用户举报他人私信）；聊天页长按消息气泡 → 复制 / 举报。
+- **管理台新页**：`pages/admin/dashboard` / `pages/admin/words` / `pages/admin/recycle`；设置页与管理台顶栏均有入口（`role` 仅做显隐，服务端 `checkAdmin` 强制）。
+
+### Changed
+- **跨端身份修复（H5/APK 真实缺陷）**：`post-detail` / `product-detail` 的点赞、收藏状态与 `comment-list` 的评论点赞态、`countViewOnce` 的浏览量去重，此前都直接读 `cloud.getWXContext().OPENID`。H5/APK 走 REST 没有 OPENID → 点赞态恒空、浏览量恒为 0。统一改为 `resolveIdentity` / `getOptionalUser`。
+- **分页参数统一**：新增内核 `pageParams`（`clampInt`），全部列表入口（post/product/comment/follow/block/message/notification/admin 各 list）统一收敛 `page ≥ 1`、`1 ≤ pageSize ≤ max`、非数字回落默认值。旧实现 `Number('abc')` = NaN 会把 `.skip(NaN)` 传进云数据库直接报错。
+- **举报目标存在性校验**：`report` 现在先校验目标存在（帖子 / 商品 / 评论 / 私信），不再允许往不存在的 id 塞举报。
+- **备份集合补齐**：`backup-db` 由 15 个集合扩到 21 个（补 blocks / messages / announcements / points_orders / post_revisions / sensitive_words），此前这些用户数据与运营配置不在备份范围内。
+- **索引 51 → 55**：`idx_posts_status_updated`（回收站）、`idx_post_revisions_post_created`、`idx_sensitive_words_word`（唯一）、`idx_sensitive_words_status`。
+- **集合 25 → 27**：`post_revisions` / `sensitive_words`；`init-db` 同步登记。
+- **业务入口 39 → 44 / 页面 29 → 32 / 内核 12 → 13**：契约测试由源码推导强制同步，README / README.zh-CN / 落地页 / USER_GUIDE / DEPLOY / INDEXES 全部更新。
+- **文档纠偏**：删除 README / USER_GUIDE / 落地页 / COMPLIANCE 中「双列瀑布流」「分享海报 / Canvas 保存相册」「wot-design-uni」等与代码不符的表述；USER_GUIDE 目录重排（移除已不存在的 login / expired 页），补治理三页与编辑历史 / 相关阅读 / 私信举报说明；`uni-app/README.md` 按当前技术栈重写。
+- **展示物料**：33 张逐页截图 + 33 页总览长图 + 演示视频（MP4 / GIF）全部按当前构建产物重录，逐页脚本自动校验横向溢出 / `undefined` 文本 / 控制台错误。
+
+### Fixed
+- **私信页横向溢出**：`scroll-view` 根节点不在全局 `box-sizing` 重置范围内，`width:100%` + 左右 padding 撑出 24rpx 横向滚动条。
+- **设置页行内挤压**：`<text>` 嵌套 `<text>` 在 H5 按行内元素渲染，标题与副标题挤成一行；容器改回块级 `<view>`。
+- **首页右上角错位**：「墨荧」徽章与「设置」横向并排把设置挤到标题中线；改为纵向右对齐。
+- **演示层编辑历史快照顺序**：演示数据层在改字段之后才快照，历史里永远是「新值」；改为先快照后落库（与真后端一致），并补行为测试。
+- **契约测试硬编码版本号**：`demo-data.test.ts` 把 `__v: 2` 写死，`STORE_VERSION` 升级后用例静默失效；改为沿用存储里的真实版本号。
+
 ## [0.11.0] - 2026-10-23
 
 审计路线图收口 + 两个对标差距功能（用户拉黑 / 站内私信）。全部先写失败测试再实现，`npm run gate` 全绿（后端 228 → 235 条，前端 36 → 37 条），vue-tsc 无错误。

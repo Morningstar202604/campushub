@@ -30,7 +30,7 @@ const STORE_KEY = 'campushub.demo.v1'
  * 旧值会覆盖新种子 —— 页面就出现「商品无图」「分类显示英文枚举」这类残缺状态，
  * 且刷新不消失（因为坏数据一直在存储里）。加版本号后旧数据直接丢弃重播。
  */
-const STORE_VERSION = 2
+const STORE_VERSION = 3
 
 /* ---------------------------------- 种子数据 --------------------------------- */
 
@@ -61,6 +61,9 @@ interface DemoState {
   reports: any[]
   verify: { status: string; reason?: string; submittedAt?: string; school?: string }
   pointsOrders: any[]
+  /** v0.12.0：编辑历史 / 分级敏感词库 / 演示管理台状态 */
+  revisions: any[]
+  words: { _id: string; word: string; action: string; replacement: string; status: string; createdAt: string }[]
 }
 
 function seed(): DemoState {
@@ -582,7 +585,34 @@ function seed(): DemoState {
     feedbacks: [],
     reports: [],
     verify: { status: 'none' },
-    pointsOrders: []
+    pointsOrders: [],
+    revisions: [],
+    words: [
+      {
+        _id: 'w1',
+        word: '代写代考',
+        action: 'block',
+        replacement: '',
+        status: 'active',
+        createdAt: ago(9 * DAY)
+      },
+      {
+        _id: 'w2',
+        word: '加微信',
+        action: 'replace',
+        replacement: '****',
+        status: 'active',
+        createdAt: ago(8 * DAY)
+      },
+      {
+        _id: 'w3',
+        word: '急转',
+        action: 'flag',
+        replacement: '',
+        status: 'active',
+        createdAt: ago(7 * DAY)
+      }
+    ]
   }
 }
 
@@ -687,6 +717,32 @@ function notBlocked<T extends { userId?: string }>(s: DemoState, list: T[]): T[]
   const blocked = new Set(s.blocks.map((b) => b.blockedId))
   // userId 缺失的内容无法归属到任何人，不过滤（与后端「无 userId 不参与匹配」一致）
   return list.filter((x) => !x.userId || !blocked.has(x.userId))
+}
+
+/**
+ * 演示层敏感词筛查（与 common-words.js 同语义）：
+ * block 命中直接抛错拒发，replace 命中片段替换，flag 仅记录不阻断。
+ */
+function screenDemoTexts(s: DemoState, texts: any[]) {
+  const blocked: string[] = []
+  const out = (texts || []).map((t) => {
+    let v = String(t == null ? '' : t)
+    const active = (s.words || []).filter((w) => w.status === 'active')
+    for (const rule of active) {
+      if (!rule.word) continue
+      const re = new RegExp(rule.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+      if (!re.test(v)) continue
+      if (rule.action === 'block') {
+        blocked.push(rule.word)
+        continue
+      }
+      if (rule.action === 'flag') continue
+      v = v.replace(re, rule.replacement || '*'.repeat(Math.max(2, rule.word.length)))
+    }
+    return v
+  })
+  if (blocked.length) throw new Error('内容包含禁止发布的词，请修改后重试')
+  return { texts: out }
 }
 
 /* ------------------------------ 管理台（演示） ------------------------------ */
@@ -927,6 +983,7 @@ const handlers: Record<string, Handler> = {
     if (!catId) throw new Error('请选择分类')
     const hasChildren = s.categories.some((c) => c.parentId === catId && c.status === 'active')
     if (hasChildren) throw new Error('请选择更具体的分类')
+    const screened = screenDemoTexts(s, [e.title, e.content])
     const id = nextId('p')
     const isAnon = e.kind === 'confession' ? true : !!e.isAnonymous
     s.posts.unshift({
@@ -942,8 +999,8 @@ const handlers: Record<string, Handler> = {
       categoryPath: buildCategoryPath(e.categoryId || 'c-life'),
       category: categoryNameOf(e.categoryId || 'c-life'),
       kind: e.kind || 'post',
-      title: String(e.title || ''),
-      content: String(e.content || ''),
+      title: screened.texts[0] ?? String(e.title || ''),
+      content: screened.texts[1] ?? String(e.content || ''),
       images: e.images || [],
       tags: e.tags || [],
       location: e.location || '',
@@ -966,8 +1023,25 @@ const handlers: Record<string, Handler> = {
     const s = load()
     const post = s.posts.find((p) => p._id === e.postId)
     if (!post) throw new Error('帖子不存在')
+    const screened = screenDemoTexts(s, [e.title, e.content])
+    // 编辑历史快照必须在改字段之前：先快照旧值，再落新值（与真后端 post-update 一致）
+    s.revisions.unshift({
+      _id: nextId('rv'),
+      postId: post._id,
+      title: post.title || '',
+      content: post.content || '',
+      images: [...(post.images || [])],
+      tags: [...(post.tags || [])],
+      createdAt: new Date().toISOString()
+    })
     for (const k of ['title', 'content', 'images', 'tags', 'categoryId']) {
       if (e[k] !== undefined) post[k] = e[k]
+    }
+    if (e.title !== undefined && screened.texts[0] !== undefined) post.title = screened.texts[0]
+    if (e.content !== undefined && screened.texts[1] !== undefined) post.content = screened.texts[1]
+    const mine = s.revisions.filter((r) => r.postId === post._id)
+    for (const stale of mine.slice(10)) {
+      s.revisions = s.revisions.filter((r) => r._id !== stale._id)
     }
     post.updatedAt = new Date().toISOString()
     save()
@@ -1572,6 +1646,130 @@ const handlers: Record<string, Handler> = {
       return { deleted: true }
     }
     throw new Error('未知操作')
+  },
+
+  'post-related': (e) => {
+    const s = load()
+    const cur = s.posts.find((p) => p._id === e.postId)
+    if (!cur) throw new Error('帖子不存在')
+    const pool = s.posts.filter(
+      (p) => p._id !== cur._id && p.status === 'normal' && !s.blocks.some((b) => b.blockedId === p.userId)
+    )
+    const sameCat = pool.filter((p) => p.categoryId === cur.categoryId)
+    const rest = pool.filter((p) => p.categoryId !== cur.categoryId)
+    const byHot = (a: any, b: any) =>
+      (b.likeCount || 0) - (a.likeCount || 0) || +new Date(b.createdAt) - +new Date(a.createdAt)
+    const list = [...sameCat.sort(byHot), ...rest.sort(byHot)].slice(0, 5).map((p) => ({
+      _id: p._id,
+      title: p.title || '',
+      content: String(p.content || '').slice(0, 60),
+      image: (p.images || [])[0] || '',
+      likeCount: p.likeCount || 0,
+      commentCount: p.commentCount || 0,
+      createdAt: p.createdAt,
+      kind: p.kind || 'post'
+    }))
+    return { list: clone(list) }
+  },
+
+  'revision-list': (e) => {
+    const s = load()
+    const list = s.revisions
+      .filter((r) => r.postId === e.postId)
+      .slice(0, 10)
+    return { list: clone(list), maxVersions: 10 }
+  },
+
+  'word-manage': (e) => {
+    const s = load()
+    if (e.action === 'list') {
+      return { list: clone(s.words), total: s.words.length, page: 1, pageSize: 30 }
+    }
+    if (e.action === 'create') {
+      const word = String(e.word || '').trim()
+      if (!word) throw new Error('请输入敏感词')
+      if (s.words.some((w) => w.word === word)) throw new Error('该词已存在')
+      const id = nextId('w')
+      s.words.unshift({
+        _id: id,
+        word,
+        action: ['block', 'replace', 'flag'].includes(e.wordAction) ? e.wordAction : 'block',
+        replacement: String(e.replacement || ''),
+        status: 'active',
+        createdAt: new Date().toISOString()
+      })
+      save()
+      return { wordId: id }
+    }
+    if (e.action === 'update') {
+      const w = s.words.find((x) => x._id === e.wordId)
+      if (!w) throw new Error('词条不存在')
+      if (e.word !== undefined) w.word = String(e.word)
+      if (e.wordAction !== undefined) w.action = e.wordAction
+      if (e.replacement !== undefined) w.replacement = String(e.replacement)
+      if (e.status !== undefined) w.status = e.status
+      save()
+      return { updated: true }
+    }
+    if (e.action === 'delete') {
+      s.words = s.words.filter((x) => x._id !== e.wordId)
+      save()
+      return { deleted: true }
+    }
+    throw new Error('未知操作')
+  },
+
+  'content-restore': (e) => {
+    const s = load()
+    const col = e.type === 'product' ? s.products : e.type === 'comment' ? s.comments : s.posts
+    if (e.action === 'list') {
+      const rows = col.filter((d: any) => d.status === 'deleted')
+      return { list: clone(rows), total: rows.length, pageSize: 20 }
+    }
+    if (e.action === 'restore') {
+      const doc = col.find((d: any) => d._id === e.targetId)
+      if (!doc) throw new Error('内容不存在')
+      if (doc.status !== 'deleted') return { restored: false, already: true }
+      doc.status = 'normal'
+      doc.updatedAt = new Date().toISOString()
+      save()
+      return { restored: true }
+    }
+    throw new Error('未知操作')
+  },
+
+  'admin-stats': (e) => {
+    const s = load()
+    const days = Math.min(90, Math.max(1, Number(e.days) || 7))
+    const since = Date.now() - days * 86400000
+    const recent = (d: any) => +new Date(d.createdAt || 0) > since
+    return {
+      days,
+      users: {
+        total: 1,
+        banned: s.user.verifyStatus === 'banned' ? 1 : 0,
+        new: 1
+      },
+      posts: {
+        normal: s.posts.filter((p) => p.status === 'normal').length,
+        deleted: s.posts.filter((p) => p.status === 'deleted').length,
+        new: s.posts.filter((p) => p.status === 'normal' && recent(p)).length
+      },
+      products: {
+        total: s.products.filter((p) => p.status !== 'deleted').length,
+        onSale: s.products.filter((p) => p.status === 'on_sale').length
+      },
+      comments: {
+        normal: s.comments.filter((c) => c.status === 'normal').length,
+        new: s.comments.filter((c) => c.status === 'normal' && recent(c)).length
+      },
+      queue: {
+        reports: s.reports.filter((r) => r.status === 'pending').length,
+        verifies: s.verify.status === 'pending' ? 1 : 0,
+        feedbacks: s.feedbacks.filter((f) => f.status === 'pending').length
+      },
+      avgResolveHours: 6.5
+    }
   },
 
   admin: (e) => {

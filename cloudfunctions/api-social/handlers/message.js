@@ -19,7 +19,8 @@ const {
   wrap,
   requireActiveUser,
   rateLimit,
-  checkContents
+  checkContents,
+  pageParams
 } = require('./common-bundle')
 
 const CONTENT_MAX = 500
@@ -225,8 +226,7 @@ module.exports = wrap(async (event) => {
   const db = getDB()
   const { action = 'conversations' } = event
 
-  const page = Math.max(1, Number(event.page) || 1)
-  const pSize = Math.min(100, Math.max(1, Number(event.pageSize) || 20))
+  const { page, pageSize: pSize } = pageParams(event, { defaultSize: 20, maxSize: 100 })
 
   if (action === 'send') {
     // 限频先于一切：审核配额有限且 fail-closed，先审后限等于允许脚本耗尽配额（同 v0.9.4 修订）

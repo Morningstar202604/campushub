@@ -16,6 +16,7 @@ const {
   getDB,
   getCmd,
   AppError,
+  pageParams,
   ok,
   wrap,
   getOpenid,
@@ -69,9 +70,8 @@ module.exports = wrap(async (event) => {
   }
 
   if (action === 'list-reports') {
-    const { page = 1, pageSize = 20 } = event
-    const pSize = Math.min(100, Math.max(1, Number(pageSize) || 20))
-    const skip = Math.max(0, (Number(page) - 1) * pSize)
+    const { page = 1 } = event
+    const { pageSize: pSize, skip } = pageParams(event, { defaultSize: 20, maxSize: 100 })
     const [listRes, totalRes] = await Promise.all([
       db
         .collection('reports')
@@ -268,9 +268,8 @@ module.exports = wrap(async (event) => {
 
   // ---- 用户列表（分页 + 搜索） ----
   if (action === 'list-users') {
-    const { keyword, page = 1, pageSize = 20 } = event
-    const pSize = Math.min(100, Math.max(1, Number(pageSize)))
-    const skip = Math.max(0, (Number(page) - 1) * pSize)
+    const { keyword, page = 1 } = event
+    const { pageSize: pSize, skip } = pageParams(event, { defaultSize: 20, maxSize: 100 })
     const where = {}
     if (keyword && String(keyword).trim()) {
       where.nickname = db.RegExp({
@@ -303,9 +302,8 @@ module.exports = wrap(async (event) => {
 
   // ---- 反馈列表 ----
   if (action === 'list-feedbacks') {
-    const { page = 1, pageSize = 20 } = event
-    const pSize = Math.min(100, Math.max(1, Number(pageSize)))
-    const skip = Math.max(0, (Number(page) - 1) * pSize)
+    const { page = 1 } = event
+    const { pageSize: pSize, skip } = pageParams(event, { defaultSize: 20, maxSize: 100 })
     const [listRes, totalRes] = await Promise.all([
       db.collection('feedbacks').orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
       db.collection('feedbacks').count()
@@ -395,9 +393,8 @@ module.exports = wrap(async (event) => {
   }
   // ---- 审计日志查询 ----
   if (action === 'list-logs') {
-    const { page = 1, pageSize = 30 } = event
-    const pSize = Math.min(100, Math.max(1, Number(pageSize)))
-    const skip = Math.max(0, (Number(page) - 1) * pSize)
+    const { page = 1 } = event
+    const { pageSize: pSize, skip } = pageParams(event, { defaultSize: 20, maxSize: 100 })
     const [listRes, totalRes] = await Promise.all([
       db.collection('admin_logs').orderBy('createdAt', 'desc').skip(skip).limit(pSize).get(),
       db.collection('admin_logs').count()

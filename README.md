@@ -2,38 +2,43 @@
 
 # CampusHub
 
-> **An open-source campus content community, delivered to three platforms from one codebase — WeChat Mini Program / H5 / Android, powered by uni-app + Tencent CloudBase.**
-> Multi-level categories, posts, second-hand market, threaded comments, check-in streaks, follows, content moderation, and an admin console — ready out of the box, near-zero cost.
+> **一个开源校园内容社区，一套代码交付三端：微信小程序 / H5 / 安卓 APK —— uni-app + 腾讯云开发（CloudBase）。**
+> 多级分类、发帖、二手市集、楼中楼评论、表白墙、失物招领、私信与拉黑、签到积分、分级敏感词、编辑历史、回收站、运营仪表盘。
+> **克隆即用**：不填任何云配置也能以本地演示模式完整浏览与操作。
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License"/></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.11.0-green.svg" alt="Version"/></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.12.0-green.svg" alt="Version"/></a>
   <a href="https://uniapp.dcloud.net.cn/"><img src="https://img.shields.io/badge/uni--app-Vue%203%20·%20Vite-42b883.svg" alt="uni-app"/></a>
   <a href="https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html"><img src="https://img.shields.io/badge/WeChat-CloudBase-orange.svg" alt="CloudBase"/></a>
-  <a href="https://gitcode.com/badhope/campushub"><img src="https://img.shields.io/badge/GitCode-badhope%2Fcampushub-blue" alt="GitCode"/></a>
   <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"/></a>
 </p>
 
 <p align="center">
   📖 <a href="./docs/USER_GUIDE.md">使用说明书</a> ｜
-  🚀 <a href="./docs/DEPLOY.md">部署上线指南</a> ｜
-  📱 <a href="./docs/DEPLOY_H5_ANDROID.md">H5 / 安卓部署</a> ｜
-  ✅ <a href="./docs/LAUNCH_CHECKLIST.md">上线检查清单</a> ｜
-  🔍 <a href="./docs/AUDIT_REPORT_2026-10-22.md">全维度审查报告</a> ｜
-  💰 <a href="./docs/COST.md">成本方案</a> ｜
-  ⚖️ <a href="./docs/COMPLIANCE.md">合规要点</a> ｜
-  🇨🇳 <a href="./docs/README.zh-CN.md">中文文档</a> ｜
+  🚀 <a href="./docs/DEPLOY.md">部署上线</a> ｜
+  📱 <a href="./docs/DEPLOY_H5_ANDROID.md">H5 / 安卓</a> ｜
+  🎯 <a href="./docs/BENCHMARK.md">竞品对标</a> ｜
+  ✅ <a href="./docs/LAUNCH_CHECKLIST.md">上线清单</a> ｜
+  🔍 <a href="./docs/AUDIT_REPORT_2026-10-22.md">审查报告</a> ｜
+  💰 <a href="./docs/COST.md">成本</a> ｜
+  ⚖️ <a href="./docs/COMPLIANCE.md">合规</a> ｜
+  🇨🇳 <a href="./docs/README.zh-CN.md">中文</a> ｜
   🌐 <a href="./index.html">Landing Page</a>
 </p>
 
-> If this project helps you, please give it a ⭐ **Star** on <a href="https://gitcode.com/badhope/campushub">GitCode</a> so more campuses can find it. Issues and PRs are welcome.
+<p align="center">
+  <b>三端同源</b> · <b>一校一署</b> · <b>10 个部署单元 / 44 个业务入口</b> · <b>27 集合 / 55 索引</b> · <b>244 后端 + 42 前端测试</b> · <b>内容安全 fail-closed</b>
+</p>
+
+> 如果这个项目对你有帮助，欢迎在 <a href="https://gitcode.com/badhope/campushub">GitCode</a> 点一个 ⭐ Star。
 
 ---
 
 ## 📸 Screenshots / 截图
 
-> 以下 27 张为当前「墨荧 · Acid Campus」设计的**真实运行截图**（H5 构建产物、390×844 实机渲染、逐页实测无溢出/无报错）。
-> 深色为默认主题，浅色主题可在「设置 → 主题」切换（导航栏与 tabBar 同步跟随）。
+> 以下 **33 张**为当前「墨荧 · Acid Campus」设计的**真实运行截图**（H5 构建产物、390×844 视口 @2x、逐页实测无溢出 / 无控制台报错）。
+> 深色为默认主题，浅色可在「设置 → 主题」切换（H5/App 导航栏与 tabBar 同步跟随）。
 
 <p align="center">
   <img src="docs/screenshots/v1/index.png" alt="首页" width="150" />
@@ -44,16 +49,20 @@
 </p>
 <p align="center">
   <img src="docs/screenshots/v1/product-detail.png" alt="商品详情" width="150" />
-  <img src="docs/screenshots/v1/post-create.png" alt="发布" width="150" />
-  <img src="docs/screenshots/v1/my-list.png" alt="我的内容" width="150" />
-  <img src="docs/screenshots/v1/points.png" alt="积分商城" width="150" />
-  <img src="docs/screenshots/v1/checkin.png" alt="签到" width="150" />
+  <img src="docs/screenshots/v1/dashboard.png" alt="运营仪表盘" width="150" />
+  <img src="docs/screenshots/v1/words.png" alt="敏感词库" width="150" />
+  <img src="docs/screenshots/v1/recycle.png" alt="内容回收站" width="150" />
+  <img src="docs/screenshots/v1/settings.png" alt="设置" width="150" />
 </p>
 
 <p align="center">
-  <a href="./docs/screenshots/overview-v1.png"><b>查看 27 页总览长图</b></a> ｜
+  <a href="./docs/screenshots/overview-v1.png"><b>33 页总览长图</b></a> ｜
+  <a href="./docs/screenshots/demo.mp4">30 秒演示视频（MP4）</a> ｜
+  <a href="./docs/screenshots/demo.gif">GIF 预览</a> ｜
   <a href="./docs/screenshots/v1/">逐页查看</a>
 </p>
+
+![演示动图](docs/screenshots/demo.gif)
 
 | 页面 | 文件 | 页面 | 文件 |
 |---|---|---|---|
@@ -69,10 +78,13 @@
 | 个人主页 | `v1/user-profile.png` | 公告管理 | `v1/announcements.png` |
 | 编辑资料 | `v1/user-update.png` | 类目管理 | `v1/categories.png` |
 | 校园指南 | `v1/guide-list.png` | 指南详情 | `v1/guide-detail.png` |
-| 设置 | `v1/settings.png` | 用户协议 | `v1/legal-agreement.png` |
-| 隐私政策 | `v1/legal-privacy.png` | | |
+| 黑名单 | `v1/block-list.png` | 私信列表 | `v1/message-list.png` |
+| 聊天 | `v1/chat.png` | 设置 | `v1/settings.png` |
+| 用户协议 | `v1/legal-agreement.png` | 隐私政策 | `v1/legal-privacy.png` |
+| 运营仪表盘 | `v1/dashboard.png` | 敏感词库 | `v1/words.png` |
+| 内容回收站 | `v1/recycle.png` | | |
 
-> 截图全部来自当前构建产物（`uni-app/dist/build/h5`，390×844 视口），旧版白蓝主题图已随 v0.10.0 清理，不再保留历史版本目录。
+> 截图与视频全部来自当前构建产物（`uni-app/dist/build/h5`，390×844 视口），逐页脚本自动检查了横向溢出、`undefined`/`NaN` 文本与控制台错误。
 
 ## 🎯 Overview / 项目简介
 
@@ -80,7 +92,7 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 | 核心能力 | 说明 |
 |---|---|
-| **一套代码 · 三端交付** | uni-app（Vue 3 + Vite）：微信小程序、H5、安卓 APK 共用 29 个页面与全部业务逻辑 |
+| **一套代码 · 三端交付** | uni-app（Vue 3 + Vite）：微信小程序、H5、安卓 APK 共用 32 个页面与全部业务逻辑 |
 | **多级分类** | Zone（校区/兴趣圈）→ Category（版块大类）→ Board（子版），后台 UI 即可调整，无需改代码 |
 | **多元内容** | 帖子、任务、失物、招领、表白、二手商品、校园指南等 7 类内容 |
 | **完整闭环** | 发帖 → 评论 → 点赞收藏 → 关注 → 通知 → 管理审核，覆盖社区全链路 |
@@ -105,9 +117,9 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 系统由 **uni-app 三端前端 → 云函数 API 层 → 微信云开发后端** 三层构成：
 
-- **前端**：uni-app（Vue 3 + Vite），29 个页面，pinia 状态管理 + z-paging 分页 + wot-design-uni 组件，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 39 个业务入口复用（部署在 10 个云函数上）
-- **API 层**：39 个业务入口收敛为 **7 个资源型网关**（auth / post / product / comment / social / admin / content）+ 3 个独立函数（2 个定时器 + init-db）；入口按 `event.fn` 分发，鉴权/限频/审核仍在各入口内部执行。寻址表见 `gateway-routes.json`，说明见 [docs/GATEWAYS.md](docs/GATEWAYS.md)
-- **共享内核**：`cloudfunctions/common/` 下 12 个模块（context / identity / scope / security / rate / db / content / indexes / error / bundle / subscribe / blocklist）只保留一份源码，由 `build:functions`（esbuild）在构建期内联进每个函数产物 —— 部署物永远等于当前源码，副本漂移在结构上不可能（详见 [docs/SYNC.md](docs/SYNC.md)）
+- **前端**：uni-app（Vue 3 + Vite），32 个页面，pinia 状态管理 + z-paging 分页，设计系统「墨荧 · Acid Campus」；微信小程序端走 `wx.cloud.callFunction`，H5 / App 端走 REST（CloudBase HTTP 访问服务 + restToken），同一套 44 个业务入口复用（部署在 10 个云函数上）
+- **API 层**：44 个业务入口收敛为 **7 个资源型网关**（auth / post / product / comment / social / admin / content）+ 3 个独立函数（2 个定时器 + init-db）；入口按 `event.fn` 分发，鉴权/限频/审核仍在各入口内部执行。寻址表见 `gateway-routes.json`，说明见 [docs/GATEWAYS.md](docs/GATEWAYS.md)
+- **共享内核**：`cloudfunctions/common/` 下 13 个模块（context / identity / scope / security / rate / db / content / indexes / error / bundle / subscribe / blocklist / words）只保留一份源码，由 `build:functions`（esbuild）在构建期内联进每个函数产物 —— 部署物永远等于当前源码，副本漂移在结构上不可能（详见 [docs/SYNC.md](docs/SYNC.md)）
 - **后端**：CloudBase 云数据库（25 集合 / 51 索引）、云存储、云调用（内容安全）、定时触发器（03:00 自动备份 · 6h 任务归档 + 日志清理）
 - **v0.9.2 加固**：限频原子化（`rate_limits` 确定性 _id 占位 + 原子自增，杜绝并发绕过）、读侧查询白名单（`sanitizeQuery`）、定时函数管理员守卫（fail-closed）
 
@@ -127,30 +139,30 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 
 | 特性 | 描述 |
 |---|---|
-| 📱 **三端交付** | 微信小程序 / H5 / 安卓 APK 一套代码；HBuilderX 云打包出 APK |
+| 📱 **三端交付** | 微信小程序 / H5 / 安卓 APK 一套代码；小程序走 `wx.cloud`，H5/App 走 REST + HMAC 设备令牌 |
 | 🌳 **多级分类** | Zone → Category → Board（3 级）；`categoryPath` 祖先数组支持任意层级筛选；发帖限定叶子节点 |
-| 🏠 **Feed 首页** | 双列瀑布流（帖子 + 商品）；推荐 / 热门 / 最新 Tab；分类筛选；过期归档入口 |
-| 📝 **富文本帖子** | 图文混排、分类、标签、匿名发帖、图片预览；编辑模式回填（帖子和商品均支持） |
-| ⏳ **任务与过期** | 任务帖支持 3/7/15/30 天 TTL；6 小时 cron 自动归档过期任务；作者/管理员可标记「已解决」|
-| 🛒 **二手市场** | 商品列表、价格/成色/交易方式枚举白名单、联系信息、标记已售/重新上架、编辑商品 |
-| 💬 **嵌套评论** | 楼层 + 子回复（replyCount 原子回退）、评论点赞、@ 回复 |
-| 👥 **关注系统** | 关注/取关、粉丝/关注数、个人主页 |
-| 📅 **每日签到** | 连续签到 + 积分 + 每周奖励（北京时间唯一索引防双签） |
-| 🔔 **站内通知** | 点赞、评论、关注自动生成通知 |
-| 📚 **校园指南** | 新生指南、学习攻略等文章，支持分类筛选 |
-| 🔍 **搜索** | 跨集合搜索（帖子 / 商品 / 指南），标题 + 正文匹配，热词聚合最近 7 天 |
-| 👤 **用户主页** | 公开资料、最近发布、关注按钮（他人视角脱敏） |
-| 🛡️ **内容安全** | 全部 UGC 经微信内容安全接口；**fail-closed**：异常/超限/违规均拒绝发布 |
-| ⚛️ **原子限频** | 统一 `rate_limits` 窗口占位（v0.9.2）：主键唯一性保证窗口内恰一次放行，杜绝并发绕过 |
-| ⚙️ **管理后台** | 举报审核、封禁/解封、置顶/精华、用户列表、反馈管理、类目 CRUD、公告管理、操作审计 |
-| 📣 **公告栏** | 管理员发布，首页顶部展示 ≤3 条，支持置顶 |
-| 🪙 **积分商城** | 签到积分兑换改名卡，首次改名免费 |
-| 💾 **自动备份** | 每日 03:00 自动快照核心集合到 `backups`，保留 7 天；截断显式标记 |
-| 🧹 **日志生命周期** | `task-expire` 定时清理 90 天前浏览日志与过期限频占位（云开发无自动 TTL） |
-| 🖼️ **分享海报** | 一键生成 Canvas 分享卡片，保存到相册 |
-| 📜 **游标分页** | 后端最新 feed 与评论已支持游标分页（深层滚动不丢序）；uni-app 前端当前仍走 page/pageSize 分页，游标接入为待办项 |
-
----
+| 🏠 **信息流首页** | 单列信息流 + 类型标签；推荐 / 最新 / 热榜；置顶优先；下拉刷新与分页 |
+| 📝 **图文帖子** | 标题 / 正文 / 最多 9 图 / 标签 / 匿名 / 5 种内容类型；发布与编辑均走内容安全 |
+| ⏳ **任务与过期** | 任务帖 3/7/15/30 天 TTL；6 小时 cron 归档；作者或管理员标记已解决 |
+| 🛒 **二手市集** | 类目 / 成色 / 交易方式枚举白名单；标记已售 / 重新上架；联系方式一键复制或拨号 |
+| 💬 **楼中楼评论** | 楼层 + 子回复；评论点赞；删除级联与计数回退；单楼 500 字上限 |
+| 👥 **关注与主页** | 关注/取关、粉丝与关注列表、他人主页脱敏（不返回信用分等敏感统计） |
+| 🚫 **拉黑** | 单向读侧过滤（信息流 / 市集 / 评论），对方无感知；黑名单管理页；私信双向拦截 |
+| ✉️ **站内私信** | 会话按双方 id 排序拼接；发送过审 + 限频 + 双向拉黑；未读数；长按可复制或举报 |
+| 🔔 **通知中心** | 点赞 / 评论 / 关注 / 私信 / 系统通知；未读角标；点击直达对应详情 |
+| 📅 **签到与积分** | 连续签到加成；北京时间自然日 + 唯一索引防双签；积分兑换改名卡 |
+| 🔍 **搜索** | 帖子 / 商品 / 指南跨集合检索；本地转义防正则注入；7 天热搜聚合；服务端限频 |
+| 🎓 **校园认证** | 学号 + 证件照人工审核；通过后内容带「已认证」；驳回可重提 |
+| 🛡️ **内容安全** | 微信 `msgSecCheck` / `imgSecCheck` **fail-closed** + 本地三级词表（拒发 / 替换 / 送审） |
+| 🧾 **编辑历史** | 每次编辑前快照旧值，作者与管理员可查最近 10 版（`revision-list`） |
+| ♻️ **内容回收站** | 管理员列出软删内容并恢复，回补计数且重复恢复幂等 |
+| ⚛️ **原子限频** | `rate_limits` 确定性 `_id` 占位 + 原子自增，并发不可绕过 |
+| ⚙️ **管理台** | 举报审核、封禁、置顶/加精、用户/认证/反馈、公告、类目、词库、回收站、审计日志 |
+| 📊 **运营仪表盘** | 一次聚合待处理队列、用户/内容规模、7/30/90 天新增、平均处理时长 |
+| 📣 **公告栏** | 管理员发布，首页顶部展示 ≤5 条，支持置顶与上下线 |
+| 💾 **自动备份** | 每日 03:00 快照 21 个业务集合到 `backups`，保留 7 天；截断显式标记 |
+| 🧹 **日志生命周期** | `task-expire` 清理 90 天前浏览日志与过期限频占位（云开发无自动 TTL） |
+| 🖼️ **分享** | 小程序原生分享（帖子 / 商品 / 市集 / 表白墙 / 指南），H5 走浏览器分享 |
 
 ## ⚙️ Tech Stack / 技术栈
 
@@ -158,11 +170,11 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 |---|---|
 | 前端框架 | uni-app（Vue 3 + Vite），三端：微信小程序 / H5 / 安卓 |
 | 状态管理 | pinia 2.2.4 + pinia-plugin-persistedstate 4.1.3（锁版） |
-| 列表/组件 | z-paging 2.8.8（分页）· wot-design-uni 1.14.0（组件库） |
+| 列表/组件 | z-paging 2.8.8（分页）· 自建设计系统组件（无第三方 UI 库） |
 | H5/App 云端接入 | @cloudbase/js-sdk 2.32.0（v2 API：匿名登录 + uploadFile/getTempFileURL）+ REST（restToken） |
-| 后端服务 | 微信云开发云函数 × 10 个部署单元（39 个业务入口） |
+| 后端服务 | 微信云开发云函数 × 10 个部署单元（44 个业务入口） |
 | 数据存储 | 微信云数据库（25 集合 / 51 索引）+ 云存储 |
-| 开放能力 | 微信登录、内容安全 `msgSecCheck` / `imgSecCheck`、Canvas 海报 |
+| 开放能力 | 微信登录、内容安全 `msgSecCheck` / `imgSecCheck`、订阅消息 |
 | 质量工具链 | `npm run gate`（网关生成校验 → 构建内联 → 契约 → ESLint → Prettier → 测试）· ESLint/Prettier 已入库强制 · CI 见 `.github/workflows` |
 | 构建脚本 | `scripts/build-functions.js`（11 个内核模块构建期内联到各云函数产物）· `scripts/gen-gateways.js`（由路由表生成网关） |
 
@@ -173,10 +185,10 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 | 指标 | 数量 |
 |---|---|
 | 云函数（部署单元） | 10 = 7 资源型网关 + 3 独立函数（定时器 ×2 / 初始化） |
-| 业务入口（handler） | 39 |
-| 前端页面 | 26（uni-app，三端共用） |
-| 数据集合 | 25 |
-| 已定义索引 | 51（`init-db` 自动比对缺失清单） |
+| 业务入口（handler） | 44 |
+| 前端页面 | 32（uni-app，三端共用） |
+| 数据集合 | 27 |
+| 已定义索引 | 55（`init-db` 自动比对缺失清单） |
 | 质量门禁 | `npm run gate` 一条命令全跑（Actions 在 GitCode 不执行，故门禁必须本地可用） |
 
 ---
@@ -186,12 +198,12 @@ CampusHub 是一个基于 **uni-app 三端（微信小程序 / H5 / 安卓 APK�
 ```
 CampusHub/
 ├── uni-app/                  # ★ 前端（uni-app Vue3 三端：微信小程序 / H5 / 安卓 APK）
-│   ├── src/                  #    29 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
+│   ├── src/                  #    32 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
 │   ├── scripts/              #    可复跑校验脚本（纯 Python 标准库，无需装包）
 │   ├── docs/                 #    安卓打包手册 / 设计系统 / 版本基线
 │   └── README.md             #    前端架构与启动说明
 ├── gateway-routes.json       # ★ 业务入口 → 部署单元 的唯一寻址表
-├── cloudfunctions/           # 10 个部署单元（7 网关 + 3 独立函数）+ common 内核，39 个业务入口
+├── cloudfunctions/           # 10 个部署单元（7 网关 + 3 独立函数）+ common 内核，44 个业务入口
 │   ├── common/               # ★ 共享内核层（单一数据源）
 │   │   ├── common-bundle.js  # 一行的聚合导出
 │   │   ├── common-context.js # 用户上下文 & 鉴权
@@ -200,7 +212,7 @@ CampusHub/
 │   │   ├── common-rate.js    # 原子限频（rate_limits 窗口占位，v0.9.2）
 │   │   ├── common-db.js      # 数据库单例 + sanitizeQuery
 │   │   ├── common-content.js # 内容删除（软删 + 图片回收 + 计数回滚 + 对账）
-│   │   ├── common-indexes.js # 51 条索引权威定义
+│   │   ├── common-indexes.js # 55 条索引权威定义
 │   │   └── common-error.js   # 统一错误模型
 │   ├── api-post/             # 资源型网关：post-* / resolve 等 7 个入口
 │   ├── api-admin/            # 资源型网关：admin / category-* / announcement 等 6 个入口
@@ -213,7 +225,7 @@ CampusHub/
 │   ├── DEPLOY.md             # ★ 部署指南（10 步）
 │   ├── GATEWAYS.md           # 网关形态与上线/回滚顺序
 │   ├── USER_GUIDE.md         # 使用说明书
-│   ├── INDEXES.md            # 51 条索引检查清单
+│   ├── INDEXES.md            # 55 条索引检查清单
 │   ├── COST.md / COMPLIANCE.md / OPERATIONS.md
 │   ├── screenshots/          # ★ 当前版本逐页截图（v1/）+ 总览长图
 │   ├── archive/              # 历史报告归档（v0.6.0 / v0.8.1，仅追溯用）
@@ -246,7 +258,7 @@ npm install                # 1. 安装依赖
 npm run build:functions    # 2. 把内核内联进各云函数，产出 dist/cloudfunctions/
                            # 2. 微信开发者工具导入本仓库 → 上传部署 cloudfunctions/ 全部函数
                            # 3. 控制台开启「HTTP 访问服务」生成 restToken；「身份验证」开启匿名登录
-                           # 4. 调用一次 init-db（建集合 + 种子数据）；索引按 docs/INDEXES.md（51 条）核对
+                           # 4. 调用一次 init-db（建集合 + 种子数据）；索引按 docs/INDEXES.md（55 条）核对
                            # 5. 配置管理员 OpenID（云函数环境变量 ADMIN_OPENIDS）
 
 # ── 前端（uni-app 三端）──────────────────────────
@@ -321,7 +333,7 @@ node scripts/restore-backup.js --date 2026-10-22 --yes
 - **单一删除入口**：`removeContent()` 统一处理软删除 + 云存储图片回收 + 计数回滚 + 管理员覆盖
 - **定时任务守卫**：`backup-db` / `task-expire` fail-closed——定时触发放行，手动调用仅限管理员
 - **分类索引复用**：`categoryPath` 祖先数组让一个索引覆盖任意层级筛选
-- **索引自检**：`init-db` 对比 `common-indexes.js`（51 条）与线上索引，输出 `missingIndexes`
+- **索引自检**：`init-db` 对比 `common-indexes.js`（55 条）与线上索引，输出 `missingIndexes`
 - **软删除优先**：删除只改 `status='deleted'`，保留数据可追踪性
 - **搜索安全**：关键词正则转义 + 20 字符限制，避免 ReDoS / 注入
 - **成本可控**：开发期使用云开发免费环境，生产环境 19.9 元/月起
@@ -332,7 +344,10 @@ node scripts/restore-backup.js --date 2026-10-22 --yes
 
 详见 [`CHANGELOG.md`](./CHANGELOG.md)。
 
-**Latest: v0.11.0** — 审计路线图收口 + 两个对标差距功能：云函数超时显式配置（网关 20s / 备份 60s，修复带图发布随机超时）、4 个高复杂度函数拆分（CC 全部 ≤10）、**用户拉黑**（读侧过滤，对方无感知）、**站内私信**（审核 + 限频 + 拉黑双向拦截）（0.11.0）→ 开源治理与审计收口（0.10.0）→ 三端身份链路打通（0.9.5 之后）→ 37 个云函数收敛为 10 个部署单元（0.9.5）。
+**Latest: v0.12.0** — 内容治理与运营闭环：**分级敏感词库**（拒发 / 替换 / 送审，后台可维护）、**编辑历史**（作者与管理员可查最近 10 版）、**内容回收站**（软删可恢复，计数回补幂等）、**运营仪表盘**（一次聚合队列与规模）、**相关阅读**、**私信举报**、私信/评论/详情页的跨端身份修复（H5 点赞态与浏览量此前恒空）、统一分页参数校验、备份集合补齐 6 个。
+
+历史：v0.11.0 用户拉黑 + 站内私信 + 超时显式配置 → v0.10.0 开源治理与审计收口 → v0.9.5 三端身份链路打通 → v0.9.5 之前 37 个云函数收敛为 10 个部署单元。
+
 
 ---
 
