@@ -28,7 +28,7 @@
 </p>
 
 <p align="center">
-  <b>三端同源</b> · <b>一校一署</b> · <b>10 个部署单元 / 44 个业务入口</b> · <b>27 集合 / 55 索引</b> · <b>244 后端 + 42 前端测试</b> · <b>内容安全 fail-closed</b>
+  <b>三端同源</b> · <b>一校一署</b> · <b>10 个部署单元 / 44 个业务入口</b> · <b>27 集合 / 55 索引</b> · <b>248 后端 + 42 前端测试</b> · <b>内容安全 fail-closed</b>
 </p>
 
 > 如果这个项目对你有帮助，欢迎在 <a href="https://gitcode.com/badhope/campushub">GitCode</a> 点一个 ⭐ Star。

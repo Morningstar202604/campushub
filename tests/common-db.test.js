@@ -69,3 +69,38 @@ test('insertIdempotent：插入成功返回 true，唯一键冲突返回 false�
   assert.equal(await insertIdempotent('likes', {}), false) // 冲突 → 幂等 false
   await assert.rejects(() => insertIdempotent('likes', {}), /db down/) // 真实故障 → 抛出
 })
+
+
+/* ---------------- v0.12.0 分页参数收敛 ---------------- */
+
+test('pageParams：非法页码/页宽回落默认值，并夹在合法区间内', () => {
+  const { pageParams } = loadCommonDb()
+  assert.deepEqual(pageParams({ page: 'abc', pageSize: 'xyz' }), {
+    page: 1,
+    pageSize: 20,
+    skip: 0
+  })
+  assert.deepEqual(pageParams({ page: 0, pageSize: 0 }, { defaultSize: 20, maxSize: 100 }), {
+    page: 1,
+    pageSize: 1,
+    skip: 0
+  })
+  assert.deepEqual(pageParams({ page: -5, pageSize: 999 }, { defaultSize: 20, maxSize: 50 }), {
+    page: 1,
+    pageSize: 50,
+    skip: 0
+  })
+  assert.deepEqual(pageParams({ page: 3, pageSize: 10 }), { page: 3, pageSize: 10, skip: 20 })
+  // 小数向下取整，避免 skip 出现非整数
+  assert.deepEqual(pageParams({ page: 2.9, pageSize: 7.8 }), { page: 2, pageSize: 7, skip: 7 })
+})
+
+test('clampInt：边界与 NaN/Infinity 行为固定', () => {
+  const { clampInt } = loadCommonDb()
+  assert.equal(clampInt(undefined, 20, 1, 100), 20)
+  assert.equal(clampInt(NaN, 20, 1, 100), 20)
+  assert.equal(clampInt(Infinity, 20, 1, 100), 20)
+  assert.equal(clampInt(-Infinity, 20, 1, 100), 20)
+  assert.equal(clampInt(0, 20, 1, 100), 1)
+  assert.equal(clampInt(1000, 20, 1, 100), 100)
+})

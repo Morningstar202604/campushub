@@ -371,3 +371,162 @@ test('report：私信只能由会话参与方举报', async () => {
   const okRes = await rp.main({ targetId: 'm1', targetType: 'message', reason: '骚扰' })
   assert.equal(okRes.success, true, JSON.stringify(okRes))
 })
+
+/* --------------------- 跨端身份：H5/APK 无 OPENID 的场景 --------------------- */
+
+test('post-detail / product-detail / comment-list：H5 设备令牌下点赞态正确回填', async () => {
+  // 模拟 REST：wxContext 没有 OPENID，只带 __identity 设备令牌
+  mem.reset()
+  process.env.IDENTITY_SECRET = 'test-secret-at-least-16-chars-long'
+  if (env) env.restore()
+  env = mem.install({
+    wxContext: {},
+    openapi: { security: { msgSecCheck: async () => ({}), imgSecCheck: async () => ({}) } }
+  })
+  mem.purge(path.join('cloudfunctions', 'common'))
+  process.env.ADMIN_OPENIDS = ADMIN_OPENID
+
+  const identity = require(path.join(CF, 'common', 'common-identity.js'))
+  const token = identity.issueToken('devuid123')
+  const openid = 'dev_devuid123'
+
+  mem.coll('users').set('u-dev', {
+    _id: 'u-dev',
+    openid,
+    nickname: 'H5 用户',
+    verifyStatus: 'unverified',
+    campusVerified: false,
+    campusVerifyStatus: 'none',
+    creditScore: 100,
+    postCount: 0,
+    productCount: 0,
+    collectCount: 0,
+    followerCount: 0,
+    followingCount: 0,
+    renameTokens: 0
+  })
+  mem.coll('posts').set('p1', {
+    _id: 'p1',
+    userId: 'u-dev',
+    userNickname: 'H5 用户',
+    title: 'T',
+    content: 'C',
+    images: [],
+    kind: 'post',
+    status: 'normal',
+    isAnonymous: false,
+    likeCount: 1,
+    commentCount: 0,
+    collectCount: 1,
+    viewCount: 0,
+    createdAt: new Date()
+  })
+  mem.coll('products').set('pr1', {
+    _id: 'pr1',
+    userId: 'u-dev',
+    userNickname: 'H5 用户',
+    title: 'P',
+    images: ['cloud://x/1.jpg'],
+    price: 1,
+    status: 'on_sale',
+    likeCount: 1,
+    collectCount: 1,
+    viewCount: 0,
+    createdAt: new Date()
+  })
+  mem.coll('likes').set('l1', {
+    _id: 'l1',
+    userId: 'u-dev',
+    targetId: 'p1',
+    type: 'post',
+    createdAt: new Date()
+  })
+  mem.coll('collects').set('c1', {
+    _id: 'c1',
+    userId: 'u-dev',
+    targetId: 'p1',
+    type: 'post',
+    createdAt: new Date()
+  })
+  mem.coll('likes').set('l2', {
+    _id: 'l2',
+    userId: 'u-dev',
+    targetId: 'cmt1',
+    type: 'comment',
+    createdAt: new Date()
+  })
+  mem.coll('comments').set('cmt1', {
+    _id: 'cmt1',
+    targetId: 'p1',
+    targetType: 'post',
+    userId: 'u-dev',
+    userNickname: 'H5 用户',
+    content: '评论',
+    parentId: null,
+    likeCount: 1,
+    status: 'normal',
+    createdAt: new Date()
+  })
+
+  const detail = loadUnit('api-post', 'post-detail')
+  const res = await detail.main({ postId: 'p1', __identity: token })
+  assert.equal(res.success, true, JSON.stringify(res))
+  assert.equal(res.isLiked, true, 'H5 设备令牌下点赞态必须回填（旧实现读 OPENID 恒 false）')
+  assert.equal(res.isCollected, true, 'H5 设备令牌下收藏态必须回填')
+  assert.ok(res.post.viewCount >= 1, '浏览量必须能计数（旧实现无 OPENID 直接跳过）')
+
+  const comments = loadUnit('api-comment', 'comment-list')
+  const cl = await comments.main({ targetId: 'p1', __identity: token })
+  assert.equal(cl.success, true, JSON.stringify(cl))
+  assert.equal(cl.list[0].liked, true, 'H5 设备令牌下评论点赞态必须回填')
+
+  const prod = loadUnit('api-product', 'product-detail')
+  const pr = await prod.main({ productId: 'pr1', __identity: token })
+  assert.equal(pr.success, true, JSON.stringify(pr))
+  assert.equal(pr.isLiked, false, '该商品未点赞，应为 false 而不是因身份丢失而为 false')
+  assert.equal(pr.isCollected, false)
+
+  delete process.env.IDENTITY_SECRET
+})
+
+test('post-related：排除当前帖，最多 5 条，同分类优先', async () => {
+  mem.reset()
+  seedCategories()
+  seedUser()
+  seedPost({ _id: 'cur', categoryId: 'c-leaf', categoryPath: ['c-root', 'c-leaf'] })
+  for (let i = 0; i < 7; i++) {
+    mem.coll('posts').set(`same${i}`, {
+      _id: `same${i}`,
+      userId: 'u1',
+      title: `同分类${i}`,
+      content: 'x',
+      images: [],
+      kind: 'post',
+      status: 'normal',
+      categoryId: 'c-leaf',
+      likeCount: i,
+      commentCount: 0,
+      createdAt: new Date()
+    })
+  }
+  mem.coll('posts').set('other', {
+    _id: 'other',
+    userId: 'u1',
+    title: '别的分类',
+    content: 'x',
+    images: [],
+    kind: 'post',
+    status: 'normal',
+    categoryId: 'c-other',
+    likeCount: 999,
+    commentCount: 0,
+    createdAt: new Date()
+  })
+  actAs(USER_OPENID)
+  const { main } = loadUnit('api-post', 'post-related')
+  const res = await main({ postId: 'cur' })
+  assert.equal(res.success, true, JSON.stringify(res))
+  assert.equal(res.list.length, 5)
+  assert.ok(!res.list.some((p) => p._id === 'cur'), '不得推荐当前帖')
+  assert.ok(res.list.every((p) => p.categoryId === undefined || p.categoryId === 'c-leaf'))
+})

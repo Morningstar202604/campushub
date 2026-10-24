@@ -1,4 +1,4 @@
-# 云函数收敛：37 个入口 → 10 个部署单元
+# 云函数收敛：44 个入口 → 10 个部署单元
 
 > 状态：**代码已收敛并本地全绿，尚未在任何云环境部署验证**。
 > 因此本分支不直接合入 main；请按下面的上线顺序在 dev 环境走一遍再合。
@@ -12,7 +12,7 @@
 | 收敛前 | 收敛后 |
 |---|---|
 | 37 个云函数目录（= 37 个部署单元） | **10 个部署单元**：7 个资源型网关 + `task-expire` / `backup-db` / `init-db` |
-| 业务入口与部署单元 1:1 | 业务入口仍是 37 个（handler），只是住在网关里 |
+| 业务入口与部署单元 1:1 | 业务入口仍是 44 个（handler），只是住在网关里 |
 | 37 份 `config.json` 权限声明 | 10 份，且由路由表推导并集 |
 | 产物合计约 341KB / 10 函数（内核内联 10 次） | 对比收敛前 37 函数需内联 37 次 |
 
@@ -21,11 +21,11 @@
 | 部署单元 | 承载入口 |
 |---|---|
 | `api-auth` | login、user-profile、user-update、verify |
-| `api-post` | post-list、post-detail、post-create、post-update、post-delete、my-list、resolve |
+| `api-post` | post-list、post-detail、post-create、post-update、post-delete、my-list、resolve、revision-list、post-related |
 | `api-product` | product-list、product-detail、product-create、product-update、product-delete |
 | `api-comment` | comment-list、comment-create、comment-delete |
 | `api-social` | like、collect、follow、notification、checkin、points |
-| `api-admin` | admin、category-list、category-manage、announcement、feedback-create、report |
+| `api-admin` | admin、admin-stats、category-list、category-manage、announcement、feedback-create、report、word-manage、content-restore |
 | `api-content` | guide-list、guide-detail、search |
 | 独立函数 | task-expire（6h 定时）、backup-db（03:00 定时）、init-db（控制台手动） |
 

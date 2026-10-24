@@ -15,7 +15,7 @@
 ```bash
 npm run gate      # 8 阶段：gen:gateways:check → build:functions → build:functions:check
                   #        → contract → lint:js → format → test → test:frontend
-                  # 当前基线：后端 244 / 前端 42，全绿
+                  # 当前基线：后端 248 / 前端 42，全绿
 npm run verify    # 发布级静态校验：页面映射 / 版本徽章 / 治理文件 / 云函数结构
 npm run lint      # UI 层 lint：隐私接口清单 / 全局原子类重定义 / 空态 emoji
 cd uni-app && ./node_modules/.bin/vue-tsc --noEmit   # 前端类型检查（CI 也跑）

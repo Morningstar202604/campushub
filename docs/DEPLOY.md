@@ -489,7 +489,7 @@ mp.weixin.qq.com → 版本管理 → 开发版本 → 提交审核
 
 ```
 CampusHub/
-├── uni-app/               # 前端（uni-app Vue 3 三端：微信小程序 / H5 / 安卓 APK，26 个页面）
+├── uni-app/               # 前端（uni-app Vue 3 三端：微信小程序 / H5 / 安卓 APK，32 个页面）
 │   └── src/config/school.config.js  # 多校配置唯一入口（envId / restToken / operator）
 ├── cloudfunctions/        # 云函数源码（7 网关 + 3 独立函数 = 10 个部署单元）
 │   └── common/            # 共享内核层（单一事实源，构建期内联）

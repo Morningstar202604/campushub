@@ -186,7 +186,11 @@ test('关键页面必须有可达入口（此前 report/guide-list/follow 零链
   for (const [page, why] of [
     ['/pages/report/report', '举报页'],
     ['/pages/guide-list/guide-list', '校园指南'],
-    ['/pages/follow/follow', '关注列表']
+    ['/pages/follow/follow', '关注列表'],
+    // v0.12.0 三个治理页：入口在管理台顶栏 + 设置页，两处任一都必须存在
+    ['/pages/admin/dashboard', '运营仪表盘'],
+    ['/pages/admin/words', '敏感词库'],
+    ['/pages/admin/recycle', '内容回收站']
   ] as const) {
     assert.ok(all.includes(page), `${why}（${page}）必须有入口，否则注册了也点不到`)
   }

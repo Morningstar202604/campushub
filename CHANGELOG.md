@@ -7,7 +7,7 @@
 
 ## [0.12.0] - 2026-10-24
 
-内容治理、运营闭环与跨端一致性。对标 [docs/BENCHMARK.md](docs/BENCHMARK.md) 的 P0/P1 项落地；`npm run gate` 全绿（后端 233 → 244 条，前端 37 → 42 条），vue-tsc 0 错误，H5 / 小程序双端构建通过。
+内容治理、运营闭环与跨端一致性。对标 [docs/BENCHMARK.md](docs/BENCHMARK.md) 的 P0/P1 项落地；`npm run gate` 全绿（后端 233 → 248 条，前端 37 → 42 条），vue-tsc 0 错误，H5 / 小程序双端构建通过。
 
 ### Added
 - **分级敏感词库（`word-manage` + 内核 `common-words`）**：三级语义 `block`（命中即拒发）/ `replace`（片段替换后放行）/ `flag`（照发但写审核队列）。词表存 `sensitive_words`（`word` 唯一索引），后台可增删改停用；内核 5 分钟缓存，管理台写操作立即失效。接在 `post-create` / `post-update` 的微信 `msgSecCheck` 之前（本地先筛，省审核配额），送审记录复用 `reports`（`source=word_filter`）与用户举报同一处置入口。

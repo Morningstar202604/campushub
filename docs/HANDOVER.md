@@ -14,7 +14,7 @@ campushub/
 ├── cloudfunctions/     # 后端：10 个部署单元（7 网关 + 3 独立函数），44 个业务入口
 │   └── common/         # 共享库（ok()/fail()/鉴权/内容安全），随各函数打包
 ├── uni-app/            # 前端：uni-app(Vue3+Vite) 三端，微信小程序 / H5 / 安卓 APK
-│   ├── src/            #   26 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
+│   ├── src/            #   32 个页面 + pinia + 适配层 + 设计系统「墨荧 · Acid Campus」
 │   ├── scripts/        #   可复跑校验脚本（纯 Python 标准库，无需装包）
 │   └── docs/           #   安卓打包手册 / 设计系统 / 版本基线
 ├── docs/               # 产品级文档：DEPLOY / COST / COMPLIANCE / INDEXES / USER_GUIDE …
